@@ -653,7 +653,15 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
 export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { meses, supabase, showSuccess, showError }) {
   try {
     showSuccess('Gerando relatório individual...');
-    
+
+    // Remove emojis e caracteres não suportados pelo jsPDF
+    const sanitize = (str) => (str || '')
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')   // emojis faixa alta
+      .replace(/[\u2600-\u27BF]/gu, '')           // símbolos miscelâneos
+      .replace(/[\uFE00-\uFE0F]/gu, '')           // variation selectors
+      .replace(/\u200B/g, '')                     // zero width space
+      .trim();
+
     // Buscar dados da loja
     const { data: dadosLoja } = await supabase
       .from('dados_loja')
