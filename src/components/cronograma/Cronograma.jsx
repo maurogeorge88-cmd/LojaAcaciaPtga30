@@ -114,6 +114,8 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null)
         'sessao_magna': 'Sessao Magna',
         'sessao_posse': 'Sessao de Posse',
         'sessao_instalacao': 'Sessao de Instalacao',
+        'sessao_festiva': 'Sessao Festiva',
+        'feriado': 'Feriado',
         'evento_externo': 'Evento Externo', 
         'outro': 'Outro' 
       };
@@ -288,6 +290,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     { value: 'sessao_magna', label: '👑 Sessão Magna', cor: '#ef4444' },
     { value: 'sessao_posse', label: '📜 Sessão de Posse', cor: '#10b981' },
     { value: 'sessao_instalacao', label: '👑 Sessão de Instalação', cor: '#3b82f6' },
+    { value: 'sessao_festiva', label: '🥂 Sessão Festiva', cor: '#c9a84c' },
+    { value: 'feriado', label: '🎌 Feriado', cor: '#f97316' },
     { value: 'evento_externo', label: '🌍 Evento Externo', cor: '#f59e0b' },
     { value: 'outro', label: '📌 Outro', cor: '#6b7280' }
   ];
