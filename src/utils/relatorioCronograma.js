@@ -143,6 +143,10 @@ const obterLabelTipo = (tipo) => {
     'trabalho_irmao': 'Trabalho',
     'instrucao': 'Instrução',
     'sessao_magna': 'Sessão Magna',
+    'sessao_posse': 'Sessão de Posse',
+    'sessao_instalacao': 'Sessão de Instalação',
+    'sessao_festiva': 'Sessão Festiva',
+    'feriado': 'Feriado',
     'evento_externo': 'Evento Externo',
     'outro': 'Outro'
   };
