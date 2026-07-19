@@ -5,6 +5,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [irmao, setIrmao]                           = useState(null);
   const [anoPresenca, setAnoPresenca]               = useState(new Date().getFullYear().toString());
   const [anosDisponiveis, setAnosDisponiveis]       = useState([]);
+  const [anosFinanceiroDisponiveis, setAnosFinanceiroDisponiveis] = useState([]);
   const [anoFinanceiro, setAnoFinanceiro]           = useState('todos');
   const [mesFinanceiro, setMesFinanceiro]           = useState('todos');
   const [dadosPresenca, setDadosPresenca]           = useState(null);
@@ -40,6 +41,12 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
         .select('sessoes_presenca!inner(data_sessao)').eq('membro_id', irmaoId);
       const anos = [...new Set(anosData?.map(r => new Date(r.sessoes_presenca.data_sessao).getFullYear()))].sort((a,b)=>b-a);
       setAnosDisponiveis(anos);
+
+      // Anos financeiros — apenas os anos com lançamento(s) realmente cadastrado(s) para este irmão
+      const { data: anosFinData } = await supabase.from('lancamentos_loja')
+        .select('data_vencimento').eq('origem_irmao_id', irmaoId).eq('origem_tipo', 'Irmao');
+      const anosFin = [...new Set((anosFinData||[]).map(l => l.data_vencimento?.substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+      setAnosFinanceiroDisponiveis(anosFin);
 
       await carregarPresenca(irmaoData);
       await carregarFinanceiro();
@@ -165,7 +172,6 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const sSecTitle = { fontSize:'1.05rem', fontWeight:'700', color:'var(--color-text)', marginBottom:'0.75rem', display:'flex', alignItems:'center', gap:'0.4rem' };
   const sMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const anoAtual = new Date().getFullYear();
-  const anosFinanceiro = Array.from({length:5},(_,i)=>anoAtual-i);
 
   const taxaCor = t => t>=90?'#10b981':t>=70?'#3b82f6':t>=50?'#f59e0b':'#ef4444';
 
@@ -247,7 +253,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
               <div style={{display:'flex',gap:'0.4rem'}}>
                 <select value={anoFinanceiro} onChange={e=>setAnoFinanceiro(e.target.value)} style={sSelect}>
                   <option value="todos">Todos os anos</option>
-                  {anosFinanceiro.map(a=><option key={a} value={a}>{a}</option>)}
+                  {anosFinanceiroDisponiveis.map(a=><option key={a} value={a}>{a}</option>)}
                 </select>
                 {anoFinanceiro !== 'todos' && (
                   <select value={mesFinanceiro} onChange={e=>setMesFinanceiro(e.target.value)} style={sSelect}>
