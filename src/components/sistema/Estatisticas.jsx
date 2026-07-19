@@ -346,10 +346,10 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                     {name:'Aprendiz',value:stats.porGrau.Aprendiz},
                     {name:'Companheiro',value:stats.porGrau.Companheiro},
                     {name:'Mestre',value:stats.porGrau.Mestre},
-                  ].filter(d=>d.value>0)} cx="45%" cy="50%" outerRadius={65} dataKey="value" label={({name,value,percent})=>`${name}: ${value}`} labelLine={true}>
+                  ].filter(d=>d.value>0)} cx="45%" cy="50%" outerRadius={65} dataKey="value" label={({name,value}) => <tspan fill="var(--color-text)">{`${name}: ${value}`}</tspan>} labelLine={{ stroke: 'var(--color-text-muted)' }}>
                     {[DOURADO,AZUL,VERDE].map((c,i)=><Cell key={i} fill={c}/>)}
                   </Pie>
-                  <Tooltip/>
+                  <Tooltip contentStyle={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'8px',color:'var(--color-text)'}} itemStyle={{color:'var(--color-text)'}} labelStyle={{color:'var(--color-text)'}}/>
                 </PieChart>
               </ResponsiveContainer>
             ) : <GraficoVazio/>}
