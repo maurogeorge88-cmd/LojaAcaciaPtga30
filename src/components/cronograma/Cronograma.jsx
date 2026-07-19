@@ -254,6 +254,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const [eventoEditando, setEventoEditando] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
+  const [mesFiltroInicializado, setMesFiltroInicializado] = useState(false);
   const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
   const [mostrarModalRelatorio, setMostrarModalRelatorio] = useState(false);
   const [tipoRelatorio, setTipoRelatorio] = useState('mensal'); // 'mensal', 'semestral', 'anual'
@@ -370,6 +371,34 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     }
     setLoading(false);
   };
+
+  // ─── Define o filtro de mês inicial: mês vigente, ou o próximo mês que ────
+  // tiver algum evento agendado caso o mês atual esteja vazio. Roda apenas
+  // uma vez, assim que os eventos terminam de carregar.
+  useEffect(() => {
+    if (loading || mesFiltroInicializado) return;
+    if (eventos.length === 0) { setMesFiltroInicializado(true); return; }
+
+    const mesesComEventos = [...new Set(eventos.map(e => e.data_evento.substring(0, 7)))].sort();
+
+    let mesEscolhido = '';
+    if (mesesComEventos.includes(mesAtualKey)) {
+      mesEscolhido = mesAtualKey;
+    } else {
+      // Procura o próximo mês futuro com evento
+      const proximoComEvento = mesesComEventos.find(m => m > mesAtualKey);
+      if (proximoComEvento) {
+        mesEscolhido = proximoComEvento;
+      } else {
+        // Não há eventos futuros: cai para o mês mais recente do passado
+        const passados = mesesComEventos.filter(m => m < mesAtualKey);
+        mesEscolhido = passados.length > 0 ? passados[passados.length - 1] : '';
+      }
+    }
+
+    setFiltroMes(mesEscolhido);
+    setMesFiltroInicializado(true);
+  }, [eventos, loading, mesFiltroInicializado]);
 
   const limparFormulario = () => {
     setEventoForm({
