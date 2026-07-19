@@ -79,7 +79,6 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
   const [candidatos,  setCandidatos]  = useState([]);
 
   const isMestre = !grauUsuario || ['mestre','mestre instalado','admin'].includes((grauUsuario||'').toLowerCase());
-  const isComp   = isMestre || (grauUsuario||'').toLowerCase() === 'companheiro';
 
   // Buscar anos disponíveis nos dados (só uma vez)
   useEffect(() => {
@@ -387,9 +386,15 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {/* Linha de presença mensal */}
         <div style={{marginBottom:'1.25rem'}}>
           <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Taxa de Presença por Mês (%)</p>
-          {stats.presencaMensal.some(m=>m.sessoes>0) ? (
+          {(() => {
+            // No ano vigente, exibe só até o mês atual — meses futuros ainda não
+            // aconteceram e não devem aparecer na linha do gráfico.
+            const presencaExibir = Number(anoSel) === anoAtual
+              ? stats.presencaMensal.slice(0, new Date().getMonth() + 1)
+              : stats.presencaMensal;
+            return presencaExibir.some(m=>m.sessoes>0) ? (
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={stats.presencaMensal}>
+              <LineChart data={presencaExibir}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                 <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
                 <YAxis domain={[0,100]} tick={{fontSize:11,fill:'var(--color-text)'}} unit="%"/>
@@ -401,7 +406,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <Line type="monotone" dataKey="taxa" stroke={AZUL} strokeWidth={2} dot={{r:4,fill:AZUL}} activeDot={{r:6}}/>
               </LineChart>
             </ResponsiveContainer>
-          ) : <GraficoVazio/>}
+            ) : <GraficoVazio/>;
+          })()}
         </div>
 
         {/* Barras por grau + ranking */}
@@ -461,9 +467,13 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {/* Receita vs Despesa mensal */}
         <div style={{marginBottom:'1.25rem'}}>
           <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Receita vs Despesa por Mês (R$)</p>
-          {isComp && stats.finMensal.some(m=>m.receita>0||m.despesa>0) ? (
+          {(() => {
+            const finExibir = Number(anoSel) === anoAtual
+              ? stats.finMensal.slice(0, new Date().getMonth() + 1)
+              : stats.finMensal;
+            return finExibir.some(m=>m.receita>0||m.despesa>0) ? (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={stats.finMensal}>
+              <BarChart data={finExibir}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                 <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
                 <YAxis tick={{fontSize:10,fill:'var(--color-text)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
@@ -477,16 +487,21 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <Bar dataKey="despesa" fill={VERMELHO} name="Despesa"  radius={[4,4,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
-          ) : <GraficoVazio/>}
+            ) : <GraficoVazio/>;
+          })()}
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
           {/* Saldo acumulado */}
           <div>
             <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Evolução do Saldo Acumulado</p>
-            {isComp && stats.saldoMensal.some(m=>m.saldo!==0) ? (
+            {(() => {
+              const saldoExibir = Number(anoSel) === anoAtual
+                ? stats.saldoMensal.slice(0, new Date().getMonth() + 1)
+                : stats.saldoMensal;
+              return saldoExibir.some(m=>m.saldo!==0) ? (
               <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={stats.saldoMensal}>
+                <LineChart data={saldoExibir}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis dataKey="mes" tick={{fontSize:10}}/>
                   <YAxis tick={{fontSize:10}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
@@ -498,13 +513,14 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                   <Line type="monotone" dataKey="saldo" stroke={DOURADO} strokeWidth={2} dot={false}/>
                 </LineChart>
               </ResponsiveContainer>
-            ) : <GraficoVazio/>}
+              ) : <GraficoVazio/>;
+            })()}
           </div>
 
           {/* Receita por categoria */}
           <div>
             <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Receita por Categoria</p>
-            {isComp && stats.graficoRecCat.length>0 ? (
+            {stats.graficoRecCat.length>0 ? (
               <ResponsiveContainer width="100%" height={Math.max(200, stats.graficoRecCat.length * 36)}>
                 <BarChart data={stats.graficoRecCat} layout="vertical" margin={{left:0,right:16,top:4,bottom:4}}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
@@ -524,12 +540,6 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
             ) : <GraficoVazio/>}
           </div>
         </div>
-
-        {!isComp && (
-          <div style={{padding:'0.75rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',marginTop:'0.75rem',textAlign:'center'}}>
-            <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--color-text)'}}>🔒 Detalhes financeiros disponíveis a partir do grau Companheiro</span>
-          </div>
-        )}
       </Painel>
 
       {/* ══════════════════════════════════════════════════════════════════════
