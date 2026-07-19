@@ -542,6 +542,47 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     return statusObj ? statusObj.cor : ' ';
   };
 
+  // ─── Estilos padronizados da barra de filtros/ações ───────────────────────
+  // Mesma altura, raio de borda e fonte para TODOS os botões e campos da barra
+  const estiloCampoFiltro = {
+    width: '100%',
+    height: '2.5rem',
+    padding: '0 0.75rem',
+    borderRadius: 'var(--radius-lg)',
+    background: 'var(--color-surface-2)',
+    color: 'var(--color-text)',
+    border: '1px solid var(--color-border)',
+    fontSize: '0.875rem'
+  };
+
+  const estiloBotaoBase = {
+    height: '2.5rem',
+    padding: '0 1.1rem',
+    borderRadius: 'var(--radius-lg)',
+    border: '1px solid transparent',
+    fontWeight: 600,
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    whiteSpace: 'nowrap',
+    transition: 'opacity 0.15s ease'
+  };
+
+  const estiloBotaoOutline = {
+    ...estiloBotaoBase,
+    background: 'var(--color-surface-2)',
+    color: 'var(--color-text)',
+    border: '1px solid var(--color-border)'
+  };
+
+  const estiloBotaoAtivo = {
+    ...estiloBotaoBase,
+    background: 'var(--color-accent)',
+    color: '#fff'
+  };
+
   if (loading) {
     return <div className="text-center py-12">Carregando cronograma...</div>;
   }
@@ -819,13 +860,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
       {/* Filtros e Visualização */}
       <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-end gap-4">
+          {/* Filtro: Tipo */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo</label>
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              style={estiloCampoFiltro}
             >
               <option value="">Todos os Tipos</option>
               {tiposEvento.map(tipo => (
@@ -834,59 +876,58 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             </select>
           </div>
 
+          {/* Filtro: Mês */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
             <input
               type="month"
               value={filtroMes}
               onChange={(e) => setFiltroMes(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              style={estiloCampoFiltro}
             />
           </div>
 
-          <div className="flex items-end gap-2">
-            <button
-              onClick={() => {
-                setFiltroTipo('');
-                setFiltroMes('');
-              }}
-              className="px-4 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              🔄 Limpar
-            </button>
-          </div>
+          {/* Limpar */}
+          <button
+            onClick={() => {
+              setFiltroTipo('');
+              setFiltroMes('');
+            }}
+            style={estiloBotaoOutline}
+          >
+            🔄 Limpar
+          </button>
+
+          {/* Divisor */}
+          <div style={{width:"1px",height:"2.5rem",background:"var(--color-border)"}} />
 
           {/* Toggle Visualização Lista/Calendário */}
-          <div className="flex items-end gap-2 border-l-2 pl-4">
+          <div className="flex gap-2">
             <button
               onClick={() => setVisualizacao('lista')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                visualizacao === 'lista'
-                  ? 'bg-primary-600 text-white'
-                  : 'btn-tab-inactive'
-              }`}
+              style={visualizacao === 'lista' ? estiloBotaoAtivo : estiloBotaoOutline}
             >
               📋 Lista
             </button>
             <button
               onClick={() => setVisualizacao('calendario')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                visualizacao === 'calendario'
-                  ? 'btn-yellow-placeholder'
-                  : 'btn-tab-inactive'
-              }`}
+              style={visualizacao === 'calendario' ? estiloBotaoAtivo : estiloBotaoOutline}
             >
               📅 Calendário
             </button>
           </div>
 
-          <div className="flex items-end gap-2">
+          {/* Divisor */}
+          <div style={{width:"1px",height:"2.5rem",background:"var(--color-border)"}} />
+
+          {/* Relatórios PDF */}
+          <div className="flex gap-2">
             <button
               onClick={() => {
                 setTipoRelatorio('mensal');
                 setMostrarModalRelatorio(true);
               }}
-              style={{padding:"0.4rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
+              style={{ ...estiloBotaoBase, background:"var(--color-accent)", color:"#fff" }}
               title="Gerar PDF mensal"
             >
               📄 Mensal
@@ -896,7 +937,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('semestral');
                 setMostrarModalRelatorio(true);
               }}
-              style={{padding:"0.4rem 1rem",background:"#8b5cf6",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
+              style={{ ...estiloBotaoBase, background:"#8b5cf6", color:"#fff" }}
               title="Gerar PDF semestral"
             >
               📄 Semestral
@@ -906,16 +947,20 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('anual');
                 setMostrarModalRelatorio(true);
               }}
-              style={{padding:"0.4rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
+              style={{ ...estiloBotaoBase, background:"#10b981", color:"#fff" }}
               title="Gerar PDF anual"
             >
               📄 Anual
             </button>
           </div>
+        </div>
 
-          <div className="text-sm">
-            <strong>{eventosFiltrados.length}</strong> evento(s) encontrado(s)
-          </div>
+        {/* Contador de resultados */}
+        <div
+          className="mt-4 pt-3 text-sm"
+          style={{ borderTop: "1px solid var(--color-border)", color: "var(--color-text-muted)" }}
+        >
+          <strong style={{color:"var(--color-text)"}}>{eventosFiltrados.length}</strong> evento(s) encontrado(s)
         </div>
       </div>
 
