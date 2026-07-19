@@ -77,6 +77,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
   const [comissoes,   setComissoes]   = useState([]);
   const [caridade,    setCaridade]    = useState([]);
   const [candidatos,  setCandidatos]  = useState([]);
+  const [familias,    setFamilias]    = useState([]);
+  const [comodatosAtivos, setComodatosAtivos] = useState([]);
+  const [equipamentos, setEquipamentos] = useState([]);
 
   const isMestre = !grauUsuario || ['mestre','mestre instalado','admin'].includes((grauUsuario||'').toLowerCase());
 
@@ -114,6 +117,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {data: comissoesD},
         {data: caridadeD},
         {data: candidatosD},
+        {data: familiasD},
+        {data: comodatosD},
+        {data: equipamentosD},
       ] = await Promise.all([
         supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado').order('nome'),
         supabase.from('sessoes_presenca').select('id,data_sessao,grau_sessao_id').gte('data_sessao',`${anoSel}-01-01`).lte('data_sessao',`${anoSel}-12-31`).order('data_sessao'),
@@ -122,6 +128,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         supabase.from('comissoes_integrantes').select('irmao_id,comissoes(status)'),
         supabase.from('ajudas_caridade').select('id,created_at').gte('created_at',`${anoSel}-01-01`),
         supabase.from('sindicancia_candidatos').select('id,situacao,created_at'),
+        supabase.from('familias_carentes').select('id,ativa'),
+        supabase.from('comodatos').select('id,beneficiario_id').eq('status','ativo'),
+        supabase.from('equipamentos').select('id,status'),
       ]);
 
       setIrmaos(irmaosD||[]);
@@ -130,6 +139,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       setCandidatos(candidatosD||[]);
       setLancamentos(lancD||[]);
       setCaridade(caridadeD||[]);
+      setFamilias(familiasD||[]);
+      setComodatosAtivos(comodatosD||[]);
+      setEquipamentos(equipamentosD||[]);
 
       const sessoesAno = sessoesD||[];
       setSessoes(sessoesAno);
@@ -274,6 +286,15 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const candAtivos   = (candidatos||[]).filter(c=>!['excluido','desistiu','adiado'].includes(c.situacao)).length;
     const candAprovados= (candidatos||[]).filter(c=>c.situacao==='aprovado').length;
 
+    // Caridade — famílias
+    const familiasTotal  = (familias||[]).length;
+    const familiasAtivas = (familias||[]).filter(f=>f.ativa).length;
+
+    // Comodatos — pessoas atendidas e equipamentos
+    const pessoasComodato = new Set((comodatosAtivos||[]).map(c=>c.beneficiario_id)).size;
+    const equipamentosTotal       = (equipamentos||[]).length;
+    const equipamentosEmprestados = (equipamentos||[]).filter(e=>e.status==='emprestado').length;
+
     return {
       ativos:totalAtivos,regulares,licenciados,irregulares,suspensos,desligados,falecidos,
       porGrau,iniciadosAno,exaltadosAno,elevadosAno,
@@ -281,8 +302,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       finMensal,saldoMensal,totalReceita,totalDespesa,graficoRecCat,
       irmaosEmComissao,percComissao,caridade:(caridade||[]).length,
       candAtivos,candAprovados,
+      familiasTotal,familiasAtivas,pessoasComodato,equipamentosTotal,equipamentosEmprestados,
     };
-  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,anoSel,loading]);
+  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,familias,comodatosAtivos,equipamentos,anoSel,loading]);
 
   const sBtn = (ativo) => ({
     padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',
@@ -551,6 +573,18 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           <Card label="Ações Caridade" valor={stats.caridade}          sub={`registradas em ${anoSel}`}                  cor={VERDE}  icon="❤️"/>
           <Card label="Candidatos"     valor={stats.candAtivos}         sub="em processo de sindicância"                  cor="var(--color-accent)"   icon="🔍"/>
           <Card label="Sessões"        valor={sessoes.length}           sub={`realizadas em ${anoSel}`}                   cor={DOURADO}icon="🏛️"/>
+        </div>
+      </Painel>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          PAINEL 5 — CARIDADE E COMODATOS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <Painel titulo="❤️ Caridade e Comodatos">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem'}}>
+          <Card label="Famílias Atendidas"    valor={stats.familiasTotal}          sub={`${stats.familiasAtivas} ativa(s)`}                cor={VERDE}  icon="👨‍👩‍👧‍👦"/>
+          <Card label="Famílias Ativas"       valor={stats.familiasAtivas}         sub="recebendo apoio atualmente"                        cor={VERMELHO} icon="❤️"/>
+          <Card label="Pessoas em Comodato"   valor={stats.pessoasComodato}        sub="beneficiários com empréstimo ativo"                cor="var(--color-accent)"   icon="🧑‍🤝‍🧑"/>
+          <Card label="Equipamentos Emprestados" valor={stats.equipamentosEmprestados} sub={`de ${stats.equipamentosTotal} cadastrado(s)`} cor={DOURADO} icon="🦽"/>
         </div>
       </Painel>
 
