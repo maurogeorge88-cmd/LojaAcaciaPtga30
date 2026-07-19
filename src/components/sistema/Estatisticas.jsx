@@ -309,8 +309,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem',marginBottom:'1.25rem'}}>
           <Card label="Irmãos Ativos"   valor={stats.ativos}      sub={`${stats.regulares} reg. · ${stats.licenciados} lic.`} cor={AZUL}     icon="👥"/>
           <Card label={`Iniciados ${anoSel}`}  valor={stats.iniciadosAno}  sub="Novos Aprendizes"    cor={VERDE}    icon="⬆️"/>
+          <Card label={`Elevados ${anoSel}`}   valor={stats.elevadosAno}   sub="Novos Companheiros"  cor={ROXO}     icon="📈"/>
           <Card label={`Exaltados ${anoSel}`}  valor={stats.exaltadosAno}  sub="Elevados a Mestre"   cor={DOURADO}  icon="⭐"/>
-          <Card label="Situações Ativas" valor={stats.irregulares+stats.suspensos} sub={`${stats.irregulares} irreg. · ${stats.suspensos} susp.`} cor={LARANJA} icon="⚠️"/>
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
