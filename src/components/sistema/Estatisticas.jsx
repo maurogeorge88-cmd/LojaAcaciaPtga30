@@ -36,7 +36,7 @@ const Card = ({label, valor, sub, cor='var(--color-accent)', icon}) => (
 const Painel = ({titulo, children}) => (
   <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden',marginBottom:'1.25rem'}}>
     <div style={{padding:'0.75rem 1.25rem',background:'var(--color-surface-2)',borderBottom:'1px solid var(--color-border)',display:'flex',alignItems:'center',gap:'0.5rem'}}>
-      <h3 style={{margin:0,fontWeight:700,fontSize:'0.95rem',color:AZUL}}>{titulo}</h3>
+      <h3 style={{margin:0,fontWeight:700,fontSize:'0.95rem',color:'var(--color-accent)'}}>{titulo}</h3>
     </div>
     <div style={{padding:'1.25rem'}}>{children}</div>
   </div>
@@ -47,6 +47,21 @@ const GraficoVazio = () => (
     Sem dados suficientes para exibir
   </div>
 );
+
+// Rótulo customizado do PieChart — precisa retornar um <text> válido (um <tspan>
+// solto, sem <text> pai, não renderiza nada no SVG) e a cor precisa ser clara
+// para ficar legível sobre o tema escuro.
+const renderPieLabel = ({ cx, cy, midAngle, outerRadius, name, value }) => {
+  const RADIAN = Math.PI / 180;
+  const raio = outerRadius + 18;
+  const x = cx + raio * Math.cos(-midAngle * RADIAN);
+  const y = cy + raio * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" style={{ fill: 'var(--color-text)', fontSize: 12, fontWeight: 600 }}>
+      {`${name}: ${value}`}
+    </text>
+  );
+};
 
 export default function Estatisticas({ grauUsuario, permissoes }) {
   const [anoSel, setAnoSel]   = useState(anoAtual);
@@ -289,7 +304,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1.5rem',flexWrap:'wrap',gap:'0.75rem'}}>
         <div>
-          <h2 style={{margin:0,fontWeight:800,fontSize:'1.3rem',color:AZUL}}>📊 Estatísticas e Indicadores</h2>
+          <h2 style={{margin:0,fontWeight:800,fontSize:'1.3rem',color:'var(--color-accent)'}}>📊 Estatísticas e Indicadores</h2>
           <p style={{margin:'0.2rem 0 0',fontSize:'0.8rem',color:'var(--color-text-muted)'}}>Visão consolidada da Loja — dados em tempo real</p>
         </div>
         <div style={{display:'flex',gap:'0.5rem',alignItems:'center'}}>
@@ -307,7 +322,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       ══════════════════════════════════════════════════════════════════════ */}
       <Painel titulo="👥 Quadro de Irmãos">
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem',marginBottom:'1.25rem'}}>
-          <Card label="Irmãos Ativos"   valor={stats.ativos}      sub={`${stats.regulares} reg. · ${stats.licenciados} lic.`} cor={AZUL}     icon="👥"/>
+          <Card label="Irmãos Ativos"   valor={stats.ativos}      sub={`${stats.regulares} reg. · ${stats.licenciados} lic.`} cor="var(--color-accent)"     icon="👥"/>
           <Card label={`Iniciados ${anoSel}`}  valor={stats.iniciadosAno}  sub="Novos Aprendizes"    cor={VERDE}    icon="⬆️"/>
           <Card label={`Elevados ${anoSel}`}   valor={stats.elevadosAno}   sub="Novos Companheiros"  cor={ROXO}     icon="📈"/>
           <Card label={`Exaltados ${anoSel}`}  valor={stats.exaltadosAno}  sub="Elevados a Mestre"   cor={DOURADO}  icon="⭐"/>
@@ -316,10 +331,10 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
           {/* Distribuição por situação */}
           <div>
-            <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Distribuição por Situação</p>
+            <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Distribuição por Situação</p>
             {[
               {l:'Regular',v:stats.regulares,c:VERDE},
-              {l:'Licenciado',v:stats.licenciados,c:AZUL},
+              {l:'Licenciado',v:stats.licenciados,c:'#3b82f6'},
               {l:'Irregular',v:stats.irregulares,c:LARANJA},
               {l:'Suspenso',v:stats.suspensos,c:VERMELHO},
               {l:'Desligado',v:stats.desligados,c:'#94a3b8'},
@@ -338,7 +353,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
           {/* Pizza por grau */}
           <div>
-            <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Distribuição por Grau (Ativos)</p>
+            <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Distribuição por Grau (Ativos)</p>
             {stats.ativos > 0 ? (
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
@@ -346,7 +361,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                     {name:'Aprendiz',value:stats.porGrau.Aprendiz},
                     {name:'Companheiro',value:stats.porGrau.Companheiro},
                     {name:'Mestre',value:stats.porGrau.Mestre},
-                  ].filter(d=>d.value>0)} cx="45%" cy="50%" outerRadius={65} dataKey="value" label={({name,value}) => <tspan fill="var(--color-text)">{`${name}: ${value}`}</tspan>} labelLine={{ stroke: 'var(--color-text-muted)' }}>
+                  ].filter(d=>d.value>0)} cx="45%" cy="50%" outerRadius={65} dataKey="value" label={renderPieLabel} labelLine={{ stroke: 'var(--color-text-muted)' }}>
                     {[DOURADO,AZUL,VERDE].map((c,i)=><Cell key={i} fill={c}/>)}
                   </Pie>
                   <Tooltip contentStyle={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'8px',color:'var(--color-text)'}} itemStyle={{color:'var(--color-text)'}} labelStyle={{color:'var(--color-text)'}}/>
@@ -363,15 +378,15 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       <Painel titulo="📅 Presença nas Sessões">
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem',marginBottom:'1.25rem'}}>
           <Card label="Taxa de Presença"    valor={fmtP(stats.taxaGeralAno)} sub={`Média do ano ${anoSel}`}              cor={stats.taxaGeralAno>=70?VERDE:stats.taxaGeralAno>=50?LARANJA:VERMELHO} icon="✅"/>
-          <Card label="Sessões Realizadas"  valor={sessoes.length}            sub={`em ${anoSel}`}                        cor={AZUL}    icon="🏛️"/>
-          <Card label="Irmãos Ativos"       valor={stats.ativos}              sub="Base de cálculo"                      cor={AZUL}    icon="👥"/>
+          <Card label="Sessões Realizadas"  valor={sessoes.length}            sub={`em ${anoSel}`}                        cor="var(--color-accent)"    icon="🏛️"/>
+          <Card label="Irmãos Ativos"       valor={stats.ativos}              sub="Base de cálculo"                      cor="var(--color-accent)"    icon="👥"/>
           <Card label="Melhor Mês"          valor={stats.presencaMensal.filter(m=>m.sessoes>0).sort((a,b)=>b.taxa-a.taxa)[0]?.mes||'—'}
                 sub={fmtP(Math.max(...stats.presencaMensal.map(m=>m.taxa)))} cor={VERDE} icon="🏆"/>
         </div>
 
         {/* Linha de presença mensal */}
         <div style={{marginBottom:'1.25rem'}}>
-          <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Taxa de Presença por Mês (%)</p>
+          <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Taxa de Presença por Mês (%)</p>
           {stats.presencaMensal.some(m=>m.sessoes>0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={stats.presencaMensal}>
@@ -392,7 +407,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {/* Barras por grau + ranking */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
           <div>
-            <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Taxa por Grau de Sessão</p>
+            <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Taxa por Grau de Sessão</p>
             {stats.graficoGrau.length>0 ? (
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={stats.graficoGrau} layout="vertical">
@@ -412,7 +427,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
           {isMestre && (
             <div>
-              <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>🏆 Top 5 Mais Assíduos</p>
+              <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>🏆 Top 5 Mais Assíduos</p>
               {stats.rankingPresenca.slice(0,5).map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
                   <span style={{fontWeight:700,fontSize:'0.75rem',color:DOURADO,minWidth:'18px'}}>{idx+1}º</span>
@@ -440,12 +455,12 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           <Card label={`Receitas ${anoSel}`}  valor={fmtR(stats.totalReceita)} sub="Entradas pagas"           cor={VERDE}    icon="📈"/>
           <Card label={`Despesas ${anoSel}`}  valor={fmtR(stats.totalDespesa)} sub="Saídas pagas"             cor={VERMELHO} icon="📉"/>
           <Card label="Resultado"         valor={fmtR(stats.totalReceita-stats.totalDespesa)} sub={stats.totalReceita>=stats.totalDespesa?'Superávit':'Déficit'} cor={stats.totalReceita>=stats.totalDespesa?VERDE:VERMELHO} icon="⚖️"/>
-          <Card label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor={AZUL} icon="🏆"/>
+          <Card label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor="var(--color-accent)" icon="🏆"/>
         </div>
 
         {/* Receita vs Despesa mensal */}
         <div style={{marginBottom:'1.25rem'}}>
-          <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Receita vs Despesa por Mês (R$)</p>
+          <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Receita vs Despesa por Mês (R$)</p>
           {isComp && stats.finMensal.some(m=>m.receita>0||m.despesa>0) ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={stats.finMensal}>
@@ -468,7 +483,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
           {/* Saldo acumulado */}
           <div>
-            <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Evolução do Saldo Acumulado</p>
+            <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Evolução do Saldo Acumulado</p>
             {isComp && stats.saldoMensal.some(m=>m.saldo!==0) ? (
               <ResponsiveContainer width="100%" height={180}>
                 <LineChart data={stats.saldoMensal}>
@@ -488,7 +503,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
           {/* Receita por categoria */}
           <div>
-            <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Receita por Categoria</p>
+            <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Receita por Categoria</p>
             {isComp && stats.graficoRecCat.length>0 ? (
               <ResponsiveContainer width="100%" height={Math.max(200, stats.graficoRecCat.length * 36)}>
                 <BarChart data={stats.graficoRecCat} layout="vertical" margin={{left:0,right:16,top:4,bottom:4}}>
@@ -511,8 +526,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         </div>
 
         {!isComp && (
-          <div style={{padding:'0.75rem',background:'rgba(30,58,95,0.06)',border:'1px solid rgba(30,58,95,0.2)',borderRadius:'var(--radius-md)',marginTop:'0.75rem',textAlign:'center'}}>
-            <span style={{fontSize:'0.78rem',color:'var(--color-text-muted)'}}>🔒 Detalhes financeiros disponíveis a partir do grau Companheiro</span>
+          <div style={{padding:'0.75rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',marginTop:'0.75rem',textAlign:'center'}}>
+            <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--color-text)'}}>🔒 Detalhes financeiros disponíveis a partir do grau Companheiro</span>
           </div>
         )}
       </Painel>
@@ -524,7 +539,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem'}}>
           <Card label="Em Comissões"   valor={stats.irmaosEmComissao} sub={`${stats.percComissao}% dos ativos`}         cor={ROXO}   icon="👥"/>
           <Card label="Ações Caridade" valor={stats.caridade}          sub={`registradas em ${anoSel}`}                  cor={VERDE}  icon="❤️"/>
-          <Card label="Candidatos"     valor={stats.candAtivos}         sub="em processo de sindicância"                  cor={AZUL}   icon="🔍"/>
+          <Card label="Candidatos"     valor={stats.candAtivos}         sub="em processo de sindicância"                  cor="var(--color-accent)"   icon="🔍"/>
           <Card label="Sessões"        valor={sessoes.length}           sub={`realizadas em ${anoSel}`}                   cor={DOURADO}icon="🏛️"/>
         </div>
       </Painel>
