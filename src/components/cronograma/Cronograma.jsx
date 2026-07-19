@@ -563,37 +563,45 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
             <button
               onClick={() => {
-                if (!mostrarFormulario) {
-                  limparFormulario();
-                  setMostrarFormulario(true);
-                  // Scroll para o topo
-                  setTimeout(() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }, 100);
-                } else {
-                  setMostrarFormulario(false);
-                }
+                limparFormulario();
+                setMostrarFormulario(true);
               }}
               className="px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-semibold"
               style={{ color: '#000080' }}
             >
-              {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
+              ➕ Novo Evento
             </button>
           )}
         </div>
       </div>
 
-      {/* Formulário */}
+      {/* Modal de Cadastro/Edição de Evento */}
       {mostrarFormulario && (
-        <div 
-          key={eventoEditando?.id || 'novo'} 
-          className="rounded-lg p-6 border-2"
-          style={{ borderColor: tema.cor_primaria }}
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={limparFormulario}
         >
-          <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
-            {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
-          </h3>
+          <div
+            key={eventoEditando?.id || 'novo'}
+            className="rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
+            style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 rounded-t-xl text-white" style={{background:"var(--color-accent)"}}>
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
+                  {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
+                </h3>
+                <button
+                  onClick={limparFormulario}
+                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1rem",fontWeight:"700"}}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
 
+            <div className="p-6" style={{background:"var(--color-surface)"}}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Título */}
@@ -804,6 +812,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               </button>
             </div>
           </form>
+            </div>
+          </div>
         </div>
       )}
 
