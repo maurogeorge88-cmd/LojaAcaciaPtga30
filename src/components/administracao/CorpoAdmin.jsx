@@ -20,12 +20,9 @@ const formatarData = (d) => {
   return `${dia}/${mes}/${ano}`;
 };
 
-const ORDEM_CARGOS_ADM = [
-  'Veneravel Mestre','Primeiro Vigilante','Segundo Vigilante','Orador','Secretario',
-  'Tesoureiro','Chanceler','Hospitaleiro','Mestre de Cerimonia','Mestre de Harmonia',
-  'Mestre de Banquetes','Porta Espada','Porta Estandarte','Diácono','Cobridor Externo',
-  'Cobridor Interno','Bibliotecario',
-];
+// Ordem hierárquica maçônica — mesma lista oficial usada no cadastro (CARGOS_ADMINISTRATIVOS),
+// garantindo que a ordem de exibição sempre bata com os valores realmente salvos no banco.
+const ORDEM_CARGOS_ADM = CARGOS_ADMINISTRATIVOS;
 
 export const CorpoAdmin = ({ 
   corpoAdmin, 
@@ -210,7 +207,14 @@ export const CorpoAdmin = ({
                 gap: '0.5rem',
               }}>
                 {chapasEleicao
-                  .sort((a, b) => ORDEM_CARGOS_ADM.indexOf(a.cargo) - ORDEM_CARGOS_ADM.indexOf(b.cargo))
+                  .sort((a, b) => {
+                    const indexA = ORDEM_CARGOS_ADM.indexOf(a.cargo);
+                    const indexB = ORDEM_CARGOS_ADM.indexOf(b.cargo);
+                    if (indexA === -1 && indexB === -1) return (a.cargo || '').localeCompare(b.cargo || '');
+                    if (indexA === -1) return 1;  // cargo não reconhecido vai para o fim
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                  })
                   .map(c => {
                     const irmao = irmaos?.find(i => i.id === c.irmao_id);
                     return (
