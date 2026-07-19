@@ -53,18 +53,16 @@ export default function MinhasFinancas({ userEmail, userData }) {
       // Anos disponíveis
       const anos = [...new Set(lista.map(l => l.data_vencimento?.substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
       setAnosDisp(anos);
-      const anoAtual = String(new Date().getFullYear());
-      const anoInicial = anos.includes(anoAtual) ? anoAtual : (anos[0] || '');
-      setFiltroAno(anoInicial);
+      // Padrão: "Todos" — para não esconder pendências de anos anteriores ao atual
+      setFiltroAno('');
     } finally { setLoading(false); }
   };
 
   // Recalcular meses disponíveis quando o ano muda
   useEffect(() => {
-    if (!filtroAno) return;
     const meses = [...new Set(
       lancamentos
-        .filter(l => l.data_vencimento?.startsWith(filtroAno))
+        .filter(l => !filtroAno || l.data_vencimento?.startsWith(filtroAno))
         .map(l => l.data_vencimento?.substring(5,7))
         .filter(Boolean)
     )].sort((a,b) => b.localeCompare(a));
@@ -162,6 +160,7 @@ export default function MinhasFinancas({ userEmail, userData }) {
         <div style={{display:'flex',gap:'0.4rem',alignItems:'center'}}>
           <span style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Ano:</span>
           <select value={filtroAno} onChange={e=>{setFiltroAno(e.target.value)}} style={inp}>
+            <option value=''>Todos</option>
             {anosDisp.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
         </div>
