@@ -298,7 +298,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const percComissao = totalAtivos>0?Math.round(irmaosEmComissao/totalAtivos*100):0;
 
     // Sindicância
-    const candAtivos   = (candidatos||[]).filter(c=>!['excluido','desistiu','adiado'].includes(c.situacao)).length;
+    const candAtivos   = (candidatos||[]).length;
     const candAprovados= (candidatos||[]).filter(c=>c.situacao==='aprovado').length;
 
     // Caridade — famílias
@@ -590,11 +590,10 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           PAINEL 4 — ENGAJAMENTO
       ══════════════════════════════════════════════════════════════════════ */}
       <Painel titulo="🤝 Engajamento e Atividades">
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'0.75rem'}}>
           <Card label="Em Comissões"   valor={stats.irmaosEmComissao} sub={`${stats.percComissao}% dos ativos`}         cor={ROXO}   icon="👥"/>
           <Card label="Ações Caridade" valor={stats.caridade}          sub={`registradas em ${anoSel}`}                  cor={VERDE}  icon="❤️"/>
-          <Card label="Candidatos"     valor={stats.candAtivos}         sub="em processo de sindicância"                  cor="var(--color-accent)"   icon="🔍"/>
-          <Card label="Sessões"        valor={sessoes.length}           sub={`realizadas em ${anoSel}`}                   cor={DOURADO}icon="🏛️"/>
+          <Card label="Candidatos"     valor={stats.candAtivos}         sub="total cadastrado na sindicância"             cor="var(--color-accent)"   icon="🔍"/>
         </div>
       </Painel>
 
