@@ -14,6 +14,7 @@ export default function ModalGradePresenca({ onFechar }) {
   const [periodoInicio, setPeriodoInicio] = useState(`${new Date().getFullYear()}-01-01`);
   const [periodoFim, setPeriodoFim]     = useState(new Date().toISOString().split('T')[0]);
   const [irmaoIndividual, setIrmaoIndividual] = useState(null);
+  const [gerandoIndividual, setGerandoIndividual] = useState(false);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const anoAtual = new Date().getFullYear();
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
@@ -57,6 +58,68 @@ export default function ModalGradePresenca({ onFechar }) {
       carregar();
     }
   }, [anoSelecionado, mesSelecionado, anosDisponiveis]);
+
+  // Busca sessões + presenças do PERÍODO EXATO escolhido no modal (não usa o
+  // filtro ano/mês da tela da Matriz — senão o relatório fica restrito ao
+  // mesmo recorte da tela, mesmo que o usuário peça um intervalo maior).
+  const handleGerarRelatorioIndividual = async () => {
+    if (!irmaoIndividual) { alert('Selecione um irmão.'); return; }
+    if (!periodoInicio || !periodoFim) { alert('Selecione o período.'); return; }
+    if (periodoInicio > periodoFim) { alert('Data início deve ser anterior ao fim.'); return; }
+
+    setGerandoIndividual(true);
+    try {
+      const { data: sessoesPeriodo } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
+        .gte('data_sessao', periodoInicio)
+        .lte('data_sessao', periodoFim)
+        .order('data_sessao');
+
+      const sessaoIds = (sessoesPeriodo || []).map(s => s.id);
+
+      let todosRegistros = [];
+      if (sessaoIds.length > 0) {
+        let inicio = 0;
+        const tamanhoPagina = 1000;
+        let continuar = true;
+        while (continuar) {
+          const { data: lote } = await supabase
+            .from('registros_presenca')
+            .select('membro_id, sessao_id, presente, justificativa')
+            .in('sessao_id', sessaoIds)
+            .range(inicio, inicio + tamanhoPagina - 1);
+          if (lote && lote.length > 0) {
+            todosRegistros = [...todosRegistros, ...lote];
+            inicio += tamanhoPagina;
+            if (lote.length < tamanhoPagina) continuar = false;
+          } else {
+            continuar = false;
+          }
+        }
+      }
+
+      const gradePeriodo = {};
+      todosRegistros.forEach(reg => {
+        if (!gradePeriodo[reg.membro_id]) gradePeriodo[reg.membro_id] = {};
+        gradePeriodo[reg.membro_id][reg.sessao_id] = {
+          presente: reg.presente,
+          justificativa: reg.justificativa
+        };
+      });
+
+      gerarRelatorioIndividualPDF(
+        irmaoIndividual, sessoesPeriodo || [], gradePeriodo, historicoSituacoes,
+        dadosLoja, periodoInicio, periodoFim
+      );
+      setModalIndividual(false);
+    } catch (error) {
+      console.error('Erro ao gerar relatório individual:', error);
+      alert('Erro ao gerar relatório. Tente novamente.');
+    } finally {
+      setGerandoIndividual(false);
+    }
+  };
 
   const carregar = async () => {
     try {
@@ -862,18 +925,10 @@ export default function ModalGradePresenca({ onFechar }) {
                 Cancelar
               </button>
               <button
-                onClick={() => {
-                  if (!irmaoIndividual) { alert('Selecione um irmão.'); return; }
-                  if (!periodoInicio || !periodoFim) { alert('Selecione o período.'); return; }
-                  if (periodoInicio > periodoFim) { alert('Data início deve ser anterior ao fim.'); return; }
-                  gerarRelatorioIndividualPDF(
-                    irmaoIndividual, sessoes, grade, historicoSituacoes,
-                    dadosLoja, periodoInicio, periodoFim
-                  );
-                  setModalIndividual(false);
-                }}
-                style={{flex:2,padding:'0.6rem',background:'#6366f1',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
-                📄 Gerar Relatório
+                onClick={handleGerarRelatorioIndividual}
+                disabled={gerandoIndividual}
+                style={{flex:2,padding:'0.6rem',background:'#6366f1',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:gerandoIndividual?'wait':'pointer',opacity:gerandoIndividual?0.7:1}}>
+                {gerandoIndividual ? '⏳ Gerando...' : '📄 Gerar Relatório'}
               </button>
             </div>
           </div>
