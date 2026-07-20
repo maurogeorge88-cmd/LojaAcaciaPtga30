@@ -57,6 +57,19 @@ export const gerarRelatorioIndividualPDF = (
       rodape();
     }
   };
+  // Se a página já está mais de 60% preenchida, o cabeçalho do próximo ano
+  // vai direto para a folha seguinte — evita "Ano XXXX" ficar isolado no
+  // rodapé da página com o mês seguinte só aparecendo na próxima.
+  const LIMITE_60PC = 297 * 0.6; // 178.2mm (A4 = 297mm)
+  const checkNovoAno = () => {
+    if (y > LIMITE_60PC) {
+      doc.addPage();
+      y = 15;
+      rodape();
+    } else {
+      checkPage(20);
+    }
+  };
   const rodape = () => {
     const totalPg = doc.getNumberOfPages();
     for (let p = 1; p <= totalPg; p++) {
@@ -140,7 +153,7 @@ export const gerarRelatorioIndividualPDF = (
 
   // ── Iterar anos e meses ────────────────────────────────────────────────────
   Object.keys(grupos).sort().forEach(ano => {
-    checkPage(20);
+    checkNovoAno();
 
     // Cabeçalho do ano
     doc.setFillColor(30, 58, 138);
