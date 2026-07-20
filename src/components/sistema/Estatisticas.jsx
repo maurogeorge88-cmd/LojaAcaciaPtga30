@@ -448,8 +448,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         </div>
 
         {/* Barras por grau + ranking */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem'}}>
-          <div>
+        <div style={{display:'grid',gridTemplateColumns: isMestre ? 'repeat(3,1fr)' : '1fr',gap:'1.25rem'}}>
+          <div style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem'}}>
             <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>Taxa por Grau de Sessão</p>
             {stats.graficoGrau.length>0 ? (
               <ResponsiveContainer width="100%" height={160}>
@@ -469,7 +469,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           </div>
 
           {isMestre && (
-            <div>
+            <div style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem'}}>
               <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--color-accent)',marginBottom:'0.75rem'}}>🏆 Top 5 Mais Assíduos</p>
               {stats.rankingPresenca.slice(0,5).map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
@@ -478,7 +478,12 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                   <span style={{fontWeight:700,fontSize:'0.8rem',color:VERDE}}>{fmtP(i.taxa)}</span>
                 </div>
               ))}
-              <p style={{fontWeight:700,fontSize:'0.82rem',color:VERMELHO,marginBottom:'0.5rem',marginTop:'1rem'}}>⚠️ Mais Faltas</p>
+            </div>
+          )}
+
+          {isMestre && (
+            <div style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem'}}>
+              <p style={{fontWeight:700,fontSize:'0.82rem',color:VERMELHO,marginBottom:'0.75rem'}}>⚠️ Top 5 Mais Faltosos</p>
               {stats.rankingPresenca
                 .filter(i=>!i.temPrerrogativa && !i.licenciado)
                 .slice(-5).reverse().map((i,idx)=>(
