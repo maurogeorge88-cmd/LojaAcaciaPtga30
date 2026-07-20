@@ -167,7 +167,10 @@ export const gerarRelatorioIndividualPDF = (
 
     Object.keys(grupos[ano]).sort((a, b) => parseInt(a) - parseInt(b)).forEach(mes => {
       const sessoesMes = grupos[ano][mes];
-      checkPage(18 + sessoesMes.length * 7);
+      // Só garante espaço pro cabeçalho do mês + cabeçalho de colunas + 1ª linha.
+      // As demais linhas, se não couberem, continuam na página seguinte — assim
+      // não sobra um espaço grande quando o mês inteiro não cabe de uma vez.
+      checkPage(14 + 6.5);
 
       // Cabeçalho do mês
       doc.setFillColor(219, 234, 254);
@@ -180,16 +183,32 @@ export const gerarRelatorioIndividualPDF = (
       let presMes = 0, elegMes = 0;
 
       // Cabeçalho das colunas
-      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80);
-      txt('Data', M + 4, y + 2);
-      txt('Sessão', M + 28, y + 2);
-      txt('Situação', M + 100, y + 2);
-      txt('Obs.', M + 142, y + 2);
-      linha(y + 4);
-      y += 6;
+      const desenharCabecalhoColunas = () => {
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80);
+        txt('Data', M + 4, y + 2);
+        txt('Sessão', M + 28, y + 2);
+        txt('Situação', M + 100, y + 2);
+        txt('Obs.', M + 142, y + 2);
+        linha(y + 4);
+        y += 6;
+      };
+      desenharCabecalhoColunas();
 
       sessoesMes.forEach((s, idx) => {
-        checkPage(8);
+        // Quebra a linha para a página seguinte se não couber — repete o
+        // nome do mês (continuação) e o cabeçalho de colunas lá.
+        if (y + 8 > 270) {
+          doc.addPage();
+          y = 15;
+          rodape();
+          doc.setFillColor(219, 234, 254);
+          doc.rect(M, y - 3, W - M * 2, 8, 'F');
+          doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 64, 175);
+          txt(`${MESES_NOMES[parseInt(mes)]} (continuação)`, M + 4, y + 2);
+          doc.setTextColor(0);
+          y += 8;
+          desenharCabecalhoColunas();
+        }
 
         const reg = grade[irmao.id]?.[s.id];
         const dataSessao = new Date(s.data_sessao + 'T00:00:00');
