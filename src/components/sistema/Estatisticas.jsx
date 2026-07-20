@@ -121,7 +121,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {data: comodatosD},
         {data: equipamentosD},
       ] = await Promise.all([
-        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_prerrogativa').order('nome'),
+        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_nascimento').order('nome'),
         supabase.from('sessoes_presenca').select('id,data_sessao,grau_sessao_id').gte('data_sessao',`${anoSel}-01-01`).lte('data_sessao',`${anoSel}-12-31`).order('data_sessao'),
         supabase.from('lancamentos_loja').select('valor,tipo,status,data_pagamento,data_vencimento,categoria_id,tipo_pagamento,eh_transferencia_interna').eq('status','pago').gte('data_pagamento',`${anoSel}-01-01`).lte('data_pagamento',`${anoSel}-12-31`),
         supabase.from('categorias_financeiras').select('id,nome,tipo'),
@@ -222,11 +222,20 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const graficoGrau = Object.entries(presencaPorGrau).map(([g,v])=>({grau:g,taxa:v.total>0?Math.round(v.presentes/v.total*100):0}));
 
     // Presença por irmão (top/bottom)
+    const calcIdade = (dataNasc) => {
+      if (!dataNasc) return null;
+      const nasc = new Date(dataNasc);
+      const hoje = new Date();
+      let idade = hoje.getFullYear() - nasc.getFullYear();
+      if (hoje.getMonth() < nasc.getMonth() || (hoje.getMonth()===nasc.getMonth() && hoje.getDate()<nasc.getDate())) idade--;
+      return idade;
+    };
+
     const presencaIrmao = {};
     ativos.forEach(i=>{
       presencaIrmao[i.id]={
         nome:i.nome,pres:0,total:0,
-        temPrerrogativa:!!i.data_prerrogativa,
+        temPrerrogativa:(calcIdade(i.data_nascimento)||0) >= 70,
         licenciado:(i.situacao||'').toLowerCase()==='licenciado'
       };
     });
