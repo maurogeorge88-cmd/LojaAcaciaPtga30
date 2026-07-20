@@ -121,7 +121,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {data: comodatosD},
         {data: equipamentosD},
       ] = await Promise.all([
-        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado').order('nome'),
+        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_prerrogativa').order('nome'),
         supabase.from('sessoes_presenca').select('id,data_sessao,grau_sessao_id').gte('data_sessao',`${anoSel}-01-01`).lte('data_sessao',`${anoSel}-12-31`).order('data_sessao'),
         supabase.from('lancamentos_loja').select('valor,tipo,status,data_pagamento,data_vencimento,categoria_id,tipo_pagamento,eh_transferencia_interna').eq('status','pago').gte('data_pagamento',`${anoSel}-01-01`).lte('data_pagamento',`${anoSel}-12-31`),
         supabase.from('categorias_financeiras').select('id,nome,tipo'),
@@ -223,7 +223,13 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
     // Presença por irmão (top/bottom)
     const presencaIrmao = {};
-    ativos.forEach(i=>{ presencaIrmao[i.id]={nome:i.nome,pres:0,total:0}; });
+    ativos.forEach(i=>{
+      presencaIrmao[i.id]={
+        nome:i.nome,pres:0,total:0,
+        temPrerrogativa:!!i.data_prerrogativa,
+        licenciado:(i.situacao||'').toLowerCase()==='licenciado'
+      };
+    });
     sessoes.forEach(s=>{
       presencas.filter(p=>p.sessao_id===s.id).forEach(p=>{
         if(presencaIrmao[p.membro_id]) {
@@ -235,7 +241,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const rankingPresenca = Object.values(presencaIrmao)
       .filter(i=>i.total>0)
       .map(i=>({...i,taxa:Math.round(i.pres/i.total*100)}))
-      .sort((a,b)=>b.taxa-a.taxa);
+      .sort((a,b)=> b.taxa-a.taxa || a.nome.localeCompare(b.nome));
 
     // Financeiro por mês
     const catMap = {};
@@ -464,7 +470,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 </div>
               ))}
               <p style={{fontWeight:700,fontSize:'0.82rem',color:VERMELHO,marginBottom:'0.5rem',marginTop:'1rem'}}>⚠️ Mais Faltas</p>
-              {stats.rankingPresenca.slice(-5).reverse().map((i,idx)=>(
+              {stats.rankingPresenca
+                .filter(i=>!i.temPrerrogativa && !i.licenciado)
+                .slice(-5).reverse().map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
                   <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.nome}</span>
                   <span style={{fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxa)}</span>
