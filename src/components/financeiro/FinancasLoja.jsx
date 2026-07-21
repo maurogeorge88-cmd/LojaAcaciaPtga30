@@ -3272,8 +3272,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
                                 </span>
                                 <span style={{flex:1}}/>
-                                {recGrupo > 0 && <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#10b981',flexShrink:0}}>📈 {formatarMoeda(recGrupo)}</span>}
-                                {despGrupo > 0 && <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#ef4444',flexShrink:0,marginLeft:'0.35rem'}}>📉 {formatarMoeda(despGrupo)}</span>}
+                                {/* Faixa de valores — mesma largura total das colunas Status+Valor+Ações
+                                    da linha abaixo (85+90+132+gaps=323px). Receita à esquerda, despesa
+                                    à direita, assim o valor de cada lançamento fica centralizado entre
+                                    os dois. */}
+                                <div style={{width:'323px',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+                                  <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#10b981',visibility: recGrupo>0?'visible':'hidden'}}>📈 {formatarMoeda(recGrupo)}</span>
+                                  <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#ef4444',visibility: despGrupo>0?'visible':'hidden'}}>📉 {formatarMoeda(despGrupo)}</span>
+                                </div>
                                 {pendGrupo > 0 && (
                                   <span style={{fontSize:'0.65rem',fontWeight:'700',marginLeft:'0.35rem',flexShrink:0,
                                     color: vencGrupo > 0 ? '#ef4444' : '#f59e0b'}}>
