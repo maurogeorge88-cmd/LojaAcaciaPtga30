@@ -3259,32 +3259,47 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
                           return (
                             <div key={dataKey} style={{borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)',overflow:'hidden'}}>
-                              {/* Cabeçalho do grupo de data — totais compactos, juntos à direita,
-                                  separados por um traço vertical */}
+                              {/* Cabeçalho do grupo de data — bloco "receita | despesa" centralizado
+                                  exatamente sobre a coluna "Valor" das linhas de baixo (mesmo grid:
+                                  1fr 85px 90px 132px). Sempre mostra os dois valores (R$ 0,00 se não houver). */}
                               <div onClick={toggleData} style={{
-                                display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.4rem 0.75rem',
+                                display:'grid',
+                                gridTemplateColumns:'1fr 85px 90px 132px',
+                                alignItems:'center',gap:'0.5rem',padding:'0.4rem 0.75rem',
                                 background: corOrigemLight,
                                 cursor:'pointer',userSelect:'none',
                                 borderLeft:`3px solid ${corOrigemBorder}`}}>
-                                <span style={{fontSize:'0.75rem',fontWeight:'700',color: corOrigem,flexShrink:0}}>
-                                  📅 {dataLabel}
-                                </span>
-                                <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0}}>
-                                  • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
-                                </span>
-                                <span style={{flex:1}}/>
-                                {pendGrupo > 0 && (
-                                  <span style={{fontSize:'0.65rem',fontWeight:'700',marginRight:'0.35rem',flexShrink:0,
-                                    color: vencGrupo > 0 ? '#ef4444' : '#f59e0b'}}>
-                                    {vencGrupo > 0 ? `⚠️ ${vencGrupo} venc.` : `⏳ ${pendGrupo} pend.`}
+                                <div style={{display:'flex',alignItems:'center',gap:'0.5rem',minWidth:0}}>
+                                  <span style={{fontSize:'0.75rem',fontWeight:'700',color: corOrigem,flexShrink:0}}>
+                                    📅 {dataLabel}
                                   </span>
-                                )}
-                                <span style={{display:'flex',alignItems:'center',gap:'0.5rem',flexShrink:0}}>
-                                  {recGrupo > 0 && <span style={{fontSize:'0.75rem',fontWeight:'700',color:'#10b981',whiteSpace:'nowrap'}}>📈 {formatarMoeda(recGrupo)}</span>}
-                                  {recGrupo > 0 && despGrupo > 0 && <span style={{color:'var(--color-border)'}}>|</span>}
-                                  {despGrupo > 0 && <span style={{fontSize:'0.75rem',fontWeight:'700',color:'#ef4444',whiteSpace:'nowrap'}}>📉 {formatarMoeda(despGrupo)}</span>}
-                                </span>
-                                <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0,marginLeft:'0.35rem',transform: dataAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                                  <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0,whiteSpace:'nowrap'}}>
+                                    • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
+                                  </span>
+                                </div>
+                                {/* Coluna equivalente ao "Status" — contador de pendentes/vencidos */}
+                                <div style={{textAlign:'right'}}>
+                                  {pendGrupo > 0 && (
+                                    <span style={{fontSize:'0.65rem',fontWeight:'700',whiteSpace:'nowrap',
+                                      color: vencGrupo > 0 ? '#ef4444' : '#f59e0b'}}>
+                                      {vencGrupo > 0 ? `⚠️ ${vencGrupo} venc.` : `⏳ ${pendGrupo} pend.`}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Coluna equivalente ao "Valor" — bloco centralizado, pode extrapolar
+                                    a largura da coluna (position:absolute não empurra os vizinhos) */}
+                                <div style={{position:'relative',height:'100%'}}>
+                                  <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',
+                                    display:'flex',alignItems:'center',gap:'0.4rem',whiteSpace:'nowrap'}}>
+                                    <span style={{fontSize:'0.75rem',fontWeight:'700',color:'#10b981'}}>📈 {formatarMoeda(recGrupo)}</span>
+                                    <span style={{color:'var(--color-border)'}}>|</span>
+                                    <span style={{fontSize:'0.75rem',fontWeight:'700',color:'#ef4444'}}>📉 {formatarMoeda(despGrupo)}</span>
+                                  </div>
+                                </div>
+                                {/* Coluna equivalente às "Ações" — seta de expandir */}
+                                <div style={{display:'flex',justifyContent:'flex-end'}}>
+                                  <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',transform: dataAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                                </div>
                               </div>
 
                               {/* Registros internos minimalistas */}
