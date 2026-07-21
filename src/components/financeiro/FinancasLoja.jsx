@@ -1629,11 +1629,30 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         dataLimite = `${ano}-01-01`;
       }
 
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo)')
-        .eq('status', 'pago')
-        .lt('data_pagamento', dataLimite)  
+      const { data, error } = await (async () => {
+        const query = supabase
+          .from('lancamentos_loja')
+          .select('*, categorias_financeiras(tipo)')
+          .eq('status', 'pago')
+          .lt('data_pagamento', dataLimite);
+
+        // Paginação automática — mesma lógica do carregarLancamentos, evita
+        // que o limite de 1000 linhas do Supabase trunque o histórico e gere
+        // diferença no saldo anterior quando a loja já tem muitos lançamentos.
+        let allData = [];
+        let pageStart = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        while (hasMore) {
+          const { data: pageData, error: pageError } = await query.range(pageStart, pageStart + pageSize - 1);
+          if (pageError) return { data: null, error: pageError };
+          if (!pageData || pageData.length === 0) break;
+          allData = [...allData, ...pageData];
+          hasMore = pageData.length === pageSize;
+          pageStart += pageSize;
+        }
+        return { data: allData, error: null };
+      })();
 
       if (error) throw error;
 
@@ -1673,10 +1692,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const calcularCaixaFisicoTotal = async () => {
     try {
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo, nome)')
-        .eq('status', 'pago');
+      const { data, error } = await (async () => {
+        const query = supabase
+          .from('lancamentos_loja')
+          .select('*, categorias_financeiras(tipo, nome)')
+          .eq('status', 'pago');
+
+        // Paginação automática — caixa físico usa histórico completo, então
+        // precisa do mesmo tratamento contra o limite de 1000 linhas.
+        let allData = [];
+        let pageStart = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+        while (hasMore) {
+          const { data: pageData, error: pageError } = await query.range(pageStart, pageStart + pageSize - 1);
+          if (pageError) return { data: null, error: pageError };
+          if (!pageData || pageData.length === 0) break;
+          allData = [...allData, ...pageData];
+          hasMore = pageData.length === pageSize;
+          pageStart += pageSize;
+        }
+        return { data: allData, error: null };
+      })();
 
       if (error) throw error;
 
