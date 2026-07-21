@@ -3276,16 +3276,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0,whiteSpace:'nowrap'}}>
                                     • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
                                   </span>
-                                </div>
-                                {/* Coluna equivalente ao "Status" — contador de pendentes/vencidos */}
-                                <div style={{textAlign:'right'}}>
                                   {pendGrupo > 0 && (
-                                    <span style={{fontSize:'0.65rem',fontWeight:'700',whiteSpace:'nowrap',
+                                    <span style={{fontSize:'0.65rem',fontWeight:'700',whiteSpace:'nowrap',flexShrink:0,
                                       color: vencGrupo > 0 ? '#ef4444' : '#f59e0b'}}>
                                       {vencGrupo > 0 ? `⚠️ ${vencGrupo} venc.` : `⏳ ${pendGrupo} pend.`}
                                     </span>
                                   )}
                                 </div>
+                                {/* Coluna equivalente ao "Status" — mantida vazia para preservar o grid */}
+                                <div/>
                                 {/* Coluna equivalente ao "Valor" — bloco centralizado, pode extrapolar
                                     a largura da coluna (position:absolute não empurra os vizinhos) */}
                                 <div style={{position:'relative',height:'100%'}}>
