@@ -3293,7 +3293,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                     return (
                                       <div key={lanc.id} style={{
                                         display:'grid',
-                                        gridTemplateColumns:'1fr auto auto auto',
+                                        gridTemplateColumns:'1fr 85px 90px 132px',
                                         alignItems:'center',gap:'0.5rem',
                                         padding:'0.38rem 0.75rem 0.38rem 1.75rem',
                                         background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
@@ -3317,11 +3317,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                           {badge.icone} {badge.texto}
                                         </span>
                                         {/* Valor */}
-                                        <span style={{fontSize:'0.8rem',fontWeight:'700',color:cor,flexShrink:0,whiteSpace:'nowrap'}}>
+                                        <span style={{fontSize:'0.8rem',fontWeight:'700',color:cor,flexShrink:0,whiteSpace:'nowrap',textAlign:'right'}}>
                                           {formatarMoeda(parseFloat(lanc.valor))}
                                         </span>
-                                        {/* Ações */}
-                                        <div style={{display:'flex',gap:'0.2rem',flexShrink:0}}>
+                                        {/* Ações — largura fixa: o valor não se desloca entre 2 e 4 ícones */}
+                                        <div style={{display:'flex',gap:'0.2rem',flexShrink:0,justifyContent:'flex-end'}}>
                                           {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
                                             <button onClick={() => abrirModalQuitacao(lanc)}
                                               style={{padding:'0.18rem 0.4rem',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
