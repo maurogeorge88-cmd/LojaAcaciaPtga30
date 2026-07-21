@@ -75,6 +75,16 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
       carregarMesesCronograma();
       // Se já tinha mês selecionado, recarrega eventos imediatamente
       if (mesCronograma) carregarEventosCronograma(mesCronograma);
+    } else if (tipoSelec === 'boletim_mensal') {
+      // Boletim Mensal é retrospectivo (presença, financeiro etc. já
+      // consolidados) — o mês atual ainda não terminou, então o padrão
+      // deve ser sempre o mês ANTERIOR, nunca o próximo.
+      const hoje = new Date();
+      const mesAnt = hoje.getMonth() === 0 ? 12 : hoje.getMonth();
+      const anoAnt = hoje.getMonth() === 0 ? hoje.getFullYear() - 1 : hoje.getFullYear();
+      setMesCronograma(`${anoAnt}-${String(mesAnt).padStart(2, '0')}`);
+      setEventosCronograma([]);
+      setEventosDestaque([]);
     } else {
       setEventosCronograma([]);
       setEventosDestaque([]);
