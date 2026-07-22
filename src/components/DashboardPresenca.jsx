@@ -951,6 +951,20 @@ export default function DashboardPresenca() {
       console.log('  Qtd. irmãos com registros:', totalComRegistros);
       console.log('  Soma das taxas individuais:', somaPresencas);
       console.log('  Média Presença calculada:', mediaPresenca, '%');
+      console.log('  ── TODOS os irmãos considerados (nome | registros | presentes | taxa) ──');
+      resumoCompleto
+        .filter(r => r.total_registros > 0)
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .forEach(r => {
+          console.log(`    ${r.nome} | registros: ${r.total_registros} | presentes: ${r.presentes} | taxa: ${r.taxa}%`);
+        });
+      console.log('  ── Irmãos com registros = 0 (excluídos do cálculo) ──');
+      resumoCompleto
+        .filter(r => r.total_registros === 0)
+        .sort((a, b) => a.nome.localeCompare(b.nome))
+        .forEach(r => {
+          console.log(`    ${r.nome} | 0 registros`);
+        });
       console.log('  Detalhe de quem tem prerrogativa/nascimento cadastrado:');
       irmaos?.forEach(irmao => {
         if (!irmao.data_nascimento) return;
