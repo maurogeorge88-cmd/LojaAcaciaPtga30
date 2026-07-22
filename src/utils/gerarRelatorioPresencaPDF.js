@@ -561,17 +561,42 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     .map(id => irmaos.find(i => i.id === id))
     .filter(Boolean);
 
-  const qtdIrmaosPorGrau = { Aprendiz: 0, Companheiro: 0, Mestre: 0 };
+  // Determinar, para cada irmão, se está de fato ATIVO (nem prerrogativa, nem
+  // licenciado atualmente) ou EXCLUÍDO da conta (prerrogativa de idade ou
+  // licença vigente hoje) — usado tanto pra quantidade quanto pra % de presença.
+  const hojeQuadro3 = new Date(); hojeQuadro3.setHours(0, 0, 0, 0);
+  const ehExcluidoAtivo = (irmao) => {
+    if (irmao.data_prerrogativa) {
+      const dataPrer = new Date(irmao.data_prerrogativa);
+      if (hojeQuadro3 >= dataPrer) return true;
+    }
+    const licencaVigente = historicoSituacoes?.some(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!tipo.includes('licen')) return false;
+      const di = new Date(sit.data_inicio + 'T00:00:00');
+      if (hojeQuadro3 < di) return false;
+      if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return hojeQuadro3 <= df; }
+      return true;
+    });
+    if (licencaVigente) return true;
+    if (irmao.situacao?.toLowerCase() === 'licenciado') return true;
+    return false;
+  };
+
+  const qtdIrmaosPorGrau = { Aprendiz: { ativos: 0, excluidos: 0 }, Companheiro: { ativos: 0, excluidos: 0 }, Mestre: { ativos: 0, excluidos: 0 } };
   irmaosContados.forEach(irmao => {
     const g = obterGrauIrmao(irmao);
     const label = g === 'A' ? 'Aprendiz' : g === 'C' ? 'Companheiro' : 'Mestre';
-    qtdIrmaosPorGrau[label]++;
+    if (ehExcluidoAtivo(irmao)) qtdIrmaosPorGrau[label].excluidos++;
+    else qtdIrmaosPorGrau[label].ativos++;
   });
 
+  // Soma de presenças — apenas dos irmãos considerados ATIVOS
   const presPorTipoSessaoEGrauIrmao = {};
   graus.forEach(g => { presPorTipoSessaoEGrauIrmao[g.id] = { Aprendiz: 0, Companheiro: 0, Mestre: 0 }; });
 
-  irmaosContados.forEach(irmao => {
+  irmaosContados.filter(irmao => !ehExcluidoAtivo(irmao)).forEach(irmao => {
     const gIrmao = obterGrauIrmao(irmao);
     const labelIrmao = gIrmao === 'A' ? 'Aprendiz' : gIrmao === 'C' ? 'Companheiro' : 'Mestre';
     sessoes.forEach(sessao => {
@@ -582,6 +607,12 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     });
   });
 
+  // Grau numérico mínimo elegível por tipo de sessão — só entram no quadro os
+  // graus de irmão que realmente podem participar daquele tipo de sessão
+  // (ex: sessão de Companheiro mostra Companheiro+Mestre, não Aprendiz).
+  const grauNumerico = { Aprendiz: 1, Companheiro: 2, Mestre: 3 };
+  const grauMinimoPorTipoSessao = (grauSessaoId) => grauSessaoId === 4 ? 1 : grauSessaoId;
+
   doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 58, 95);
@@ -590,6 +621,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   graus.filter(g => (qtdSessoesPorGrau[g.id] || 0) > 0).forEach(g => {
     const qtdSessoesTipo = qtdSessoesPorGrau[g.id];
+    const grauMinimo = grauMinimoPorTipoSessao(g.id);
 
     // Quebra de página se não houver espaço para o subtítulo + tabela
     if (ySum > pageHeight - 40) {
@@ -604,19 +636,21 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     ySum += 4;
 
     const linhas = ['Aprendiz', 'Companheiro', 'Mestre']
-      .filter(label => qtdIrmaosPorGrau[label] > 0)
+      .filter(label => grauNumerico[label] >= grauMinimo) // só quem pode participar desse tipo de sessão
+      .filter(label => (qtdIrmaosPorGrau[label].ativos + qtdIrmaosPorGrau[label].excluidos) > 0)
       .map(label => {
-        const qtdIrmaos = qtdIrmaosPorGrau[label];
+        const qtdAtivos = qtdIrmaosPorGrau[label].ativos;
+        const qtdExcluidos = qtdIrmaosPorGrau[label].excluidos;
         const presSoma = presPorTipoSessaoEGrauIrmao[g.id][label];
-        const maximoPossivel = qtdIrmaos * qtdSessoesTipo;
+        const maximoPossivel = qtdAtivos * qtdSessoesTipo;
         const pctPres = maximoPossivel > 0 ? Math.round((presSoma / maximoPossivel) * 100) : 0;
         const pctAus = maximoPossivel > 0 ? 100 - pctPres : 0;
-        return [label, String(qtdIrmaos), `${pctPres}%`, `${pctAus}%`];
+        return [label, String(qtdAtivos), String(qtdExcluidos), maximoPossivel > 0 ? `${pctPres}%` : '—', maximoPossivel > 0 ? `${pctAus}%` : '—'];
       });
 
     doc.autoTable({
       startY: ySum,
-      head: [['Grau do Irmão', 'Qtd. Irmãos', '% Presença', '% Ausência']],
+      head: [['Grau do Irmão', 'Qtd. Ativos', 'Prerrog./Licença', '% Presença', '% Ausência']],
       body: linhas,
       theme: 'grid',
       styles: { fontSize: 9, halign: 'center', cellPadding: 2.5 },
