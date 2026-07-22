@@ -85,9 +85,18 @@ export default function ModalCompensacao({ irmao, debitos, creditos, onClose, on
         }
         obs += `\n[Compensação de ${formatarMoeda(valorAbater)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
 
+        // Marca visualmente na DESCRIÇÃO (o que aparece na tabela, não só em
+        // observações) que este valor remanescente é resultado de uma
+        // compensação parcial — evita duplicar o prefixo se já tiver sido
+        // aplicado numa compensação anterior sobre o mesmo lançamento.
+        let descricaoAtualizada = lancamento.descricao || '';
+        if (!descricaoAtualizada.startsWith('🔸 Restante Compensação:')) {
+          descricaoAtualizada = `🔸 Restante Compensação: ${descricaoAtualizada}`;
+        }
+
         const { error: errUpd } = await supabase
           .from('lancamentos_loja')
-          .update({ valor: valorRestante, observacoes: obs.trim() })
+          .update({ valor: valorRestante, observacoes: obs.trim(), descricao: descricaoAtualizada })
           .eq('id', lancamento.id);
         if (errUpd) throw errUpd;
       };
