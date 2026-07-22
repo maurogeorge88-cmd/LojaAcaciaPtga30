@@ -792,6 +792,12 @@ export default function DashboardPresenca() {
             // Ignorar sessão de grau SUPERIOR
             if (grauSessao > grauIrmao) return;
 
+            // Ignorar sessão em que o Irmão já tinha prerrogativa de idade
+            // (calculada acima, mas nunca era realmente aplicada aqui — por
+            // isso a Média de Presença ficava puxada pra baixo por quem tem
+            // prerrogativa e nunca comparece, mesmo estando isento).
+            if (temPrerrogativa && dataPrerrogativa && dataSessao >= dataPrerrogativa) return;
+
             // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
             const situacaoNaData = historicoSituacoes?.find(sit => 
               sit.membro_id === irmao.id &&
