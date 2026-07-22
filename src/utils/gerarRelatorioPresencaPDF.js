@@ -511,16 +511,15 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   doc.autoTable({
     startY: ySum,
-    head: [['Grau', 'Qtd. Sessões', 'Presenças', 'Ausências', '% Presença', '% Ausência']],
+    head: [['Grau', 'Sessões', '% Presença', '% Ausência']],
     body: graus
       .filter(g => (qtdSessoesPorGrau[g.id] || 0) > 0)
       .map(g => {
         const qtd = qtdSessoesPorGrau[g.id] || 0;
         const d = porGrau[g.id] || { pres: 0, eleg: 0 };
-        const ausencias = d.eleg - d.pres;
         const pctPres = d.eleg > 0 ? Math.round((d.pres / d.eleg) * 100) : 0;
         const pctAus = d.eleg > 0 ? 100 - pctPres : 0;
-        return [g.nome, String(qtd), String(d.pres), String(ausencias), `${pctPres}%`, `${pctAus}%`];
+        return [g.nome, String(qtd), `${pctPres}%`, `${pctAus}%`];
       }),
     theme: 'grid',
     styles: { fontSize: 9, halign: 'center', cellPadding: 3 },
@@ -530,10 +529,10 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   ySum = doc.lastAutoTable.finalY + 10;
 
-  // Resumo geral (soma de todos os graus)
+  // Resumo geral — quantidade de SESSÕES (não soma de elegibilidades por irmão)
+  const totalSessoesGeral = sessoes.length;
   const totalPresGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.pres || 0), 0);
   const totalElegGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.eleg || 0), 0);
-  const totalAusGeral  = totalElegGeral - totalPresGeral;
   const pctPresGeral   = totalElegGeral > 0 ? Math.round((totalPresGeral / totalElegGeral) * 100) : 0;
   const pctAusGeral    = totalElegGeral > 0 ? 100 - pctPresGeral : 0;
 
@@ -545,14 +544,91 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   doc.autoTable({
     startY: ySum,
-    head: [['Sessões Elegíveis', 'Presenças', 'Ausências', '% Presença Geral', '% Ausência Geral']],
-    body: [[String(totalElegGeral), String(totalPresGeral), String(totalAusGeral), `${pctPresGeral}%`, `${pctAusGeral}%`]],
+    head: [['Qtd. Sessões', '% Presença Geral', '% Ausência Geral']],
+    body: [[String(totalSessoesGeral), `${pctPresGeral}%`, `${pctAusGeral}%`]],
     theme: 'grid',
     styles: { fontSize: 10, halign: 'center', fontStyle: 'bold', cellPadding: 4 },
     headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
   });
 
-  ySum = doc.lastAutoTable.finalY + 10;
+  ySum = doc.lastAutoTable.finalY + 12;
+
+  // ── Quadro 3: cruzamento por tipo de sessão × grau do irmão ────────────────
+  // Para cada tipo de sessão (Aprendiz/Companheiro/Mestre/Administrativa),
+  // mostra quantos irmãos de cada grau existem no quadro e qual a % de
+  // presença/ausência deles especificamente nesse tipo de sessão.
+  const irmaosContados = rowIrmaoIds
+    .map(id => irmaos.find(i => i.id === id))
+    .filter(Boolean);
+
+  const qtdIrmaosPorGrau = { Aprendiz: 0, Companheiro: 0, Mestre: 0 };
+  irmaosContados.forEach(irmao => {
+    const g = obterGrauIrmao(irmao);
+    const label = g === 'A' ? 'Aprendiz' : g === 'C' ? 'Companheiro' : 'Mestre';
+    qtdIrmaosPorGrau[label]++;
+  });
+
+  const presPorTipoSessaoEGrauIrmao = {};
+  graus.forEach(g => { presPorTipoSessaoEGrauIrmao[g.id] = { Aprendiz: 0, Companheiro: 0, Mestre: 0 }; });
+
+  irmaosContados.forEach(irmao => {
+    const gIrmao = obterGrauIrmao(irmao);
+    const labelIrmao = gIrmao === 'A' ? 'Aprendiz' : gIrmao === 'C' ? 'Companheiro' : 'Mestre';
+    sessoes.forEach(sessao => {
+      const reg = grade[irmao.id]?.[sessao.id];
+      if (reg?.presente && presPorTipoSessaoEGrauIrmao[sessao.grau_sessao_id]) {
+        presPorTipoSessaoEGrauIrmao[sessao.grau_sessao_id][labelIrmao]++;
+      }
+    });
+  });
+
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 58, 95);
+  doc.text('FREQUÊNCIA POR GRAU DENTRO DE CADA TIPO DE SESSÃO', pageWidth / 2, ySum, { align: 'center' });
+  ySum += 9;
+
+  graus.filter(g => (qtdSessoesPorGrau[g.id] || 0) > 0).forEach(g => {
+    const qtdSessoesTipo = qtdSessoesPorGrau[g.id];
+
+    // Quebra de página se não houver espaço para o subtítulo + tabela
+    if (ySum > pageHeight - 40) {
+      doc.addPage();
+      ySum = 18;
+    }
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 95);
+    doc.text(`Sessões de ${g.nome} (${qtdSessoesTipo} sessão${qtdSessoesTipo === 1 ? '' : 'ões'})`, 10, ySum);
+    ySum += 4;
+
+    const linhas = ['Aprendiz', 'Companheiro', 'Mestre']
+      .filter(label => qtdIrmaosPorGrau[label] > 0)
+      .map(label => {
+        const qtdIrmaos = qtdIrmaosPorGrau[label];
+        const presSoma = presPorTipoSessaoEGrauIrmao[g.id][label];
+        const maximoPossivel = qtdIrmaos * qtdSessoesTipo;
+        const pctPres = maximoPossivel > 0 ? Math.round((presSoma / maximoPossivel) * 100) : 0;
+        const pctAus = maximoPossivel > 0 ? 100 - pctPres : 0;
+        return [label, String(qtdIrmaos), `${pctPres}%`, `${pctAus}%`];
+      });
+
+    doc.autoTable({
+      startY: ySum,
+      head: [['Grau do Irmão', 'Qtd. Irmãos', '% Presença', '% Ausência']],
+      body: linhas,
+      theme: 'grid',
+      styles: { fontSize: 9, halign: 'center', cellPadding: 2.5 },
+      headStyles: { fillColor: [71, 85, 105], textColor: 255, fontStyle: 'bold' },
+      columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+      margin: { left: 10, right: 10 },
+    });
+
+    ySum = doc.lastAutoTable.finalY + 8;
+  });
+
+  ySum += 2;
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
