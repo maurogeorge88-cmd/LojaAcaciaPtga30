@@ -207,6 +207,9 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // Índice de linha por irmão (para usar no didDrawCell)
   const rowIrmaoIds = [];
 
+  // Acumulador para o quadro-resumo final (sessões/presenças/ausências por grau)
+  const porGrau = { 1: { pres: 0, eleg: 0 }, 2: { pres: 0, eleg: 0 }, 3: { pres: 0, eleg: 0 }, 4: { pres: 0, eleg: 0 } };
+
   // Preparar dados dos irmãos (filtrados)
   const rows = irmaos
     .filter(irmao => deveAparecerNoRelatorio(irmao))
@@ -328,10 +331,15 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       // Contar como elegível
       sessoesElegiveis++;
 
+      // Acumular no resumo por grau (usa o grau da SESSÃO, não do irmão)
+      const idGrauSessao = sessao.grau_sessao_id;
+      if (porGrau[idGrauSessao]) porGrau[idGrauSessao].eleg++;
+
       // Verificar presença
       if (reg?.presente) {
         presencas++;
         row[`sessao_${index}`] = 'P';
+        if (porGrau[idGrauSessao]) porGrau[idGrauSessao].pres++;
       } else if (reg?.justificativa) {
         row[`sessao_${index}`] = 'J';
       } else {
@@ -479,6 +487,97 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       doc.line(10, pageHeight - 8, pageWidth - 10, pageHeight - 8);
     }
   });
+
+  // ── Quadro-resumo final: sessões e presença por grau + geral ──────────────
+  const graus = [
+    { id: 1, nome: 'Aprendiz' },
+    { id: 2, nome: 'Companheiro' },
+    { id: 3, nome: 'Mestre' },
+    { id: 4, nome: 'Administrativa' },
+  ];
+
+  // Quantidade de sessões realizadas por grau (contagem direta, sem depender de elegibilidade)
+  const qtdSessoesPorGrau = {};
+  sessoes.forEach(s => { qtdSessoesPorGrau[s.grau_sessao_id] = (qtdSessoesPorGrau[s.grau_sessao_id] || 0) + 1; });
+
+  doc.addPage();
+  let ySum = 18;
+
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 58, 95);
+  doc.text('RESUMO DE PRESENÇA', pageWidth / 2, ySum, { align: 'center' });
+  ySum += 10;
+
+  doc.autoTable({
+    startY: ySum,
+    head: [['Grau', 'Qtd. Sessões', 'Presenças', 'Ausências', '% Presença', '% Ausência']],
+    body: graus
+      .filter(g => (qtdSessoesPorGrau[g.id] || 0) > 0)
+      .map(g => {
+        const qtd = qtdSessoesPorGrau[g.id] || 0;
+        const d = porGrau[g.id] || { pres: 0, eleg: 0 };
+        const ausencias = d.eleg - d.pres;
+        const pctPres = d.eleg > 0 ? Math.round((d.pres / d.eleg) * 100) : 0;
+        const pctAus = d.eleg > 0 ? 100 - pctPres : 0;
+        return [g.nome, String(qtd), String(d.pres), String(ausencias), `${pctPres}%`, `${pctAus}%`];
+      }),
+    theme: 'grid',
+    styles: { fontSize: 9, halign: 'center', cellPadding: 3 },
+    headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' },
+    columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+  });
+
+  ySum = doc.lastAutoTable.finalY + 10;
+
+  // Resumo geral (soma de todos os graus)
+  const totalPresGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.pres || 0), 0);
+  const totalElegGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.eleg || 0), 0);
+  const totalAusGeral  = totalElegGeral - totalPresGeral;
+  const pctPresGeral   = totalElegGeral > 0 ? Math.round((totalPresGeral / totalElegGeral) * 100) : 0;
+  const pctAusGeral    = totalElegGeral > 0 ? 100 - pctPresGeral : 0;
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 58, 95);
+  doc.text('Situação Geral da Loja', pageWidth / 2, ySum, { align: 'center' });
+  ySum += 6;
+
+  doc.autoTable({
+    startY: ySum,
+    head: [['Sessões Elegíveis', 'Presenças', 'Ausências', '% Presença Geral', '% Ausência Geral']],
+    body: [[String(totalElegGeral), String(totalPresGeral), String(totalAusGeral), `${pctPresGeral}%`, `${pctAusGeral}%`]],
+    theme: 'grid',
+    styles: { fontSize: 10, halign: 'center', fontStyle: 'bold', cellPadding: 4 },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+  });
+
+  ySum = doc.lastAutoTable.finalY + 10;
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100);
+  doc.text(
+    'Observação: ausências de Irmãos com prerrogativa de idade ou em período de licença registrado não são computadas nestes percentuais — apenas sessões efetivamente elegíveis para cada Irmão entram no cálculo.',
+    10, ySum, { maxWidth: pageWidth - 20 }
+  );
+
+  // Rodapé de TODAS as páginas — corrige a contagem "Página X de Y", já que Y
+  // mudou depois que a página de resumo foi adicionada (o didDrawTable da
+  // tabela principal não sabia, no momento em que rodou, que teria mais uma
+  // página pela frente).
+  const totalPaginasFinal = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPaginasFinal; p++) {
+    doc.setPage(p);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(pageWidth / 2 - 25, pageHeight - 9.5, 50, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Página ${p} de ${totalPaginasFinal}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+    doc.setDrawColor(200);
+    doc.line(10, pageHeight - 8, pageWidth - 10, pageHeight - 8);
+  }
 
   // Salvar PDF
   let nomeArquivo;
