@@ -209,6 +209,10 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   // Acumulador para o quadro-resumo final (sessões/presenças/ausências por grau)
   const porGrau = { 1: { pres: 0, eleg: 0 }, 2: { pres: 0, eleg: 0 }, 3: { pres: 0, eleg: 0 }, 4: { pres: 0, eleg: 0 } };
+  // Taxa individual de cada irmão (com sessão elegível) — para calcular a
+  // "Situação Geral" com o MESMO método do Dashboard de Presença (média das
+  // % individuais, não soma ponderada por sessão).
+  const taxasIndividuais = [];
 
   // Preparar dados dos irmãos (filtrados)
   const rows = irmaos
@@ -352,6 +356,13 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     row.percentual = sessoesElegiveis > 0 
       ? `${Math.round((presencas / sessoesElegiveis) * 100)}%` 
       : '0%';
+
+    // Guarda a taxa individual (só quem tem sessão elegível) para o cálculo
+    // da "Situação Geral" — mesmo método usado no Dashboard de Presença:
+    // média das % de cada irmão, não soma ponderada por sessão.
+    if (sessoesElegiveis > 0) {
+      taxasIndividuais.push(Math.round((presencas / sessoesElegiveis) * 100));
+    }
 
     return row;
   });
@@ -527,14 +538,25 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
   });
 
-  ySum = doc.lastAutoTable.finalY + 10;
+  ySum = doc.lastAutoTable.finalY + 3;
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(120);
+  doc.text(
+    '* Já exclui automaticamente sessões em que o Irmão tinha prerrogativa de idade ou estava em licença registrada na data.',
+    10, ySum, { maxWidth: pageWidth - 20 }
+  );
+  ySum += 7;
 
   // Resumo geral — quantidade de SESSÕES (não soma de elegibilidades por irmão)
   const totalSessoesGeral = sessoes.length;
-  const totalPresGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.pres || 0), 0);
-  const totalElegGeral = graus.reduce((s, g) => s + (porGrau[g.id]?.eleg || 0), 0);
-  const pctPresGeral   = totalElegGeral > 0 ? Math.round((totalPresGeral / totalElegGeral) * 100) : 0;
-  const pctAusGeral    = totalElegGeral > 0 ? 100 - pctPresGeral : 0;
+  // % geral = MÉDIA das taxas individuais de cada irmão (mesmo método do
+  // Dashboard de Presença), não soma de presenças ÷ soma de elegibilidades.
+  const pctPresGeral = taxasIndividuais.length > 0
+    ? Math.round(taxasIndividuais.reduce((s, t) => s + t, 0) / taxasIndividuais.length)
+    : 0;
+  const pctAusGeral  = taxasIndividuais.length > 0 ? 100 - pctPresGeral : 0;
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
@@ -632,7 +654,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 58, 95);
-    doc.text(`Sessões de ${g.nome} (${qtdSessoesTipo} sessão${qtdSessoesTipo === 1 ? '' : 'ões'})`, 10, ySum);
+    doc.text(`Sessões de ${g.nome} (${qtdSessoesTipo} sess${qtdSessoesTipo === 1 ? 'ão' : 'ões'})`, 10, ySum);
     ySum += 4;
 
     const linhas = ['Aprendiz', 'Companheiro', 'Mestre']
