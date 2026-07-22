@@ -835,7 +835,28 @@ export default function DashboardPresenca() {
       // Processar cada irmão
       const resumoCompleto = [];
 
+      // Mesma regra do relatório em PDF (deveAparecerNoRelatorio): irmão com
+      // desligamento/exclusão PERMANENTE (sem data_fim no histórico) não deve
+      // entrar na conta — mesmo que ainda tenha registros de presença antigos
+      // no banco. Sem isso, ex-membros desligados definitivamente inflavam a
+      // lista e derrubavam a Média de Presença.
+      const temDesligamentoPermanente = (irmaoId) => {
+        return historicoSituacoes?.some(sit => {
+          if (sit.membro_id !== irmaoId) return false;
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesExclusivas = ['desligado', 'desligamento', 'excluido', 'ex-oficio'];
+          const ehExclusiva = situacoesExclusivas.includes(tipoNormalizado) ||
+            situacoesExclusivas.some(s => tipoNormalizado.includes(s));
+          if (!ehExclusiva) return false;
+          if (sit.data_fim) return false; // tem data_fim = pode voltar, deve aparecer
+          return true; // desligamento/exclusão permanente
+        });
+      };
+
       irmaos?.forEach(irmao => {
+        // Descartar quem tem desligamento/exclusão permanente registrado
+        if (temDesligamentoPermanente(irmao.id)) return;
+
         // Calcular grau MÁXIMO já atingido (usado só pra descartar quem nunca
         // foi iniciado — o grau efetivo em cada sessão é calculado abaixo,
         // sessão por sessão, igual ao relatório em PDF).
