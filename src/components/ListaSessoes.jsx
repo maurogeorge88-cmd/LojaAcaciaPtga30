@@ -633,6 +633,23 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                                   )}
                                 </div>
                               )}
+                              {/* Linha 4: licenciados/prerrogativa (informativo — não contam no %) */}
+                              {((sessao.total_licenciados || 0) > 0 || (sessao.total_prerrogativa || 0) > 0) && (
+                                <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap',justifyContent:'center'}}>
+                                  {sessao.total_licenciados > 0 && (
+                                    <span style={{padding:'0.08rem 0.35rem',background:'rgba(59,130,246,0.1)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.25)',borderRadius:'var(--radius-sm)',fontSize:'0.65rem',fontWeight:'600',whiteSpace:'nowrap'}}
+                                      title="Licenciados — não contam no % de presença">
+                                      📋 {sessao.total_licenciados} licenciado{sessao.total_licenciados===1?'':'s'}
+                                    </span>
+                                  )}
+                                  {sessao.total_prerrogativa > 0 && (
+                                    <span style={{padding:'0.08rem 0.35rem',background:'rgba(139,92,246,0.1)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.25)',borderRadius:'var(--radius-sm)',fontSize:'0.65rem',fontWeight:'600',whiteSpace:'nowrap'}}
+                                      title="Com prerrogativa de idade — não contam no % de presença">
+                                      🎖️ {sessao.total_prerrogativa} c/ prerrogativa
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             {/* Visitantes */}
                             <div style={{textAlign:'center'}}>
