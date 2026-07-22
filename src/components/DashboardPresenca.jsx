@@ -166,10 +166,29 @@ export default function DashboardPresenca() {
         .from('irmaos')
         .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja');
 
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+      // Paginado (blocos de 1000) — evita truncamento silencioso do
+      // histórico de situações quando a tabela já passou do limite padrão
+      // do Supabase (acumula anos de licenças/desligamentos de todos os irmãos).
+      let historicoSituacoes = [];
+      {
+        let inicioHistLoop = 0;
+        const tamanhoPaginaHistLoop = 1000;
+        let continuarHistLoop = true;
+        while (continuarHistLoop) {
+          const { data: loteHistLoop } = await supabase
+            .from('historico_situacoes')
+            .select('*')
+            .eq('status', 'ativa')
+            .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
+          if (loteHistLoop && loteHistLoop.length > 0) {
+            historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
+            inicioHistLoop += tamanhoPaginaHistLoop;
+            if (loteHistLoop.length < tamanhoPaginaHistLoop) continuarHistLoop = false;
+          } else {
+            continuarHistLoop = false;
+          }
+        }
+      }
 
       const sessoesMap = {};
       sessoes?.forEach(s => { sessoesMap[s.id] = s; });
@@ -268,10 +287,29 @@ export default function DashboardPresenca() {
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
         ;
 
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+      // Paginado (blocos de 1000) — evita truncamento silencioso do
+      // histórico de situações quando a tabela já passou do limite padrão
+      // do Supabase (acumula anos de licenças/desligamentos de todos os irmãos).
+      let historicoSituacoes = [];
+      {
+        let inicioHistLoop = 0;
+        const tamanhoPaginaHistLoop = 1000;
+        let continuarHistLoop = true;
+        while (continuarHistLoop) {
+          const { data: loteHistLoop } = await supabase
+            .from('historico_situacoes')
+            .select('*')
+            .eq('status', 'ativa')
+            .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
+          if (loteHistLoop && loteHistLoop.length > 0) {
+            historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
+            inicioHistLoop += tamanhoPaginaHistLoop;
+            if (loteHistLoop.length < tamanhoPaginaHistLoop) continuarHistLoop = false;
+          } else {
+            continuarHistLoop = false;
+          }
+        }
+      }
 
       const hoje = new Date();
       const sessoesMap = {};
@@ -377,10 +415,29 @@ export default function DashboardPresenca() {
         .from('irmaos')
         .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_nascimento, data_falecimento, data_desligamento');
 
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+      // Paginado (blocos de 1000) — evita truncamento silencioso do
+      // histórico de situações quando a tabela já passou do limite padrão
+      // do Supabase (acumula anos de licenças/desligamentos de todos os irmãos).
+      let historicoSituacoes = [];
+      {
+        let inicioHistLoop = 0;
+        const tamanhoPaginaHistLoop = 1000;
+        let continuarHistLoop = true;
+        while (continuarHistLoop) {
+          const { data: loteHistLoop } = await supabase
+            .from('historico_situacoes')
+            .select('*')
+            .eq('status', 'ativa')
+            .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
+          if (loteHistLoop && loteHistLoop.length > 0) {
+            historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
+            inicioHistLoop += tamanhoPaginaHistLoop;
+            if (loteHistLoop.length < tamanhoPaginaHistLoop) continuarHistLoop = false;
+          } else {
+            continuarHistLoop = false;
+          }
+        }
+      }
 
       const sessoesComDados = await Promise.all(sessoes.map(async (sessao) => {
         const { data: registros } = await supabase
@@ -530,10 +587,29 @@ export default function DashboardPresenca() {
       }
 
       // 2. Buscar histórico de situações
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+      // Paginado (blocos de 1000) — evita truncamento silencioso do
+      // histórico de situações quando a tabela já passou do limite padrão
+      // do Supabase (acumula anos de licenças/desligamentos de todos os irmãos).
+      let historicoSituacoes = [];
+      {
+        let inicioHistLoop = 0;
+        const tamanhoPaginaHistLoop = 1000;
+        let continuarHistLoop = true;
+        while (continuarHistLoop) {
+          const { data: loteHistLoop } = await supabase
+            .from('historico_situacoes')
+            .select('*')
+            .eq('status', 'ativa')
+            .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
+          if (loteHistLoop && loteHistLoop.length > 0) {
+            historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
+            inicioHistLoop += tamanhoPaginaHistLoop;
+            if (loteHistLoop.length < tamanhoPaginaHistLoop) continuarHistLoop = false;
+          } else {
+            continuarHistLoop = false;
+          }
+        }
+      }
 
       // 3. Buscar irmãos com grau
       const { data: irmaos } = await supabase
@@ -672,10 +748,30 @@ export default function DashboardPresenca() {
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
       // 2. Buscar histórico de situações (licenças, desligamentos, etc)
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+      // Paginado (blocos de 1000) — a tabela já acumula anos de histórico de
+      // TODOS os irmãos, então facilmente passa do limite padrão do Supabase.
+      // Sem isso, licenças mais antigas somem silenciosamente da consulta e
+      // as ausências desse período voltam a contar erradamente contra o irmão.
+      let historicoSituacoes = [];
+      {
+        let inicioHist = 0;
+        const tamanhoPaginaHist = 1000;
+        let continuarHist = true;
+        while (continuarHist) {
+          const { data: loteHist } = await supabase
+            .from('historico_situacoes')
+            .select('*')
+            .eq('status', 'ativa')
+            .range(inicioHist, inicioHist + tamanhoPaginaHist - 1);
+          if (loteHist && loteHist.length > 0) {
+            historicoSituacoes = [...historicoSituacoes, ...loteHist];
+            inicioHist += tamanhoPaginaHist;
+            if (loteHist.length < tamanhoPaginaHist) continuarHist = false;
+          } else {
+            continuarHist = false;
+          }
+        }
+      }
 
       // 3. Buscar TODOS os irmãos (ativos e inativos) para estatísticas
       const { data: todosIrmaos } = await supabase
