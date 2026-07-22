@@ -796,9 +796,13 @@ export default function DashboardPresenca() {
       stats.ativos = stats.regulares + stats.licenciados;
 
       // 4. Buscar irmãos ativos para cálculos de presença
+      // .eq('status','ativo') — mesmo filtro usado na consulta que alimenta o
+      // relatório em PDF (ModalGradePresenca.jsx). Sem isso, irmãos com status
+      // diferente de "ativo" (desligado, inativo, etc.) entravam na conta.
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, data_ingresso_loja, data_falecimento')
+        .eq('status', 'ativo')
         ;
 
       // 5. Buscar registros com paginação
@@ -835,15 +839,41 @@ export default function DashboardPresenca() {
       // Processar cada irmão
       const resumoCompleto = [];
 
-      // Desligado/Irregular/Excluído/Ex-ofício são tratados igual à Licença:
-      // sessão por sessão, pela data no histórico (checagem genérica logo
-      // abaixo, dentro do loop de sessões) — antes da situação conta normal,
-      // durante não conta, e sem data_fim continua não contando dali em diante.
-      // Nada de exclusão especial aqui: com o histórico paginado corretamente,
-      // a checagem por sessão já resolve isso sozinha, sem precisar remover o
-      // irmão inteiro (o que cortaria até o período válido ANTES da situação).
+      // Filtro de "elegibilidade pro relatório de hoje" — mesma regra usada em
+      // ModalGradePresenca.jsx: se o irmão tem situação bloqueadora (desligado,
+      // irregular, suspenso, excluído, ex-ofício) que já estava ativa ANTES do
+      // início do mês atual (e ainda não resolvida), ele não aparece mais nas
+      // contas a partir do mês seguinte à situação — mesmo que tenha
+      // frequência real registrada em meses anteriores a isso.
+      const hojeFiltro = new Date();
+      const mesAtualFiltro = hojeFiltro.getMonth();
+      const anoAtualFiltro = hojeFiltro.getFullYear();
+      const dataInicioMesAtual = new Date(anoAtualFiltro, mesAtualFiltro, 1);
+
+      const temSituacaoBloqueadoraAtual = (irmaoId) => {
+        return historicoSituacoes?.some(sit => {
+          if (sit.membro_id !== irmaoId) return false;
+          const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+          if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+
+          const dataInicioSit = new Date(sit.data_inicio + 'T00:00:00');
+          if (dataInicioSit < dataInicioMesAtual) {
+            if (sit.data_fim) {
+              const dataFimSit = new Date(sit.data_fim + 'T00:00:00');
+              return dataFimSit >= dataInicioMesAtual; // ainda bloqueado
+            }
+            return true; // sem data_fim, bloqueado
+          }
+          return false;
+        });
+      };
 
       irmaos?.forEach(irmao => {
+        // Descartar quem tem situação bloqueadora vigente desde antes do mês
+        // atual — mesma regra do relatório em PDF.
+        if (temSituacaoBloqueadoraAtual(irmao.id)) return;
+
         // Calcular grau MÁXIMO já atingido (usado só pra descartar quem nunca
         // foi iniciado — o grau efetivo em cada sessão é calculado abaixo,
         // sessão por sessão, igual ao relatório em PDF).
