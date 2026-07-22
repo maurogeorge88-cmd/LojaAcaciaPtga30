@@ -736,6 +736,7 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
+      console.log('🟢 DEBUG MÉDIA PRESENÇA — carregar() rodando, versão com fix de prerrogativa/grau dinâmico/falecimento');
       const hoje = new Date().toISOString().split('T')[0];
       
       // 1. Buscar sessões do período ATÉ HOJE
@@ -945,6 +946,23 @@ export default function DashboardPresenca() {
       const somaPresencas = resumoCompleto.reduce((sum, r) => sum + r.taxa, 0);
       const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
+
+      console.log('🟢 DEBUG MÉDIA PRESENÇA — resultado final do carregar():');
+      console.log('  Qtd. irmãos com registros:', totalComRegistros);
+      console.log('  Soma das taxas individuais:', somaPresencas);
+      console.log('  Média Presença calculada:', mediaPresenca, '%');
+      console.log('  Detalhe de quem tem prerrogativa/nascimento cadastrado:');
+      irmaos?.forEach(irmao => {
+        if (!irmao.data_nascimento) return;
+        const nasc = new Date(irmao.data_nascimento);
+        const hj = new Date();
+        let idadeDebug = hj.getFullYear() - nasc.getFullYear();
+        if (hj.getMonth() < nasc.getMonth() || (hj.getMonth() === nasc.getMonth() && hj.getDate() < nasc.getDate())) idadeDebug--;
+        if (idadeDebug >= 70) {
+          const r = resumoCompleto.find(x => x.id === irmao.id);
+          console.log(`    👤 ${irmao.nome} (${idadeDebug} anos, prerrogativa) → registros considerados: ${r ? r.total_registros : 'não entrou em resumoCompleto'}, taxa: ${r ? r.taxa : '-'}%`);
+        }
+      });
 
       // Contar irmãos ativos baseado em situações reais
       const irmaosAtivosCount = stats.ativos; // Já calculado: regulares + licenciados
