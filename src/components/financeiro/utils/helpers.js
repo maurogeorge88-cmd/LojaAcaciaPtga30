@@ -91,6 +91,13 @@ export const calcularSaldo = (lancamentos) => {
  */
 export const obterBadgeStatus = (lancamento) => {
   if (lancamento.status === 'pago') {
+    if (lancamento.tipo_pagamento === 'compensacao') {
+      return {
+        cor: 'bg-blue-100 text-blue-800 border-blue-300',
+        texto: 'Pago Comp.',
+        icone: '✓'
+      };
+    }
     return {
       cor: 'bg-green-100 text-green-800 border-green-300',
       texto: 'Pago',
