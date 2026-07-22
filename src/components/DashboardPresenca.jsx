@@ -739,13 +739,18 @@ export default function DashboardPresenca() {
       const resumoCompleto = [];
 
       irmaos?.forEach(irmao => {
-        // Calcular grau
+        // Calcular grau MÁXIMO já atingido (usado só pra descartar quem nunca
+        // foi iniciado — o grau efetivo em cada sessão é calculado abaixo,
+        // sessão por sessão, igual ao relatório em PDF).
         let grauIrmao = 0;
         if (irmao.data_exaltacao) grauIrmao = 3;
         else if (irmao.data_elevacao) grauIrmao = 2;
         else if (irmao.data_iniciacao) grauIrmao = 1;
 
         if (grauIrmao === 0) return;
+
+        const dataExaltacao = irmao.data_exaltacao ? new Date(irmao.data_exaltacao) : null;
+        const dataElevacao  = irmao.data_elevacao ? new Date(irmao.data_elevacao) : null;
 
         // Calcular idade e prerrogativa
         let temPrerrogativa = false;
@@ -771,6 +776,8 @@ export default function DashboardPresenca() {
         const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
         const dataInicio = dataIngresso || dataIniciacao;
 
+        const dataFalecimento = irmao.data_falecimento ? new Date(irmao.data_falecimento) : null;
+
         // Contar apenas registros VÁLIDOS
         let totalRegistros = 0;
         let presentes = 0;
@@ -789,8 +796,19 @@ export default function DashboardPresenca() {
             // Ignorar sessão ANTES do ingresso na loja
             if (dataInicio && dataSessao < dataInicio) return;
 
-            // Ignorar sessão de grau SUPERIOR
-            if (grauSessao > grauIrmao) return;
+            // Ignorar sessão APÓS o falecimento (campo era buscado mas nunca
+            // checado — irmão falecido não pode contar falta depois de morto)
+            if (dataFalecimento && dataSessao >= dataFalecimento) return;
+
+            // Grau EFETIVO do irmão NA DATA da sessão (não o grau atual) —
+            // mesma lógica usada no relatório em PDF, pra não considerar
+            // "falta" numa sessão de grau que o irmão ainda nem tinha alcançado
+            let grauNaSessao = 1;
+            if (dataExaltacao && dataSessao >= dataExaltacao) grauNaSessao = 3;
+            else if (dataElevacao && dataSessao >= dataElevacao) grauNaSessao = 2;
+
+            // Ignorar sessão de grau SUPERIOR ao grau que o irmão tinha NA DATA
+            if (grauSessao > grauNaSessao) return;
 
             // Ignorar sessão em que o Irmão já tinha prerrogativa de idade
             // (calculada acima, mas nunca era realmente aplicada aqui — por
