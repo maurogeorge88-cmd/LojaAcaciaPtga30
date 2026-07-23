@@ -80,6 +80,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
   const [familias,    setFamilias]    = useState([]);
   const [comodatosAtivos, setComodatosAtivos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
 
   const isMestre = !grauUsuario || ['mestre','mestre instalado','admin'].includes((grauUsuario||'').toLowerCase());
 
@@ -121,7 +122,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         {data: comodatosD},
         {data: equipamentosD},
       ] = await Promise.all([
-        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_nascimento').order('nome'),
+        supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_nascimento,data_ingresso_loja').order('nome'),
         supabase.from('sessoes_presenca').select('id,data_sessao,grau_sessao_id').gte('data_sessao',`${anoSel}-01-01`).lte('data_sessao',`${anoSel}-12-31`).order('data_sessao'),
         supabase.from('lancamentos_loja').select('valor,tipo,status,data_pagamento,data_vencimento,categoria_id,tipo_pagamento,eh_transferencia_interna').eq('status','pago').gte('data_pagamento',`${anoSel}-01-01`).lte('data_pagamento',`${anoSel}-12-31`),
         supabase.from('categorias_financeiras').select('id,nome,tipo'),
@@ -132,6 +133,31 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         supabase.from('comodatos').select('id,beneficiario_id').eq('status','ativo'),
         supabase.from('equipamentos').select('id,status'),
       ]);
+
+      // Histórico de situações (licença, desligado, irregular, suspenso,
+      // excluído, ex-ofício) — paginado, pois a tabela acumula anos de
+      // histórico de todos os irmãos e pode passar do limite de 1000 linhas.
+      let todoHistorico = [];
+      {
+        let inicioHist = 0;
+        const tamanhoPaginaHist = 1000;
+        let continuarHist = true;
+        while (continuarHist) {
+          const { data: loteHist } = await supabase
+            .from('historico_situacoes')
+            .select('membro_id,tipo_situacao,data_inicio,data_fim,status')
+            .eq('status', 'ativa')
+            .range(inicioHist, inicioHist + tamanhoPaginaHist - 1);
+          if (loteHist && loteHist.length > 0) {
+            todoHistorico = [...todoHistorico, ...loteHist];
+            inicioHist += tamanhoPaginaHist;
+            if (loteHist.length < tamanhoPaginaHist) continuarHist = false;
+          } else {
+            continuarHist = false;
+          }
+        }
+      }
+      setHistoricoSituacoes(todoHistorico);
 
       setIrmaos(irmaosD||[]);
       setCategorias(catD||[]);
@@ -195,30 +221,99 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const exaltadosAno = irmaos.filter(i=>i.data_exaltacao?.startsWith(String(anoSel))).length;
     const elevadosAno  = irmaos.filter(i=>i.data_elevacao?.startsWith(String(anoSel))).length;
 
-    // Presença por sessão
     const totalAtivos = ativos.length;
-    const presencaMensal = Array.from({length:12},(_,m)=>({mes:MESES_ABR[m],sessoes:0,presentes:0,taxa:0}));
+
+    // ── Elegibilidade sessão-a-sessão — mesma lógica do relatório em PDF,
+    // da Matrix de Presença, do Dashboard e do boletim por e-mail: grau na
+    // data, data de entrada, falecimento, situação bloqueadora por data real
+    // (sem nada fixo) e prerrogativa de idade (70+ na data da sessão).
+    const unaccentLower = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const elegivelNaData = (irmao, dataSessao, grauSessaoId) => {
+      const grauMin = grauSessaoId === 4 ? 1 : grauSessaoId; // Administrativa tratada como Aprendiz
+      let grauNaData = 1;
+      if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) grauNaData = 3;
+      else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) grauNaData = 2;
+      if (grauMin > grauNaData) return false;
+
+      const dataEntrada = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) :
+                           (irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null);
+      if (!dataEntrada || dataSessao < dataEntrada) return false;
+
+      if (irmao.data_falecimento && dataSessao >= new Date(irmao.data_falecimento)) return false;
+
+      const bloqueado = historicoSituacoes.some(sit => {
+        if (sit.membro_id !== irmao.id) return false;
+        const tipo = unaccentLower(sit.tipo_situacao);
+        const tipos = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca'];
+        const ehBloq = tipos.includes(tipo) || tipos.some(t=>tipo.includes(t));
+        if (!ehBloq) return false;
+        const di = new Date(sit.data_inicio + 'T00:00:00');
+        if (dataSessao < di) return false;
+        if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return dataSessao <= df; }
+        return true;
+      });
+      if (bloqueado) return false;
+
+      if (irmao.data_nascimento) {
+        const nasc = new Date(irmao.data_nascimento + 'T00:00:00');
+        let idade = dataSessao.getFullYear() - nasc.getFullYear();
+        if (dataSessao.getMonth() < nasc.getMonth() ||
+           (dataSessao.getMonth() === nasc.getMonth() && dataSessao.getDate() < nasc.getDate())) idade--;
+        if (idade >= 70) return false;
+      }
+      return true;
+    };
+
+    // Lookup rápido de presença por sessão+irmão
+    const presMap = {};
+    presencas.forEach(p => { presMap[`${p.sessao_id}_${p.membro_id}`] = p.presente; });
+
+    // Presença por sessão — cada mês soma presenças/elegíveis considerando
+    // SÓ quem estava realmente elegível naquela sessão específica (exclui
+    // prerrogativa/licença/desligado/irregular/etc. por data real).
+    const presencaMensal = Array.from({length:12},(_,m)=>({mes:MESES_ABR[m],sessoes:0,presentes:0,eleg:0,taxa:0}));
+    const totaisIndividuaisAno = {};
+    irmaos.forEach(i => { totaisIndividuaisAno[i.id] = { eleg: 0, pres: 0 }; });
+
     sessoes.forEach(s=>{
       const mes = parseInt(s.data_sessao.substring(5, 7)) - 1; // 0=Jan, 11=Dez
-      const regs = presencas.filter(p=>p.sessao_id===s.id);
-      const pres = regs.filter(p=>p.presente).length;
+      const dataSessao = new Date(s.data_sessao + 'T00:00:00');
       presencaMensal[mes].sessoes++;
-      presencaMensal[mes].presentes += pres;
+      irmaos.forEach(i => {
+        if (!elegivelNaData(i, dataSessao, s.grau_sessao_id)) return;
+        presencaMensal[mes].eleg++;
+        totaisIndividuaisAno[i.id].eleg++;
+        const presente = !!presMap[`${s.id}_${i.id}`];
+        if (presente) {
+          presencaMensal[mes].presentes++;
+          totaisIndividuaisAno[i.id].pres++;
+        }
+      });
     });
-    presencaMensal.forEach(m=>{ if(m.sessoes>0 && totalAtivos>0) m.taxa=Math.round(m.presentes/m.sessoes/totalAtivos*100); });
-    const mesesComSessao = presencaMensal.filter(m=>m.sessoes>0);
-    const taxaGeralAno = mesesComSessao.length>0 ? Math.round(mesesComSessao.reduce((s,m)=>s+m.taxa,0)/mesesComSessao.length) : 0;
+    presencaMensal.forEach(m => { m.taxa = m.eleg > 0 ? Math.round(m.presentes / m.eleg * 100) : 0; });
 
-    // Presença por grau
-    const presencaPorGrau = sessoes.reduce((acc,s)=>{
-      const grauId = s.grau_sessao_id;
-      const label = grauId===1?'Aprendiz':grauId===2?'Companheiro':grauId===3||grauId===4?'Mestre':'Outro';
-      if(!acc[label]) acc[label]={total:0,presentes:0};
-      const regs = presencas.filter(p=>p.sessao_id===s.id);
-      acc[label].total += regs.length;
-      acc[label].presentes += regs.filter(p=>p.presente).length;
-      return acc;
-    },{});
+    // Taxa geral do ano — MÉDIA DAS TAXAS INDIVIDUAIS de cada irmão (mesmo
+    // método do relatório em PDF, do Dashboard "Média Presença" e do
+    // boletim por e-mail), não soma ponderada por sessão.
+    const taxasIndividuaisAno = Object.values(totaisIndividuaisAno)
+      .filter(t => t.eleg > 0)
+      .map(t => Math.round((t.pres / t.eleg) * 100));
+    const taxaGeralAno = taxasIndividuaisAno.length > 0
+      ? Math.round(taxasIndividuaisAno.reduce((s,t)=>s+t,0) / taxasIndividuaisAno.length)
+      : 0;
+
+    // Presença por grau — mesma elegibilidade
+    const presencaPorGrau = { Aprendiz:{total:0,presentes:0}, Companheiro:{total:0,presentes:0}, Mestre:{total:0,presentes:0} };
+    sessoes.forEach(s => {
+      const dataSessao = new Date(s.data_sessao + 'T00:00:00');
+      const label = s.grau_sessao_id===1?'Aprendiz':s.grau_sessao_id===2?'Companheiro':'Mestre'; // Administrativa (4) tratada como Aprendiz nos elegíveis, mas exibida à parte não é necessária aqui
+      const labelReal = s.grau_sessao_id===4?'Aprendiz':label;
+      irmaos.forEach(i => {
+        if (!elegivelNaData(i, dataSessao, s.grau_sessao_id)) return;
+        presencaPorGrau[labelReal].total++;
+        if (presMap[`${s.id}_${i.id}`]) presencaPorGrau[labelReal].presentes++;
+      });
+    });
     const graficoGrau = Object.entries(presencaPorGrau).map(([g,v])=>({grau:g,taxa:v.total>0?Math.round(v.presentes/v.total*100):0}));
 
     // Presença por irmão (top/bottom)
@@ -319,7 +414,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       candAtivos,candAprovados,
       familiasTotal,familiasAtivas,pessoasComodato,equipamentosTotal,equipamentosEmprestados,
     };
-  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,familias,comodatosAtivos,equipamentos,anoSel,loading]);
+  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,familias,comodatosAtivos,equipamentos,historicoSituacoes,anoSel,loading]);
 
   const sBtn = (ativo) => ({
     padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',
