@@ -208,6 +208,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // "Situação Geral" com o MESMO método do Dashboard de Presença (média das
   // % individuais, não soma ponderada por sessão).
   const taxasIndividuais = [];
+  const taxasIndividuaisPorGrau = { Aprendiz: [], Companheiro: [], Mestre: [] };
 
   // Preparar dados dos irmãos — quem não tem NENHUMA responsabilidade no
   // período deste relatório (desligado/irregular/etc. desde antes de toda a
@@ -357,9 +358,15 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
     // Guarda a taxa individual (só quem tem sessão elegível) para o cálculo
     // da "Situação Geral" — mesmo método usado no Dashboard de Presença:
-    // média das % de cada irmão, não soma ponderada por sessão.
+    // média das % de cada irmão, não soma ponderada por sessão. Guarda
+    // também o grau ATUAL do irmão (sem sobreposição), pra montar o Quadro
+    // "Resumo de Presença" por grau com o mesmo método (cada pessoa conta
+    // uma única vez, dentro do próprio grau).
     if (sessoesElegiveis > 0) {
-      taxasIndividuais.push(Math.round((presencas / sessoesElegiveis) * 100));
+      const taxaInd = Math.round((presencas / sessoesElegiveis) * 100);
+      taxasIndividuais.push(taxaInd);
+      const grauAtual = obterGrauIrmao(irmao) === 'A' ? 'Aprendiz' : obterGrauIrmao(irmao) === 'C' ? 'Companheiro' : 'Mestre';
+      taxasIndividuaisPorGrau[grauAtual].push(taxaInd);
     }
 
     return row;
@@ -525,9 +532,20 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       .filter(g => (qtdSessoesPorGrau[g.id] || 0) > 0)
       .map(g => {
         const qtd = qtdSessoesPorGrau[g.id] || 0;
-        const d = porGrau[g.id] || { pres: 0, eleg: 0 };
-        const pctPres = d.eleg > 0 ? Math.round((d.pres / d.eleg) * 100) : 0;
-        const pctAus = d.eleg > 0 ? 100 - pctPres : 0;
+        // Administrativa não é um grau de irmão — não tem grupo próprio de
+        // pessoas, então mantém o cálculo por vaga/sessão só pra essa linha.
+        // Aprendiz/Companheiro/Mestre usam o método por pessoa (cada irmão
+        // conta uma única vez, dentro do próprio grau — mesmo método do
+        // card geral "Situação Geral da Loja" e do boletim por e-mail).
+        let pctPres;
+        if (g.nome === 'Administrativa') {
+          const d = porGrau[g.id] || { pres: 0, eleg: 0 };
+          pctPres = d.eleg > 0 ? Math.round((d.pres / d.eleg) * 100) : 0;
+        } else {
+          const taxas = taxasIndividuaisPorGrau[g.nome] || [];
+          pctPres = taxas.length > 0 ? Math.round(taxas.reduce((s, t) => s + t, 0) / taxas.length) : 0;
+        }
+        const pctAus = 100 - pctPres;
         return [g.nome, String(qtd), `${pctPres}%`, `${pctAus}%`];
       }),
     theme: 'grid',
