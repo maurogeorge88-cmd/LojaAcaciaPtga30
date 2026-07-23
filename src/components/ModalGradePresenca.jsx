@@ -193,16 +193,27 @@ export default function ModalGradePresenca({ onFechar }) {
           }
         }
 
-        // 2. Desligado/Irregular/Suspenso/Excluído/Ex-ofício NÃO removem mais o
-        // irmão da lista inteira aqui. Antes, essa checagem usava o mês ATUAL
-        // (hoje) como referência — o que apagava até os meses ANTERIORES à
-        // situação de relatórios/matriz de meses passados (ex: irmão ficou
-        // irregular em 25/06, mas ao consultar junho depois de julho começar,
-        // ele sumia até dos dias 01–24/06, quando ainda devia contar).
-        // Essas situações já são tratadas corretamente SESSÃO POR SESSÃO,
-        // por data, dentro do próprio gerador de relatório/matriz
-        // (verificarSituacaoNaData) — igual à licença: antes conta, durante
-        // não conta, e sem data_fim fica bloqueado dali em diante.
+        // 2. Desligado/Irregular/Suspenso/Excluído/Ex-ofício SEM data de
+        // retorno: se TODAS as sessões deste período visível (ano ou mês
+        // selecionado na Matrix) já são depois do início da situação, o
+        // irmão não tem mais nenhum vínculo relevante aqui e some da lista
+        // por completo — igual a um desligado/falecido. Se parte do período
+        // for antes da situação, ele continua aparecendo normalmente (com
+        // dado real até a data, e "-" dali em diante — tratado célula a
+        // célula mais abaixo). Isso é automático a partir da data cadastrada,
+        // funciona pra qualquer irmão, em qualquer período.
+        const semVinculoNoPeriodo = historicoSituacoesData?.some(sit => {
+          if (sit.membro_id !== i.id) return false;
+          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesQueEncerram = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+          const ehEncerramento = situacoesQueEncerram.includes(tipo) || situacoesQueEncerram.some(s => tipo.includes(s));
+          if (!ehEncerramento) return false;
+          if (sit.data_fim) return false; // já foi regularizado, deve aparecer
+
+          const dataInicioSit = new Date(sit.data_inicio + 'T00:00:00');
+          return sessoesData?.every(s => new Date(s.data_sessao + 'T00:00:00') >= dataInicioSit);
+        });
+        if (semVinculoNoPeriodo) return false;
 
         return true;
       });
