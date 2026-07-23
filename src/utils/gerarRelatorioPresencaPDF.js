@@ -150,38 +150,6 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   headers.push({ title: 'Total', dataKey: 'total' });
   headers.push({ title: '%', dataKey: 'percentual' });
 
-  // Função para verificar se irmão deve aparecer no relatório
-  const deveAparecerNoRelatorio = (irmao) => {
-    // Verifica se tem situação bloqueadora SEM data_fim (desligamento permanente)
-    const temDesligamentoPermanente = historicoSituacoes?.some(sit => {
-      if (sit.membro_id !== irmao.id) return false;
-      
-      const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const situacoesExclusivas = ['desligado', 'desligamento', 'excluido', 'ex-oficio'];
-      const ehExclusiva = situacoesExclusivas.includes(tipoNormalizado) ||
-        situacoesExclusivas.some(s => tipoNormalizado.includes(s));
-      
-      if (!ehExclusiva) return false;
-      
-      // Se tem data_fim no futuro ou passado, significa que pode voltar/voltou - DEVE aparecer
-      if (sit.data_fim) return false;
-      
-      // Desligamento permanente (sem data_fim)
-      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
-      
-      // Verifica se o desligamento aconteceu ANTES de todas as sessões do período
-      const todasSessoesAposDesligamento = sessoes.every(s => {
-        const dataSessao = new Date(s.data_sessao + 'T00:00:00');
-        return dataSessao >= dataInicio;
-      });
-      
-      // Se todas as sessões são após o desligamento, NÃO deve aparecer
-      return todasSessoesAposDesligamento;
-    });
-    
-    return !temDesligamentoPermanente;
-  };
-
   // ── Mapa de licenças: { irmaoId: Set<sessaoIndex> } ──────────────────────────
   const mapaLicencas = {};
   irmaos.forEach(irmao => {
@@ -214,9 +182,18 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // % individuais, não soma ponderada por sessão).
   const taxasIndividuais = [];
 
-  // Preparar dados dos irmãos (filtrados)
+  // Preparar dados dos irmãos — SEM esconder nenhuma linha por completo.
+  // Antes, "deveAparecerNoRelatorio" escondia o irmão inteiro se TODAS as
+  // sessões do período gerado fossem depois do início da situação — só que
+  // isso depende de QUAL período está sendo gerado (ano inteiro vs só um
+  // mês), então a mesma pessoa podia aparecer no relatório anual e sumir do
+  // relatório de um mês específico, ou vice-versa — inconsistente.
+  // Agora todo mundo aparece sempre como linha (igual à prerrogativa: quando
+  // não há nenhuma sessão elegível, vira "0/0"), e quem decide o que conta
+  // ou não, sessão por sessão, é só a data real da situação no histórico
+  // (verificarSituacaoNaData, mais abaixo) — 100% automático a partir da
+  // data cadastrada, sem depender de qual período do relatório foi gerado.
   const rows = irmaos
-    .filter(irmao => deveAparecerNoRelatorio(irmao))
     .map(irmao => {
     // ── Rótulo sob o nome ──────────────────────────────────────────
     const hoje = new Date(); hoje.setHours(0,0,0,0);
