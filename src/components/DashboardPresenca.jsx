@@ -459,7 +459,11 @@ export default function DashboardPresenca() {
         
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00'); // Adicionar hora para evitar problema de timezone
 
-        const elegiveis = irmaos.filter(i => {
+        const elegiveis = [];
+        let licenciadosCount = 0;
+        let prerrogativaCount = 0;
+
+        irmaos.forEach(i => {
           // 1. Verificar grau
           let grauIrmao = 0;
           if (i.data_exaltacao) grauIrmao = 3;
@@ -467,14 +471,14 @@ export default function DashboardPresenca() {
           else if (i.data_iniciacao) grauIrmao = 1;
 
           // Sessão de grau superior - não pode
-          if (grauSessao > grauIrmao) return false;
+          if (grauSessao > grauIrmao) return;
 
           // 2. Verificar data de ingresso
           const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja + 'T00:00:00') : 
                             i.data_iniciacao ? new Date(i.data_iniciacao + 'T00:00:00') : null;
-          if (dataInicio && dataSessao < dataInicio) return false;
+          if (dataInicio && dataSessao < dataInicio) return;
 
-          // 3. Verificar SITUAÇÕES BLOQUEADORAS na data da sessão - EXCLUIR
+          // 3. Verificar SITUAÇÕES BLOQUEADORAS na data da sessão - EXCLUI (não conta nem como licenciado/prerrogativa)
           const temSituacaoBloqueadora = historicoSituacoes?.find(sit => {
             const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             const situacoesExcluidas = ['desligado', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
@@ -484,17 +488,38 @@ export default function DashboardPresenca() {
               dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
               (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
           });
-          if (temSituacaoBloqueadora) return false;
+          if (temSituacaoBloqueadora) return;
 
           // 4. Verificar falecimento - SE faleceu ANTES da sessão, NÃO é elegível
           if (i.data_falecimento) {
             const dataFalec = new Date(i.data_falecimento + 'T00:00:00');
-            if (dataSessao >= dataFalec) return false;
+            if (dataSessao >= dataFalec) return;
           }
 
-          // 5. Licenciados e Prerrogativa CONTAM como elegíveis (não excluir)
+          // 5. Licença vigente na data da sessão — NÃO conta como elegível, mas
+          // é contabilizado à parte pra deixar claro que existe (não é falta real)
+          const temLicenca = historicoSituacoes?.find(sit => {
+            const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return sit.membro_id === i.id &&
+              tipoNormalizado.includes('licen') &&
+              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
+          });
+          if (temLicenca) { licenciadosCount++; return; }
 
-          return true;
+          // 6. Prerrogativa de idade (70+) na data da sessão — mesma lógica: não
+          // conta como elegível, mas é contabilizado à parte
+          if (i.data_nascimento) {
+            const nasc = new Date(i.data_nascimento + 'T00:00:00');
+            let idade = dataSessao.getFullYear() - nasc.getFullYear();
+            if (dataSessao.getMonth() < nasc.getMonth() ||
+               (dataSessao.getMonth() === nasc.getMonth() && dataSessao.getDate() < nasc.getDate())) {
+              idade--;
+            }
+            if (idade >= 70) { prerrogativaCount++; return; }
+          }
+
+          elegiveis.push(i);
         });
 
         const presencas = registros?.filter(r => r.presente).length || 0;
@@ -510,7 +535,9 @@ export default function DashboardPresenca() {
           presencas,
           ausencias,
           percentual,
-          visitantes: totalVisitantes || 0
+          visitantes: totalVisitantes || 0,
+          licenciados: licenciadosCount,
+          prerrogativa: prerrogativaCount
         };
       }));
 
@@ -839,41 +866,17 @@ export default function DashboardPresenca() {
       // Processar cada irmão
       const resumoCompleto = [];
 
-      // Filtro de "elegibilidade pro relatório de hoje" — mesma regra usada em
-      // ModalGradePresenca.jsx: se o irmão tem situação bloqueadora (desligado,
-      // irregular, suspenso, excluído, ex-ofício) que já estava ativa ANTES do
-      // início do mês atual (e ainda não resolvida), ele não aparece mais nas
-      // contas a partir do mês seguinte à situação — mesmo que tenha
-      // frequência real registrada em meses anteriores a isso.
-      const hojeFiltro = new Date();
-      const mesAtualFiltro = hojeFiltro.getMonth();
-      const anoAtualFiltro = hojeFiltro.getFullYear();
-      const dataInicioMesAtual = new Date(anoAtualFiltro, mesAtualFiltro, 1);
-
-      const temSituacaoBloqueadoraAtual = (irmaoId) => {
-        return historicoSituacoes?.some(sit => {
-          if (sit.membro_id !== irmaoId) return false;
-          const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
-          if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
-
-          const dataInicioSit = new Date(sit.data_inicio + 'T00:00:00');
-          if (dataInicioSit < dataInicioMesAtual) {
-            if (sit.data_fim) {
-              const dataFimSit = new Date(sit.data_fim + 'T00:00:00');
-              return dataFimSit >= dataInicioMesAtual; // ainda bloqueado
-            }
-            return true; // sem data_fim, bloqueado
-          }
-          return false;
-        });
-      };
+      // Desligado/Irregular/Suspenso/Excluído/Ex-ofício NÃO removem mais o
+      // irmão inteiro da conta. A checagem "mês atual" (relativo a hoje) foi
+      // removida porque apagava até o período ANTES da situação começar —
+      // ex: irmão ficou irregular em 25/06, mas ao olhar o ano/mês de junho
+      // depois de julho começar, ele sumia até dos dias 01–24/06, quando
+      // ainda devia contar normalmente. Essas situações já são tratadas
+      // corretamente SESSÃO POR SESSÃO, por data, na checagem genérica
+      // logo abaixo (mesmo mecanismo da licença): antes conta, durante não
+      // conta, e sem data_fim fica bloqueado dali em diante.
 
       irmaos?.forEach(irmao => {
-        // Descartar quem tem situação bloqueadora vigente desde antes do mês
-        // atual — mesma regra do relatório em PDF.
-        if (temSituacaoBloqueadoraAtual(irmao.id)) return;
-
         // Calcular grau MÁXIMO já atingido (usado só pra descartar quem nunca
         // foi iniciado — o grau efetivo em cada sessão é calculado abaixo,
         // sessão por sessão, igual ao relatório em PDF).
