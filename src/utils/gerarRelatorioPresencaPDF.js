@@ -606,8 +606,27 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     return false;
   };
 
+  // Irmão com situação CURRENTE (hoje) de desligado/irregular/suspenso/excluído/
+  // ex-ofício não deve contar no roster deste Quadro (nem como ativo, nem
+  // como prerrogativa/licença) — ele já entra corretamente na conta de
+  // presença/ausência sessão-a-sessão do quadro principal, mas não representa
+  // mais um membro "efetivo" do grau hoje.
+  const ehInativoHoje = (irmao) => {
+    return historicoSituacoes?.some(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const situacoesInativas = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+      const ehInativa = situacoesInativas.includes(tipo) || situacoesInativas.some(s => tipo.includes(s));
+      if (!ehInativa) return false;
+      const di = new Date(sit.data_inicio + 'T00:00:00');
+      if (hojeQuadro3 < di) return false;
+      if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return hojeQuadro3 <= df; }
+      return true;
+    });
+  };
+
   const qtdIrmaosPorGrau = { Aprendiz: { ativos: 0, excluidos: 0 }, Companheiro: { ativos: 0, excluidos: 0 }, Mestre: { ativos: 0, excluidos: 0 } };
-  irmaosContados.forEach(irmao => {
+  irmaosContados.filter(irmao => !ehInativoHoje(irmao)).forEach(irmao => {
     const g = obterGrauIrmao(irmao);
     const label = g === 'A' ? 'Aprendiz' : g === 'C' ? 'Companheiro' : 'Mestre';
     if (ehExcluidoAtivo(irmao)) qtdIrmaosPorGrau[label].excluidos++;
@@ -618,7 +637,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   const presPorTipoSessaoEGrauIrmao = {};
   graus.forEach(g => { presPorTipoSessaoEGrauIrmao[g.id] = { Aprendiz: 0, Companheiro: 0, Mestre: 0 }; });
 
-  irmaosContados.filter(irmao => !ehExcluidoAtivo(irmao)).forEach(irmao => {
+  irmaosContados.filter(irmao => !ehExcluidoAtivo(irmao) && !ehInativoHoje(irmao)).forEach(irmao => {
     const gIrmao = obterGrauIrmao(irmao);
     const labelIrmao = gIrmao === 'A' ? 'Aprendiz' : gIrmao === 'C' ? 'Companheiro' : 'Mestre';
     sessoes.forEach(sessao => {
