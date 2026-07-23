@@ -179,7 +179,7 @@ export default function ModalGradePresenca({ onFechar }) {
         .eq('status', 'ativo')
         .order('nome');
 
-      // Filtrar: remover falecidos de MESES ANTERIORES e desligados
+      // Filtrar: remover falecidos de MESES ANTERIORES
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
 
@@ -192,35 +192,18 @@ export default function ModalGradePresenca({ onFechar }) {
             return false;
           }
         }
-        
-        // 2. Verificar se tem situação bloqueadora ATIVA HOJE
-        // (irregular, desligado desde data anterior ao mês atual)
-        const temSituacaoBloqueadoraAtual = historicoSituacoesData?.some(sit => {
-          if (sit.membro_id !== i.id) return false;
-          
-          const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
-          
-          if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
-          
-          const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
-          const dataInicioMes = new Date(anoAtual, mesAtual, 1);
-          
-          // Se desligou/ficou irregular ANTES do início do mês atual, excluir da lista
-          if (dataInicio < dataInicioMes) {
-            // Se tem data_fim e já passou, não bloqueia
-            if (sit.data_fim) {
-              const dataFim = new Date(sit.data_fim + 'T00:00:00');
-              return dataFim >= dataInicioMes; // Ainda está bloqueado
-            }
-            return true; // Sem data_fim, está bloqueado
-          }
-          
-          return false;
-        });
-        
-        if (temSituacaoBloqueadoraAtual) return false;
-        
+
+        // 2. Desligado/Irregular/Suspenso/Excluído/Ex-ofício NÃO removem mais o
+        // irmão da lista inteira aqui. Antes, essa checagem usava o mês ATUAL
+        // (hoje) como referência — o que apagava até os meses ANTERIORES à
+        // situação de relatórios/matriz de meses passados (ex: irmão ficou
+        // irregular em 25/06, mas ao consultar junho depois de julho começar,
+        // ele sumia até dos dias 01–24/06, quando ainda devia contar).
+        // Essas situações já são tratadas corretamente SESSÃO POR SESSÃO,
+        // por data, dentro do próprio gerador de relatório/matriz
+        // (verificarSituacaoNaData) — igual à licença: antes conta, durante
+        // não conta, e sem data_fim fica bloqueado dali em diante.
+
         return true;
       });
 
