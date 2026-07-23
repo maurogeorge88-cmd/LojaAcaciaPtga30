@@ -866,17 +866,32 @@ export default function DashboardPresenca() {
       // Processar cada irmão
       const resumoCompleto = [];
 
-      // Desligado/Irregular/Suspenso/Excluído/Ex-ofício NÃO removem mais o
-      // irmão inteiro da conta. A checagem "mês atual" (relativo a hoje) foi
-      // removida porque apagava até o período ANTES da situação começar —
-      // ex: irmão ficou irregular em 25/06, mas ao olhar o ano/mês de junho
-      // depois de julho começar, ele sumia até dos dias 01–24/06, quando
-      // ainda devia contar normalmente. Essas situações já são tratadas
-      // corretamente SESSÃO POR SESSÃO, por data, na checagem genérica
-      // logo abaixo (mesmo mecanismo da licença): antes conta, durante não
-      // conta, e sem data_fim fica bloqueado dali em diante.
+      // Desligado/Irregular/Suspenso/Excluído/Ex-ofício SEM data de retorno:
+      // se TODAS as sessões deste período (sessoesPerio) já são depois do
+      // início da situação, o irmão não tem mais vínculo relevante aqui e
+      // sai da conta por completo (igual a um desligado/falecido de anos
+      // atrás) — mesma regra usada no relatório em PDF e na Matrix. Se parte
+      // do período for antes da situação, ele continua entrando
+      // normalmente, com a checagem sessão-a-sessão (mais abaixo) cuidando
+      // do resto. 100% automático, baseado na data cadastrada.
+      const semVinculoNoPeriodo = (irmaoId) => {
+        return historicoSituacoes?.some(sit => {
+          if (sit.membro_id !== irmaoId) return false;
+          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesQueEncerram = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+          const ehEncerramento = situacoesQueEncerram.includes(tipo) || situacoesQueEncerram.some(s => tipo.includes(s));
+          if (!ehEncerramento) return false;
+          if (sit.data_fim) return false; // já foi regularizado, deve entrar na conta
+
+          const dataInicioSit = new Date(sit.data_inicio + 'T00:00:00');
+          return sessoesPerio?.every(s => new Date(s.data_sessao + 'T00:00:00') >= dataInicioSit);
+        });
+      };
 
       irmaos?.forEach(irmao => {
+        // Descartar quem não tem mais nenhum vínculo relevante neste período
+        if (semVinculoNoPeriodo(irmao.id)) return;
+
         // Calcular grau MÁXIMO já atingido (usado só pra descartar quem nunca
         // foi iniciado — o grau efetivo em cada sessão é calculado abaixo,
         // sessão por sessão, igual ao relatório em PDF).
