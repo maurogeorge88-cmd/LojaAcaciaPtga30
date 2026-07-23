@@ -150,6 +150,33 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   headers.push({ title: 'Total', dataKey: 'total' });
   headers.push({ title: '%', dataKey: 'percentual' });
 
+  // Irmão sem NENHUMA responsabilidade/vínculo no período deste relatório —
+  // some da listagem por completo (igual desligado/falecido). Isso acontece
+  // quando ele tem uma situação bloqueadora (desligado, irregular, suspenso,
+  // excluído, ex-ofício) SEM data_fim, e TODAS as sessões deste relatório
+  // (seja do ano inteiro ou de um mês só) já são depois do início dela — ou
+  // seja, não sobra nenhum dia "antes" pra mostrar. Se parte do período for
+  // antes da situação, o irmão continua aparecendo normalmente (com os dados
+  // reais até a data, e "-" dali em diante, tratado sessão a sessão mais abaixo).
+  const naoTemMaisVinculoNoPeriodo = (irmao) => {
+    return historicoSituacoes?.some(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+
+      const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const situacoesQueEncerram = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+      const ehEncerramento = situacoesQueEncerram.includes(tipoNormalizado) ||
+        situacoesQueEncerram.some(s => tipoNormalizado.includes(s));
+
+      if (!ehEncerramento) return false;
+      if (sit.data_fim) return false; // tem data_fim = já foi regularizado, pode aparecer normalmente
+
+      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+
+      // Todas as sessões DESTE relatório são depois do início da situação?
+      return sessoes.every(s => new Date(s.data_sessao + 'T00:00:00') >= dataInicio);
+    });
+  };
+
   // ── Mapa de licenças: { irmaoId: Set<sessaoIndex> } ──────────────────────────
   const mapaLicencas = {};
   irmaos.forEach(irmao => {
@@ -182,18 +209,12 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // % individuais, não soma ponderada por sessão).
   const taxasIndividuais = [];
 
-  // Preparar dados dos irmãos — SEM esconder nenhuma linha por completo.
-  // Antes, "deveAparecerNoRelatorio" escondia o irmão inteiro se TODAS as
-  // sessões do período gerado fossem depois do início da situação — só que
-  // isso depende de QUAL período está sendo gerado (ano inteiro vs só um
-  // mês), então a mesma pessoa podia aparecer no relatório anual e sumir do
-  // relatório de um mês específico, ou vice-versa — inconsistente.
-  // Agora todo mundo aparece sempre como linha (igual à prerrogativa: quando
-  // não há nenhuma sessão elegível, vira "0/0"), e quem decide o que conta
-  // ou não, sessão por sessão, é só a data real da situação no histórico
-  // (verificarSituacaoNaData, mais abaixo) — 100% automático a partir da
-  // data cadastrada, sem depender de qual período do relatório foi gerado.
+  // Preparar dados dos irmãos — quem não tem NENHUMA responsabilidade no
+  // período deste relatório (desligado/irregular/etc. desde antes de toda a
+  // janela, sem data de retorno) some da lista por completo. Quem tem parte
+  // do período antes da situação continua aparecendo normalmente.
   const rows = irmaos
+    .filter(irmao => !naoTemMaisVinculoNoPeriodo(irmao))
     .map(irmao => {
     // ── Rótulo sob o nome ──────────────────────────────────────────
     const hoje = new Date(); hoje.setHours(0,0,0,0);
