@@ -302,19 +302,25 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       ? Math.round(taxasIndividuaisAno.reduce((s,t)=>s+t,0) / taxasIndividuaisAno.length)
       : 0;
 
-    // Presença por grau — mesma elegibilidade
-    const presencaPorGrau = { Aprendiz:{total:0,presentes:0}, Companheiro:{total:0,presentes:0}, Mestre:{total:0,presentes:0} };
-    sessoes.forEach(s => {
-      const dataSessao = new Date(s.data_sessao + 'T00:00:00');
-      const label = s.grau_sessao_id===1?'Aprendiz':s.grau_sessao_id===2?'Companheiro':'Mestre'; // Administrativa (4) tratada como Aprendiz nos elegíveis, mas exibida à parte não é necessária aqui
-      const labelReal = s.grau_sessao_id===4?'Aprendiz':label;
-      irmaos.forEach(i => {
-        if (!elegivelNaData(i, dataSessao, s.grau_sessao_id)) return;
-        presencaPorGrau[labelReal].total++;
-        if (presMap[`${s.id}_${i.id}`]) presencaPorGrau[labelReal].presentes++;
-      });
+    // Presença por grau — MÉDIA DAS TAXAS INDIVIDUAIS de cada irmão, agrupada
+    // pelo grau ATUAL dele (sem sobreposição — cada pessoa conta uma única
+    // vez, no seu próprio grau), igual ao Quadro 1 do relatório em PDF e ao
+    // boletim por e-mail. Antes, esse gráfico calculava por SESSÃO (vaga),
+    // o que fazia Mestres/M.I. (elegíveis pra quase todas as sessões)
+    // inflarem a % de Aprendiz e Companheiro também, deixando as 3 barras
+    // parecidas e sem diferenciação real.
+    const gruposPorGrauIrmao = { Aprendiz: [], Companheiro: [], Mestre: [] };
+    irmaos.forEach(i => {
+      const t = totaisIndividuaisAno[i.id];
+      if (!t || t.eleg === 0) return;
+      const g = obterGrau(i);
+      if (!gruposPorGrauIrmao[g]) return; // ignora "Não Iniciado"
+      gruposPorGrauIrmao[g].push(Math.round((t.pres / t.eleg) * 100));
     });
-    const graficoGrau = Object.entries(presencaPorGrau).map(([g,v])=>({grau:g,taxa:v.total>0?Math.round(v.presentes/v.total*100):0}));
+    const graficoGrau = Object.entries(gruposPorGrauIrmao).map(([g, taxas]) => ({
+      grau: g,
+      taxa: taxas.length > 0 ? Math.round(taxas.reduce((s,t)=>s+t,0) / taxas.length) : 0
+    }));
 
     // Presença por irmão (top/bottom)
     const calcIdade = (dataNasc) => {
