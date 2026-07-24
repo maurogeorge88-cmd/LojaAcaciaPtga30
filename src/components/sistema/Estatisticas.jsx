@@ -113,7 +113,6 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       const [
         {data: irmaosD},
         {data: sessoesD},
-        {data: lancD},
         {data: catD},
         {data: comissoesD},
         {data: caridadeD},
@@ -124,7 +123,6 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       ] = await Promise.all([
         supabase.from('irmaos').select('id,nome,situacao,data_iniciacao,data_elevacao,data_exaltacao,data_falecimento,mestre_instalado,data_nascimento,data_ingresso_loja').order('nome'),
         supabase.from('sessoes_presenca').select('id,data_sessao,grau_sessao_id').gte('data_sessao',`${anoSel}-01-01`).lte('data_sessao',`${anoSel}-12-31`).order('data_sessao'),
-        supabase.from('lancamentos_loja').select('valor,tipo,status,data_pagamento,data_vencimento,categoria_id,tipo_pagamento,eh_transferencia_interna').eq('status','pago').gte('data_pagamento',`${anoSel}-01-01`).lte('data_pagamento',`${anoSel}-12-31`),
         supabase.from('categorias_financeiras').select('id,nome,tipo'),
         supabase.from('comissoes_integrantes').select('irmao_id,comissoes(status)'),
         supabase.from('ajudas_caridade').select('id,data_ajuda').gte('data_ajuda',`${anoSel}-01-01`).lte('data_ajuda',`${anoSel}-12-31`),
@@ -133,6 +131,33 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         supabase.from('comodatos').select('id,beneficiario_id').eq('status','ativo'),
         supabase.from('equipamentos').select('id,status'),
       ]);
+
+      // Lançamentos financeiros do ano — paginado (blocos de 1000), já que
+      // uma loja com bom volume de lançamentos passa facilmente do limite
+      // padrão do Supabase, causando receita/despesa mensal incompletas e
+      // divergentes do Finanças da Loja (que já é paginado corretamente).
+      let lancD = [];
+      {
+        let inicioLanc = 0;
+        const tamanhoPaginaLanc = 1000;
+        let continuarLanc = true;
+        while (continuarLanc) {
+          const { data: loteLanc } = await supabase
+            .from('lancamentos_loja')
+            .select('valor,tipo,status,data_pagamento,data_vencimento,categoria_id,tipo_pagamento,eh_transferencia_interna')
+            .eq('status', 'pago')
+            .gte('data_pagamento', `${anoSel}-01-01`)
+            .lte('data_pagamento', `${anoSel}-12-31`)
+            .range(inicioLanc, inicioLanc + tamanhoPaginaLanc - 1);
+          if (loteLanc && loteLanc.length > 0) {
+            lancD = [...lancD, ...loteLanc];
+            inicioLanc += tamanhoPaginaLanc;
+            if (loteLanc.length < tamanhoPaginaLanc) continuarLanc = false;
+          } else {
+            continuarLanc = false;
+          }
+        }
+      }
 
       // Histórico de situações (licença, desligado, irregular, suspenso,
       // excluído, ex-ofício) — paginado, pois a tabela acumula anos de
@@ -626,7 +651,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                     contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
                     labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
                     itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
-                    formatter={(v,n)=>[fmtR(v),n==='receita'?'Receita':'Despesa']}/>
+                    formatter={(v,n)=>[fmtR(v),n]}/>
                 <Legend/>
                 <Bar dataKey="receita" fill={VERDE}    name="Receita"  radius={[4,4,0,0]}/>
                 <Bar dataKey="despesa" fill={VERMELHO} name="Despesa"  radius={[4,4,0,0]}/>
