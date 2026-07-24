@@ -648,10 +648,20 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
                 <YAxis tick={{fontSize:10,fill:'var(--color-text)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
                 <Tooltip
-                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
-                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
-                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
-                    formatter={(v,n)=>[fmtR(v),n]}/>
+                    content={({active, payload, label}) => {
+                      if (!active || !payload || payload.length === 0) return null;
+                      const receita = payload.find(p=>p.dataKey==='receita')?.value || 0;
+                      const despesa = payload.find(p=>p.dataKey==='despesa')?.value || 0;
+                      const saldo = receita - despesa;
+                      return (
+                        <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px',padding:'0.6rem 0.8rem'}}>
+                          <p style={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem',margin:'0 0 0.3rem'}}>{label}</p>
+                          <p style={{color:VERDE,fontSize:'0.8rem',margin:'0.1rem 0'}}>Receita: {fmtR(receita)}</p>
+                          <p style={{color:VERMELHO,fontSize:'0.8rem',margin:'0.1rem 0'}}>Despesa: {fmtR(despesa)}</p>
+                          <p style={{color: saldo>=0?VERDE:VERMELHO,fontWeight:700,fontSize:'0.8rem',margin:'0.3rem 0 0',borderTop:'1px solid var(--color-border)',paddingTop:'0.3rem'}}>Saldo: {fmtR(saldo)}</p>
+                        </div>
+                      );
+                    }}/>
                 <Legend/>
                 <Bar dataKey="receita" fill={VERDE}    name="Receita"  radius={[4,4,0,0]}/>
                 <Bar dataKey="despesa" fill={VERMELHO} name="Despesa"  radius={[4,4,0,0]}/>
