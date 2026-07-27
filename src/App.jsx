@@ -1491,23 +1491,28 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 {menuAberto && <span className="font-semibold">Dashboard</span>}
               </button>
 
-              {/* ===== MENU PARA IRMÃO COMUM ===== */}
+              {/* MEU CADASTRO — sempre visível pra qualquer irmão (acesso simples
+                  ou ampliado), já que editar os PRÓPRIOS dados não depende da
+                  permissão de visualização geral do sistema */}
               {userData?.nivel_acesso === 'irmao' && (
-            <>
-              {/* MEU CADASTRO E VISUALIZAR */}
-              <button
-                onClick={() => setCurrentPage('meu-cadastro')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'meu-cadastro'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Meu Cadastro"
-              >
-                <span className="text-base">👤</span>
-                {menuAberto && <span className="font-semibold">Meu Cadastro</span>}
-              </button>
+                <button
+                  onClick={() => setCurrentPage('meu-cadastro')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'meu-cadastro'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Meu Cadastro"
+                >
+                  <span className="text-base">👤</span>
+                  {menuAberto && <span className="font-semibold">Meu Cadastro</span>}
+                </button>
+              )}
 
+              {/* ===== MENU PARA IRMÃO COMUM (sem permissão de visualização ampliada) ===== */}
+              {userData?.nivel_acesso === 'irmao' && !permissoes?.canViewFinancial && (
+            <>
+              {/* MEU PERFIL COMPLETO */}
               <button
                 onClick={() => {
                   if (irmaoLogadoId) {
