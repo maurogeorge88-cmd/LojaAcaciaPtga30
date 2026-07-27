@@ -1935,8 +1935,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             </>
           )}
 
-          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS ===== */}
-          {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
+          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS (ou irmão com permissão explícita de ver financeiro) ===== */}
+          {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo' || permissoes?.canViewFinancial) && (
             <>
               {/* SUBMENU: CONTROLE DE IRMÃOS */}
               <div className="border-t border-primary-700 mt-2 pt-2">
