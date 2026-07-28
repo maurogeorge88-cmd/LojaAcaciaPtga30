@@ -1,9 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatarData, calcularIdade } from '../../utils/formatters';
+import { supabase } from '../../supabaseClient';
+import { gerarRelatorioSituacoesPDF } from '../../utils/gerarRelatorioSituacoesPDF';
 
 const QuadroIrmaos = ({ irmaos }) => {
   const [grauSelecionado, setGrauSelecionado] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('nome');
+  const [dadosLoja, setDadosLoja] = useState(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  useEffect(() => {
+    const carregarDadosLoja = async () => {
+      const { data } = await supabase.from('dados_loja').select('*').single();
+      if (data) setDadosLoja(data);
+    };
+    carregarDadosLoja();
+  }, []);
+
+  const handleGerarRelatorioSituacoes = async () => {
+    setGerandoPdf(true);
+    try {
+      await gerarRelatorioSituacoesPDF(irmaos, dadosLoja);
+    } catch (e) {
+      console.error('Erro ao gerar relatório de situações:', e);
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
 
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -186,7 +209,7 @@ const QuadroIrmaos = ({ irmaos }) => {
       </div>
 
       <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               Filtrar por Grau
@@ -225,6 +248,16 @@ const QuadroIrmaos = ({ irmaos }) => {
               style={{width:"100%",padding:"0.5rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
             >
               Exportar Quadro
+            </button>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={handleGerarRelatorioSituacoes}
+              disabled={gerandoPdf}
+              style={{width:"100%",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:gerandoPdf?"wait":"pointer",fontWeight:"700",opacity:gerandoPdf?0.7:1}}
+            >
+              {gerandoPdf ? '⏳ Gerando...' : '📄 Relatório de Situações (PDF)'}
             </button>
           </div>
         </div>
