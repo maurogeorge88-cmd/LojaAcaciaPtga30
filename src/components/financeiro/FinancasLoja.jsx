@@ -33,7 +33,11 @@ import ModalQuitacaoLote from './ModalQuitacaoLote';
 const STATUS_PERMITIDOS = ['regular', 'Regular', 'licenciado', 'Licenciado'];
 const STATUS_BLOQUEADOS = ['irregular', 'Irregular', 'suspenso', 'Suspenso', 'desligado', 'Desligado', 'excluído', 'Excluído', 'falecido', 'Falecido', 'ex-ofício', 'Ex-Ofício'];
 
-export default function FinancasLoja({ showSuccess, showError, userEmail, userData }) {
+export default function FinancasLoja({ showSuccess, showError, userEmail, userData, permissoes }) {
+  // Somente leitura: verdadeiro pra quem NÃO tem permissão explícita de
+  // editar financeiro (admin/cargo com acesso total continuam liberados,
+  // já que canEditFinancial vem true pra eles desde o App.jsx).
+  const somenteLeitura = permissoes && !permissoes.canEditFinancial;
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -571,6 +575,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const fecharMes = async () => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     if (!filtros.mes || !filtros.ano) {
       showError('Selecione um mês e ano para fechar.');
       return;
@@ -601,6 +606,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const reabrirMes = async () => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     if (!filtros.mes || !filtros.ano) return;
     const nomeMes = meses[filtros.mes - 1];
     if (!window.confirm(`Reabrir ${nomeMes}/${filtros.ano}? Lançamentos voltarão a ser permitidos.`)) return;
@@ -632,6 +638,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const handleSubmit = async (dados) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     // Se receber um evento, prevenir default (mantém compatibilidade)
     if (dados && dados.preventDefault) {
       dados.preventDefault();
@@ -828,6 +835,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const handleLancamentoIrmaos = async (e) => {
     e.preventDefault();
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
 
     if (lancamentoIrmaos.irmaos_selecionados.length === 0) {
       showError('Selecione pelo menos um irmão!');
@@ -872,6 +880,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   // NOVA FUNÇÃO: Quitação individual rápida
   const abrirModalQuitacao = async (lancamento) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const { data: pagamentos, error } = await supabase
         .from('lancamentos_loja')
@@ -907,6 +916,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
 
   const togglePago = async (id, statusAtual) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const novoStatus = statusAtual === 'pago' ? 'pendente' : 'pago';
       const dataAtual = new Date().toISOString().split('T')[0];
@@ -931,6 +941,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const editarLancamento = (lancamento) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     console.log('editarLancamento chamado:', lancamento.id, 'origem_irmao_id:', lancamento.origem_irmao_id);
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     const bloqueado = dataRef && verificarMesBloqueado(dataRef);
@@ -988,6 +999,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const excluirLancamento = async (id) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     const lancamento = lancamentos.find(l => l.id === id);
     const dataRef = lancamento?.data_pagamento || lancamento?.data_lancamento || lancamento?.data_vencimento;
     const ehPendente = lancamento?.status === 'pendente';
@@ -1078,6 +1090,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const abrirModalPagamentoParcial = async (lancamento) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const { data: pagamentos, error } = await supabase
         .from('lancamentos_loja')
@@ -1142,6 +1155,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   // Função para abrir modal de compensação
   const abrirModalCompensacao = async (irmaoId) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const irmao = irmaos.find(i => i.id === irmaoId);
       if (!irmao) {
@@ -1269,6 +1283,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const fazerSangria = async () => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const { valor, data, observacao, finalidade, categoria_despesa_id, descricao_despesa } = formSangria;
       if (!valor || parseFloat(valor) <= 0) {
@@ -1367,6 +1382,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const fazerSangriaTronco = async () => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
       const { valor, data, observacao } = formSangria;
       if (!valor || parseFloat(valor) <= 0) {
