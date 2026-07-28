@@ -122,6 +122,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // aparece nos filtros de irmão irregular/desligado/excluído/etc.
   const [idsIrmaosComRegistro, setIdsIrmaosComRegistro] = useState(new Set());
   const [idsIrmaosComPendencia, setIdsIrmaosComPendencia] = useState(new Set());
+  // Botão explícito na tela principal — controla se irregular/desligado/etc.
+  // com pendência aparecem no filtro de Irmão (fica desmarcado por padrão)
+  const [mostrarPendenciaFiltro, setMostrarPendenciaFiltro] = useState(false);
   // Modal "Movimentação do Irmão": quando marcado, também mostra quem não
   // tem NENHUM registro (pra emissão de Certidão Negativa de Débitos)
   const [mostrarSemRegistros, setMostrarSemRegistros] = useState(false);
@@ -219,6 +222,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
     setIdsIrmaosComRegistro(new Set(todos.map(l => l.origem_irmao_id)));
     setIdsIrmaosComPendencia(new Set(todos.filter(l => l.status === 'pendente').map(l => l.origem_irmao_id)));
+    console.log('🔍 DEBUG situação financeira irmãos:');
+    console.log('  Total de lançamentos de irmãos encontrados:', todos.length);
+    console.log('  IDs com algum registro:', [...new Set(todos.map(l => l.origem_irmao_id))]);
+    console.log('  IDs com pendência:', [...new Set(todos.filter(l => l.status === 'pendente').map(l => l.origem_irmao_id))]);
   };
 
   useEffect(() => {
@@ -2460,14 +2467,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     const situacaoNormal = irmao.situacao === 'regular' || irmao.situacao === 'licenciado';
                     if (situacaoNormal) return true; // sempre aparece
                     // Irregular/desligado/excluído/suspenso/ex-ofício: só
-                    // aparece nesse filtro se tiver pendência em aberto
-                    return idsIrmaosComPendencia.has(irmao.id);
+                    // aparece se o botão abaixo estiver marcado E a pessoa
+                    // tiver pendência em aberto
+                    return mostrarPendenciaFiltro && idsIrmaosComPendencia.has(irmao.id);
                   })
                   .sort((a,b)=>a.nome.localeCompare(b.nome))
                   .map(irmao => (
                   <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
                 ))}
               </select>
+              <label style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.72rem',color:'var(--color-text-muted)',marginTop:'0.4rem',cursor:'pointer'}}>
+                <input type="checkbox" checked={mostrarPendenciaFiltro} onChange={e=>setMostrarPendenciaFiltro(e.target.checked)} />
+                Incluir irregulares/desligados/excluídos com pendência
+              </label>
             </div>
           )}
         </div>
