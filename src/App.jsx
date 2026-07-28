@@ -1551,6 +1551,54 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       </button>
 
                       <button
+                        onClick={() => setCurrentPage('lancamentos-lote')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'lancamentos-lote'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>📦</span>
+                        <span>Lançamentos em Lote</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentPage('creditos-debitos')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'creditos-debitos'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>💵</span>
+                        <span>Créditos/Débitos</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentPage('categorias-financeiras')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'categorias-financeiras'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>🏷️</span>
+                        <span>Categorias</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentPage('eventos-comemorativos')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'eventos-comemorativos'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>🍽️</span>
+                        <span>Ágape &amp; Festas</span>
+                      </button>
+
+                      <button
                         onClick={() => setCurrentPage('relatorio-financeiro')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'relatorio-financeiro'
@@ -1566,8 +1614,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </div>
               )}
 
-              {/* ===== MENU PARA IRMÃO COMUM (sem permissão de visualização ampliada) ===== */}
-              {userData?.nivel_acesso === 'irmao' && !permissoes?.canViewFinancial && (
+              {/* ===== MENU PARA IRMÃO COMUM (sempre visível pra quem é irmão,
+                  independente de ter ou não a permissão extra de financeiro —
+                  não tem sobreposição de itens com o bloco Financeiro acima) ===== */}
+              {userData?.nivel_acesso === 'irmao' && (
             <>
               {/* MEU PERFIL COMPLETO */}
               <button
@@ -3089,6 +3139,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <LancamentosLote
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
@@ -3097,6 +3148,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <CategoriasFinanceiras
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
