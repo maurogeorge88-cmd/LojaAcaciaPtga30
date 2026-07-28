@@ -1509,6 +1509,63 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
               )}
 
+              {/* CONTROLE FINANCEIRO — versão independente, só pra irmão de
+                  acesso simples com a permissão específica de visualizar
+                  financeiro marcada. Não abre nenhum outro módulo — só este,
+                  exatamente o que foi autorizado pra essa pessoa. */}
+              {userData?.nivel_acesso === 'irmao' && permissoes?.canViewFinancial && (
+                <div className="border-t border-primary-700 mt-2 pt-2">
+                  <button
+                    onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
+                    title="Controle Financeiro"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💰</span>
+                      {menuAberto && <span className="font-semibold">Controle Financeiro</span>}
+                    </div>
+                    {menuAberto && (
+                      <svg
+                        className={`w-4 h-4 transition-transform ${submenuFinanceiro ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {(submenuFinanceiro && menuAberto) && (
+                    <div className="bg-primary-900 bg-opacity-50">
+                      <button
+                        onClick={() => setCurrentPage('financas-loja')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'financas-loja'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>🏦</span>
+                        <span>Finanças - Loja</span>
+                      </button>
+
+                      <button
+                        onClick={() => setCurrentPage('relatorio-financeiro')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'relatorio-financeiro'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
+                        }`}
+                      >
+                        <span>📊</span>
+                        <span>Conferir Finanças</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ===== MENU PARA IRMÃO COMUM (sem permissão de visualização ampliada) ===== */}
               {userData?.nivel_acesso === 'irmao' && !permissoes?.canViewFinancial && (
             <>
@@ -1940,8 +1997,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             </>
           )}
 
-          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS (ou irmão com permissão explícita de ver financeiro) ===== */}
-          {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo' || permissoes?.canViewFinancial) && (
+          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS ===== */}
+          {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
             <>
               {/* SUBMENU: CONTROLE DE IRMÃOS */}
               <div className="border-t border-primary-700 mt-2 pt-2">
@@ -2189,7 +2246,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       </div>
                     )}
                   </div>
+                </>
+              )}
 
+              {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
+                <>
                   {/* SUBMENU: FILANTROPIA */}
                   <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
@@ -3010,6 +3071,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showError={showError}
             userEmail={userData?.email}
             userData={userData}
+            permissoes={permissoes}
           />
         )}
 
