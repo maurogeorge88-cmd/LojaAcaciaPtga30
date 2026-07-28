@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
+import { gerarCertidaoFinanceiraPDF } from '../../../utils/gerarCertidaoFinanceiraPDF';
 
 const fmtR = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -11,7 +12,7 @@ const sInp = { padding: '0.38rem 0.7rem', borderRadius: 'var(--radius-md)', font
 
 const SITUACOES_ATIVAS = ['regular', 'licenciado'];
 
-function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo }) {
+function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo, selecionadoId, onSelecionar }) {
   if (lista.length === 0) return null;
   const totLojaPg    = lista.reduce((s, i) => s + ((i.totalDespesas  || 0) - (i.despesasPendentes || 0)), 0);
   const totLojaDev   = lista.reduce((s, i) => s + (i.despesasPendentes  || 0), 0);
@@ -33,6 +34,7 @@ function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
+              <th style={{ ...sTh, textAlign: 'center', width: '2.5rem' }}>Certidão</th>
               <th style={{ ...sTh, textAlign: 'left', width: '26%' }}>Irmão</th>
               <th style={sTh}>Desp. Pagas<div style={{ fontSize: '0.62rem', fontWeight: '400', marginTop: '0.1rem' }}>Loja → Irmão (pago)</div></th>
               <th style={{ ...sTh, color: '#7c3aed' }}>Loja Deve<div style={{ fontSize: '0.62rem', fontWeight: '400', marginTop: '0.1rem', color: 'var(--color-text-muted)' }}>Loja → Irmão (pendente)</div></th>
@@ -50,6 +52,15 @@ function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo }) {
               const devedor   = valDevido > 0;
               return (
                 <tr key={idx} style={{ background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
+                  <td style={{ ...sTd, textAlign: 'center' }}>
+                    <input
+                      type="radio"
+                      name="irmaoSelecionadoCertidao"
+                      checked={selecionadoId === irmao.irmaoId}
+                      onChange={() => onSelecionar(irmao)}
+                      style={{ cursor: 'pointer', width: '1rem', height: '1rem' }}
+                    />
+                  </td>
                   <td style={{ ...sTd, textAlign: 'left' }}>
                     <p style={{ margin: 0, fontWeight: '700', color: 'var(--color-text)', fontSize: '0.875rem' }}>{irmao.nomeIrmao}</p>
                     <p style={{ margin: 0, fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>CIM: {irmao.cim || 'N/A'}</p>
@@ -69,6 +80,7 @@ function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo }) {
           </tbody>
           <tfoot>
             <tr style={{ background: 'var(--color-surface-2)', borderTop: '2px solid var(--color-border)' }}>
+              <td style={sTd}></td>
               <td style={{ ...sTd, textAlign: 'left', fontWeight: '700', color: 'var(--color-text)' }}>TOTAL ({lista.length} irmãos)</td>
               <td style={{ ...sTd, color: '#6b7280', fontWeight: '700' }}>{fmtR(totLojaPg)}</td>
               <td style={{ ...sTd, color: '#7c3aed', fontWeight: '800' }}>{fmtR(totLojaDev)}</td>
@@ -94,6 +106,44 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
   const [todosLanc, setTodosLanc]       = useState([]);   // todos os lançamentos de irmãos
   const [irmaosMap, setIrmaosMap]       = useState({});   // { id → { nome, cim, situacao } }
   const [resumoIrmaos, setResumoIrmaos] = useState([]);
+  const [selecionado, setSelecionado]   = useState(null); // irmão marcado p/ certidão
+  const [dadosLoja, setDadosLoja]       = useState(null);
+  const [nomeTesoureiro, setNomeTesoureiro] = useState('');
+  const [nomeVeneravel, setNomeVeneravel]   = useState('');
+
+  // Cabeçalho da Loja + tenta pré-preencher Tesoureiro/Venerável Mestre da
+  // gestão mais recente já empossada (sempre editável, é só uma conveniência)
+  useEffect(() => {
+    const carregarAssinantes = async () => {
+      const { data: loja } = await supabase.from('dados_loja').select('*').single();
+      if (loja) setDadosLoja(loja);
+
+      const { data: corpo } = await supabase
+        .from('corpo_administrativo')
+        .select('cargo, ano_exercicio, irmaos(nome)')
+        .eq('posse_realizada', true)
+        .order('ano_exercicio', { ascending: false });
+
+      if (corpo && corpo.length > 0) {
+        const tes = corpo.find(c => (c.cargo || '').toLowerCase().includes('tesoureiro'));
+        const ven = corpo.find(c => (c.cargo || '').toLowerCase().includes('veneravel') || (c.cargo || '').toLowerCase().includes('venerável'));
+        if (tes?.irmaos?.nome) setNomeTesoureiro(tes.irmaos.nome);
+        if (ven?.irmaos?.nome) setNomeVeneravel(ven.irmaos.nome);
+      }
+    };
+    carregarAssinantes();
+  }, []);
+
+  const handleGerarCertidao = () => {
+    if (!selecionado) return;
+    const irmaoInfo = irmaosMap[selecionado.irmaoId] || {};
+    gerarCertidaoFinanceiraPDF(
+      { nomeIrmao: selecionado.nomeIrmao, cim: selecionado.cim, grau: irmaoInfo },
+      selecionado.receitasPendentes || 0,
+      dadosLoja,
+      { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
+    );
+  };
 
   // ── Busca inicial quando o modal abre ─────────────────────────
   useEffect(() => {
@@ -107,7 +157,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       // 1. Todos os irmãos (para saber situação)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, cim, situacao')
+        .select('id, nome, cim, situacao, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
         .order('nome');
       const mapa = {};
       (irmaosData || []).forEach(i => { mapa[i.id] = i; });
@@ -185,6 +235,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       if (!resumoPorIrmao[id]) {
         const dadosIrmao = irmaosMap[id] || lanc.irmaos || {};
         resumoPorIrmao[id] = {
+          irmaoId: id,
           nomeIrmao: dadosIrmao.nome || `Irmão #${id}`,
           cim: dadosIrmao.cim || null,
           situacao: (dadosIrmao.situacao || '').toLowerCase(),
@@ -301,6 +352,38 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
             </div>
           </div>
 
+          {/* ── Emissão de Certidão (Negativa/Positiva) do irmão marcado ── */}
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '1rem', padding: '0.75rem 1rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Irmão marcado</label>
+              <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: '700', color: selecionado ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+                {selecionado ? selecionado.nomeIrmao : 'Marque um irmão na tabela abaixo ↓'}
+              </p>
+            </div>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Tesoureiro</label>
+              <input value={nomeTesoureiro} onChange={e => setNomeTesoureiro(e.target.value)} placeholder="Nome do Tesoureiro"
+                style={{ width: '100%', ...sInp, cursor: 'text' }} />
+            </div>
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Venerável Mestre</label>
+              <input value={nomeVeneravel} onChange={e => setNomeVeneravel(e.target.value)} placeholder="Nome do Venerável Mestre"
+                style={{ width: '100%', ...sInp, cursor: 'text' }} />
+            </div>
+            <button
+              onClick={handleGerarCertidao}
+              disabled={!selecionado}
+              style={{
+                padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem',
+                cursor: selecionado ? 'pointer' : 'not-allowed', opacity: selecionado ? 1 : 0.5,
+                background: selecionado ? (selecionado.receitasPendentes > 0 ? '#ea580c' : '#16a34a') : 'var(--color-surface)',
+                color: '#fff', whiteSpace: 'nowrap'
+              }}
+            >
+              📄 Gerar {selecionado ? (selecionado.receitasPendentes > 0 ? 'Certidão Positiva' : 'Certidão Negativa') : 'Certidão'}
+            </button>
+          </div>
+
           {/* Cards resumo */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
             {[
@@ -329,7 +412,8 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
           ) : (
             <TabelaIrmaos lista={ativosExibir} ordem={ordem}
               titulo="👥 Irmãos Ativos e Licenciados"
-              corTitulo="#2563eb" bgTitulo="rgba(37,99,235,0.06)" />
+              corTitulo="#2563eb" bgTitulo="rgba(37,99,235,0.06)"
+              selecionadoId={selecionado?.irmaoId} onSelecionar={setSelecionado} />
           )}
 
           {/* Tabela inativos */}
@@ -342,7 +426,8 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
               </div>
               <TabelaIrmaos lista={inativos} ordem={ordem}
                 titulo="🔴 Débitos de Irmãos Inativos — Irregular / Desligado / Suspenso / Excluído / Ex-Ofício"
-                corTitulo="#ea580c" bgTitulo="rgba(234,88,12,0.06)" />
+                corTitulo="#ea580c" bgTitulo="rgba(234,88,12,0.06)"
+                selecionadoId={selecionado?.irmaoId} onSelecionar={setSelecionado} />
             </>
           )}
 
