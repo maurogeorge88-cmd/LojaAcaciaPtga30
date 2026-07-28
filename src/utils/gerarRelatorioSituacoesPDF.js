@@ -112,9 +112,13 @@ export const gerarRelatorioSituacoesPDF = async (irmaos, dadosLoja) => {
   doc.setTextColor(0);
 
   // ── Agrupar por situação (mesma ordem/lista oficial usada no cadastro) ──────
+  // "Falecido" aparece como "Oriente Eterno" só neste relatório — o valor
+  // salvo no banco (situacao === 'falecido') continua o mesmo, é só o texto
+  // exibido que muda aqui.
+  const LABELS_RELATORIO = { falecido: 'Oriente Eterno' };
   const grupos = STATUS_IRMAOS.map(s => ({
     valor: s.value,
-    label: s.label,
+    label: LABELS_RELATORIO[s.value] || s.label,
     irmaos: irmaos.filter(i => (i.situacao || 'regular').toLowerCase() === s.value),
   })).filter(g => g.irmaos.length > 0);
 
