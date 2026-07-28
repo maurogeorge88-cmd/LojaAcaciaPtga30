@@ -147,10 +147,10 @@ export const gerarCertidaoFinanceiraPDF = (irmao, valorDevido, dadosLoja, assina
     { t: irmao.cim || '—', b: true },
     { t: ', detentor do Grau ', b: false },
     { t: obterGrauLabel(irmao.grau), b: true },
-    { t: ', NÃO se encontra em ', b: false },
-    { t: 'regularidade financeira', b: true },
+    { t: ', encontra-se com ', b: false },
+    { t: 'PENDÊNCIAS financeiras', b: true },
     { t: ' perante a Tesouraria desta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, ', b: false },
-    { t: `constando, até a presente data, débito(s) pendente(s) no valor total de ${fmtR(valorDevido)}.`, b: true },
+    { t: `constando, até a presente data, débitos pendentes no valor total de ${fmtR(valorDevido)}.`, b: true },
   ];
   desenharParagrafoJustificado(negativa ? partesNegativa : partesPositiva);
 
