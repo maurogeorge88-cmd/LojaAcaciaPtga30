@@ -7,7 +7,8 @@ import { supabase } from '../../supabaseClient';
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-export default function LancamentosLote({ showSuccess, showError }) {
+export default function LancamentosLote({ showSuccess, showError, permissoes }) {
+  const somenteLeitura = permissoes && !permissoes.canEditFinancial;
   const [irmaos, setIrmaos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [eventosComemorativos, setEventosComemorativos] = useState([]);
@@ -204,6 +205,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
   // Salvar todos os lançamentos
   const salvarLancamentos = async () => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     setLoading(true);
 
     try {
