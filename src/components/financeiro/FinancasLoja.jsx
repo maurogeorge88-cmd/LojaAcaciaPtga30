@@ -116,6 +116,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
   const [movForm, setMovForm] = useState({ irmaoId: '', dataInicio: '', dataFim: '' });
 
+  // Quais irmãos têm ALGUM lançamento (qualquer status) e quais têm
+  // PENDÊNCIA em aberto — consulta própria, olhando o histórico completo
+  // (não depende de nenhum filtro de data/tela ativo), pra decidir quem
+  // aparece nos filtros de irmão irregular/desligado/excluído/etc.
+  const [idsIrmaosComRegistro, setIdsIrmaosComRegistro] = useState(new Set());
+  const [idsIrmaosComPendencia, setIdsIrmaosComPendencia] = useState(new Set());
+  // Modal "Movimentação do Irmão": quando marcado, também mostra quem não
+  // tem NENHUM registro (pra emissão de Certidão Negativa de Débitos)
+  const [mostrarSemRegistros, setMostrarSemRegistros] = useState(false);
+
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
   const [fechandoMes, setFechandoMes] = useState(false);
@@ -183,6 +193,37 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (mes === 0) return `${ano}`;
     return `${mes.toString().padStart(2, '0')}/${ano}`;
   };
+
+  // Busca, no histórico COMPLETO (sem filtro de data/tela), quais irmãos têm
+  // algum lançamento e quais têm pendência em aberto. Paginado em blocos de
+  // 1000 (padrão do projeto), pra não truncar silenciosamente.
+  const carregarSituacaoFinanceiraIrmaos = async () => {
+    let todos = [];
+    let inicio = 0;
+    const tamanhoPagina = 1000;
+    let continuar = true;
+    while (continuar) {
+      const { data: lote } = await supabase
+        .from('lancamentos_loja')
+        .select('origem_irmao_id, status')
+        .eq('origem_tipo', 'Irmao')
+        .not('origem_irmao_id', 'is', null)
+        .range(inicio, inicio + tamanhoPagina - 1);
+      if (lote && lote.length > 0) {
+        todos = [...todos, ...lote];
+        inicio += tamanhoPagina;
+        if (lote.length < tamanhoPagina) continuar = false;
+      } else {
+        continuar = false;
+      }
+    }
+    setIdsIrmaosComRegistro(new Set(todos.map(l => l.origem_irmao_id)));
+    setIdsIrmaosComPendencia(new Set(todos.filter(l => l.status === 'pendente').map(l => l.origem_irmao_id)));
+  };
+
+  useEffect(() => {
+    carregarSituacaoFinanceiraIrmaos();
+  }, []);
 
   useEffect(() => {
     // OTIMIZAÇÃO: rodar em paralelo em vez de sequencial
@@ -2414,7 +2455,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos</option>
-                {irmaos.map(irmao => (
+                {irmaos
+                  .filter(irmao => {
+                    const situacaoNormal = irmao.situacao === 'regular' || irmao.situacao === 'licenciado';
+                    if (situacaoNormal) return true; // sempre aparece
+                    // Irregular/desligado/excluído/suspenso/ex-ofício: só
+                    // aparece nesse filtro se tiver pendência em aberto
+                    return idsIrmaosComPendencia.has(irmao.id);
+                  })
+                  .sort((a,b)=>a.nome.localeCompare(b.nome))
+                  .map(irmao => (
                   <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
                 ))}
               </select>
@@ -3973,11 +4023,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <select value={movForm.irmaoId} onChange={e=>setMovForm(f=>({...f,irmaoId:e.target.value}))}
                   style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                   <option value="">-- Selecionar irmão --</option>
-                  {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
+                  {irmaos
+                    .filter(i => {
+                      const situacaoNormal = i.situacao === 'regular' || i.situacao === 'licenciado';
+                      if (situacaoNormal) return true; // sempre aparece
+                      const temRegistro = idsIrmaosComRegistro.has(i.id);
+                      if (temRegistro) return true; // irregular/desligado/etc. com histórico
+                      // Sem nenhum registro: só aparece se marcou a Certidão Negativa
+                      return mostrarSemRegistros;
+                    })
+                    .sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
                     <option key={i.id} value={i.id}>{i.nome}</option>
                   ))}
                 </select>
               </div>
+              <label style={{display:'flex',alignItems:'center',gap:'0.5rem',fontSize:'0.78rem',color:'var(--color-text-muted)',cursor:'pointer'}}>
+                <input type="checkbox" checked={mostrarSemRegistros} onChange={e=>setMostrarSemRegistros(e.target.checked)} />
+                Mostrar irmãos sem nenhum registro (Certidão Negativa)
+              </label>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Início *</label>
