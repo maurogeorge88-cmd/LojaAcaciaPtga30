@@ -2478,7 +2478,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </select>
               <label style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.72rem',color:'var(--color-text-muted)',marginTop:'0.4rem',cursor:'pointer'}}>
                 <input type="checkbox" checked={mostrarPendenciaFiltro} onChange={e=>setMostrarPendenciaFiltro(e.target.checked)} />
-                Incluir irregulares/desligados/excluídos com pendência
+                Inativos
+                <span style={{fontSize:'0.65rem',opacity:0.7}}>({idsIrmaosComPendencia.size} com pendência encontrados)</span>
               </label>
             </div>
           )}
@@ -4053,6 +4054,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <input type="checkbox" checked={mostrarSemRegistros} onChange={e=>setMostrarSemRegistros(e.target.checked)} />
                 Mostrar irmãos sem nenhum registro (Certidão Negativa)
               </label>
+              <p style={{fontSize:'0.62rem',color:'var(--color-text-muted)',opacity:0.7,margin:0}}>
+                {irmaos.length} irmãos no total • {idsIrmaosComRegistro.size} com algum registro • {idsIrmaosComPendencia.size} com pendência
+              </p>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Início *</label>
