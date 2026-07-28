@@ -14,6 +14,18 @@ const obterGrauLabel = (situacaoOuGrau) => {
   return '—';
 };
 
+// A fonte padrão (Helvetica) do jsPDF não tem o glifo "∴" (símbolo maçônico
+// usado em "A∴R∴L∴S∴") — ele sai corrompido no PDF. Sanitiza removendo esse
+// e outros símbolos que a fonte padrão não suporta, mantendo acentuação
+// normal (que a Helvetica do jsPDF já suporta nativamente).
+const sanitizeTexto = (str) => (str || '')
+  .replace(/∴/g, '')
+  .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+  .replace(/[\u2600-\u27BF]/gu, '')
+  .replace(/[\uFE00-\uFE0F]/gu, '')
+  .replace(/\s{2,}/g, ' ')
+  .trim();
+
 /**
  * Gera a Certidão Negativa (sem débito) ou Positiva (com débito) de um irmão,
  * decidido automaticamente pelo valor de `valorDevido`.
@@ -30,6 +42,66 @@ export const gerarCertidaoFinanceiraPDF = (irmao, valorDevido, dadosLoja, assina
 
   const txt = (text, x, yy, opts = {}) => doc.text(String(text), x, yy, opts);
   const negativa = !(valorDevido > 0);
+  const larguraUtil = W - M * 2;
+  const alturaLinha = 6.2;
+
+  // ── Desenha um parágrafo composto de trechos (normal/negrito), quebrando
+  // linha pela largura útil e JUSTIFICANDO todas as linhas menos a última
+  // (mesma convenção de textos formais/jurídicos). ─────────────────────────
+  const desenharParagrafoJustificado = (partes, tamanhoFonte = 11.5) => {
+    doc.setFontSize(tamanhoFonte);
+    doc.setFont('helvetica', 'normal');
+    const espacoLargura = doc.getTextWidth(' ');
+
+    // Quebra as partes em palavras (sem espaço embutido), preservando o
+    // estilo (negrito/normal) de cada uma.
+    const palavras = [];
+    partes.forEach(parte => {
+      sanitizeTexto(parte.t).split(' ').forEach(p => {
+        if (p.length > 0) palavras.push({ texto: p, b: parte.b });
+      });
+    });
+
+    // Agrupa as palavras em linhas, respeitando a largura útil da página
+    const linhas = [];
+    let linhaAtual = [];
+    let larguraAtual = 0;
+    palavras.forEach(w => {
+      doc.setFont('helvetica', w.b ? 'bold' : 'normal');
+      const larguraPalavra = doc.getTextWidth(w.texto);
+      const espacoExtra = linhaAtual.length > 0 ? espacoLargura : 0;
+      if (larguraAtual + espacoExtra + larguraPalavra > larguraUtil && linhaAtual.length > 0) {
+        linhas.push(linhaAtual);
+        linhaAtual = [];
+        larguraAtual = 0;
+      }
+      if (linhaAtual.length > 0) larguraAtual += espacoLargura;
+      linhaAtual.push(w);
+      larguraAtual += larguraPalavra;
+    });
+    if (linhaAtual.length > 0) linhas.push(linhaAtual);
+
+    // Desenha cada linha — justificada (espaço distribuído), exceto a última
+    linhas.forEach((linha, idxLinha) => {
+      const ehUltima = idxLinha === linhas.length - 1;
+      const larguraPalavras = linha.reduce((s, w) => {
+        doc.setFont('helvetica', w.b ? 'bold' : 'normal');
+        return s + doc.getTextWidth(w.texto);
+      }, 0);
+      const gaps = linha.length - 1;
+      const espacoUsado = (!ehUltima && gaps > 0)
+        ? (larguraUtil - larguraPalavras) / gaps
+        : espacoLargura;
+
+      let x = M;
+      linha.forEach((w, i) => {
+        doc.setFont('helvetica', w.b ? 'bold' : 'normal');
+        txt(w.texto, x, y);
+        x += doc.getTextWidth(w.texto) + (i < linha.length - 1 ? espacoUsado : 0);
+      });
+      y += alturaLinha;
+    });
+  };
 
   // ── Cabeçalho da Loja (mesmo padrão dos demais relatórios) ─────────────────
   if (dadosLoja?.logo_url) {
@@ -40,9 +112,9 @@ export const gerarCertidaoFinanceiraPDF = (irmao, valorDevido, dadosLoja, assina
   }
 
   doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-  txt(dadosLoja?.nome || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', W / 2, y, { align: 'center' }); y += 6;
+  txt(sanitizeTexto(dadosLoja?.nome) || 'ARLS Acacia de Paranatinga no 30', W / 2, y, { align: 'center' }); y += 6;
   doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
-  txt(dadosLoja?.endereco || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 6;
+  txt(sanitizeTexto(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 6;
 
   doc.setDrawColor(60); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
   doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
@@ -54,86 +126,40 @@ export const gerarCertidaoFinanceiraPDF = (irmao, valorDevido, dadosLoja, assina
   txt(negativa ? 'CERTIDÃO NEGATIVA DE DÉBITOS' : 'CERTIDÃO POSITIVA DE DÉBITOS', W / 2, y, { align: 'center' });
   y += 16;
 
-  // ── Corpo do texto — parágrafo com trechos em negrito ──────────────────────
-  // jsPDF não tem "negrito inline" nativo dentro de splitTextToSize, então o
-  // texto é montado manualmente, trecho a trecho, medindo a largura de cada
-  // pedaço pra quebrar linha corretamente e destacar só as partes importantes.
-  const larguraUtil = W - M * 2;
-  const alturaLinha = 6.2;
-
-  const montarPartes = () => {
-    if (negativa) {
-      return [
-        { t: 'Certificamos, para os devidos fins, que o Irmão ', b: false },
-        { t: irmao.nomeIrmao || '—', b: true },
-        { t: ', portador do Cadastro de Identidade Maçônica – CIM nº ', b: false },
-        { t: irmao.cim || '—', b: true },
-        { t: ', detentor do Grau ', b: false },
-        { t: obterGrauLabel(irmao.grau), b: true },
-        { t: ', encontra-se em ', b: false },
-        { t: 'plena regularidade financeira', b: true },
-        { t: ' perante a Tesouraria desta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, ', b: false },
-        { t: 'inexistindo, até a presente data, quaisquer débitos, pendências financeiras ou obrigações pecuniárias em aberto em seu nome.', b: true },
-      ];
-    }
-    return [
-      { t: 'Certificamos, para os devidos fins, que o Irmão ', b: false },
-      { t: irmao.nomeIrmao || '—', b: true },
-      { t: ', portador do Cadastro de Identidade Maçônica – CIM nº ', b: false },
-      { t: irmao.cim || '—', b: true },
-      { t: ', detentor do Grau ', b: false },
-      { t: obterGrauLabel(irmao.grau), b: true },
-      { t: ', consta com débito(s) pendente(s) perante a Tesouraria desta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, no valor total de ', b: false },
-      { t: fmtR(valorDevido), b: true },
-      { t: ', relativo(s) a obrigação(ões) financeira(s) em aberto até a presente data.', b: false },
-    ];
-  };
-
-  // Quebra as "partes" (cada uma com seu próprio estilo normal/negrito) em
-  // palavras, remontando linha a linha respeitando a largura útil da página.
-  const palavras = [];
-  montarPartes().forEach(parte => {
-    parte.t.split(' ').forEach((p, i, arr) => {
-      palavras.push({ texto: p + (i < arr.length - 1 ? ' ' : ''), b: parte.b });
-    });
-  });
-
-  doc.setFontSize(11.5);
-  let linhaAtual = [];
-  let larguraAtual = 0;
-
-  const desenharLinha = (linha) => {
-    let x = M;
-    linha.forEach(w => {
-      doc.setFont('helvetica', w.b ? 'bold' : 'normal');
-      txt(w.texto, x, y);
-      x += doc.getTextWidth(w.texto);
-    });
-    y += alturaLinha;
-  };
-
-  palavras.forEach(w => {
-    doc.setFont('helvetica', w.b ? 'bold' : 'normal');
-    const largura = doc.getTextWidth(w.texto);
-    if (larguraAtual + largura > larguraUtil) {
-      desenharLinha(linhaAtual);
-      linhaAtual = [];
-      larguraAtual = 0;
-    }
-    linhaAtual.push(w);
-    larguraAtual += largura;
-  });
-  if (linhaAtual.length > 0) desenharLinha(linhaAtual);
+  // ── Corpo do texto — mesma estrutura de frase nos dois casos, só troca o
+  // trecho que fala da situação (regular / com débito). ─────────────────────
+  const partesNegativa = [
+    { t: 'Certificamos, para os devidos fins, que o Irmão ', b: false },
+    { t: irmao.nomeIrmao || '—', b: true },
+    { t: ', portador do Cadastro de Identidade Maçônica – CIM nº ', b: false },
+    { t: irmao.cim || '—', b: true },
+    { t: ', detentor do Grau ', b: false },
+    { t: obterGrauLabel(irmao.grau), b: true },
+    { t: ', encontra-se em ', b: false },
+    { t: 'plena regularidade financeira', b: true },
+    { t: ' perante a Tesouraria desta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, ', b: false },
+    { t: 'inexistindo, até a presente data, quaisquer débitos, pendências financeiras ou obrigações pecuniárias em aberto em seu nome.', b: true },
+  ];
+  const partesPositiva = [
+    { t: 'Certificamos, para os devidos fins, que o Irmão ', b: false },
+    { t: irmao.nomeIrmao || '—', b: true },
+    { t: ', portador do Cadastro de Identidade Maçônica – CIM nº ', b: false },
+    { t: irmao.cim || '—', b: true },
+    { t: ', detentor do Grau ', b: false },
+    { t: obterGrauLabel(irmao.grau), b: true },
+    { t: ', NÃO se encontra em ', b: false },
+    { t: 'regularidade financeira', b: true },
+    { t: ' perante a Tesouraria desta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, ', b: false },
+    { t: `constando, até a presente data, débito(s) pendente(s) no valor total de ${fmtR(valorDevido)}.`, b: true },
+  ];
+  desenharParagrafoJustificado(negativa ? partesNegativa : partesPositiva);
 
   y += 8;
 
   // ── Parágrafo final ──────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(11.5);
-  const paragrafoFinal = doc.splitTextToSize(
-    'A presente certidão é expedida a pedido do interessado e destina-se aos fins que se fizerem necessários, produzindo seus efeitos na data de sua emissão.',
-    larguraUtil
-  );
-  paragrafoFinal.forEach(linha => { txt(linha, M, y); y += alturaLinha; });
+  desenharParagrafoJustificado([
+    { t: 'A presente certidão é expedida a pedido do interessado e destina-se aos fins que se fizerem necessários, produzindo seus efeitos na data de sua emissão.', b: false },
+  ]);
 
   y += 14;
 
@@ -142,18 +168,24 @@ export const gerarCertidaoFinanceiraPDF = (irmao, valorDevido, dadosLoja, assina
   const cidade = dadosLoja?.cidade || 'Paranatinga';
   const estado = dadosLoja?.estado || 'MT';
   const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(0);
   txt(`${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`, M, y);
   y += 26;
 
   // ── Assinaturas ─────────────────────────────────────────────────────────
+  // Uma única linha por assinante: a linha desenhada + o cargo logo abaixo.
+  // Se um nome for informado, ele aparece ACIMA da linha (como de praxe em
+  // atos formais); se não for informado, fica só a linha em branco pra
+  // assinatura manual — sem nenhum texto duplicado por baixo.
   const assinatura = (nome, cargo, yy) => {
+    if (nome) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0);
+      txt(sanitizeTexto(nome), M, yy - 2);
+    }
     doc.setDrawColor(0); doc.setLineWidth(0.3);
     doc.line(M, yy, M + 80, yy);
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-    txt(nome || '_____________________________', M, yy + 5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
-    txt(cargo, M, yy + 10);
+    txt(cargo, M, yy + 5);
     doc.setTextColor(0);
   };
   assinatura(assinantes.tesoureiro, 'Tesoureiro', y);
