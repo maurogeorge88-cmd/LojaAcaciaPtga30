@@ -3187,17 +3187,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 const origemAberta = filtroIrmaoAtivo || expandedLista.origens.has(origem.key);
                 const toggleOrigem = () => setExpandedLista(prev => {
                   const novaOrigens = new Set(prev.origens);
-                  const novaDatas  = new Set(prev.datas);
                   if (origemAberta) {
                     novaOrigens.delete(origem.key);
-                    // colapsa todos os grupos de data desta origem
-                    grupos.forEach(g => novaDatas.delete(`${origem.key}__${g.chave}`));
                   } else {
                     novaOrigens.add(origem.key);
-                    // expande todos os grupos de data desta origem
-                    grupos.forEach(g => novaDatas.add(`${origem.key}__${g.chave}`));
                   }
-                  return { origens: novaOrigens, datas: novaDatas };
+                  return { ...prev, origens: novaOrigens };
                 });
 
                 // Totais da origem
