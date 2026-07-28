@@ -122,12 +122,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // aparece nos filtros de irmão irregular/desligado/excluído/etc.
   const [idsIrmaosComRegistro, setIdsIrmaosComRegistro] = useState(new Set());
   const [idsIrmaosComPendencia, setIdsIrmaosComPendencia] = useState(new Set());
+  // Lista COMPLETA de irmãos, sem nenhum filtro de situação — alimenta o
+  // botão "Inativos" em todos os lugares (Modal de Lançamento, filtro
+  // principal e Modal de Movimentação)
+  const [todosIrmaosCompleto, setTodosIrmaosCompleto] = useState([]);
   // Botão explícito na tela principal — controla se irregular/desligado/etc.
   // com pendência aparecem no filtro de Irmão (fica desmarcado por padrão)
   const [mostrarPendenciaFiltro, setMostrarPendenciaFiltro] = useState(false);
   // Modal "Movimentação do Irmão": quando marcado, também mostra quem não
   // tem NENHUM registro (pra emissão de Certidão Negativa de Débitos)
   const [mostrarSemRegistros, setMostrarSemRegistros] = useState(false);
+  // Botão "Inativos" do modal de Movimentação (mesmo padrão do Modal de Lançamento)
+  const [mostrarInativosMovimentacao, setMostrarInativosMovimentacao] = useState(false);
 
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
@@ -397,6 +403,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       );
       
       console.log('✅ Irmãos disponíveis para lançamento:', irmaosDisponiveis.length);
+      
+      // Guarda TAMBÉM a lista completa, sem filtro nenhum — é o que alimenta
+      // o botão "Inativos" (mesmo padrão já usado no Modal de Lançamento),
+      // tanto ali quanto no filtro principal e no modal de Movimentação.
+      setTodosIrmaosCompleto(todosIrmaos || []);
       
       if (irmaosDisponiveis.length === 0) {
         console.warn('⚠️ NENHUM IRMÃO DISPONÍVEL PARA LANÇAMENTO!');
@@ -2455,32 +2466,59 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* Filtro por Irmão (só aparece se origem = Irmão) */}
           {filtros.origem_tipo === 'Irmao' && (
             <div>
-              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.25rem'}}>
+                <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Irmão</label>
+                <button
+                  type="button"
+                  onClick={() => setMostrarPendenciaFiltro(v => !v)}
+                  style={{
+                    display:'flex',alignItems:'center',gap:'0.35rem',
+                    padding:'0.2rem 0.6rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
+                    cursor:'pointer',border:'1px solid',
+                    background: mostrarPendenciaFiltro ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
+                    color: mostrarPendenciaFiltro ? '#ef4444' : 'var(--color-text-muted)',
+                    borderColor: mostrarPendenciaFiltro ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
+                  }}
+                >
+                  {mostrarPendenciaFiltro ? '🔴 Inativos' : '⚪ Só Ativos'}
+                </button>
+              </div>
               <select
                 value={filtros.origem_irmao_id}
                 onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos</option>
-                {irmaos
-                  .filter(irmao => {
-                    const situacaoNormal = irmao.situacao === 'regular' || irmao.situacao === 'licenciado';
-                    if (situacaoNormal) return true; // sempre aparece
-                    // Irregular/desligado/excluído/suspenso/ex-ofício: só
-                    // aparece se o botão abaixo estiver marcado E a pessoa
-                    // tiver pendência em aberto
-                    return mostrarPendenciaFiltro && idsIrmaosComPendencia.has(irmao.id);
-                  })
-                  .sort((a,b)=>a.nome.localeCompare(b.nome))
-                  .map(irmao => (
-                  <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
-                ))}
+                {!mostrarPendenciaFiltro ? (
+                  irmaos
+                    .sort((a,b)=>a.nome.localeCompare(b.nome))
+                    .map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                    ))
+                ) : (
+                  <>
+                    <optgroup label="── Inativos com pendência ──">
+                      {todosIrmaosCompleto
+                        .filter(i => {
+                          const situacaoNormal = i.situacao === 'regular' || i.situacao === 'licenciado';
+                          if (situacaoNormal) return false; // já aparece no grupo de ativos
+                          return idsIrmaosComPendencia.has(i.id);
+                        })
+                        .sort((a,b)=>a.nome.localeCompare(b.nome))
+                        .map(irmao => (
+                          <option key={irmao.id} value={irmao.id}>{irmao.nome} ({irmao.situacao})</option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="── Ativos / Licenciados ──">
+                      {irmaos
+                        .sort((a,b)=>a.nome.localeCompare(b.nome))
+                        .map(irmao => (
+                          <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                        ))}
+                    </optgroup>
+                  </>
+                )}
               </select>
-              <label style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.72rem',color:'var(--color-text-muted)',marginTop:'0.4rem',cursor:'pointer'}}>
-                <input type="checkbox" checked={mostrarPendenciaFiltro} onChange={e=>setMostrarPendenciaFiltro(e.target.checked)} />
-                Inativos
-                <span style={{fontSize:'0.65rem',opacity:0.7}}>({idsIrmaosComPendencia.size} com pendência encontrados)</span>
-              </label>
             </div>
           )}
         </div>
@@ -2500,6 +2538,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         setFormData={setFormLancamento}
         categorias={categorias}
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
+        todosIrmaos={todosIrmaosCompleto}
         editando={editando}
         eventosComemorativos={eventosComemorativos}
         projetos={projetosAtivos}
@@ -4032,31 +4071,66 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             <div style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
               <div>
-                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Irmão *</label>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.3rem'}}>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase'}}>Irmão *</label>
+                  <button
+                    type="button"
+                    onClick={() => { setMostrarInativosMovimentacao(v => !v); setMovForm(f => ({ ...f, irmaoId: '' })); }}
+                    style={{
+                      display:'flex',alignItems:'center',gap:'0.35rem',
+                      padding:'0.2rem 0.6rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
+                      cursor:'pointer',border:'1px solid',
+                      background: mostrarInativosMovimentacao ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
+                      color: mostrarInativosMovimentacao ? '#ef4444' : 'var(--color-text-muted)',
+                      borderColor: mostrarInativosMovimentacao ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
+                    }}
+                  >
+                    {mostrarInativosMovimentacao ? '🔴 Inativos' : '⚪ Só Ativos'}
+                  </button>
+                </div>
                 <select value={movForm.irmaoId} onChange={e=>setMovForm(f=>({...f,irmaoId:e.target.value}))}
                   style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                   <option value="">-- Selecionar irmão --</option>
-                  {irmaos
-                    .filter(i => {
-                      const situacaoNormal = i.situacao === 'regular' || i.situacao === 'licenciado';
-                      if (situacaoNormal) return true; // sempre aparece
-                      const temRegistro = idsIrmaosComRegistro.has(i.id);
-                      if (temRegistro) return true; // irregular/desligado/etc. com histórico
-                      // Sem nenhum registro: só aparece se marcou a Certidão Negativa
-                      return mostrarSemRegistros;
-                    })
-                    .sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
-                    <option key={i.id} value={i.id}>{i.nome}</option>
-                  ))}
+                  {!mostrarInativosMovimentacao ? (
+                    irmaos
+                      .sort((a,b)=>a.nome.localeCompare(b.nome))
+                      .map(i => (
+                        <option key={i.id} value={i.id}>{i.nome}</option>
+                      ))
+                  ) : (
+                    <>
+                      <optgroup label="── Inativos ──">
+                        {todosIrmaosCompleto
+                          .filter(i => {
+                            const situacaoNormal = i.situacao === 'regular' || i.situacao === 'licenciado';
+                            if (situacaoNormal) return false; // já aparece no grupo de ativos
+                            const temRegistro = idsIrmaosComRegistro.has(i.id);
+                            if (temRegistro) return true; // tem histórico com a Loja
+                            // Sem nenhum registro: só entra se marcou Certidão Negativa
+                            return mostrarSemRegistros;
+                          })
+                          .sort((a,b)=>a.nome.localeCompare(b.nome))
+                          .map(i => (
+                            <option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>
+                          ))}
+                      </optgroup>
+                      <optgroup label="── Ativos / Licenciados ──">
+                        {irmaos
+                          .sort((a,b)=>a.nome.localeCompare(b.nome))
+                          .map(i => (
+                            <option key={i.id} value={i.id}>{i.nome}</option>
+                          ))}
+                      </optgroup>
+                    </>
+                  )}
                 </select>
               </div>
-              <label style={{display:'flex',alignItems:'center',gap:'0.5rem',fontSize:'0.78rem',color:'var(--color-text-muted)',cursor:'pointer'}}>
-                <input type="checkbox" checked={mostrarSemRegistros} onChange={e=>setMostrarSemRegistros(e.target.checked)} />
-                Mostrar irmãos sem nenhum registro (Certidão Negativa)
-              </label>
-              <p style={{fontSize:'0.62rem',color:'var(--color-text-muted)',opacity:0.7,margin:0}}>
-                {irmaos.length} irmãos no total • {idsIrmaosComRegistro.size} com algum registro • {idsIrmaosComPendencia.size} com pendência
-              </p>
+              {mostrarInativosMovimentacao && (
+                <label style={{display:'flex',alignItems:'center',gap:'0.5rem',fontSize:'0.78rem',color:'var(--color-text-muted)',cursor:'pointer'}}>
+                  <input type="checkbox" checked={mostrarSemRegistros} onChange={e=>setMostrarSemRegistros(e.target.checked)} />
+                  Mostrar também quem não tem nenhum registro (Certidão Negativa)
+                </label>
+              )}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Início *</label>
