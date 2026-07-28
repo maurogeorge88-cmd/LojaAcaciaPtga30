@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function CategoriasFinanceiras({ showSuccess, showError }) {
+export default function CategoriasFinanceiras({ showSuccess, showError, permissoes }) {
+  const somenteLeitura = permissoes && !permissoes.canEditFinancial;
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -68,7 +69,8 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   // ========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
+
     try {
       // Calcular nível automaticamente
       let nivel = 1;
@@ -127,6 +129,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   // 🗑️ EXCLUIR CATEGORIA
   // ========================================
   const handleExcluir = async (id) => {
+    if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     // Verificar se tem subcategorias
     const temFilhos = categorias.some(c => c.categoria_pai_id === id);
     if (temFilhos) {
