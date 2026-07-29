@@ -1024,47 +1024,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
-      // Se lançamento tem projeto vinculado, remover de receitas/custos_projeto
-      const lancToDelete = lancamentos.find(l => l.id === id);
-      if (lancToDelete?.projeto_id) {
-        if (lancToDelete.tipo === 'receita') {
-          // Tentar excluir por lancamento_id (preciso); fallback por data+descricao
-          const { data: recVinc } = await supabase.from('receitas_projeto')
-            .select('id')
-            .eq('projeto_id', lancToDelete.projeto_id)
-            .eq('lancamento_id', lancToDelete.id)
-            .maybeSingle();
-          if (recVinc) {
-            await supabase.from('receitas_projeto').delete().eq('id', recVinc.id);
-          } else {
-            const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
-            await supabase.from('receitas_projeto')
-              .delete()
-              .eq('projeto_id', lancToDelete.projeto_id)
-              .eq('origem', 'Finanças Loja')
-              .eq('data_receita', dataRef)
-              .eq('descricao', lancToDelete.descricao);
-          }
-        } else {
-          const { data: custVinc } = await supabase.from('custos_projeto')
-            .select('id')
-            .eq('projeto_id', lancToDelete.projeto_id)
-            .eq('lancamento_id', lancToDelete.id)
-            .maybeSingle();
-          if (custVinc) {
-            await supabase.from('custos_projeto').delete().eq('id', custVinc.id);
-          } else {
-            const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
-            await supabase.from('custos_projeto')
-              .delete()
-              .eq('projeto_id', lancToDelete.projeto_id)
-              .eq('categoria', 'Finanças Loja')
-              .eq('data_custo', dataRef)
-              .eq('descricao', lancToDelete.descricao);
-          }
-        }
-      }
-
+      // Não mexe mais em receitas_projeto/custos_projeto — uma vez criada a
+      // linha do projeto, ela só é alterada/excluída manualmente na tela de
+      // Projetos, nunca automaticamente a partir de uma ação no Finanças.
       const { error } = await supabase
         .from('lancamentos_loja')
         .delete()
