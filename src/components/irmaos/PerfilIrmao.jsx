@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
 import GestaoSituacoes from './GestaoSituacoes';
+import InstrucoesTrabalhos from './InstrucoesTrabalhos';
 
 export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError, permissoes, userEmail, userData }) {
   const [irmao, setIrmao] = useState(null);
@@ -1327,6 +1328,15 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Instruções Recebidas e Trabalhos Apresentados */}
+              <div className="p-6 rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <InstrucoesTrabalhos
+                  irmao={irmao}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
               </div>
             </div>
           )}
