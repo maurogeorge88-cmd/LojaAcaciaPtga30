@@ -59,7 +59,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   };
 
   const salvar = async (e) => {
-    e.preventDefault();
+    if (e?.preventDefault) e.preventDefault();
     if (!form.grau || !form.data_instrucao) {
       showError('Preencha o grau e a data da instrução.');
       return;
@@ -142,8 +142,11 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
         </button>
       </div>
 
-      {/* Formulário */}
-      <form onSubmit={salvar} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+      {/* Formulário — usa <div>, não <form>: esse componente fica dentro do
+          formulário principal de cadastro do irmão, e HTML não permite
+          formulário aninhado (o botão "type=submit" acabava disparando o
+          formulário de fora inteiro, tirando da tela sem salvar certo). */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
         <div>
           <label style={sLabel}>Grau</label>
           <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
@@ -164,7 +167,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           <input type="text" value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} style={sInput} placeholder="Opcional" />
         </div>
         <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <button type="submit" style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', background: '#10b981', color: '#fff', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button type="button" onClick={salvar} style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', background: '#10b981', color: '#fff', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {editandoId ? 'Salvar' : '+ Adicionar'}
           </button>
           {editandoId && (
@@ -173,7 +176,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
             </button>
           )}
         </div>
-      </form>
+      </div>
 
       {/* Tabela agrupada por grau */}
       {loading ? (
