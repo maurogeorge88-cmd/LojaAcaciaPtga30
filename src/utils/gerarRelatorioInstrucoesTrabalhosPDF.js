@@ -44,6 +44,48 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
     }
   };
 
+  // ── Desenha um parágrafo justificado (espaço distribuído entre as
+  // palavras em todas as linhas, menos a última) — mesma técnica usada
+  // na Certidão Financeira. ─────────────────────────────────────────────
+  const desenharParagrafoJustificado = (textoBruto, tamanhoFonte = 10.5) => {
+    doc.setFontSize(tamanhoFonte);
+    doc.setFont('helvetica', 'normal');
+    const espacoLargura = doc.getTextWidth(' ');
+
+    const palavras = sanitizeTexto(textoBruto).split(' ').filter(p => p.length > 0);
+
+    const linhas = [];
+    let linhaAtual = [];
+    let larguraAtual = 0;
+    palavras.forEach(p => {
+      const larguraPalavra = doc.getTextWidth(p);
+      const espacoExtra = linhaAtual.length > 0 ? espacoLargura : 0;
+      if (larguraAtual + espacoExtra + larguraPalavra > larguraUtil && linhaAtual.length > 0) {
+        linhas.push(linhaAtual);
+        linhaAtual = [];
+        larguraAtual = 0;
+      }
+      if (linhaAtual.length > 0) larguraAtual += espacoLargura;
+      linhaAtual.push(p);
+      larguraAtual += larguraPalavra;
+    });
+    if (linhaAtual.length > 0) linhas.push(linhaAtual);
+
+    linhas.forEach((linha, idxLinha) => {
+      const ehUltima = idxLinha === linhas.length - 1;
+      const larguraPalavras = linha.reduce((s, p) => s + doc.getTextWidth(p), 0);
+      const gaps = linha.length - 1;
+      const espacoUsado = (!ehUltima && gaps > 0) ? (larguraUtil - larguraPalavras) / gaps : espacoLargura;
+
+      let x = M;
+      linha.forEach((p, i) => {
+        txt(p, x, y);
+        x += doc.getTextWidth(p) + (i < linha.length - 1 ? espacoUsado : 0);
+      });
+      y += 5.6;
+    });
+  };
+
   // ── Cabeçalho da Loja ─────────────────────────────────────────────────────
   if (dadosLoja?.logo_url) {
     try {
@@ -135,11 +177,9 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
   checkPage(24);
   y += 4;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
-  const paragrafoFinal = doc.splitTextToSize(
-    'O presente relatório é expedido a pedido do interessado, para fins de instrução de processo de transferência ou intercâmbio para outra Potência ou Loja, e tem por objetivo registrar, de forma fiel e cronológica, o histórico das instruções ministradas, dos trabalhos apresentados e das atividades desenvolvidas pelo Irmão nesta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, conforme os registros oficiais existentes até a presente data.',
-    larguraUtil
+  desenharParagrafoJustificado(
+    'O presente relatório é expedido a pedido do interessado, para fins de instrução de processo de transferência ou intercâmbio para outra Potência ou Loja, e tem por objetivo registrar, de forma fiel e cronológica, o histórico das instruções ministradas, dos trabalhos apresentados e das atividades desenvolvidas pelo Irmão nesta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, conforme os registros oficiais existentes até a presente data.'
   );
-  paragrafoFinal.forEach(linha => { txt(linha, M, y); y += 5.6; });
 
   y += 10;
 
