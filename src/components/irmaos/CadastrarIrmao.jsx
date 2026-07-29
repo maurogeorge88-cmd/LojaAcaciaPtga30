@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
 import GestaoSituacoes from './GestaoSituacoes';
+import InstrucoesTrabalhos from './InstrucoesTrabalhos';
 import {
   formatarCPF,
   formatarTelefone,
@@ -1632,6 +1633,24 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <div className="text-center py-8 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm">
                     Nenhum cargo cadastrado ainda. Use o formulário acima para adicionar.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Instruções Recebidas e Trabalhos Apresentados */}
+            <div className="p-6 rounded-lg shadow mt-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              {irmaoEditando?.id ? (
+                <InstrucoesTrabalhos
+                  irmao={irmaoEditando}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
+              ) : (
+                <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <div className="text-6xl mb-4">📚</div>
+                  <p className="text-lg font-medium">
+                    Salve o irmão primeiro para registrar instruções e trabalhos
                   </p>
                 </div>
               )}
