@@ -737,16 +737,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         projeto_id: dados.projeto_id ? parseInt(dados.projeto_id) : null,
       };
 
-      // Buscar projeto anterior ANTES de qualquer operação
-      let projetoAnterior = null;
-      if (editando) {
-        const { data: lancAnterior } = await supabase
-          .from('lancamentos_loja')
-          .select('projeto_id')
-          .eq('id', editando)
-          .single();
-        projetoAnterior = lancAnterior?.projeto_id || null;
-      }
+      // Uma vez criada a linha do projeto (na criação do lançamento), edições
+      // futuras no Finanças NÃO devem mais alterá-la. Correções manuais na
+      // linha do projeto passam a ser feitas direto na tela de Projetos
+      // (botão de editar), não automaticamente por aqui.
 
       if (editando) {
         const { error } = await supabase
@@ -756,73 +750,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Gerenciar vínculo com projeto
-        if (projetoAnterior || dados.projeto_id) {
-          if (projetoAnterior) {
-            // Remover registros anteriores — usa lancamento_id como chave primária (fallback por data)
-            const { data: recAnterior } = await supabase.from('receitas_projeto')
-              .select('id, lancamento_id')
-              .eq('projeto_id', projetoAnterior)
-              .eq('origem', 'Finanças Loja')
-              .eq('lancamento_id', editando)
-              .maybeSingle();
-            if (recAnterior) {
-              await supabase.from('receitas_projeto').delete().eq('id', recAnterior.id);
-            } else {
-              await supabase.from('receitas_projeto')
-                .delete()
-                .eq('projeto_id', projetoAnterior)
-                .eq('origem', 'Finanças Loja')
-                .eq('data_receita', dadosLancamento.data_lancamento);
-            }
-            const { data: custAnterior } = await supabase.from('custos_projeto')
-              .select('id, lancamento_id')
-              .eq('projeto_id', projetoAnterior)
-              .eq('categoria', 'Finanças Loja')
-              .eq('lancamento_id', editando)
-              .maybeSingle();
-            if (custAnterior) {
-              await supabase.from('custos_projeto').delete().eq('id', custAnterior.id);
-            } else {
-              await supabase.from('custos_projeto')
-                .delete()
-                .eq('projeto_id', projetoAnterior)
-                .eq('categoria', 'Finanças Loja')
-                .eq('data_custo', dadosLancamento.data_lancamento);
-            }
-          }
-          if (dados.projeto_id) {
-            const irmaoNome = dados.origem_irmao_id
-              ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-              : '';
-            if (dados.tipo === 'receita') {
-              await supabase.from('receitas_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
-                lancamento_id: editando,
-                data_receita: dados.data_lancamento,
-                descricao: dados.descricao,
-                valor: parseFloat(dados.valor),
-                origem: 'Finanças Loja',
-                forma_pagamento: dados.tipo_pagamento || '',
-                responsavel: irmaoNome,
-              }]);
-            } else {
-              await supabase.from('custos_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
-                lancamento_id: editando,
-                data_custo: dados.data_lancamento,
-                descricao: dados.descricao,
-                valor: parseFloat(dados.valor),
-                categoria: 'Finanças Loja',
-                forma_pagamento: dados.tipo_pagamento || '',
-                responsavel: dados.origem_irmao_id
-                  ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-                  : '',
-              }]);
-            }
-          }
-        }
-        
         // Registrar log de edição
         if (userData?.id) {
           try {
@@ -920,11 +847,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         };
       });
 
-      const { error } = await supabase
+      const { data: novosLancs, error } = await supabase
         .from('lancamentos_loja')
-        .insert(lancamentosParaInserir);
+        .insert(lancamentosParaInserir)
+        .select('id, origem_irmao_id');
 
       if (error) throw error;
+
+      // Espelhar no projeto (receitas_projeto) — se o lote tiver projeto
+      // vinculado, cada lançamento criado também vira uma linha no projeto,
+      // igual já acontece na criação individual (handleSubmit). Isso é feito
+      // SÓ na criação — nenhuma alteração futura no Finanças (edição,
+      // compensação, quitação) deve tocar de novo nessas linhas.
+      if (lancamentoIrmaos.projeto_id && novosLancs?.length > 0) {
+        const espelhos = novosLancs.map(nl => {
+          const irmao = irmaos.find(i => i.id === nl.origem_irmao_id);
+          return {
+            projeto_id: parseInt(lancamentoIrmaos.projeto_id),
+            lancamento_id: nl.id,
+            data_receita: lancamentoIrmaos.data_lancamento,
+            descricao: lancamentoIrmaos.descricao,
+            valor: parseFloat(lancamentoIrmaos.valor),
+            origem: 'Finanças Loja',
+            forma_pagamento: lancamentoIrmaos.tipo_pagamento || '',
+            responsavel: irmao?.nome || '',
+          };
+        });
+        const { error: errEspelho } = await supabase.from('receitas_projeto').insert(espelhos);
+        if (errEspelho) {
+          console.error('Erro ao espelhar lançamentos no projeto:', errEspelho);
+          showError('Lançamentos criados, mas houve erro ao vincular ao projeto: ' + errEspelho.message);
+        }
+      }
 
       showSuccess(`${lancamentosParaInserir.length} lançamentos criados com sucesso!`);
       setMostrarModalIrmaos(false);
