@@ -28,8 +28,9 @@ const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
  * @param {Array}  registros    linhas de instrucoes_trabalhos_irmao
  * @param {Object} dadosLoja    { nome, endereco, logo_url, cidade, estado }
  * @param {Object} assinantes   { veneravelMestre, orador, secretario }
+ * @param {Array|null} presencaMensal  [{ label, elegiveis, presentes, percentual }] — se informado, gera a 2ª página com o quadro de presenças
  */
-export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja, assinantes = {}) => {
+export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja, assinantes = {}, presencaMensal = null) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 20;
   let y = 18;
@@ -86,21 +87,25 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
     });
   };
 
-  // ── Cabeçalho da Loja ─────────────────────────────────────────────────────
-  if (dadosLoja?.logo_url) {
-    try {
-      doc.addImage(dadosLoja.logo_url, 'PNG', (W - 24) / 2, y, 24, 24);
-      y += 28;
-    } catch (e) { y += 2; }
-  }
-  doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-  txt(sanitizeTexto(dadosLoja?.nome) || 'ARLS Acacia de Paranatinga no 30', W / 2, y, { align: 'center' }); y += 5.5;
-  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
-  txt(sanitizeTexto(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 5.5;
-  doc.setDrawColor(60); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
-  doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
-  y += 10;
-  doc.setTextColor(0);
+  // ── Cabeçalho da Loja (reutilizável — chamado de novo na 2ª página) ───────
+  const desenharCabecalho = () => {
+    y = 18;
+    if (dadosLoja?.logo_url) {
+      try {
+        doc.addImage(dadosLoja.logo_url, 'PNG', (W - 24) / 2, y, 24, 24);
+        y += 28;
+      } catch (e) { y += 2; }
+    }
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
+    txt(sanitizeTexto(dadosLoja?.nome) || 'ARLS Acacia de Paranatinga no 30', W / 2, y, { align: 'center' }); y += 5.5;
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
+    txt(sanitizeTexto(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 5.5;
+    doc.setDrawColor(60); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+    doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
+    y += 10;
+    doc.setTextColor(0);
+  };
+  desenharCabecalho();
 
   // ── Título ──────────────────────────────────────────────────────────────
   doc.setFontSize(13.5); doc.setFont('helvetica', 'bold');
@@ -210,6 +215,56 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
   y += 24;
   assinatura(assinantes.orador, 'Orador', M + larguraAssinatura / 2 + 5, y);
   assinatura(assinantes.secretario, 'Secretário', W - M - larguraAssinatura / 2 - 5, y);
+
+  // ── Página 2 — Quadro de Presenças (mesmo cabeçalho da primeira página) ──
+  if (presencaMensal && presencaMensal.length > 0) {
+    doc.addPage();
+    desenharCabecalho();
+
+    doc.setFontSize(13.5); doc.setFont('helvetica', 'bold');
+    txt('QUADRO DE PRESENÇAS', W / 2, y, { align: 'center' }); y += 5;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
+    const inicioLabel = presencaMensal[0].label;
+    const fimLabel = presencaMensal[presencaMensal.length - 1].label;
+    txt(`Período: ${inicioLabel} a ${fimLabel}`, W / 2, y, { align: 'center' });
+    doc.setTextColor(0);
+    y += 8;
+
+    doc.autoTable({
+      startY: y,
+      head: [['Mês', 'Sessões Elegíveis', 'Presenças', '% Presença']],
+      body: presencaMensal.map(m => [
+        m.label,
+        String(m.elegiveis),
+        String(m.presentes),
+        m.percentual === null ? '—' : `${m.percentual}%`,
+      ]),
+      theme: 'grid',
+      styles: { fontSize: 9.5, cellPadding: 2.4, halign: 'center' },
+      headStyles: { fillColor: [230, 230, 230], textColor: 30, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 40, halign: 'left' },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 45 },
+        3: { cellWidth: larguraUtil - 130 },
+      },
+      margin: { left: M, right: M },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 3 && data.cell.raw !== '—') {
+          const valor = parseInt(data.cell.raw, 10);
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.textColor = valor >= 70 ? [16, 129, 87] : valor >= 50 ? [180, 130, 6] : [190, 40, 40];
+        }
+      },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    const totalEleg = presencaMensal.reduce((s, m) => s + m.elegiveis, 0);
+    const totalPres = presencaMensal.reduce((s, m) => s + m.presentes, 0);
+    const percGeral = totalEleg > 0 ? Math.round((totalPres / totalEleg) * 100) : null;
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+    txt(`Total do período: ${totalPres}/${totalEleg} sessões (${percGeral === null ? '—' : percGeral + '%'})`, M, y);
+  }
 
   // ── Rodapé ──────────────────────────────────────────────────────────────
   const totalPg = doc.getNumberOfPages();
