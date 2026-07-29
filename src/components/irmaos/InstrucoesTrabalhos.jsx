@@ -146,6 +146,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           📚 Instruções Recebidas e Trabalhos Apresentados
         </h3>
         <button
+          type="button"
           onClick={handleGerarRelatorio}
           disabled={gerandoPdf || registros.length === 0}
           style={{
@@ -247,8 +248,8 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                       <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{r.observacoes || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center' }}>
-                          <button onClick={() => editar(r)} style={{ padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer' }}>✏️</button>
-                          <button onClick={() => excluir(r.id)} style={{ padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>🗑️</button>
+                          <button type="button" onClick={() => editar(r)} style={{ padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer' }}>✏️</button>
+                          <button type="button" onClick={() => excluir(r.id)} style={{ padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', cursor: 'pointer' }}>🗑️</button>
                         </div>
                       </td>
                     </tr>
