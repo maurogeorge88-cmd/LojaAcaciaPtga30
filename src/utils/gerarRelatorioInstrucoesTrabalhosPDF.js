@@ -136,7 +136,7 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
   y += 4;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
   const paragrafoFinal = doc.splitTextToSize(
-    'O presente relatório é expedido a pedido do interessado, para fins de transferência ou intercâmbio com outra Potência/Loja, refletindo fielmente o histórico de instruções e trabalhos registrados por esta Loja até a presente data.',
+    'O presente relatório é expedido a pedido do interessado, para fins de instrução de processo de transferência ou intercâmbio para outra Potência ou Loja, e tem por objetivo registrar, de forma fiel e cronológica, o histórico das instruções ministradas, dos trabalhos apresentados e das atividades desenvolvidas pelo Irmão nesta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, conforme os registros oficiais existentes até a presente data.',
     larguraUtil
   );
   paragrafoFinal.forEach(linha => { txt(linha, M, y); y += 5.6; });
