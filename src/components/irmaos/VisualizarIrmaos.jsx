@@ -7,6 +7,7 @@ import {
   calcularIdade
 } from '../../utils/formatters';
 import { STATUS_IRMAOS } from '../../utils/constants';
+import InstrucoesTrabalhos from './InstrucoesTrabalhos';
 
 const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto, onUpdate, showSuccess, showError, permissoes, userData }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -715,6 +716,15 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Instruções Recebidas e Trabalhos Apresentados */}
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <InstrucoesTrabalhos
+                  irmao={irmaoSelecionado}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
               </div>
 
               {/* Cônjuge */}
