@@ -15,6 +15,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [abaAtiva, setAbaAtiva] = useState('receitas');
   const [custoForm, setCustoForm] = useState({});
   const [receitaForm, setReceitaForm] = useState({});
+  const [receitaEditando, setReceitaEditando] = useState(null);
+  const [custoEditando, setCustoEditando] = useState(null);
   const [mostrarFormReceita, setMostrarFormReceita] = useState(false);
   const [mostrarFormCusto, setMostrarFormCusto] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -174,16 +176,28 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const adicionarCusto = async (e) => {
     e.preventDefault();
     const dadosCusto = { ...custoForm, projeto_id: projetoSelecionado.id, valor: parseFloat(custoForm.valor) || 0 };
-    const { error } = await supabase.from('custos_projeto').insert([dadosCusto]);
-    if (error) { showError('Erro ao adicionar custo: ' + error.message); }
-    else {
+
+    if (custoEditando) {
+      const { error } = await supabase.from('custos_projeto').update(dadosCusto).eq('id', custoEditando.id);
+      if (error) { showError('Erro ao salvar custo: ' + error.message); return; }
+      showSuccess('Custo atualizado com sucesso!');
+    } else {
+      const { error } = await supabase.from('custos_projeto').insert([dadosCusto]);
+      if (error) { showError('Erro ao adicionar custo: ' + error.message); return; }
       showSuccess('Custo adicionado com sucesso!');
-      setCustoForm({});
-      setMostrarFormCusto(false);
-      await carregarCustos(projetoSelecionado.id);
-      await carregarProjetos();
-      setRefreshKey(prev => prev + 1);
     }
+    setCustoForm({});
+    setCustoEditando(null);
+    setMostrarFormCusto(false);
+    await carregarCustos(projetoSelecionado.id);
+    await carregarProjetos();
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const editarCusto = (custo) => {
+    setCustoForm(custo);
+    setCustoEditando(custo);
+    setMostrarFormCusto(true);
   };
 
   const excluirCusto = async (id) => {
@@ -201,16 +215,31 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const adicionarReceita = async (e) => {
     e.preventDefault();
     const dadosReceita = { ...receitaForm, projeto_id: projetoSelecionado.id, valor: parseFloat(receitaForm.valor) || 0 };
-    const { error } = await supabase.from('receitas_projeto').insert([dadosReceita]);
-    if (error) { showError('Erro ao adicionar receita: ' + error.message); }
-    else {
+
+    if (receitaEditando) {
+      // Correção manual de uma linha já existente — inclusive as que vieram
+      // do Finanças Loja (o vínculo automático só acontece na criação; uma
+      // vez criada, só é alterada aqui manualmente, de propósito).
+      const { error } = await supabase.from('receitas_projeto').update(dadosReceita).eq('id', receitaEditando.id);
+      if (error) { showError('Erro ao salvar receita: ' + error.message); return; }
+      showSuccess('Receita atualizada com sucesso!');
+    } else {
+      const { error } = await supabase.from('receitas_projeto').insert([dadosReceita]);
+      if (error) { showError('Erro ao adicionar receita: ' + error.message); return; }
       showSuccess('Receita adicionada com sucesso!');
-      setReceitaForm({});
-      setMostrarFormReceita(false);
-      await carregarReceitas(projetoSelecionado.id);
-      await carregarProjetos();
-      setRefreshKey(prev => prev + 1);
     }
+    setReceitaForm({});
+    setReceitaEditando(null);
+    setMostrarFormReceita(false);
+    await carregarReceitas(projetoSelecionado.id);
+    await carregarProjetos();
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const editarReceita = (receita) => {
+    setReceitaForm(receita);
+    setReceitaEditando(receita);
+    setMostrarFormReceita(true);
   };
 
   const excluirReceita = async (id) => {
@@ -655,14 +684,21 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
                               {permissoes?.canEdit && (
                                 <td className="px-4 py-3 text-center">
-                                  {receita.origem === 'Finanças Loja' ? (
-                                    <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
-                                  ) : (
-                                    <button onClick={() => excluirReceita(receita.id)}
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
-                                      🗑️
+                                  <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
+                                    {receita.origem === 'Finanças Loja' && (
+                                      <span title="Gerado pelo Finanças Loja — a exclusão continua sendo feita de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                    )}
+                                    <button onClick={() => editarReceita(receita)} title="Corrigir manualmente"
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
+                                      ✏️
                                     </button>
-                                  )}
+                                    {receita.origem !== 'Finanças Loja' && (
+                                      <button onClick={() => excluirReceita(receita.id)}
+                                        style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                        🗑️
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               )}
                             </tr>
@@ -734,14 +770,21 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
                               {permissoes?.canEdit && (
                                 <td className="px-4 py-3 text-center">
-                                  {custo.categoria === 'Finanças Loja' ? (
-                                    <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
-                                  ) : (
-                                    <button onClick={() => excluirCusto(custo.id)}
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
-                                      🗑️
+                                  <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
+                                    {custo.categoria === 'Finanças Loja' && (
+                                      <span title="Gerado pelo Finanças Loja — a exclusão continua sendo feita de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                    )}
+                                    <button onClick={() => editarCusto(custo)} title="Corrigir manualmente"
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
+                                      ✏️
                                     </button>
-                                  )}
+                                    {custo.categoria !== 'Finanças Loja' && (
+                                      <button onClick={() => excluirCusto(custo.id)}
+                                        style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                        🗑️
+                                      </button>
+                                    )}
+                                  </div>
                                 </td>
                               )}
                             </tr>
@@ -775,7 +818,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <h3 className="text-lg font-bold text-white">💵 Nova Receita</h3>
                 <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
               </div>
-              <button onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
+              <button onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); setReceitaEditando(null); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
             </div>
             <form onSubmit={adicionarReceita} className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -827,7 +870,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <button type="submit" style={{flex:1,padding:"0.6rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
                   💾 Salvar Receita
                 </button>
-                <button type="button" onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); }}
+                <button type="button" onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); setReceitaEditando(null); }}
                   style={{padding:"0.6rem 1.2rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
                   Cancelar
                 </button>
@@ -846,7 +889,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <h3 className="text-lg font-bold text-white">💸 Novo Custo</h3>
                 <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
               </div>
-              <button onClick={() => { setMostrarFormCusto(false); setCustoForm({}); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
+              <button onClick={() => { setMostrarFormCusto(false); setCustoForm({}); setCustoEditando(null); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
             </div>
             <form onSubmit={adicionarCusto} className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -898,7 +941,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <button type="submit" style={{flex:1,padding:"0.6rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
                   💾 Salvar Custo
                 </button>
-                <button type="button" onClick={() => { setMostrarFormCusto(false); setCustoForm({}); }}
+                <button type="button" onClick={() => { setMostrarFormCusto(false); setCustoForm({}); setCustoEditando(null); }}
                   style={{padding:"0.6rem 1.2rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
                   Cancelar
                 </button>
