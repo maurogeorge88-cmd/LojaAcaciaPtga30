@@ -685,19 +685,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               {permissoes?.canEdit && (
                                 <td className="px-4 py-3 text-center">
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
-                                    {receita.origem === 'Finanças Loja' && (
-                                      <span title="Gerado pelo Finanças Loja — a exclusão continua sendo feita de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
-                                    )}
                                     <button onClick={() => editarReceita(receita)} title="Corrigir manualmente"
                                       style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
                                       ✏️
                                     </button>
-                                    {receita.origem !== 'Finanças Loja' && (
-                                      <button onClick={() => excluirReceita(receita.id)}
-                                        style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
-                                        🗑️
-                                      </button>
-                                    )}
+                                    <button onClick={() => excluirReceita(receita.id)}
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      🗑️
+                                    </button>
                                   </div>
                                 </td>
                               )}
@@ -771,19 +766,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               {permissoes?.canEdit && (
                                 <td className="px-4 py-3 text-center">
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
-                                    {custo.categoria === 'Finanças Loja' && (
-                                      <span title="Gerado pelo Finanças Loja — a exclusão continua sendo feita de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
-                                    )}
                                     <button onClick={() => editarCusto(custo)} title="Corrigir manualmente"
                                       style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
                                       ✏️
                                     </button>
-                                    {custo.categoria !== 'Finanças Loja' && (
-                                      <button onClick={() => excluirCusto(custo.id)}
-                                        style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
-                                        🗑️
-                                      </button>
-                                    )}
+                                    <button onClick={() => excluirCusto(custo.id)}
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      🗑️
+                                    </button>
                                   </div>
                                 </td>
                               )}
