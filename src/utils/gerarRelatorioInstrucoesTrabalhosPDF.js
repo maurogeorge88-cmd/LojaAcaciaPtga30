@@ -100,6 +100,7 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
     txt(sanitizeTexto(dadosLoja?.nome) || 'ARLS Acacia de Paranatinga no 30', W / 2, y, { align: 'center' }); y += 5.5;
     doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
     txt(sanitizeTexto(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 5.5;
+    txt(sanitizeTexto(dadosLoja?.grande_loja) ? `Afiliada à ${sanitizeTexto(dadosLoja.grande_loja)}` : 'Afiliada à Grande Loja do Estado de Mato Grosso', W / 2, y, { align: 'center' }); y += 5.5;
     doc.setDrawColor(60); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
     doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
     y += 10;
@@ -144,7 +145,7 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
 
     doc.autoTable({
       startY: y,
-      head: [['Instrução', 'Data da Instrução', 'Apresentação da Peça', 'Observações']],
+      head: [['Instrução', 'Ministração da Instrução', 'Apresentação da Instrução', 'Observações']],
       body: doGrau.map(reg => [
         reg.numero_instrucao || '—',
         fmtData(reg.data_instrucao),
