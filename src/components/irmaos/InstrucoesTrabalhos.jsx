@@ -16,6 +16,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const [nomeVeneravel, setNomeVeneravel] = useState('');
   const [nomeOrador, setNomeOrador] = useState('');
   const [nomeSecretario, setNomeSecretario] = useState('');
+  const [incluirPresencas, setIncluirPresencas] = useState(false);
 
   useEffect(() => {
     if (irmao?.id) carregarRegistros();
@@ -120,14 +121,150 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
     await carregarRegistros();
   };
 
+  // Calcula a janela de meses a incluir no quadro de presenças, baseado na
+  // data de hoje: antes de maio, completa com meses do ano anterior até
+  // fechar 7 meses; de maio em diante, usa só o ano atual (janeiro até o
+  // mês corrente).
+  const calcularJanelaMeses = () => {
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth() + 1; // 1-12
+    const anoAtual = hoje.getFullYear();
+    const meses = [];
+    if (mesAtual >= 5) {
+      for (let m = 1; m <= mesAtual; m++) meses.push({ ano: anoAtual, mes: m });
+    } else {
+      const qtdAnoAnterior = 7 - mesAtual;
+      for (let m = 13 - qtdAnoAnterior; m <= 12; m++) meses.push({ ano: anoAtual - 1, mes: m });
+      for (let m = 1; m <= mesAtual; m++) meses.push({ ano: anoAtual, mes: m });
+    }
+    return meses;
+  };
+
+  // Elegibilidade sessão-a-sessão — mesma lógica já usada no relatório em
+  // PDF, na Matrix de Presença, no Dashboard e no boletim por e-mail.
+  const elegivelNaData = (irmaoDados, dataSessao, grauSessaoId, historicoSituacoes) => {
+    const grauMin = grauSessaoId === 4 ? 1 : grauSessaoId;
+    let grauNaData = 1;
+    if (irmaoDados.data_exaltacao && dataSessao >= new Date(irmaoDados.data_exaltacao)) grauNaData = 3;
+    else if (irmaoDados.data_elevacao && dataSessao >= new Date(irmaoDados.data_elevacao)) grauNaData = 2;
+    if (grauMin > grauNaData) return false;
+
+    const dataEntrada = irmaoDados.data_ingresso_loja ? new Date(irmaoDados.data_ingresso_loja) :
+                         (irmaoDados.data_iniciacao ? new Date(irmaoDados.data_iniciacao) : null);
+    if (!dataEntrada || dataSessao < dataEntrada) return false;
+
+    if (irmaoDados.data_falecimento && dataSessao >= new Date(irmaoDados.data_falecimento)) return false;
+
+    const unaccentLower = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const bloqueado = (historicoSituacoes || []).some(sit => {
+      if (sit.membro_id !== irmaoDados.id) return false;
+      const tipo = unaccentLower(sit.tipo_situacao);
+      const tipos = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
+      const ehBloq = tipos.includes(tipo) || tipos.some(t => tipo.includes(t));
+      if (!ehBloq) return false;
+      const di = new Date(sit.data_inicio + 'T00:00:00');
+      if (dataSessao < di) return false;
+      if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return dataSessao <= df; }
+      return true;
+    });
+    if (bloqueado) return false;
+
+    if (irmaoDados.data_nascimento) {
+      const nasc = new Date(irmaoDados.data_nascimento + 'T00:00:00');
+      let idade = dataSessao.getFullYear() - nasc.getFullYear();
+      if (dataSessao.getMonth() < nasc.getMonth() ||
+         (dataSessao.getMonth() === nasc.getMonth() && dataSessao.getDate() < nasc.getDate())) idade--;
+      if (idade >= 70) return false;
+    }
+    return true;
+  };
+
+  const buscarPresencaMensal = async () => {
+    const janela = calcularJanelaMeses();
+    const primeiroMes = janela[0];
+    const ultimoMes = janela[janela.length - 1];
+    const dataInicio = `${primeiroMes.ano}-${String(primeiroMes.mes).padStart(2, '0')}-01`;
+    const ultimoDia = new Date(ultimoMes.ano, ultimoMes.mes, 0).getDate();
+    const dataFim = `${ultimoMes.ano}-${String(ultimoMes.mes).padStart(2, '0')}-${ultimoDia}`;
+
+    // Dados completos do irmão (campos necessários pra elegibilidade)
+    const { data: irmaoCompleto } = await supabase
+      .from('irmaos')
+      .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_falecimento, data_ingresso_loja')
+      .eq('id', irmao.id)
+      .single();
+
+    const { data: sessoes } = await supabase
+      .from('sessoes_presenca')
+      .select('id, data_sessao, grau_sessao_id')
+      .gte('data_sessao', dataInicio)
+      .lte('data_sessao', dataFim)
+      .order('data_sessao');
+
+    const sessoesIds = (sessoes || []).map(s => s.id);
+    let registrosPresenca = [];
+    if (sessoesIds.length > 0) {
+      const { data } = await supabase
+        .from('registros_presenca')
+        .select('sessao_id, membro_id, presente')
+        .eq('membro_id', irmao.id)
+        .in('sessao_id', sessoesIds);
+      registrosPresenca = data || [];
+    }
+
+    // Histórico de situações, paginado
+    let historicoSituacoes = [];
+    let inicio = 0;
+    const tamanhoPagina = 1000;
+    let continuar = true;
+    while (continuar) {
+      const { data: lote } = await supabase
+        .from('historico_situacoes')
+        .select('membro_id, tipo_situacao, data_inicio, data_fim, status')
+        .eq('status', 'ativa')
+        .eq('membro_id', irmao.id)
+        .range(inicio, inicio + tamanhoPagina - 1);
+      if (lote && lote.length > 0) {
+        historicoSituacoes = [...historicoSituacoes, ...lote];
+        inicio += tamanhoPagina;
+        if (lote.length < tamanhoPagina) continuar = false;
+      } else continuar = false;
+    }
+
+    const presMap = {};
+    registrosPresenca.forEach(r => { presMap[r.sessao_id] = r.presente; });
+
+    const NOMES_MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return janela.map(({ ano, mes }) => {
+      const sessoesDoMes = (sessoes || []).filter(s => {
+        const d = new Date(s.data_sessao + 'T00:00:00');
+        return d.getFullYear() === ano && (d.getMonth() + 1) === mes;
+      });
+      let elegiveis = 0, presentes = 0;
+      sessoesDoMes.forEach(s => {
+        const dataSessao = new Date(s.data_sessao + 'T00:00:00');
+        if (!elegivelNaData(irmaoCompleto || irmao, dataSessao, s.grau_sessao_id, historicoSituacoes)) return;
+        elegiveis++;
+        if (presMap[s.id]) presentes++;
+      });
+      return {
+        label: `${NOMES_MESES[mes - 1]}/${ano}`,
+        elegiveis,
+        presentes,
+        percentual: elegiveis > 0 ? Math.round((presentes / elegiveis) * 100) : null,
+      };
+    });
+  };
+
   const handleGerarRelatorio = async () => {
     setGerandoPdf(true);
     try {
+      const presencaMensal = incluirPresencas ? await buscarPresencaMensal() : null;
       gerarRelatorioInstrucoesTrabalhosPDF(irmao, registros, dadosLoja, {
         veneravelMestre: nomeVeneravel,
         orador: nomeOrador,
         secretario: nomeSecretario,
-      });
+      }, presencaMensal);
     } catch (e) {
       console.error(e);
       showError('Erro ao gerar relatório: ' + e.message);
@@ -145,19 +282,25 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
         <h3 style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--color-text)', margin: 0 }}>
           📚 Instruções Recebidas e Trabalhos Apresentados
         </h3>
-        <button
-          type="button"
-          onClick={handleGerarRelatorio}
-          disabled={gerandoPdf || registros.length === 0}
-          style={{
-            padding: '0.5rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem',
-            cursor: (gerandoPdf || registros.length === 0) ? 'not-allowed' : 'pointer',
-            opacity: (gerandoPdf || registros.length === 0) ? 0.5 : 1,
-            background: 'var(--color-accent)', color: '#fff',
-          }}
-        >
-          {gerandoPdf ? '⏳ Gerando...' : '📄 Gerar Relatório (PDF)'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={incluirPresencas} onChange={e => setIncluirPresencas(e.target.checked)} />
+            Incluir presenças
+          </label>
+          <button
+            type="button"
+            onClick={handleGerarRelatorio}
+            disabled={gerandoPdf || registros.length === 0}
+            style={{
+              padding: '0.5rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem',
+              cursor: (gerandoPdf || registros.length === 0) ? 'not-allowed' : 'pointer',
+              opacity: (gerandoPdf || registros.length === 0) ? 0.5 : 1,
+              background: 'var(--color-accent)', color: '#fff',
+            }}
+          >
+            {gerandoPdf ? '⏳ Gerando...' : '📄 Gerar Relatório (PDF)'}
+          </button>
+        </div>
       </div>
 
       {/* Formulário — usa <div>, não <form>: esse componente fica dentro do
