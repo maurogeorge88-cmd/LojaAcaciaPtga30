@@ -187,7 +187,7 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
     'O presente relatório é expedido a pedido do interessado, para fins de instrução de processo de transferência ou intercâmbio para outra Potência ou Loja, e tem por objetivo registrar, de forma fiel e cronológica, o histórico das instruções ministradas, dos trabalhos apresentados e das atividades desenvolvidas pelo Irmão nesta Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº 30, conforme os registros oficiais existentes até a presente data.'
   );
 
-  y += 10;
+  y += 6;
 
   // ── Local e data ──────────────────────────────────────────────────────────
   const hoje = new Date();
@@ -196,10 +196,10 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
   const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   doc.setFontSize(10.5);
   txt(`${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`, M, y);
-  y += 22;
+  y += 16;
 
   // ── Assinaturas — Venerável Mestre, Orador, Secretário ──────────────────
-  checkPage(60);
+  checkPage(50);
   const larguraAssinatura = 70;
   const assinatura = (nome, cargo, x, yy) => {
     if (nome) {
