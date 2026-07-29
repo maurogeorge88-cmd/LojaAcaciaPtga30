@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { gerarRelatorioInstrucoesTrabalhosPDF } from '../../utils/gerarRelatorioInstrucoesTrabalhosPDF';
 
 const GRAUS = ['Aprendiz', 'Companheiro', 'Mestre'];
+const NUMEROS_INSTRUCAO = ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global'];
 const corGrau = { Aprendiz: '#3b82f6', Companheiro: '#8b5cf6', Mestre: '#f59e0b' };
 
 export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
@@ -10,7 +11,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const [loading, setLoading] = useState(false);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
-  const [form, setForm] = useState({ grau: 'Aprendiz', data_instrucao: '', data_apresentacao: '', observacoes: '' });
+  const [form, setForm] = useState({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', observacoes: '' });
   const [dadosLoja, setDadosLoja] = useState(null);
   const [nomeVeneravel, setNomeVeneravel] = useState('');
   const [nomeOrador, setNomeOrador] = useState('');
@@ -28,33 +29,47 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       .select('*')
       .eq('irmao_id', irmao.id)
       .order('data_instrucao', { ascending: false });
+    if (error) console.error('Erro ao carregar instruções/trabalhos:', error);
     if (!error) setRegistros(data || []);
     setLoading(false);
   };
 
   const carregarLojaEAssinantes = async () => {
-    const { data: loja } = await supabase.from('dados_loja').select('*').single();
+    const { data: loja } = await supabase.from('dados_loja').select('*').maybeSingle();
     if (loja) setDadosLoja(loja);
 
-    const { data: corpo } = await supabase
+    // Consulta em duas etapas (sem junção automática irmaos(nome)) — evita
+    // depender do PostgREST detectar a relação entre as tabelas sozinho,
+    // que pode falhar (erro 400) dependendo de como as chaves estrangeiras
+    // estão configuradas.
+    const { data: corpo, error: errCorpo } = await supabase
       .from('corpo_administrativo')
-      .select('cargo, ano_exercicio, irmaos(nome)')
+      .select('cargo, ano_exercicio, irmao_id')
       .eq('posse_realizada', true)
       .order('ano_exercicio', { ascending: false });
+
+    if (errCorpo) { console.error('Erro ao buscar corpo administrativo:', errCorpo); return; }
 
     if (corpo && corpo.length > 0) {
       const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const ven = corpo.find(c => norm(c.cargo).includes('veneravel'));
       const ora = corpo.find(c => norm(c.cargo).includes('orador'));
       const sec = corpo.find(c => norm(c.cargo).includes('secretario'));
-      if (ven?.irmaos?.nome) setNomeVeneravel(ven.irmaos.nome);
-      if (ora?.irmaos?.nome) setNomeOrador(ora.irmaos.nome);
-      if (sec?.irmaos?.nome) setNomeSecretario(sec.irmaos.nome);
+
+      const idsNecessarios = [ven?.irmao_id, ora?.irmao_id, sec?.irmao_id].filter(Boolean);
+      if (idsNecessarios.length > 0) {
+        const { data: irmaosCorpo } = await supabase.from('irmaos').select('id, nome').in('id', idsNecessarios);
+        const nomePorId = {};
+        (irmaosCorpo || []).forEach(i => { nomePorId[i.id] = i.nome; });
+        if (ven?.irmao_id && nomePorId[ven.irmao_id]) setNomeVeneravel(nomePorId[ven.irmao_id]);
+        if (ora?.irmao_id && nomePorId[ora.irmao_id]) setNomeOrador(nomePorId[ora.irmao_id]);
+        if (sec?.irmao_id && nomePorId[sec.irmao_id]) setNomeSecretario(nomePorId[sec.irmao_id]);
+      }
     }
   };
 
   const limparForm = () => {
-    setForm({ grau: 'Aprendiz', data_instrucao: '', data_apresentacao: '', observacoes: '' });
+    setForm({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', observacoes: '' });
     setEditandoId(null);
   };
 
@@ -67,6 +82,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
     const dados = {
       irmao_id: irmao.id,
       grau: form.grau,
+      numero_instrucao: form.numero_instrucao,
       data_instrucao: form.data_instrucao,
       data_apresentacao: form.data_apresentacao || null,
       observacoes: form.observacoes || null,
@@ -88,6 +104,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const editar = (registro) => {
     setForm({
       grau: registro.grau,
+      numero_instrucao: registro.numero_instrucao || '1ª Instrução',
       data_instrucao: registro.data_instrucao,
       data_apresentacao: registro.data_apresentacao || '',
       observacoes: registro.observacoes || '',
@@ -146,11 +163,17 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           formulário principal de cadastro do irmão, e HTML não permite
           formulário aninhado (o botão "type=submit" acabava disparando o
           formulário de fora inteiro, tirando da tela sem salvar certo). */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1.5fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr 1fr 1fr 1.3fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
         <div>
           <label style={sLabel}>Grau</label>
           <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
             {GRAUS.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={sLabel}>Instrução</label>
+          <select value={form.numero_instrucao} onChange={e => setForm({ ...form, numero_instrucao: e.target.value })} style={sInput}>
+            {NUMEROS_INSTRUCAO.map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
         <div>
@@ -198,6 +221,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--color-border)', borderTop: 'none' }}>
                 <thead>
                   <tr style={{ background: 'var(--color-surface-2)' }}>
+                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Instrução</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Data da Instrução</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Apresentação da Peça</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Observações</th>
@@ -207,6 +231,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                 <tbody>
                   {doGrau.map((r, idx) => (
                     <tr key={r.id} style={{ background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '600' }}>{r.numero_instrucao || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.82rem', color: 'var(--color-text)' }}>
                         {new Date(r.data_instrucao + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </td>
