@@ -17,7 +17,7 @@ const verificarSituacaoNaData = (irmao, dataSessao, historicoSituacoes) => {
   const sit = historicoSituacoes?.find(s => {
     if (s.membro_id !== irmao.id) return false;
     const tipo = s.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const bloqueadoras = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca'];
+    const bloqueadoras = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido (revertido)
     const ehBloq = bloqueadoras.includes(tipo) || bloqueadoras.some(b => tipo.includes(b));
     if (!ehBloq) return false;
     const di = new Date(s.data_inicio + 'T00:00:00');
@@ -27,12 +27,6 @@ const verificarSituacaoNaData = (irmao, dataSessao, historicoSituacoes) => {
     return df ? ds <= df : true;
   });
   return sit ? sit.tipo_situacao : null;
-};
-
-const ehLicenca = (tipo) => {
-  if (!tipo) return false;
-  const t = tipo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return t.includes('licen');
 };
 
 // ── Função principal ──────────────────────────────────────────────────────────
@@ -230,9 +224,10 @@ export const gerarRelatorioIndividualPDF = (
         const antesDoIngresso = dataIngresso && dataSessao < dataIngresso;
 
         // ── Verificar situação histórica ──────────────────────────────────────
+        // "licenca" já não bloqueia mais (removida de bloqueadoras acima).
+        // Prerrogativa de idade também não exclui mais — revertido a pedido,
+        // ambos voltam a contar como elegível normal (P/F/J).
         const situacaoHist = verificarSituacaoNaData(irmao, s.data_sessao, historicoSituacoes);
-        const temPrerrogativa = irmao.data_prerrogativa && dataSessao >= new Date(irmao.data_prerrogativa);
-        const temLicenca = ehLicenca(situacaoHist);
 
         // ── Não elegível por grau ou ingresso → "-" sem contar ────────────────
         const naoElegivelGrau = grauSessao > grauIrmao;
@@ -244,12 +239,6 @@ export const gerarRelatorioIndividualPDF = (
         if (antesDoIngresso || naoElegivelGrau) {
           situacaoLabel = '-'; // não se aplica
           corSit = [180, 180, 180];
-        } else if (temPrerrogativa) {
-          situacaoLabel = '-  Prerrogativa';
-          corSit = [99, 102, 241];
-        } else if (temLicenca) {
-          situacaoLabel = '-  Licenca';
-          corSit = [245, 158, 11];
         } else if (situacaoHist) {
           situacaoLabel = '-  ' + situacaoHist;
           corSit = [156, 163, 175];
