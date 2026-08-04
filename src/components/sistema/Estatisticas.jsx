@@ -354,7 +354,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const presencaIrmao = {};
     ativos.forEach(i=>{
       presencaIrmao[i.id]={
-        nome:i.nome,pres:0,total:0,
+        nome:i.nome,pres:0,faltas:0,total:0,
         temPrerrogativa:(calcIdade(i.data_nascimento)||0) >= 70,
         licenciado:(i.situacao||'').toLowerCase()==='licenciado'
       };
@@ -364,12 +364,15 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         if(presencaIrmao[p.membro_id]) {
           presencaIrmao[p.membro_id].total++;
           if(p.presente) presencaIrmao[p.membro_id].pres++;
+          // Falta só conta se NÃO tiver justificativa — ausência
+          // justificada não é considerada falta.
+          else if(!p.justificativa) presencaIrmao[p.membro_id].faltas++;
         }
       });
     });
     const rankingPresenca = Object.values(presencaIrmao)
       .filter(i=>i.total>0)
-      .map(i=>({...i,taxa:Math.round(i.pres/i.total*100)}))
+      .map(i=>({...i,taxa:Math.round(i.pres/i.total*100), taxaFalta:Math.round(i.faltas/i.total*100)}))
       .sort((a,b)=> b.taxa-a.taxa || a.nome.localeCompare(b.nome));
 
     // Financeiro por mês
@@ -613,7 +616,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 .slice(-5).reverse().map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
                   <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.nome}</span>
-                  <span style={{fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxa)}</span>
+                  <span style={{fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxaFalta)}</span>
                 </div>
               ))}
             </div>
