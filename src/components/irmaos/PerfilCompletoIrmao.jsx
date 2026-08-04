@@ -90,7 +90,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
         if (di && ds < di) return;
         const bloq = historico?.find(sit => {
           const tn = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || '';
-          const ex = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca'];
+          const ex = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido (revertido)
           if (!ex.includes(tn) && !ex.some(e=>tn.includes(e))) return false;
           const di2 = new Date(sit.data_inicio+'T00:00:00'); di2.setHours(0,0,0,0);
           const dsn = new Date(ds); dsn.setHours(0,0,0,0);
