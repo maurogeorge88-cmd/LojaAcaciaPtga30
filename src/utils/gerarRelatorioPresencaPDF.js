@@ -588,11 +588,30 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     .map(id => irmaos.find(i => i.id === id))
     .filter(Boolean);
 
-  // REVERTIDO a pedido: prerrogativa/licença não excluem mais ninguém da
-  // conta de "Ativos" deste Quadro — sempre retorna false agora (a coluna
-  // "Prerrog./Licença" fica zerada, mantida só por compatibilidade de layout).
+  // "Ativos" conta TODO MUNDO agora (prerrogativa/licença não excluem mais,
+  // revertido a pedido). "Prerrog./Licença" continua existindo, só que
+  // agora é uma contagem INFORMATIVA à parte — mostra quantos dos "Ativos"
+  // têm prerrogativa de idade ou licença vigente hoje, sem tirar ninguém
+  // da conta de Ativos nem da soma de presenças.
   const hojeQuadro3 = new Date(); hojeQuadro3.setHours(0, 0, 0, 0);
-  const ehExcluidoAtivo = () => false;
+  const temPrerrogativaOuLicencaHoje = (irmao) => {
+    if (irmao.data_prerrogativa) {
+      const dataPrer = new Date(irmao.data_prerrogativa);
+      if (hojeQuadro3 >= dataPrer) return true;
+    }
+    const licencaVigente = historicoSituacoes?.some(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!tipo.includes('licen')) return false;
+      const di = new Date(sit.data_inicio + 'T00:00:00');
+      if (hojeQuadro3 < di) return false;
+      if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return hojeQuadro3 <= df; }
+      return true;
+    });
+    if (licencaVigente) return true;
+    if (irmao.situacao?.toLowerCase() === 'licenciado') return true;
+    return false;
+  };
 
   // Irmão com situação CURRENTE (hoje) de desligado/irregular/suspenso/excluído/
   // ex-ofício não deve contar no roster deste Quadro (nem como ativo, nem
@@ -617,15 +636,16 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   irmaosContados.filter(irmao => !ehInativoHoje(irmao)).forEach(irmao => {
     const g = obterGrauIrmao(irmao);
     const label = g === 'A' ? 'Aprendiz' : g === 'C' ? 'Companheiro' : 'Mestre';
-    if (ehExcluidoAtivo(irmao)) qtdIrmaosPorGrau[label].excluidos++;
-    else qtdIrmaosPorGrau[label].ativos++;
+    qtdIrmaosPorGrau[label].ativos++; // todo mundo conta como ativo agora
+    if (temPrerrogativaOuLicencaHoje(irmao)) qtdIrmaosPorGrau[label].excluidos++; // só informativo
   });
 
-  // Soma de presenças — apenas dos irmãos considerados ATIVOS
+  // Soma de presenças — de TODOS os considerados ativos (prerrogativa/
+  // licença já não excluem mais ninguém dessa soma também)
   const presPorTipoSessaoEGrauIrmao = {};
   graus.forEach(g => { presPorTipoSessaoEGrauIrmao[g.id] = { Aprendiz: 0, Companheiro: 0, Mestre: 0 }; });
 
-  irmaosContados.filter(irmao => !ehExcluidoAtivo(irmao) && !ehInativoHoje(irmao)).forEach(irmao => {
+  irmaosContados.filter(irmao => !ehInativoHoje(irmao)).forEach(irmao => {
     const gIrmao = obterGrauIrmao(irmao);
     const labelIrmao = gIrmao === 'A' ? 'Aprendiz' : gIrmao === 'C' ? 'Companheiro' : 'Mestre';
     sessoes.forEach(sessao => {
