@@ -58,8 +58,9 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       const dataSessaoNorm = new Date(dataSessao);
       dataSessaoNorm.setHours(0, 0, 0, 0);
       
-      // Lista de situações que bloqueiam/afetam a presença
-      const situacoesBloqueadoras = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
+      // Lista de situações que bloqueiam/afetam a presença — "licenca"
+      // removida a pedido (revertido, volta a contar como elegível normal)
+      const situacoesBloqueadoras = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
       const ehBloqueadora = situacoesBloqueadoras.includes(tipoNormalizado) ||
         situacoesBloqueadoras.some(s => tipoNormalizado.includes(s));
       
@@ -284,16 +285,13 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         }
       }
 
-      // Verificar prerrogativa por idade (≥70 anos na data da sessão)
-      if (irmao.data_prerrogativa) {
-        const dataPrer = new Date(irmao.data_prerrogativa);
-        if (dataSessao >= dataPrer) {
-          row[`sessao_${index}`] = '-';
-          return; // não computa como elegível
-        }
-      }
+      // REVERTIDO a pedido: prerrogativa de idade não exclui mais a sessão
+      // da conta (volta a contar como elegível normal). O rótulo abaixo do
+      // nome ("Prerrogativa") continua aparecendo normalmente.
 
-      // Verificar situação via histórico (irregular, suspenso, licença)
+      // Verificar situação via histórico (irregular, suspenso, desligado,
+      // etc.) — "licenca" já não bloqueia mais (removida de
+      // situacoesBloqueadoras acima, a pedido).
       const situacao = verificarSituacaoNaData(irmao.id, dataSessao);
       if (situacao) {
         row[`sessao_${index}`] = '-';
@@ -556,15 +554,6 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   ySum = doc.lastAutoTable.finalY + 3;
 
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'italic');
-  doc.setTextColor(120);
-  doc.text(
-    '* Já exclui automaticamente sessões em que o Irmão tinha prerrogativa de idade ou estava em licença registrada na data.',
-    10, ySum, { maxWidth: pageWidth - 20 }
-  );
-  ySum += 7;
-
   // Resumo geral — quantidade de SESSÕES (não soma de elegibilidades por irmão)
   const totalSessoesGeral = sessoes.length;
   // % geral = MÉDIA das taxas individuais de cada irmão (mesmo método do
@@ -599,28 +588,11 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     .map(id => irmaos.find(i => i.id === id))
     .filter(Boolean);
 
-  // Determinar, para cada irmão, se está de fato ATIVO (nem prerrogativa, nem
-  // licenciado atualmente) ou EXCLUÍDO da conta (prerrogativa de idade ou
-  // licença vigente hoje) — usado tanto pra quantidade quanto pra % de presença.
+  // REVERTIDO a pedido: prerrogativa/licença não excluem mais ninguém da
+  // conta de "Ativos" deste Quadro — sempre retorna false agora (a coluna
+  // "Prerrog./Licença" fica zerada, mantida só por compatibilidade de layout).
   const hojeQuadro3 = new Date(); hojeQuadro3.setHours(0, 0, 0, 0);
-  const ehExcluidoAtivo = (irmao) => {
-    if (irmao.data_prerrogativa) {
-      const dataPrer = new Date(irmao.data_prerrogativa);
-      if (hojeQuadro3 >= dataPrer) return true;
-    }
-    const licencaVigente = historicoSituacoes?.some(sit => {
-      if (sit.membro_id !== irmao.id) return false;
-      const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (!tipo.includes('licen')) return false;
-      const di = new Date(sit.data_inicio + 'T00:00:00');
-      if (hojeQuadro3 < di) return false;
-      if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return hojeQuadro3 <= df; }
-      return true;
-    });
-    if (licencaVigente) return true;
-    if (irmao.situacao?.toLowerCase() === 'licenciado') return true;
-    return false;
-  };
+  const ehExcluidoAtivo = () => false;
 
   // Irmão com situação CURRENTE (hoje) de desligado/irregular/suspenso/excluído/
   // ex-ofício não deve contar no roster deste Quadro (nem como ativo, nem
@@ -718,16 +690,6 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
     ySum = doc.lastAutoTable.finalY + 8;
   });
-
-  ySum += 2;
-
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
-  doc.setTextColor(100);
-  doc.text(
-    'Observação: ausências de Irmãos com prerrogativa de idade ou em período de licença registrado não são computadas nestes percentuais — apenas sessões efetivamente elegíveis para cada Irmão entram no cálculo.',
-    10, ySum, { maxWidth: pageWidth - 20 }
-  );
 
   // Rodapé de TODAS as páginas — corrige a contagem "Página X de Y", já que Y
   // mudou depois que a página de resumo foi adicionada (o didDrawTable da
