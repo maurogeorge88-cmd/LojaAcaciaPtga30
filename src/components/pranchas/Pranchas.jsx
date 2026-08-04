@@ -311,7 +311,19 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
             <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
               {(() => {
                 const getAnoPrancha = p => p.data_prancha ? new Date(p.data_prancha+'T00:00:00').getFullYear() : new Date().getFullYear();
-                const lista = [...pranchasFiltradas].sort((a,b) => new Date(b.data_prancha) - new Date(a.data_prancha));
+                // Ordena por data (mais recente primeiro) e, dentro do mesmo
+                // dia, pelo número da prancha (ordem natural: 001, 002, 010).
+                // Antes só ordenava por data — quando havia mais de uma
+                // prancha no mesmo dia, a ordem ficava dependendo da ordem
+                // "crua" que os dados chegavam (por isso editar um registro
+                // fazia ele pular pro topo: mudava a ordem de chegada, não a
+                // posição real). Agora a ordem é sempre a mesma,
+                // independente de qual item foi editado por último.
+                const lista = [...pranchasFiltradas].sort((a, b) => {
+                  const dataDiff = new Date(b.data_prancha) - new Date(a.data_prancha);
+                  if (dataDiff !== 0) return dataDiff;
+                  return (a.numero_prancha || '').localeCompare(b.numero_prancha || '', undefined, { numeric: true, sensitivity: 'base' });
+                });
                 if (lista.length === 0) return (
                   <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
                     {searchTerm ? 'Nenhuma prancha encontrada' : 'Nenhuma prancha cadastrada'}
