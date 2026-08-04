@@ -322,7 +322,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                 const lista = [...pranchasFiltradas].sort((a, b) => {
                   const dataDiff = new Date(b.data_prancha) - new Date(a.data_prancha);
                   if (dataDiff !== 0) return dataDiff;
-                  return (a.numero_prancha || '').localeCompare(b.numero_prancha || '', undefined, { numeric: true, sensitivity: 'base' });
+                  return (b.numero_prancha || '').localeCompare(a.numero_prancha || '', undefined, { numeric: true, sensitivity: 'base' });
                 });
                 if (lista.length === 0) return (
                   <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
