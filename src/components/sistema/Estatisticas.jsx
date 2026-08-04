@@ -296,7 +296,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     // prerrogativa/licença/desligado/irregular/etc. por data real).
     const presencaMensal = Array.from({length:12},(_,m)=>({mes:MESES_ABR[m],sessoes:0,presentes:0,eleg:0,taxa:0}));
     const totaisIndividuaisAno = {};
-    irmaos.forEach(i => { totaisIndividuaisAno[i.id] = { eleg: 0, pres: 0, faltas: 0 }; });
+    irmaos.forEach(i => { totaisIndividuaisAno[i.id] = { eleg: 0, pres: 0, faltas: 0, justificadas: 0 }; });
 
     sessoes.forEach(s=>{
       const mes = parseInt(s.data_sessao.substring(5, 7)) - 1; // 0=Jan, 11=Dez
@@ -313,6 +313,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         } else if (!justMap[`${s.id}_${i.id}`]) {
           // Falta só conta se NÃO tiver justificativa
           totaisIndividuaisAno[i.id].faltas++;
+        } else {
+          totaisIndividuaisAno[i.id].justificadas++;
         }
       });
     });
@@ -364,16 +366,16 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     // tenha registro, mesmo as que o grau do irmão nem participava.
     const presencaIrmao = {};
     ativos.forEach(i=>{
-      const t = totaisIndividuaisAno[i.id] || { eleg: 0, pres: 0, faltas: 0 };
+      const t = totaisIndividuaisAno[i.id] || { eleg: 0, pres: 0, faltas: 0, justificadas: 0 };
       presencaIrmao[i.id]={
-        nome:i.nome, pres:t.pres, faltas:t.faltas, total:t.eleg,
+        nome:i.nome, pres:t.pres, faltas:t.faltas, justificadas:t.justificadas, total:t.eleg,
         temPrerrogativa:(calcIdade(i.data_nascimento)||0) >= 70,
         licenciado:(i.situacao||'').toLowerCase()==='licenciado'
       };
     });
     const rankingPresenca = Object.values(presencaIrmao)
       .filter(i=>i.total>0)
-      .map(i=>({...i,taxa:Math.round(i.pres/i.total*100), taxaFalta:Math.round(i.faltas/i.total*100)}))
+      .map(i=>({...i,taxa:Math.round(i.pres/i.total*100), taxaFalta:Math.round(i.faltas/i.total*100), taxaJustificada:Math.round(i.justificadas/i.total*100)}))
       .sort((a,b)=> b.taxa-a.taxa || a.nome.localeCompare(b.nome));
 
     // Financeiro por mês
@@ -612,12 +614,18 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           {isMestre && (
             <div style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem'}}>
               <p style={{fontWeight:700,fontSize:'0.82rem',color:VERMELHO,marginBottom:'0.75rem'}}>⚠️ Top 5 Mais Faltosos</p>
+              <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem',paddingBottom:'0.3rem',borderBottom:'1px solid var(--color-border)'}}>
+                <span style={{flex:1}}></span>
+                <span style={{width:'52px',textAlign:'right',fontSize:'0.65rem',fontWeight:700,color:'var(--color-text-muted)',textTransform:'uppercase'}}>Justif.</span>
+                <span style={{width:'52px',textAlign:'right',fontSize:'0.65rem',fontWeight:700,color:'var(--color-text-muted)',textTransform:'uppercase'}}>Ausência</span>
+              </div>
               {stats.rankingPresenca
                 .filter(i=>!i.temPrerrogativa && !i.licenciado)
                 .slice(-5).reverse().map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
                   <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.nome}</span>
-                  <span style={{fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxaFalta)}</span>
+                  <span style={{width:'52px',textAlign:'right',fontWeight:700,fontSize:'0.8rem',color:'#f59e0b'}}>{fmtP(i.taxaJustificada)}</span>
+                  <span style={{width:'52px',textAlign:'right',fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxaFalta)}</span>
                 </div>
               ))}
             </div>
