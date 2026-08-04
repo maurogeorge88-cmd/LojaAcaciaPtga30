@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
 } from 'recharts';
 
 const AZUL    = '#1e3a5f';
@@ -250,8 +250,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
     // ── Elegibilidade sessão-a-sessão — mesma lógica do relatório em PDF,
     // da Matrix de Presença, do Dashboard e do boletim por e-mail: grau na
-    // data, data de entrada, falecimento, situação bloqueadora por data real
-    // (sem nada fixo) e prerrogativa de idade (70+ na data da sessão).
+    // data, data de entrada, falecimento e situação bloqueadora por data real
+    // (sem nada fixo). REVERTIDO a pedido: licença e prerrogativa de idade
+    // não excluem mais ninguém da conta — voltam a contar como elegível normal.
     const unaccentLower = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const elegivelNaData = (irmao, dataSessao, grauSessaoId) => {
       const grauMin = grauSessaoId === 4 ? 1 : grauSessaoId; // Administrativa tratada como Aprendiz
@@ -269,7 +270,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       const bloqueado = historicoSituacoes.some(sit => {
         if (sit.membro_id !== irmao.id) return false;
         const tipo = unaccentLower(sit.tipo_situacao);
-        const tipos = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca'];
+        const tipos = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido
         const ehBloq = tipos.includes(tipo) || tipos.some(t=>tipo.includes(t));
         if (!ehBloq) return false;
         const di = new Date(sit.data_inicio + 'T00:00:00');
@@ -279,13 +280,6 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       });
       if (bloqueado) return false;
 
-      if (irmao.data_nascimento) {
-        const nasc = new Date(irmao.data_nascimento + 'T00:00:00');
-        let idade = dataSessao.getFullYear() - nasc.getFullYear();
-        if (dataSessao.getMonth() < nasc.getMonth() ||
-           (dataSessao.getMonth() === nasc.getMonth() && dataSessao.getDate() < nasc.getDate())) idade--;
-        if (idade >= 70) return false;
-      }
       return true;
     };
 
@@ -566,7 +560,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                     labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
                     itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
                     formatter={(v)=>[fmtP(v),'Presença']}/>
-                <Line type="monotone" dataKey="taxa" stroke={AZUL} strokeWidth={2} dot={{r:4,fill:AZUL}} activeDot={{r:6}}/>
+                <Line type="monotone" dataKey="taxa" stroke={AZUL} strokeWidth={2} dot={{r:4,fill:AZUL}} activeDot={{r:6}}>
+                  <LabelList dataKey="taxa" position="top" offset={10}
+                    formatter={(v)=>`${v}%`}
+                    style={{fontSize:11,fontWeight:700,fill:'var(--color-text)'}}/>
+                </Line>
               </LineChart>
             </ResponsiveContainer>
             ) : <GraficoVazio/>;
