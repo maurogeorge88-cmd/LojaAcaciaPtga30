@@ -496,8 +496,9 @@ export default function DashboardPresenca() {
             if (dataSessao >= dataFalec) return;
           }
 
-          // 5. Licença vigente na data da sessão — NÃO conta como elegível, mas
-          // é contabilizado à parte pra deixar claro que existe (não é falta real)
+          // 5. Licença vigente na data da sessão — REVERTIDO a pedido: volta
+          // a contar como elegível normal. Continua sendo contabilizado à
+          // parte (badge informativo), só não exclui mais da lista.
           const temLicenca = historicoSituacoes?.find(sit => {
             const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             return sit.membro_id === i.id &&
@@ -505,10 +506,10 @@ export default function DashboardPresenca() {
               dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
               (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
           });
-          if (temLicenca) { licenciadosCount++; return; }
+          if (temLicenca) { licenciadosCount++; }
 
-          // 6. Prerrogativa de idade (70+) na data da sessão — mesma lógica: não
-          // conta como elegível, mas é contabilizado à parte
+          // 6. Prerrogativa de idade (70+) na data da sessão — REVERTIDO a
+          // pedido: volta a contar como elegível normal, mesma lógica.
           if (i.data_nascimento) {
             const nasc = new Date(i.data_nascimento + 'T00:00:00');
             let idade = dataSessao.getFullYear() - nasc.getFullYear();
@@ -516,7 +517,7 @@ export default function DashboardPresenca() {
                (dataSessao.getMonth() === nasc.getMonth() && dataSessao.getDate() < nasc.getDate())) {
               idade--;
             }
-            if (idade >= 70) { prerrogativaCount++; return; }
+            if (idade >= 70) { prerrogativaCount++; }
           }
 
           elegiveis.push(i);
@@ -963,20 +964,22 @@ export default function DashboardPresenca() {
             // Ignorar sessão de grau SUPERIOR ao grau que o irmão tinha NA DATA
             if (grauSessao > grauNaSessao) return;
 
-            // Ignorar sessão em que o Irmão já tinha prerrogativa de idade
-            // (calculada acima, mas nunca era realmente aplicada aqui — por
-            // isso a Média de Presença ficava puxada pra baixo por quem tem
-            // prerrogativa e nunca comparece, mesmo estando isento).
-            if (temPrerrogativa && dataPrerrogativa && dataSessao >= dataPrerrogativa) return;
+            // REVERTIDO a pedido: prerrogativa de idade não exclui mais da
+            // conta (volta a contar como elegível normal).
 
-            // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
+            // Verificar se tem situação ativa na data da sessão — desligado,
+            // irregular, suspenso, excluído, ex-ofício continuam bloqueando;
+            // LICENÇA foi removida da lista a pedido (revertido, volta a
+            // contar como elegível normal, igual à prerrogativa).
+            const situacaoNaData = historicoSituacoes?.find(sit => {
+              if (sit.membro_id !== irmao.id) return false;
+              const tipoNorm = (sit.tipo_situacao || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              if (tipoNorm.includes('licen')) return false; // não bloqueia mais
+              return dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+                (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
+            });
             
-            // Se tem situação ativa (licença/desligamento), ignora
+            // Se tem situação ativa (desligamento/irregular/etc), ignora
             if (situacaoNaData) return;
 
             // Registro válido
