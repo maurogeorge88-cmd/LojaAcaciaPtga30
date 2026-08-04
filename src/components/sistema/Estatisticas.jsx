@@ -81,6 +81,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
   const [comodatosAtivos, setComodatosAtivos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+  const [saldoBancarioAtual, setSaldoBancarioAtual] = useState(null);
 
   const isMestre = !grauUsuario || ['mestre','mestre instalado','admin'].includes((grauUsuario||'').toLowerCase());
 
@@ -98,6 +99,64 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       if (lista.length > 0) { setAnosDisp(lista); setAnoSel(lista[0]); }
     };
     buscarAnos();
+  }, []);
+
+  // Saldo Bancário atual — SEMPRE histórico completo (não filtra por ano
+  // selecionado, é o saldo de hoje), mesma lógica do card "Saldo Bancário"
+  // do Finanças da Loja: tudo que não é dinheiro físico nem tronco em
+  // espécie, entra/sai do banco.
+  useEffect(() => {
+    const buscarSaldoBancario = async () => {
+      let todos = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('lancamentos_loja')
+          .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
+          .eq('status', 'pago')
+          .range(inicio, inicio + tamanhoPagina - 1);
+        if (lote && lote.length > 0) {
+          todos = [...todos, ...lote];
+          inicio += tamanhoPagina;
+          if (lote.length < tamanhoPagina) continuar = false;
+        } else {
+          continuar = false;
+        }
+      }
+
+      const receitasBancarias = todos
+        .filter(l =>
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      const depositos = todos
+        .filter(l =>
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.eh_transferencia_interna === true &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco')
+        )
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      const despesasBancarias = todos
+        .filter(l => {
+          const isTroncoDinheiro = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') && l.tipo_pagamento === 'dinheiro';
+          if (isTroncoDinheiro) return false;
+          return l.categorias_financeiras?.tipo === 'despesa' &&
+            l.tipo_pagamento !== 'compensacao' &&
+            l.tipo_pagamento !== 'dinheiro' &&
+            !l.eh_transferencia_interna;
+        })
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      setSaldoBancarioAtual(receitasBancarias + depositos - despesasBancarias);
+    };
+    buscarSaldoBancario();
   }, []);
 
   useEffect(() => { carregarDados(); }, [anoSel]);
@@ -637,11 +696,12 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           PAINEL 3 — FINANCEIRO
       ══════════════════════════════════════════════════════════════════════ */}
       <Painel titulo="💰 Financeiro">
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem',marginBottom:'1.25rem'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',gap:'0.75rem',marginBottom:'1.25rem'}}>
           <Card label={`Receitas ${anoSel}`}  valor={fmtR(stats.totalReceita)} sub="Entradas pagas"           cor={VERDE}    icon="📈"/>
           <Card label={`Despesas ${anoSel}`}  valor={fmtR(stats.totalDespesa)} sub="Saídas pagas"             cor={VERMELHO} icon="📉"/>
           <Card label="Resultado"         valor={fmtR(stats.totalReceita-stats.totalDespesa)} sub={stats.totalReceita>=stats.totalDespesa?'Superávit':'Déficit'} cor={stats.totalReceita>=stats.totalDespesa?VERDE:VERMELHO} icon="⚖️"/>
           <Card label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor="var(--color-accent)" icon="🏆"/>
+          <Card label="Saldo Bancário" valor={saldoBancarioAtual===null ? '...' : fmtR(saldoBancarioAtual)} sub="PIX, Transf., Cartão" cor="#0ea5e9" icon="🏦"/>
         </div>
 
         {/* Receita vs Despesa mensal */}
