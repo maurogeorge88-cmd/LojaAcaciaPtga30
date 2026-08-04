@@ -285,14 +285,18 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
     // Lookup rápido de presença por sessão+irmão
     const presMap = {};
-    presencas.forEach(p => { presMap[`${p.sessao_id}_${p.membro_id}`] = p.presente; });
+    const justMap = {};
+    presencas.forEach(p => {
+      presMap[`${p.sessao_id}_${p.membro_id}`] = p.presente;
+      justMap[`${p.sessao_id}_${p.membro_id}`] = p.justificativa;
+    });
 
     // Presença por sessão — cada mês soma presenças/elegíveis considerando
     // SÓ quem estava realmente elegível naquela sessão específica (exclui
     // prerrogativa/licença/desligado/irregular/etc. por data real).
     const presencaMensal = Array.from({length:12},(_,m)=>({mes:MESES_ABR[m],sessoes:0,presentes:0,eleg:0,taxa:0}));
     const totaisIndividuaisAno = {};
-    irmaos.forEach(i => { totaisIndividuaisAno[i.id] = { eleg: 0, pres: 0 }; });
+    irmaos.forEach(i => { totaisIndividuaisAno[i.id] = { eleg: 0, pres: 0, faltas: 0 }; });
 
     sessoes.forEach(s=>{
       const mes = parseInt(s.data_sessao.substring(5, 7)) - 1; // 0=Jan, 11=Dez
@@ -306,6 +310,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         if (presente) {
           presencaMensal[mes].presentes++;
           totaisIndividuaisAno[i.id].pres++;
+        } else if (!justMap[`${s.id}_${i.id}`]) {
+          // Falta só conta se NÃO tiver justificativa
+          totaisIndividuaisAno[i.id].faltas++;
         }
       });
     });
@@ -351,24 +358,18 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       return idade;
     };
 
+    // Presença por irmão (top/bottom) — reaproveita totaisIndividuaisAno
+    // (já filtrado por elegibilidade real: grau na data, entrada,
+    // falecimento, situação bloqueadora), em vez de contar toda sessão que
+    // tenha registro, mesmo as que o grau do irmão nem participava.
     const presencaIrmao = {};
     ativos.forEach(i=>{
+      const t = totaisIndividuaisAno[i.id] || { eleg: 0, pres: 0, faltas: 0 };
       presencaIrmao[i.id]={
-        nome:i.nome,pres:0,faltas:0,total:0,
+        nome:i.nome, pres:t.pres, faltas:t.faltas, total:t.eleg,
         temPrerrogativa:(calcIdade(i.data_nascimento)||0) >= 70,
         licenciado:(i.situacao||'').toLowerCase()==='licenciado'
       };
-    });
-    sessoes.forEach(s=>{
-      presencas.filter(p=>p.sessao_id===s.id).forEach(p=>{
-        if(presencaIrmao[p.membro_id]) {
-          presencaIrmao[p.membro_id].total++;
-          if(p.presente) presencaIrmao[p.membro_id].pres++;
-          // Falta só conta se NÃO tiver justificativa — ausência
-          // justificada não é considerada falta.
-          else if(!p.justificativa) presencaIrmao[p.membro_id].faltas++;
-        }
-      });
     });
     const rankingPresenca = Object.values(presencaIrmao)
       .filter(i=>i.total>0)
