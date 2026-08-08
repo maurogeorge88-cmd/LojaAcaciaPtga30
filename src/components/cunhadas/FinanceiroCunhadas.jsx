@@ -82,6 +82,9 @@ export const FinanceiroCunhadas=({userData})=>{
   const[mFech,setMFech]=useState(false);
   const[fechForm,setFechForm]=useState({mes:HOJE.getMonth()+1,ano:HOJE.getFullYear()});
   const[gerandoFech,setGerandoFech]=useState(false);
+  const[mFechCompleto,setMFechCompleto]=useState(false);
+  const[fechCompletoForm,setFechCompletoForm]=useState({modo:'mes',mes:HOJE.getMonth()+1,ano:HOJE.getFullYear()});
+  const[gerandoFechCompleto,setGerandoFechCompleto]=useState(false);
 
   // ── relatório mensalidades ───────────────────────────────────────────────────
   const[mRelat,setMRelat]=useState(false);
@@ -590,6 +593,340 @@ export const FinanceiroCunhadas=({userData})=>{
     finally{setGerandoFech(false);}
   };
 
+  // ── Gerar relatório de fechamento financeiro completo (PDF) ──────────────
+  // Inclui: resumo do período, receitas/despesas por categoria, evolução
+  // mensal do ano e (no modo "mês") o extrato detalhado + pendências.
+  const gerarFechamentoCompleto=async()=>{
+    setGerandoFechCompleto(true);
+    try{
+      const jsPDFModule=await import('jspdf');
+      const jsPDF=jsPDFModule.default;
+      const doc=new jsPDF();
+      const{modo,mes,ano}=fechCompletoForm;
+      const nomeMes=MESES[parseInt(mes)-1];
+      const W=190; // largura útil (210 - 2*10)
+      const margin=10;const colRight=200;
+      let y=14;
+
+      // ── Paleta (rosa = cor das cunhadas) ──────────────────────────────────
+      const COR_ACCENT=[219,39,119];
+      const COR_ACCENT_BG=[253,231,243];
+      const COR_VERDE=[16,120,60];
+      const COR_VERM=[200,30,30];
+      const COR_AZUL=[59,130,246];
+      const COR_CINZA=[100,100,100];
+      const COR_FUNDO=[248,248,252];
+      const COR_FUNDO2=[241,241,248];
+
+      // ── helpers de layout ────────────────────────────────────────────────
+      const linhaDupla=(yy)=>{doc.setDrawColor(80);doc.setLineWidth(0.8);doc.line(margin,yy,colRight,yy);doc.setLineWidth(0.3);doc.line(margin,yy+1,colRight,yy+1);doc.setDrawColor(180);doc.setLineWidth(0.2);return yy+3;};
+      const linhaSim=(yy,cor=[180])=>{doc.setDrawColor(...cor);doc.setLineWidth(0.2);doc.line(margin,yy,colRight,yy);return yy+0.5;};
+      const txt=(t,x,yy,op={})=>{doc.text(String(t),x,yy,op);};
+      const setStyle=(sz,bold,color=[0])=>{doc.setFontSize(sz);doc.setFont('helvetica',bold?'bold':'normal');doc.setTextColor(...color);};
+      const rect=(x,yy,w,h,cor)=>{doc.setFillColor(...cor);doc.rect(x,yy,w,h,'F');};
+      const rodapePagina=(pg,totalPg)=>{
+        setStyle(7,false,[160]);txt(`Página ${pg} de ${totalPg}`,105,292,{align:'center'});
+        setStyle(6,false,[180]);txt('SysMaçom-MG - Desenvolvedor: Mauro George',10,292);
+      };
+      const secaoTitulo=(titulo,valorDireita=null)=>{
+        if(y>265){doc.addPage();y=14;}
+        rect(margin,y,W,6,COR_ACCENT);
+        setStyle(9,true,[255]);txt(titulo,margin+3,y+4.2);
+        if(valorDireita!==null)txt(valorDireita,colRight-3,y+4.2,{align:'right'});
+        doc.setTextColor(0);
+        y+=9;
+      };
+      const novaPagSeNecessario=(altura=15)=>{ if(y+altura>272){doc.addPage();y=14;} };
+
+      // ── CABEÇALHO ────────────────────────────────────────────────────────
+      rect(0,0,210,26,COR_ACCENT);
+      try{ doc.addImage(LOGO_ACACIA,'PNG',8,3,20,20); }catch(e){}
+      setStyle(14,true,[255]);txt(nomeGrupo,110,10,{align:'center'});
+      const tituloRel=modo==='ano'?`Relatório de Fechamento — Ano ${ano}`:`Relatório de Fechamento — ${nomeMes}/${ano}`;
+      setStyle(9.5,true,[253,231,243]);txt(tituloRel,110,16,{align:'center'});
+      setStyle(7,false,[253,231,243]);txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,110,21.5,{align:'center'});
+      doc.setTextColor(0);
+      y=32;
+
+      // ── Filtrar lançamentos do período ─────────────────────────────────
+      const dentroPeriodo=l=>{
+        const[ly,lm]=l.data_lancamento.split('-');
+        if(modo==='ano')return parseInt(ly)===parseInt(ano);
+        return parseInt(lm)===parseInt(mes)&&parseInt(ly)===parseInt(ano);
+      };
+      const lancPeriodo=todos.filter(l=>dentroPeriodo(l)&&l.pago);
+
+      // Saldo anterior ao período
+      const limAnt=modo==='ano'?`${ano}-01-01`:`${ano}-${String(parseInt(mes)).padStart(2,'0')}-01`;
+      const lancAnt=todos.filter(l=>l.pago&&l.data_lancamento<limAnt);
+      const recAnt=lancAnt.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
+      const despAnt=lancAnt.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
+      const saldoAnterior=recAnt-despAnt;
+
+      const totalRec=lancPeriodo.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
+      const totalDesp=lancPeriodo.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
+      const saldoPeriodo=totalRec-totalDesp;
+      const saldoFinal=saldoAnterior+saldoPeriodo;
+
+      // ── 1. RESUMO FINANCEIRO ──────────────────────────────────────────────
+      secaoTitulo('1. RESUMO FINANCEIRO');
+      const boxW=(W-6)/3;
+      const boxes1=[
+        {label:'SALDO ANTERIOR',valor:saldoAnterior,cor:[80,80,160]},
+        {label:'RESULTADO DO PERÍODO',valor:saldoPeriodo,cor:saldoPeriodo>=0?COR_VERDE:COR_VERM},
+        {label:'SALDO FINAL',valor:saldoFinal,cor:saldoFinal>=0?COR_VERDE:COR_VERM},
+      ];
+      boxes1.forEach((b,i)=>{
+        const bx=margin+i*(boxW+3);
+        rect(bx,y,boxW,16,COR_FUNDO);
+        doc.setDrawColor(...b.cor);doc.setLineWidth(0.5);doc.rect(bx,y,boxW,16,'S');
+        setStyle(7,false,COR_CINZA);txt(b.label,bx+boxW/2,y+5.5,{align:'center'});
+        setStyle(10,true,b.cor);txt(fmtM(b.valor),bx+boxW/2,y+11.5,{align:'center'});
+      });
+      y+=21;
+
+      // Detalhe receitas/despesas do período
+      rect(margin,y,W,5.5,COR_FUNDO2);
+      setStyle(8,false,[30]);txt('(+) Total Receitas',margin+3,y+3.8);
+      setStyle(8,true,COR_VERDE);txt(fmtM(totalRec),colRight-3,y+3.8,{align:'right'});
+      y+=5.5;
+      rect(margin,y,W,5.5,COR_FUNDO);
+      setStyle(8,false,[30]);txt('(−) Total Despesas',margin+3,y+3.8);
+      setStyle(8,true,COR_VERM);txt(fmtM(totalDesp),colRight-3,y+3.8,{align:'right'});
+      y+=9;
+
+      // ── 2. RECEITAS POR CATEGORIA ──────────────────────────────────────────
+      const agruparPorCategoria=lancs=>{
+        const grupos={};
+        lancs.forEach(l=>{
+          const nome=l.categoria?.nome||'Sem categoria';
+          if(!grupos[nome])grupos[nome]={nome,valor:0,qtd:0};
+          grupos[nome].valor+=Number(l.valor);
+          grupos[nome].qtd+=1;
+        });
+        return Object.values(grupos).sort((a,b)=>b.valor-a.valor);
+      };
+      const gruposRec=agruparPorCategoria(lancPeriodo.filter(l=>l.tipo==='receita'));
+      const gruposDesp=agruparPorCategoria(lancPeriodo.filter(l=>l.tipo==='despesa'));
+
+      novaPagSeNecessario(20);
+      secaoTitulo('2. RECEITAS POR CATEGORIA',fmtM(totalRec));
+      if(gruposRec.length===0){setStyle(8,false,[150]);txt('Nenhuma receita no período.',margin+2,y+3);y+=8;}
+      gruposRec.forEach((g,i)=>{
+        novaPagSeNecessario(9);
+        const pct=totalRec>0?(g.valor/totalRec*100).toFixed(1):'0.0';
+        if(i%2===0)rect(margin,y-0.5,W,7,COR_FUNDO2);
+        setStyle(8.5,true,[30]);txt(g.nome,margin+3,y+3.2);
+        setStyle(7.5,false,COR_CINZA);txt(`${pct}%  ·  ${g.qtd} lanç.`,margin+95,y+3.2);
+        setStyle(8.5,true,COR_VERDE);txt(fmtM(g.valor),colRight-3,y+3.2,{align:'right'});
+        const barW=W-6;
+        doc.setFillColor(220,220,220);doc.rect(margin+3,y+4.5,barW,1.3,'F');
+        doc.setFillColor(...COR_VERDE);doc.rect(margin+3,y+4.5,barW*parseFloat(pct)/100,1.3,'F');
+        y+=7.5;
+      });
+      y+=3;
+
+      // ── 3. DESPESAS POR CATEGORIA ───────────────────────────────────────────
+      novaPagSeNecessario(20);
+      secaoTitulo('3. DESPESAS POR CATEGORIA',fmtM(totalDesp));
+      if(gruposDesp.length===0){setStyle(8,false,[150]);txt('Nenhuma despesa no período.',margin+2,y+3);y+=8;}
+      gruposDesp.forEach((g,i)=>{
+        novaPagSeNecessario(9);
+        const pct=totalDesp>0?(g.valor/totalDesp*100).toFixed(1):'0.0';
+        if(i%2===0)rect(margin,y-0.5,W,7,COR_FUNDO2);
+        setStyle(8.5,true,[30]);txt(g.nome,margin+3,y+3.2);
+        setStyle(7.5,false,COR_CINZA);txt(`${pct}%  ·  ${g.qtd} lanç.`,margin+95,y+3.2);
+        setStyle(8.5,true,COR_VERM);txt(fmtM(g.valor),colRight-3,y+3.2,{align:'right'});
+        const barW=W-6;
+        doc.setFillColor(220,220,220);doc.rect(margin+3,y+4.5,barW,1.3,'F');
+        doc.setFillColor(...COR_VERM);doc.rect(margin+3,y+4.5,barW*parseFloat(pct)/100,1.3,'F');
+        y+=7.5;
+      });
+      y+=3;
+
+      // ── 4. EVOLUÇÃO FINANCEIRA (mensal do ano) ──────────────────────────────
+      novaPagSeNecessario(20);
+      secaoTitulo('4. EVOLUÇÃO FINANCEIRA MENSAL',`Ano ${ano}`);
+
+      const inicioAno=`${ano}-01-01`;
+      const lancAntesAno=todos.filter(l=>l.pago&&l.data_lancamento<inicioAno);
+      const saldoAntesAno=lancAntesAno.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0)
+                          -lancAntesAno.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
+      const anoAtual=HOJE.getFullYear(),mesAtual=HOJE.getMonth()+1;
+
+      const cols={mes:margin+2,rec:margin+42,desp:margin+84,saldoM:margin+126,acum:margin+160};
+      rect(margin,y,W,6,[80,80,160]);
+      setStyle(7.5,true,[255]);
+      txt('Mês',cols.mes,y+4.2);txt('Receitas',cols.rec,y+4.2);txt('Despesas',cols.desp,y+4.2);
+      txt('Saldo Mês',cols.saldoM,y+4.2);txt('Acumulado',cols.acum,y+4.2);
+      doc.setTextColor(0);
+      y+=8;
+
+      let acumulado=saldoAntesAno;
+      let recAnoTotal=0,despAnoTotal=0;
+      for(let m=1;m<=12;m++){
+        novaPagSeNecessario(6);
+        const lancMesLoop=todos.filter(l=>{
+          const[ly,lm]=l.data_lancamento.split('-');
+          return l.pago&&parseInt(ly)===parseInt(ano)&&parseInt(lm)===m;
+        });
+        const recM=lancMesLoop.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
+        const despM=lancMesLoop.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
+        const saldoM=recM-despM;
+        const mesOcorreu=parseInt(ano)<anoAtual||(parseInt(ano)===anoAtual&&m<=mesAtual);
+        if(mesOcorreu)acumulado+=saldoM;
+        recAnoTotal+=recM;despAnoTotal+=despM;
+
+        if((m-1)%2===0)rect(margin,y-1,W,5.5,COR_FUNDO);
+        setStyle(7.8,true,[30]);txt(MESES[m-1].slice(0,3),cols.mes,y+3);
+        setStyle(7.5,false,COR_VERDE);txt(mesOcorreu&&recM>0?fmtM(recM):'—',cols.rec,y+3);
+        setStyle(7.5,false,COR_VERM);txt(mesOcorreu&&despM>0?fmtM(despM):'—',cols.desp,y+3);
+        setStyle(7.5,true,saldoM>=0?COR_VERDE:COR_VERM);txt(mesOcorreu?fmtM(saldoM):'—',cols.saldoM,y+3);
+        setStyle(7.5,true,acumulado>=0?COR_AZUL:COR_VERM);txt(mesOcorreu?fmtM(acumulado):'—',cols.acum,y+3);
+        y+=5.5;
+      }
+      linhaSim(y,[120,120,180]);y+=1;
+      rect(margin,y,W,6.5,[219,234,254]);
+      setStyle(8,true,[40]);txt(`TOTAL ${ano}`,cols.mes,y+4.5);
+      setStyle(8,true,COR_VERDE);txt(fmtM(recAnoTotal),cols.rec,y+4.5);
+      setStyle(8,true,COR_VERM);txt(fmtM(despAnoTotal),cols.desp,y+4.5);
+      setStyle(8,true,COR_AZUL);txt(fmtM(recAnoTotal-despAnoTotal),cols.saldoM,y+4.5);
+      setStyle(8,true,acumulado>=0?COR_VERDE:COR_VERM);txt(fmtM(acumulado),cols.acum,y+4.5);
+      y+=11;
+
+      // ── 5. EXTRATO DETALHADO (somente no modo Mês) ──────────────────────────
+      if(modo==='mes'){
+        novaPagSeNecessario(20);
+        secaoTitulo('5. EXTRATO DETALHADO DO MÊS');
+
+        // DESPESAS
+        setStyle(9.5,true,COR_VERM);txt('Despesas',margin,y+3);y+=6;
+        setStyle(7.5,true,[60]);
+        rect(margin,y-4,W,6,[248,232,232]);
+        txt('Data',margin+1,y);txt('Descrição',margin+20,y);txt('Categoria',margin+90,y);txt('Valor',colRight-1,y,{align:'right'});
+        y+=3;linhaSim(y,[200]);y+=3;
+        const despesasMes=lancPeriodo.filter(l=>l.tipo==='despesa');
+        despesasMes.forEach((l,i)=>{
+          novaPagSeNecessario(6);
+          if(i%2===0)rect(margin,y-3.5,W,5.5,[252,248,248]);
+          setStyle(8,false,[30]);
+          txt(fmtD(l.data_lancamento),margin+1,y);
+          txt(doc.splitTextToSize(l.descricao,68)[0],margin+20,y);
+          txt(doc.splitTextToSize(l.categoria?.nome||'—',48)[0],margin+90,y);
+          setStyle(8,true,COR_VERM);txt(fmtM(l.valor),colRight-1,y,{align:'right'});
+          y+=5.5;
+        });
+        if(despesasMes.length===0){setStyle(8,false,[150]);txt('Nenhuma despesa neste mês.',margin,y);y+=6;}
+        y+=1;rect(margin,y-4,W,7,COR_VERM);doc.setTextColor(255);
+        setStyle(9,true,[255]);txt('TOTAL DESPESAS',margin+2,y);txt(fmtM(totalDesp),colRight-1,y,{align:'right'});
+        doc.setTextColor(0);y+=10;
+
+        // RECEITAS
+        novaPagSeNecessario(20);
+        setStyle(9.5,true,COR_VERDE);txt('Receitas',margin,y+3);y+=6;
+        setStyle(7.5,true,[60]);
+        rect(margin,y-4,W,6,[228,248,238]);
+        txt('Data',margin+1,y);txt('Descrição / Cunhada',margin+20,y);txt('Categoria',margin+110,y);txt('Valor',colRight-1,y,{align:'right'});
+        y+=3;linhaSim(y,[200]);y+=3;
+
+        const receitasBrut=lancPeriodo.filter(l=>l.tipo==='receita');
+        const ehMensalidade=l=>l.categoria?.nome?.toLowerCase().includes('mensalid')||(!l.cunhada_id&&l.descricao?.toLowerCase().includes('mensalid'));
+        const mensLanc=receitasBrut.filter(l=>ehMensalidade(l));
+        const outrasRec=receitasBrut.filter(l=>!ehMensalidade(l));
+        const totalMens=mensLanc.reduce((s,l)=>s+Number(l.valor),0);
+        let linhasReceita=[];
+        if(mensLanc.length>0){
+          linhasReceita.push({data:`${String(parseInt(mes)).padStart(2,'0')}/${ano}`,desc:`Mensalidades (${mensLanc.length} cunhada${mensLanc.length>1?'s':''})`,cat:'Mensalidade',valor:totalMens});
+        }
+        outrasRec.forEach(l=>linhasReceita.push({data:fmtD(l.data_lancamento),desc:`${l.descricao}${l.cunhada?.nome?' · '+abreviaNome(l.cunhada.nome):''}`,cat:l.categoria?.nome||'—',valor:Number(l.valor)}));
+
+        linhasReceita.forEach((l,i)=>{
+          novaPagSeNecessario(6);
+          if(i%2===0)rect(margin,y-3.5,W,5.5,[240,252,246]);
+          setStyle(8,false,[30]);
+          txt(l.data,margin+1,y);
+          txt(doc.splitTextToSize(l.desc,88)[0],margin+20,y);
+          txt(doc.splitTextToSize(l.cat,45)[0],margin+110,y);
+          setStyle(8,true,COR_VERDE);txt(fmtM(l.valor),colRight-1,y,{align:'right'});
+          y+=5.5;
+        });
+        if(linhasReceita.length===0){setStyle(8,false,[150]);txt('Nenhuma receita neste mês.',margin,y);y+=6;}
+        y+=1;rect(margin,y-4,W,7,COR_VERDE);doc.setTextColor(255);
+        setStyle(9,true,[255]);txt('TOTAL RECEITAS',margin+2,y);txt(fmtM(totalRec),colRight-1,y,{align:'right'});
+        doc.setTextColor(0);y+=10;
+      }
+
+      // ── 6. PENDÊNCIAS ────────────────────────────────────────────────────────
+      const pendReceitas=todos.filter(l=>l.tipo==='receita'&&!l.pago);
+      const pendDespesas=todos.filter(l=>l.tipo==='despesa'&&!l.pago);
+      if(pendReceitas.length>0||pendDespesas.length>0){
+        novaPagSeNecessario(20);
+        secaoTitulo(modo==='mes'?'6. PENDÊNCIAS (situação atual)':'5. PENDÊNCIAS (situação atual)');
+
+        const hoje=HOJE.toISOString().slice(0,10);
+        const totalRecPend=pendReceitas.reduce((s,l)=>s+Number(l.valor),0);
+        const totalDespPend=pendDespesas.reduce((s,l)=>s+Number(l.valor),0);
+        const recVenc=pendReceitas.filter(l=>l.data_vencimento&&l.data_vencimento<hoje).reduce((s,l)=>s+Number(l.valor),0);
+        const despVenc=pendDespesas.filter(l=>l.data_vencimento&&l.data_vencimento<hoje).reduce((s,l)=>s+Number(l.valor),0);
+        const saldoProj=saldoFinal+totalRecPend-totalDespPend;
+
+        const bw3=(W-4)/3;
+        [
+          {label:'A Receber',valor:totalRecPend,venc:recVenc,cor:COR_VERDE},
+          {label:'A Pagar',valor:totalDespPend,venc:despVenc,cor:COR_VERM},
+          {label:'Saldo Projetado',valor:saldoProj,venc:0,cor:saldoProj>=0?[139,92,246]:COR_VERM},
+        ].forEach((b,i)=>{
+          const bx=margin+i*(bw3+2);
+          rect(bx,y,bw3,17,COR_FUNDO);
+          doc.setDrawColor(...b.cor);doc.setLineWidth(0.4);doc.rect(bx,y,bw3,17,'S');
+          setStyle(7,false,COR_CINZA);txt(b.label,bx+bw3/2,y+5,{align:'center'});
+          setStyle(9,true,b.cor);txt(fmtM(b.valor),bx+bw3/2,y+10.5,{align:'center'});
+          if(b.venc>0){setStyle(6.5,false,COR_VERM);txt(`Vencido: ${fmtM(b.venc)}`,bx+bw3/2,y+15,{align:'center'});}
+        });
+        y+=21;
+
+        if(pendReceitas.length>0){
+          novaPagSeNecessario(12);
+          rect(margin,y,W,5,[209,250,229]);
+          setStyle(8,true,[4,120,87]);txt('Receitas a Receber por Categoria',margin+2,y+3.5);
+          y+=7;
+          agruparPorCategoria(pendReceitas).forEach((g,i)=>{
+            novaPagSeNecessario(6);
+            if(i%2===0)rect(margin,y-1,W,5.5,COR_FUNDO);
+            setStyle(8,false,[30]);txt(g.nome,margin+3,y+3);
+            setStyle(8,true,COR_VERDE);txt(fmtM(g.valor),colRight-3,y+3,{align:'right'});
+            y+=5.5;
+          });
+          y+=3;
+        }
+        if(pendDespesas.length>0){
+          novaPagSeNecessario(12);
+          rect(margin,y,W,5,[254,226,226]);
+          setStyle(8,true,[185,28,28]);txt('Despesas a Pagar por Categoria',margin+2,y+3.5);
+          y+=7;
+          agruparPorCategoria(pendDespesas).forEach((g,i)=>{
+            novaPagSeNecessario(6);
+            if(i%2===0)rect(margin,y-1,W,5.5,COR_FUNDO);
+            setStyle(8,false,[30]);txt(g.nome,margin+3,y+3);
+            setStyle(8,true,COR_VERM);txt(fmtM(g.valor),colRight-3,y+3,{align:'right'});
+            y+=5.5;
+          });
+          y+=3;
+        }
+      }
+
+      // Rodapé em todas as páginas
+      const totalPg=doc.getNumberOfPages();
+      for(let p=1;p<=totalPg;p++){doc.setPage(p);rodapePagina(p,totalPg);}
+
+      const sufixo=modo==='ano'?`Ano_${ano}`:`${String(parseInt(mes)).padStart(2,'0')}_${ano}`;
+      doc.save(`FechamentoCompleto_${nomeGrupo.replace(/\s+/g,'_')}_${sufixo}.pdf`);
+      showMsg('sucesso','PDF de fechamento completo gerado!');
+      setMFechCompleto(false);
+    }catch(e){showMsg('erro','Erro ao gerar PDF: '+e.message);}
+    finally{setGerandoFechCompleto(false);}
+  };
+
   const gerarRelatorio=async()=>{
     setGerandoPdf(true);
     try{
@@ -952,6 +1289,7 @@ export const FinanceiroCunhadas=({userData})=>{
           <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens,valor:'',data_pagamento:HOJE.toISOString().slice(0,10),forma_pagamento:'pix'});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
           <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>📊 Situação</button>
           <button style={s.bp('var(--color-accent)')} onClick={()=>{setFechForm({mes:mesMens,ano:anoMens});setMFech(true);}}>📄 Fechamento</button>
+          <button style={s.bp('#8b5cf6')} onClick={()=>{setFechCompletoForm({modo:'mes',mes:mesMens,ano:anoMens});setMFechCompleto(true);}}>📊 Fechamento Completo</button>
         </div>
       </div>
 
@@ -1436,6 +1774,60 @@ export const FinanceiroCunhadas=({userData})=>{
               <button style={s.bs} onClick={()=>setMFech(false)}>Cancelar</button>
               <button style={s.bp('var(--color-accent)')} onClick={gerarFechamento} disabled={gerandoFech}>
                 {gerandoFech?'⏳ Gerando...':'📄 Gerar PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FECHAMENTO COMPLETO */}
+      {mFechCompleto&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMFechCompleto(false)}>
+          <div style={{...s.mo,maxWidth:'420px'}}>
+            <div style={s.mh}>
+              <h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)'}}>📊 Relatório de Fechamento Completo</h2>
+              <button onClick={()=>setMFechCompleto(false)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+            </div>
+            <div style={s.mb}>
+              <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+                <Lbl l="Período" ch={
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem'}}>
+                    {[{v:'mes',l:'Mensal'},{v:'ano',l:'Anual'}].map(t=>(
+                      <button key={t.v} type="button" onClick={()=>setFechCompletoForm({...fechCompletoForm,modo:t.v})}
+                        style={{padding:'0.5rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-border)',background:fechCompletoForm.modo===t.v?'rgba(139,92,246,0.12)':'var(--color-surface-2)',color:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-text)',fontWeight:fechCompletoForm.modo===t.v?'700':'400',cursor:'pointer',fontSize:'0.85rem'}}>
+                        {t.l}
+                      </button>
+                    ))}
+                  </div>
+                }/>
+                {fechCompletoForm.modo==='mes'&&(
+                  <Lbl l="Mês" ch={
+                    <select style={s.sel} value={fechCompletoForm.mes} onChange={e=>setFechCompletoForm({...fechCompletoForm,mes:parseInt(e.target.value)})}>
+                      {MESES.map((nm,i)=><option key={i+1} value={i+1}>{nm}</option>)}
+                    </select>
+                  }/>
+                )}
+                <Lbl l="Ano" ch={
+                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                    <button style={s.ab} onClick={()=>setFechCompletoForm({...fechCompletoForm,ano:fechCompletoForm.ano-1})}>‹</button>
+                    <span style={{fontWeight:'700',color:'var(--color-text)',flex:1,textAlign:'center'}}>{fechCompletoForm.ano}</span>
+                    <button style={s.ab} onClick={()=>setFechCompletoForm({...fechCompletoForm,ano:fechCompletoForm.ano+1})}>›</button>
+                  </div>
+                }/>
+                <div style={{background:'rgba(139,92,246,0.1)',border:'1px solid #8b5cf6',borderRadius:'var(--radius-lg)',padding:'0.8rem 1rem'}}>
+                  <p style={{margin:0,fontSize:'0.82rem',color:'#8b5cf6',fontWeight:'600'}}>
+                    Fechamento: {fechCompletoForm.modo==='ano'?`Ano ${fechCompletoForm.ano}`:`${MESES[fechCompletoForm.mes-1]}/${fechCompletoForm.ano}`}
+                  </p>
+                  <p style={{margin:'0.3rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                    Gera PDF completo: resumo do período, receitas e despesas por categoria, evolução financeira mensal do ano{fechCompletoForm.modo==='mes'?', extrato detalhado':''} e pendências.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div style={s.mf}>
+              <button style={s.bs} onClick={()=>setMFechCompleto(false)}>Cancelar</button>
+              <button style={s.bp('#8b5cf6')} onClick={gerarFechamentoCompleto} disabled={gerandoFechCompleto}>
+                {gerandoFechCompleto?'⏳ Gerando...':'📊 Gerar PDF'}
               </button>
             </div>
           </div>
