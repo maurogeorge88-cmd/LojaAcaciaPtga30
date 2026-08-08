@@ -24,6 +24,7 @@ import ModalPagamentoParcial from './ModalPagamentoParcial';
 import ModalCompensacao from './ModalCompensacao';
 import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
+import ModalEdicaoLote from './components/ModalEdicaoLote';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -51,6 +52,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
+  const [mostrarModalEdicaoLote, setMostrarModalEdicaoLote] = useState(false);
   const [quitacaoForm, setQuitacaoForm] = useState({
     lancamento_id: null,
     data_pagamento: new Date().toISOString().split('T')[0],
@@ -2739,6 +2741,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         showError={showError}
       />
 
+      {/* MODAL EDIÇÃO/EXCLUSÃO EM LOTE */}
+      <ModalEdicaoLote
+        aberto={mostrarModalEdicaoLote}
+        onFechar={() => setMostrarModalEdicaoLote(false)}
+        categorias={categorias}
+        verificarMesBloqueado={verificarMesBloqueado}
+        onAtualizar={recarregarDados}
+      />
+
       {/* VIEW INADIMPLENTES */}
       {viewMode === 'inadimplentes' && (
         <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
@@ -2781,6 +2792,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   className="px-4 py-2 text-white rounded-lg hover: font-medium"
                 >
                   💰 Quitar em Lote
+                </button>
+                <button
+                  onClick={() => setMostrarModalEdicaoLote(true)}
+                  style={{padding:'0.5rem 1rem',background:'#7c3aed',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.85rem',cursor:'pointer'}}
+                >
+                  ✏️ Editar/Excluir em Lote
                 </button>
                 <button
                   onClick={() => setModalRenegocAberto(true)}
