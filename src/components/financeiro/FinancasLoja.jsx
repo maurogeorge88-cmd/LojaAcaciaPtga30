@@ -3190,6 +3190,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   💰 Quitar em Lote
                 </button>
               )}
+              <button
+                onClick={() => setMostrarModalEdicaoLote(true)}
+                style={{padding:'0.5rem 1rem',background:'#7c3aed',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.8rem',cursor:'pointer'}}
+              >
+                ✏️ Editar/Excluir em Lote
+              </button>
             </div>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.75rem'}}>
