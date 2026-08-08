@@ -90,7 +90,7 @@ export const FinanceiroCunhadas=({userData})=>{
 
   // ── pagamento adiantado ────────────────────────────────────────────────────
   const[mPgAdiant,setMPgAdiant]=useState(false);
-  const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear(),valor:''});
+  const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear(),valor:'',data_pagamento:HOJE.toISOString().slice(0,10),forma_pagamento:'pix'});
   const[salvPgAdiant,setSalvPgAdiant]=useState(false);
 
   // ── matrix ────────────────────────────────────────────────────────────────
@@ -332,9 +332,10 @@ export const FinanceiroCunhadas=({userData})=>{
         :parseFloat(config.valor_mensalidade||'50');
       const valorTotal=valorUnit*pgAdiantForm.meses.length;
 
-      // Data de hoje sem fuso — usar getFullYear/getMonth/getDate
+      // Data do pagamento escolhida pelo usuário (fallback: hoje)
       const agora=new Date();
-      const dataHoje=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
+      const dataPagamento=pgAdiantForm.data_pagamento||`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
+      const formaPagamento=pgAdiantForm.forma_pagamento||'pix';
 
       // Buscar categoria "Mensalidade"
       const{data:catMens}=await supabase
@@ -352,12 +353,12 @@ export const FinanceiroCunhadas=({userData})=>{
         await supabase.from('mensalidades_cunhadas').upsert({
           cunhada_id:pgAdiantForm.cunhada_id,
           mes:m,ano:a,valor:valorUnit,pago:true,
-          data_pagamento:dataHoje,data_vencimento:dataVenc,
+          data_pagamento:dataPagamento,data_vencimento:dataVenc,
         },{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
       }
 
       // 2. UM único lançamento em financeiro_cunhadas com valor total
-      // Lançado na data de hoje (mês em que o dinheiro entrou)
+      // Lançado na data de pagamento informada
       const qtdMeses=pgAdiantForm.meses.length;
       const mesesLabel=pgAdiantForm.meses
         .map(m=>MESES[parseInt(m)-1].slice(0,3))
@@ -371,16 +372,16 @@ export const FinanceiroCunhadas=({userData})=>{
         categoria_id:categId,
         descricao,
         valor:valorTotal,
-        data_lancamento:dataHoje,
+        data_lancamento:dataPagamento,
         pago:true,
-        forma_pagamento:'pix',
+        forma_pagamento:formaPagamento,
         observacoes:`${qtdMeses} meses adiantados: ${mesesLabel}/${a}`,
       }]);
       if(eLanc)showMsg('erro','Erro no lançamento: '+eLanc.message);
       else{
         showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)! Lançamento de R$ ${valorTotal.toFixed(2)} criado.`);
         setMPgAdiant(false);
-        setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear(),valor:''});
+        setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear(),valor:'',data_pagamento:`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`,forma_pagamento:'pix'});
         carregarTudo();
       }
     }catch(e){showMsg('erro','Erro: '+e.message);}
@@ -948,7 +949,7 @@ export const FinanceiroCunhadas=({userData})=>{
           <button style={s.ab} onClick={()=>{let m=mesMens+1,a=anoMens;if(m>12){m=1;a++;}setMesMens(m);setAnoMens(a);}}>›</button>
         </div>
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-          <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens,valor:''});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
+          <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens,valor:'',data_pagamento:HOJE.toISOString().slice(0,10),forma_pagamento:'pix'});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
           <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>📊 Situação</button>
           <button style={s.bp('var(--color-accent)')} onClick={()=>{setFechForm({mes:mesMens,ano:anoMens});setMFech(true);}}>📄 Fechamento</button>
         </div>
@@ -1621,6 +1622,18 @@ export const FinanceiroCunhadas=({userData})=>{
                   onChange={e=>setPgAdiantForm({...pgAdiantForm,valor:e.target.value})}
                   style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',width:'100%',fontSize:'0.875rem'}}
                 />
+              </div>
+
+              {/* Data do pagamento / Forma de pagamento */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem',marginBottom:'1rem'}}>
+                <Lbl l="Data do pagamento" ch={
+                  <input type="date" style={s.inp} value={pgAdiantForm.data_pagamento} onChange={e=>setPgAdiantForm({...pgAdiantForm,data_pagamento:e.target.value})}/>
+                }/>
+                <Lbl l="Forma de pagamento" ch={
+                  <select style={s.sel} value={pgAdiantForm.forma_pagamento} onChange={e=>setPgAdiantForm({...pgAdiantForm,forma_pagamento:e.target.value})}>
+                    {FPGTO.map(f=><option key={f.v} value={f.v}>{f.l}</option>)}
+                  </select>
+                }/>
               </div>
 
               {/* Preview */}
