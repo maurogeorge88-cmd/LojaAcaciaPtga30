@@ -83,7 +83,7 @@ export const FinanceiroCunhadas=({userData})=>{
   const[fechForm,setFechForm]=useState({mes:HOJE.getMonth()+1,ano:HOJE.getFullYear()});
   const[gerandoFech,setGerandoFech]=useState(false);
   const[mFechCompleto,setMFechCompleto]=useState(false);
-  const[fechCompletoForm,setFechCompletoForm]=useState({modo:'mes',mes:HOJE.getMonth()+1,ano:HOJE.getFullYear()});
+  const[fechCompletoForm,setFechCompletoForm]=useState({modo:'mes',mes:HOJE.getMonth()+1,semestre:1,ano:HOJE.getFullYear()});
   const[gerandoFechCompleto,setGerandoFechCompleto]=useState(false);
 
   // ── relatório mensalidades ───────────────────────────────────────────────────
@@ -602,7 +602,7 @@ export const FinanceiroCunhadas=({userData})=>{
       const jsPDFModule=await import('jspdf');
       const jsPDF=jsPDFModule.default;
       const doc=new jsPDF();
-      const{modo,mes,ano}=fechCompletoForm;
+      const{modo,mes,semestre,ano}=fechCompletoForm;
       const nomeMes=MESES[parseInt(mes)-1];
       const W=190; // largura útil (210 - 2*10)
       const margin=10;const colRight=200;
@@ -642,22 +642,25 @@ export const FinanceiroCunhadas=({userData})=>{
       rect(0,0,210,26,COR_ACCENT);
       try{ doc.addImage(LOGO_ACACIA,'PNG',8,3,20,20); }catch(e){}
       setStyle(14,true,[255]);txt(nomeGrupo,110,10,{align:'center'});
-      const tituloRel=modo==='ano'?`Relatório de Fechamento — Ano ${ano}`:`Relatório de Fechamento — ${nomeMes}/${ano}`;
+      const tituloRel=modo==='ano'?`Relatório de Fechamento — Ano ${ano}`:modo==='semestre'?`Relatório de Fechamento — ${parseInt(semestre)}º Semestre/${ano}`:`Relatório de Fechamento — ${nomeMes}/${ano}`;
       setStyle(9.5,true,[253,231,243]);txt(tituloRel,110,16,{align:'center'});
       setStyle(7,false,[253,231,243]);txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,110,21.5,{align:'center'});
       doc.setTextColor(0);
       y=32;
 
       // ── Filtrar lançamentos do período ─────────────────────────────────
+      const mesesSemestre=semestre===1?[1,2,3,4,5,6]:[7,8,9,10,11,12];
       const dentroPeriodo=l=>{
         const[ly,lm]=l.data_lancamento.split('-');
-        if(modo==='ano')return parseInt(ly)===parseInt(ano);
-        return parseInt(lm)===parseInt(mes)&&parseInt(ly)===parseInt(ano);
+        if(parseInt(ly)!==parseInt(ano))return false;
+        if(modo==='ano')return true;
+        if(modo==='semestre')return mesesSemestre.includes(parseInt(lm));
+        return parseInt(lm)===parseInt(mes);
       };
       const lancPeriodo=todos.filter(l=>dentroPeriodo(l)&&l.pago);
 
       // Saldo anterior ao período
-      const limAnt=modo==='ano'?`${ano}-01-01`:`${ano}-${String(parseInt(mes)).padStart(2,'0')}-01`;
+      const limAnt=modo==='ano'?`${ano}-01-01`:modo==='semestre'?`${ano}-${semestre===1?'01':'07'}-01`:`${ano}-${String(parseInt(mes)).padStart(2,'0')}-01`;
       const lancAnt=todos.filter(l=>l.pago&&l.data_lancamento<limAnt);
       const recAnt=lancAnt.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
       const despAnt=lancAnt.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
@@ -919,7 +922,7 @@ export const FinanceiroCunhadas=({userData})=>{
       const totalPg=doc.getNumberOfPages();
       for(let p=1;p<=totalPg;p++){doc.setPage(p);rodapePagina(p,totalPg);}
 
-      const sufixo=modo==='ano'?`Ano_${ano}`:`${String(parseInt(mes)).padStart(2,'0')}_${ano}`;
+      const sufixo=modo==='ano'?`Ano_${ano}`:modo==='semestre'?`${semestre}sem_${ano}`:`${String(parseInt(mes)).padStart(2,'0')}_${ano}`;
       doc.save(`FechamentoCompleto_${nomeGrupo.replace(/\s+/g,'_')}_${sufixo}.pdf`);
       showMsg('sucesso','PDF de fechamento completo gerado!');
       setMFechCompleto(false);
@@ -1289,7 +1292,7 @@ export const FinanceiroCunhadas=({userData})=>{
           <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens,valor:'',data_pagamento:HOJE.toISOString().slice(0,10),forma_pagamento:'pix'});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
           <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>📊 Situação</button>
           <button style={s.bp('var(--color-accent)')} onClick={()=>{setFechForm({mes:mesMens,ano:anoMens});setMFech(true);}}>📄 Fechamento</button>
-          <button style={s.bp('#8b5cf6')} onClick={()=>{setFechCompletoForm({modo:'mes',mes:mesMens,ano:anoMens});setMFechCompleto(true);}}>📊 Fechamento Completo</button>
+          <button style={s.bp('#8b5cf6')} onClick={()=>{setFechCompletoForm({modo:'mes',mes:mesMens,semestre:mesMens<=6?1:2,ano:anoMens});setMFechCompleto(true);}}>📊 Fechamento Completo</button>
         </div>
       </div>
 
@@ -1791,10 +1794,10 @@ export const FinanceiroCunhadas=({userData})=>{
             <div style={s.mb}>
               <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
                 <Lbl l="Período" ch={
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem'}}>
-                    {[{v:'mes',l:'Mensal'},{v:'ano',l:'Anual'}].map(t=>(
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.5rem'}}>
+                    {[{v:'mes',l:'Mensal'},{v:'semestre',l:'Semestral'},{v:'ano',l:'Anual'}].map(t=>(
                       <button key={t.v} type="button" onClick={()=>setFechCompletoForm({...fechCompletoForm,modo:t.v})}
-                        style={{padding:'0.5rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-border)',background:fechCompletoForm.modo===t.v?'rgba(139,92,246,0.12)':'var(--color-surface-2)',color:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-text)',fontWeight:fechCompletoForm.modo===t.v?'700':'400',cursor:'pointer',fontSize:'0.85rem'}}>
+                        style={{padding:'0.5rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-border)',background:fechCompletoForm.modo===t.v?'rgba(139,92,246,0.12)':'var(--color-surface-2)',color:fechCompletoForm.modo===t.v?'#8b5cf6':'var(--color-text)',fontWeight:fechCompletoForm.modo===t.v?'700':'400',cursor:'pointer',fontSize:'0.82rem'}}>
                         {t.l}
                       </button>
                     ))}
@@ -1807,6 +1810,18 @@ export const FinanceiroCunhadas=({userData})=>{
                     </select>
                   }/>
                 )}
+                {fechCompletoForm.modo==='semestre'&&(
+                  <Lbl l="Semestre" ch={
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem'}}>
+                      {[{v:1,l:'1º Semestre (Jan–Jun)'},{v:2,l:'2º Semestre (Jul–Dez)'}].map(t=>(
+                        <button key={t.v} type="button" onClick={()=>setFechCompletoForm({...fechCompletoForm,semestre:t.v})}
+                          style={{padding:'0.55rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:fechCompletoForm.semestre===t.v?'#8b5cf6':'var(--color-border)',background:fechCompletoForm.semestre===t.v?'rgba(139,92,246,0.12)':'var(--color-surface-2)',color:fechCompletoForm.semestre===t.v?'#8b5cf6':'var(--color-text)',fontWeight:fechCompletoForm.semestre===t.v?'700':'400',cursor:'pointer',fontSize:'0.78rem'}}>
+                          {t.l}
+                        </button>
+                      ))}
+                    </div>
+                  }/>
+                )}
                 <Lbl l="Ano" ch={
                   <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
                     <button style={s.ab} onClick={()=>setFechCompletoForm({...fechCompletoForm,ano:fechCompletoForm.ano-1})}>‹</button>
@@ -1816,7 +1831,7 @@ export const FinanceiroCunhadas=({userData})=>{
                 }/>
                 <div style={{background:'rgba(139,92,246,0.1)',border:'1px solid #8b5cf6',borderRadius:'var(--radius-lg)',padding:'0.8rem 1rem'}}>
                   <p style={{margin:0,fontSize:'0.82rem',color:'#8b5cf6',fontWeight:'600'}}>
-                    Fechamento: {fechCompletoForm.modo==='ano'?`Ano ${fechCompletoForm.ano}`:`${MESES[fechCompletoForm.mes-1]}/${fechCompletoForm.ano}`}
+                    Fechamento: {fechCompletoForm.modo==='ano'?`Ano ${fechCompletoForm.ano}`:fechCompletoForm.modo==='semestre'?`${fechCompletoForm.semestre}º Semestre/${fechCompletoForm.ano} (${fechCompletoForm.semestre===1?'Jan–Jun':'Jul–Dez'})`:`${MESES[fechCompletoForm.mes-1]}/${fechCompletoForm.ano}`}
                   </p>
                   <p style={{margin:'0.3rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
                     Gera PDF completo: resumo do período, receitas e despesas por categoria, evolução financeira mensal do ano{fechCompletoForm.modo==='mes'?', extrato detalhado':''} e pendências.
