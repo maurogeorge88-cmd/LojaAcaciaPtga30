@@ -25,6 +25,9 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
   const [logsSelecionados, setLogsSelecionados] = useState([]);
   const [todosLogs, setTodosLogs] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
+  const [modoVisualizacao, setModoVisualizacao] = useState('agrupado'); // 'lista' | 'agrupado'
+  const [ocultarAcessosSimples, setOcultarAcessosSimples] = useState(true);
+  const [usuariosExpandidos, setUsuariosExpandidos] = useState(new Set());
   const [estatisticas, setEstatisticas] = useState({
     totalAcessos: 0,
     usuariosAtivos: 0,
@@ -159,13 +162,13 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
     });
   };
 
-  // Selecionar todos os logs
+  // Selecionar todos os logs (apenas os atualmente exibidos, respeitando filtros/ocultação)
   const toggleSelecionarTodos = () => {
     if (todosLogs) {
       setLogsSelecionados([]);
       setTodosLogs(false);
     } else {
-      setLogsSelecionados(logs.map(log => log.id));
+      setLogsSelecionados(logsExibidos.map(log => log.id));
       setTodosLogs(true);
     }
   };
@@ -281,6 +284,49 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
       'exportar': '📥'
     };
     return icones[acao] || '📋';
+  };
+
+  // Ações consideradas "acesso simples" (sem alteração de dados)
+  const ACOES_SIMPLES = ['acesso_sistema', 'login', 'logout'];
+
+  // Logs efetivamente exibidos, respeitando o toggle "ocultar acessos simples"
+  const logsExibidos = ocultarAcessosSimples
+    ? logs.filter(log => !ACOES_SIMPLES.includes(log.acao))
+    : logs;
+
+  // Agrupar logs exibidos por usuário (mais recente primeiro)
+  const gruposPorUsuario = (() => {
+    const mapa = {};
+    logsExibidos.forEach(log => {
+      const chave = String(log.usuario_id || log.usuario?.email || 'desconhecido');
+      if (!mapa[chave]) {
+        mapa[chave] = {
+          chave,
+          usuario_id: log.usuario_id,
+          nome: log.usuario?.nome || 'Usuário Desconhecido',
+          email: log.usuario?.email || '-',
+          entradas: [],
+          contagem: { acesso_sistema: 0, login: 0, logout: 0, criar: 0, editar: 0, excluir: 0, visualizar: 0, exportar: 0, outro: 0 },
+          ultimoAcesso: null
+        };
+      }
+      mapa[chave].entradas.push(log);
+      const acaoKey = mapa[chave].contagem.hasOwnProperty(log.acao) ? log.acao : 'outro';
+      mapa[chave].contagem[acaoKey]++;
+      if (!mapa[chave].ultimoAcesso || new Date(log.created_at) > new Date(mapa[chave].ultimoAcesso)) {
+        mapa[chave].ultimoAcesso = log.created_at;
+      }
+    });
+    return Object.values(mapa).sort((a, b) => new Date(b.ultimoAcesso) - new Date(a.ultimoAcesso));
+  })();
+
+  const toggleExpandirUsuario = (chave) => {
+    setUsuariosExpandidos(prev => {
+      const next = new Set(prev);
+      if (next.has(chave)) next.delete(chave);
+      else next.add(chave);
+      return next;
+    });
   };
 
   if (loading) {
@@ -463,128 +509,303 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
 
       {/* Tabela de Logs */}
       <div className="card overflow-hidden">
-        <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={todosLogs}
-              onChange={toggleSelecionarTodos}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <h3 className="text-lg font-semibold text-gray-700">
-              Histórico de Acesso ({logs.length} registros)
-            </h3>
+        <div className="flex flex-col gap-3 p-4 bg-gray-50 border-b">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={todosLogs}
+                onChange={toggleSelecionarTodos}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <h3 className="text-lg font-semibold text-gray-700">
+                Histórico de Acesso ({logsExibidos.length}{logsExibidos.length !== logs.length ? ` de ${logs.length}` : ''} registros)
+              </h3>
+            </div>
+            <button
+              onClick={limparTodosLogs}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center gap-2 text-sm"
+            >
+              <span>⚠️</span>
+              <span>Limpar Todos os Logs</span>
+            </button>
           </div>
-          <button
-            onClick={limparTodosLogs}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center gap-2 text-sm"
-          >
-            <span>⚠️</span>
-            <span>Limpar Todos os Logs</span>
-          </button>
+
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            {/* Alternador Lista / Agrupado por Usuário */}
+            <div className="inline-flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--color-border)' }}>
+              <button
+                onClick={() => setModoVisualizacao('agrupado')}
+                className="px-3 py-1.5 text-sm font-semibold transition"
+                style={{
+                  background: modoVisualizacao === 'agrupado' ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                  color: modoVisualizacao === 'agrupado' ? '#fff' : 'var(--color-text-muted)'
+                }}
+              >
+                👤 Agrupado por Usuário
+              </button>
+              <button
+                onClick={() => setModoVisualizacao('lista')}
+                className="px-3 py-1.5 text-sm font-semibold transition border-l"
+                style={{
+                  borderColor: 'var(--color-border)',
+                  background: modoVisualizacao === 'lista' ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                  color: modoVisualizacao === 'lista' ? '#fff' : 'var(--color-text-muted)'
+                }}
+              >
+                📋 Lista Completa
+              </button>
+            </div>
+
+            {/* Ocultar acessos simples */}
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--color-text-muted)' }}>
+              <input
+                type="checkbox"
+                checked={ocultarAcessosSimples}
+                onChange={(e) => setOcultarAcessosSimples(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              Ocultar acessos simples (login)
+            </label>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    checked={todosLogs}
-                    onChange={toggleSelecionarTodos}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Data/Hora
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuário
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ação
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Detalhes
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  IP
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Navegador
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {logs.length === 0 ? (
+        {modoVisualizacao === 'lista' ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <span className="text-4xl mb-2">📋</span>
-                      <p>Nenhum log encontrado</p>
-                    </div>
-                  </td>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={todosLogs}
+                      onChange={toggleSelecionarTodos}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Data/Hora
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Usuário
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ação
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Detalhes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    IP
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Navegador
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
                 </tr>
-              ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={logsSelecionados.includes(log.id)}
-                        onChange={() => toggleSelecionarLog(log.id)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
-                      {formatarDataHora(log.created_at)}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap">
-                      <div className="text-xs font-medium text-gray-900">
-                        {log.usuario?.nome || 'Usuário Desconhecido'}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {logsExibidos.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <span className="text-4xl mb-2">📋</span>
+                        <p>Nenhum log encontrado</p>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {log.usuario?.email || '-'}
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao(log.acao)}`}>
-                        <span className="text-xs">{getIconeAcao(log.acao)}</span>
-                        <span className="text-xs">{log.acao?.toUpperCase()}</span>
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-gray-900 max-w-md">
-                      <div className="break-words line-clamp-2">
-                        {log.detalhes || '-'}
-                      </div>
-                    </td>
-                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">
-                      {log.ip || '-'}
-                    </td>
-                    <td className="px-2 py-3 text-xs text-gray-500 max-w-xs">
-                      <div className="truncate" title={log.user_agent || '-'}>
-                        {log.user_agent?.substring(0, 30) || '-'}...
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => excluirLog(log.id)}
-                        className="text-red-600 hover:text-red-800 font-medium"
-                        title="Excluir log"
-                      >
-                        🗑️
-                      </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  logsExibidos.map((log) => (
+                    <tr key={log.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={logsSelecionados.includes(log.id)}
+                          onChange={() => toggleSelecionarLog(log.id)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
+                        {formatarDataHora(log.created_at)}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="text-xs font-medium text-gray-900">
+                          {log.usuario?.nome || 'Usuário Desconhecido'}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {log.usuario?.email || '-'}
+                        </div>
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao(log.acao)}`}>
+                          <span className="text-xs">{getIconeAcao(log.acao)}</span>
+                          <span className="text-xs">{log.acao?.toUpperCase()}</span>
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-xs text-gray-900 max-w-md">
+                        <div className="break-words line-clamp-2">
+                          {log.detalhes || '-'}
+                        </div>
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">
+                        {log.ip || '-'}
+                      </td>
+                      <td className="px-2 py-3 text-xs text-gray-500 max-w-xs">
+                        <div className="truncate" title={log.user_agent || '-'}>
+                          {log.user_agent?.substring(0, 30) || '-'}...
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm">
+                        <button
+                          onClick={() => excluirLog(log.id)}
+                          className="text-red-600 hover:text-red-800 font-medium"
+                          title="Excluir log"
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* ── MODO AGRUPADO POR USUÁRIO ─────────────────────────────────── */
+          <div className="divide-y divide-gray-200">
+            {gruposPorUsuario.length === 0 ? (
+              <div className="px-4 py-8 text-center text-gray-500">
+                <div className="flex flex-col items-center">
+                  <span className="text-4xl mb-2">📋</span>
+                  <p>Nenhum log encontrado</p>
+                </div>
+              </div>
+            ) : (
+              gruposPorUsuario.map((grupo) => {
+                const expandido = usuariosExpandidos.has(grupo.chave);
+                const c = grupo.contagem;
+                return (
+                  <div key={grupo.chave}>
+                    <button
+                      onClick={() => toggleExpandirUsuario(grupo.chave)}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 transition text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg">{expandido ? '▾' : '▸'}</span>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-800">{grupo.nome}</div>
+                          <div className="text-xs text-gray-500">{grupo.email}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <span className="text-xs text-gray-500">
+                          Último: {formatarDataHora(grupo.ultimoAcesso)}
+                        </span>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium border bg-gray-100 text-gray-700 border-gray-300">
+                          {grupo.entradas.length} {grupo.entradas.length === 1 ? 'ação' : 'ações'}
+                        </span>
+                        {c.editar > 0 && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao('editar')}`}>
+                            ✏️ {c.editar} edição{c.editar > 1 ? 'ões' : ''}
+                          </span>
+                        )}
+                        {c.excluir > 0 && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao('excluir')}`}>
+                            🗑️ {c.excluir} exclusão{c.excluir > 1 ? 'ões' : ''}
+                          </span>
+                        )}
+                        {c.criar > 0 && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao('criar')}`}>
+                            ➕ {c.criar} criação{c.criar > 1 ? 'ões' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+
+                    {expandido && (
+                      <div className="overflow-x-auto bg-gray-50">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead>
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <input
+                                  type="checkbox"
+                                  checked={grupo.entradas.every(log => logsSelecionados.includes(log.id))}
+                                  onChange={() => {
+                                    const idsGrupo = grupo.entradas.map(log => log.id);
+                                    const todosMarcados = idsGrupo.every(id => logsSelecionados.includes(id));
+                                    setLogsSelecionados(prev => todosMarcados
+                                      ? prev.filter(id => !idsGrupo.includes(id))
+                                      : [...new Set([...prev, ...idsGrupo])]
+                                    );
+                                  }}
+                                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                />
+                              </th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data/Hora</th>
+                              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalhes</th>
+                              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP</th>
+                              <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Navegador</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {grupo.entradas.map((log) => (
+                              <tr key={log.id} className="hover:bg-gray-100 transition">
+                                <td className="px-4 py-2 whitespace-nowrap">
+                                  <input
+                                    type="checkbox"
+                                    checked={logsSelecionados.includes(log.id)}
+                                    onChange={() => toggleSelecionarLog(log.id)}
+                                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                                  {formatarDataHora(log.created_at)}
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao(log.acao)}`}>
+                                    <span className="text-xs">{getIconeAcao(log.acao)}</span>
+                                    <span className="text-xs">{log.acao?.toUpperCase()}</span>
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-xs text-gray-900 max-w-md">
+                                  <div className="break-words line-clamp-2">
+                                    {log.detalhes || '-'}
+                                  </div>
+                                </td>
+                                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500 font-mono">
+                                  {log.ip || '-'}
+                                </td>
+                                <td className="px-2 py-2 text-xs text-gray-500 max-w-xs">
+                                  <div className="truncate" title={log.user_agent || '-'}>
+                                    {log.user_agent?.substring(0, 30) || '-'}...
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                  <button
+                                    onClick={() => excluirLog(log.id)}
+                                    className="text-red-600 hover:text-red-800 font-medium"
+                                    title="Excluir log"
+                                  >
+                                    🗑️
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
       {/* Informações adicionais */}
@@ -598,8 +819,10 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
           <li>• Os logs são registrados automaticamente para todas as ações no sistema</li>
           <li>• Use os filtros para encontrar logs específicos</li>
           <li>• Selecione múltiplos logs para excluí-los em massa</li>
+          <li>• Use "Agrupado por Usuário" para ver o histórico completo de cada pessoa de forma organizada</li>
+          <li>• "Ocultar acessos simples" esconde os logins (📋 acesso ao sistema) e mostra só o que foi criado/editado/excluído</li>
           <li>• A exclusão de logs é permanente e não pode ser desfeita</li>
-          <li>• Logs mais antigos são exibidos primeiro (limite de 1000 registros)</li>
+          <li>• Logs mais recentes são exibidos primeiro (limite de 1000 registros)</li>
         </ul>
       </div>
     </div>
