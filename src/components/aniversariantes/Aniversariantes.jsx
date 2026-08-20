@@ -462,8 +462,20 @@ export default function Aniversariantes({ permissoes }) {
       }
 
       const resultado = await res.json();
+      const r0 = resultado.resultados?.[0];
+      if (r0?.pulado) {
+        alert(`ℹ️ Nada foi enviado: ${r0.motivo || 'evento já enviado este ano'}.`);
+        setEmailEnviadosEventos(prev => ({ ...prev, [aniv.id]: true }));
+        return;
+      }
+      const enviados = r0?.total_enviados ?? resultado.total_enviados ?? 0;
+      const falhas = r0?.total_falhas ?? resultado.total_falhas ?? 0;
+      if (enviados === 0 && falhas > 0) {
+        const detalheErro = r0?.erros?.[0]?.erro || 'verifique os Logs da Edge Function no Supabase';
+        throw new Error(`Nenhum e-mail foi entregue (${falhas} falha(s)). Detalhe: ${detalheErro}`);
+      }
       setEmailEnviadosEventos(prev => ({ ...prev, [aniv.id]: true }));
-      alert(`✅ E-mail enviado para ${resultado.total_enviados || 0} irmão(s)!${resultado.total_falhas ? ` (${resultado.total_falhas} falha(s))` : ''}`);
+      alert(`✅ E-mail enviado para ${enviados} irmão(s)!${falhas ? ` (${falhas} falha(s) — confira os Logs da Edge Function para detalhes)` : ''}`);
     } catch (e) {
       alert(`❌ Erro ao enviar: ${e.message}`);
     } finally {
@@ -499,7 +511,17 @@ export default function Aniversariantes({ permissoes }) {
         throw new Error(err.error || err.message || `Erro HTTP ${res.status}`);
       }
 
-      alert(`✅ E-mail de teste enviado para ${email}! (não foi contado como envio oficial — o botão de enviar para todos continua disponível)`);
+      const resultado = await res.json();
+      const r0 = resultado.resultados?.[0];
+
+      // O envio de teste NÃO é "pulado" por idempotência, então se
+      // total_enviados vier 0, o Brevo recusou/falhou de verdade.
+      if (!r0 || r0.total_enviados === 0) {
+        const detalheErro = r0?.erros?.[0]?.erro || 'a Edge Function não retornou detalhe — confira os Logs no Supabase';
+        throw new Error(`O Brevo não confirmou o envio. Detalhe: ${detalheErro}`);
+      }
+
+      alert(`✅ E-mail de teste realmente enviado (confirmado pelo Brevo) para ${email}! Confira a caixa de entrada e o spam.\n\n(Não foi contado como envio oficial — o botão de enviar para todos continua disponível.)`);
     } catch (e) {
       alert(`❌ Erro ao enviar teste: ${e.message}`);
     } finally {
