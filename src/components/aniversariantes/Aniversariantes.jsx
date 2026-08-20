@@ -483,52 +483,6 @@ export default function Aniversariantes({ permissoes }) {
     }
   };
 
-  const handleTestarEmailEvento = async (aniv) => {
-    if (!podeEnviarEmail) { alert('Você não tem permissão para enviar e-mails.'); return; }
-    if (!aniv.id) { alert('Este evento ainda não foi salvo no cadastro de eventos.'); return; }
-
-    const email = prompt('Enviar e-mail de TESTE de "' + aniv.nome + '" para qual endereço?\n(Este envio de teste não conta como "enviado" — depois você ainda pode disparar pra todo mundo.)');
-    if (!email) return;
-    if (!/^\S+@\S+\.\S+$/.test(email)) { alert('E-mail inválido.'); return; }
-
-    setEnviandoEventoId(`teste_${aniv.id}`);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
-
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/enviar-email-evento-comemorativo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ eventoId: aniv.id, modo: 'manual', testeEmail: email }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || `Erro HTTP ${res.status}`);
-      }
-
-      const resultado = await res.json();
-      const r0 = resultado.resultados?.[0];
-
-      // O envio de teste NÃO é "pulado" por idempotência, então se
-      // total_enviados vier 0, o Brevo recusou/falhou de verdade.
-      if (!r0 || r0.total_enviados === 0) {
-        const detalheErro = r0?.erros?.[0]?.erro || 'a Edge Function não retornou detalhe — confira os Logs no Supabase';
-        throw new Error(`O Brevo não confirmou o envio. Detalhe: ${detalheErro}`);
-      }
-
-      alert(`✅ E-mail de teste realmente enviado (confirmado pelo Brevo) para ${email}! Confira a caixa de entrada e o spam.\n\n(Não foi contado como envio oficial — o botão de enviar para todos continua disponível.)`);
-    } catch (e) {
-      alert(`❌ Erro ao enviar teste: ${e.message}`);
-    } finally {
-      setEnviandoEventoId(null);
-    }
-  };
-
   const gerarRelatorioPDF = async () => {
     const doc = new jsPDF();
     const hoje = new Date();
@@ -1842,7 +1796,6 @@ export default function Aniversariantes({ permissoes }) {
                 )}
                 {ehHoje ? (
                   podeEnviarEmail ? (
-                    <>
                     <button
                       onClick={e => { e.stopPropagation(); handleEnviarEmailEvento(aniv); }}
                       disabled={enviandoEventoId === aniv.id}
@@ -1856,21 +1809,6 @@ export default function Aniversariantes({ permissoes }) {
                       }}>
                       📧 {enviandoEventoId === aniv.id ? 'Enviando...' : emailEnviadosEventos[aniv.id] ? 'Enviar novamente' : 'Enviar para todos os Irmãos Ativos'}
                     </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); handleTestarEmailEvento(aniv); }}
-                      disabled={enviandoEventoId === `teste_${aniv.id}`}
-                      title="Envia só para um e-mail, sem contar como enviado oficialmente"
-                      style={{
-                        padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 600,
-                        background: 'transparent',
-                        border: '1px dashed var(--color-border)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-text-muted)',
-                        cursor: enviandoEventoId === `teste_${aniv.id}` ? 'not-allowed' : 'pointer',
-                      }}>
-                      🧪 {enviandoEventoId === `teste_${aniv.id}` ? 'Enviando teste...' : 'Testar (1 e-mail)'}
-                    </button>
-                    </>
                   ) : !emailEnviadosEventos[aniv.id] && (
                     <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                       🔒 Sem permissão para enviar
