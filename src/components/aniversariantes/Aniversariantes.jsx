@@ -117,7 +117,8 @@ export default function Aniversariantes({ permissoes }) {
     tipo: 'Maçônico',
     descricao: '',
     dia: '',
-    mes: ''
+    mes: '',
+    envio_automatico: false
   });
   const [eventoEditando, setEventoEditando] = useState(null);
   const [salvandoEvento, setSalvandoEvento] = useState(false);
@@ -125,6 +126,8 @@ export default function Aniversariantes({ permissoes }) {
   const [emailEnviados, setEmailEnviados]   = useState({});
   const [emailEnviadosEsposas, setEmailEnviadosEsposas] = useState({});
   const [emailEnviadosBodas, setEmailEnviadosBodas] = useState({});
+  const [emailEnviadosEventos, setEmailEnviadosEventos] = useState({});
+  const [enviandoEventoId, setEnviandoEventoId] = useState(null);
   const [modalEmail, setModalEmail]         = useState(null); // irmao para preview
   const [dadosLoja, setDadosLoja]           = useState({});
   const [chanceler, setChanceler]           = useState('');
@@ -189,6 +192,21 @@ export default function Aniversariantes({ permissoes }) {
         enviadosBodas.forEach(e => { mapaBodas[e.esposa_id] = true; });
         setEmailEnviadosBodas(mapaBodas);
       }
+
+      // Emails de eventos comemorativos já enviados este ano
+      try {
+        const { data: enviadosEventos } = await supabase
+          .from('emails_eventos_comemorativos')
+          .select('evento_id')
+          .eq('ano', new Date().getFullYear());
+        if (enviadosEventos) {
+          const mapaEventos = {};
+          enviadosEventos.forEach(e => { mapaEventos[e.evento_id] = true; });
+          setEmailEnviadosEventos(mapaEventos);
+        }
+      } catch (e) {
+        console.log('ℹ️ Tabela emails_eventos_comemorativos não existe ainda');
+      }
     } catch (e) {
       console.error('Erro ao carregar dados para email:', e);
     }
@@ -241,13 +259,14 @@ export default function Aniversariantes({ permissoes }) {
           tipo: novoEvento.tipo,
           descricao: novoEvento.descricao,
           dia: parseInt(novoEvento.dia),
-          mes: parseInt(novoEvento.mes)
+          mes: parseInt(novoEvento.mes),
+          envio_automatico: novoEvento.envio_automatico
         }]);
 
       if (error) throw error;
 
       alert('Evento cadastrado com sucesso!');
-      setNovoEvento({ nome: '', tipo: 'Maçônico', descricao: '', dia: '', mes: '' });
+      setNovoEvento({ nome: '', tipo: 'Maçônico', descricao: '', dia: '', mes: '', envio_automatico: false });
       carregarEventosCustomizados();
       carregarAniversariantes(); // Recarregar para mostrar o novo evento
     } catch (error) {
@@ -265,7 +284,8 @@ export default function Aniversariantes({ permissoes }) {
       tipo: evento.tipo || 'Maçônico',
       descricao: evento.descricao || '',
       dia: evento.dia.toString(),
-      mes: evento.mes.toString()
+      mes: evento.mes.toString(),
+      envio_automatico: evento.envio_automatico || false
     });
   };
 
@@ -298,7 +318,8 @@ export default function Aniversariantes({ permissoes }) {
           tipo: eventoEditando.tipo,
           descricao: eventoEditando.descricao,
           dia: parseInt(eventoEditando.dia),
-          mes: parseInt(eventoEditando.mes)
+          mes: parseInt(eventoEditando.mes),
+          envio_automatico: eventoEditando.envio_automatico
         })
         .eq('id', eventoEditando.id);
 
@@ -400,6 +421,53 @@ export default function Aniversariantes({ permissoes }) {
       alert(`❌ Erro ao enviar: ${e.message}`);
     } finally {
       setEnviandoEmail(null);
+    }
+  };
+
+  const handleEnviarEmailEvento = async (aniv) => {
+    if (!podeEnviarEmail) { alert('Você não tem permissão para enviar e-mails.'); return; }
+    if (!aniv.id) { alert('Este evento ainda não foi salvo no cadastro de eventos.'); return; }
+
+    setEnviandoEventoId(aniv.id);
+    try {
+      // Conta quantos irmãos ativos (regular + licenciado) com e-mail vão receber
+      const { count } = await supabase
+        .from('irmaos')
+        .select('id', { count: 'exact', head: true })
+        .in('situacao', ['regular', 'licenciado'])
+        .not('email', 'is', null)
+        .neq('email', '');
+
+      if (!confirm(`Enviar "${aniv.nome}" para ${count || 0} irmão(s) ativo(s) com e-mail cadastrado?`)) {
+        setEnviandoEventoId(null);
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
+
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/enviar-email-evento-comemorativo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventoId: aniv.id, modo: 'manual' }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.message || `Erro HTTP ${res.status}`);
+      }
+
+      const resultado = await res.json();
+      setEmailEnviadosEventos(prev => ({ ...prev, [aniv.id]: true }));
+      alert(`✅ E-mail enviado para ${resultado.total_enviados || 0} irmão(s)!${resultado.total_falhas ? ` (${resultado.total_falhas} falha(s))` : ''}`);
+    } catch (e) {
+      alert(`❌ Erro ao enviar: ${e.message}`);
+    } finally {
+      setEnviandoEventoId(null);
     }
   };
 
@@ -1302,12 +1370,14 @@ export default function Aniversariantes({ permissoes }) {
 
             if (deveMostrar) {
               aniversariantesEventos.push({
+                id: evento.id,
                 tipo: evento.tipo || 'Evento',
                 nome: evento.nome,
                 descricao: evento.descricao,
                 proximo_aniversario: proximoEvento,
                 nivel: 4,
-                icone: '📅'
+                icone: '📅',
+                envio_automatico: evento.envio_automatico || false
               });
             }
           });
@@ -1698,6 +1768,43 @@ export default function Aniversariantes({ permissoes }) {
                 )}
               </div>
             )}
+
+            {/* Botão enviar email — Eventos Maçônicos/Cívicos (envio para todos os irmãos ativos) */}
+            {aniv.nivel === 4 && aniv.id && (
+              <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {emailEnviadosEventos[aniv.id] && (
+                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                    ✅ Já enviado este ano
+                  </span>
+                )}
+                {aniv.envio_automatico && (
+                  <span style={{ fontSize: '0.7rem', color: '#8b5cf6', fontWeight: 600 }}>
+                    🔁 Envio automático ligado
+                  </span>
+                )}
+                {ehHoje ? (
+                  podeEnviarEmail ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); handleEnviarEmailEvento(aniv); }}
+                      disabled={enviandoEventoId === aniv.id}
+                      style={{
+                        padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                        background: emailEnviadosEventos[aniv.id] ? 'transparent' : 'rgba(139,92,246,0.12)',
+                        border: emailEnviadosEventos[aniv.id] ? '1px solid var(--color-border)' : '1px solid rgba(139,92,246,0.4)',
+                        borderRadius: 'var(--radius-md)',
+                        color: emailEnviadosEventos[aniv.id] ? 'var(--color-text-muted)' : '#8b5cf6',
+                        cursor: enviandoEventoId === aniv.id ? 'not-allowed' : 'pointer',
+                      }}>
+                      📧 {enviandoEventoId === aniv.id ? 'Enviando...' : emailEnviadosEventos[aniv.id] ? 'Enviar novamente' : 'Enviar para todos os Irmãos Ativos'}
+                    </button>
+                  ) : !emailEnviadosEventos[aniv.id] && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      🔒 Sem permissão para enviar
+                    </span>
+                  )
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2026,6 +2133,14 @@ export default function Aniversariantes({ permissoes }) {
                       onChange={e => setNovoEvento({...novoEvento, descricao: e.target.value})}
                       placeholder="Descrição opcional" />
                   </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-text)' }}>
+                      <input type="checkbox" checked={novoEvento.envio_automatico}
+                        onChange={e => setNovoEvento({...novoEvento, envio_automatico: e.target.checked})}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                      📧 Enviar e-mail automaticamente todo ano, na data do evento, para todos os irmãos ativos
+                    </label>
+                  </div>
                 </div>
                 <button onClick={salvarEvento} disabled={salvandoEvento} style={{
                   marginTop: '1rem', padding: '0.6rem 1.25rem',
@@ -2047,7 +2162,7 @@ export default function Aniversariantes({ permissoes }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                       <thead>
                         <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
-                          {['Evento', 'Data', 'Tipo', 'Ações'].map(h => (
+                          {['Evento', 'Data', 'Tipo', '📧 Auto', 'Ações'].map(h => (
                             <th key={h} style={{ padding: '0.65rem 0.85rem', textAlign: h === 'Evento' ? 'left' : 'center', fontWeight: 600, fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
                           ))}
                         </tr>
@@ -2064,6 +2179,17 @@ export default function Aniversariantes({ permissoes }) {
                               <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' }}>
                                 {evento.tipo || 'Evento'}
                               </span>
+                            </td>
+                            <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
+                              {evento.envio_automatico ? (
+                                <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+                                  ✅ Ligado
+                                </span>
+                              ) : (
+                                <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}>
+                                  — Desligado
+                                </span>
+                              )}
                             </td>
                             <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
                               <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
@@ -2231,6 +2357,14 @@ export default function Aniversariantes({ permissoes }) {
                 <label style={labelStyle}>Descrição</label>
                 <input style={inputStyle} type="text" value={eventoEditando.descricao}
                   onChange={e => setEventoEditando({...eventoEditando, descricao: e.target.value})} />
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-text)' }}>
+                  <input type="checkbox" checked={eventoEditando.envio_automatico}
+                    onChange={e => setEventoEditando({...eventoEditando, envio_automatico: e.target.checked})}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                  📧 Enviar e-mail automaticamente todo ano, na data do evento, para todos os irmãos ativos
+                </label>
               </div>
               <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
                 <button onClick={cancelarEdicao} style={{ padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-md)', fontWeight: 500, background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
