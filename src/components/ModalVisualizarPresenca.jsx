@@ -254,19 +254,24 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           {visitantes.length === 0 ? (
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: 0 }}>Nenhum visitante registrado.</p>
           ) : (
-            <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+            <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                 <thead>
                   <tr style={{ background: 'var(--color-surface-3)' }}>
                     {['Nome', 'Loja', 'Cidade'].map(h => (
-                      <th key={h} style={{ padding: '0.35rem 0.6rem', textAlign: 'left', fontWeight: '700', color: 'var(--color-text-muted)', fontSize: '0.65rem', textTransform: 'uppercase' }}>{h}</th>
+                      <th key={h} style={{ padding: '0.35rem 0.6rem', textAlign: 'left', fontWeight: '700', color: 'var(--color-text-muted)', fontSize: '0.65rem', textTransform: 'uppercase', position: 'sticky', top: 0, background: 'var(--color-surface-3)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {visitantes.map((v, i) => (
-                    <tr key={v.id} style={{ background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text)' }}>{v.nome_visitante}</td>
+                    <tr key={v.id} style={{ background: v.eh_autoridade ? 'rgba(201,168,76,0.12)' : (i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)'), borderTop: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text)' }}>
+                        {v.eh_autoridade && (
+                          <span title={v.cargo_autoridade || 'Autoridade da Potência'} style={{ marginRight: '0.3rem' }}>🎖️</span>
+                        )}
+                        {v.nome_visitante}
+                      </td>
                       <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text-muted)' }}>{v.nome_loja}</td>
                       <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text-muted)' }}>{v.cidade}</td>
                     </tr>
