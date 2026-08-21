@@ -122,6 +122,23 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
         },
       }));
 
+      // Marca quais sessões tiveram visitante que é autoridade da Potência
+      // (Grão-Mestre, corpo administrativo, etc.) — usado só pro destaque
+      // visual do card, não vem da view.
+      const idsSessoes = sessoesMapeadas.map(s => s.id);
+      if (idsSessoes.length > 0) {
+        const { data: visitasAutoridade } = await supabase
+          .from('visitantes_sessao')
+          .select('sessao_id')
+          .eq('eh_autoridade', true)
+          .in('sessao_id', idsSessoes);
+
+        const idsComAutoridade = new Set((visitasAutoridade || []).map(v => v.sessao_id));
+        sessoesMapeadas.forEach(s => {
+          s.teve_visita_autoridade = idsComAutoridade.has(s.id);
+        });
+      }
+
       setSessoes(sessoesMapeadas);
 
     } catch (error) {
@@ -579,9 +596,9 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                               gap:'0.75rem',
                               padding:'0.65rem 1rem',
                               borderRadius:'var(--radius-lg)',
-                              border:'1px solid var(--color-border)',
-                              borderLeft:'4px solid var(--color-accent)',
-                              background: idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                              border: sessao.teve_visita_autoridade ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                              borderLeft: sessao.teve_visita_autoridade ? '4px solid #c9a84c' : '4px solid var(--color-accent)',
+                              background: sessao.teve_visita_autoridade ? 'rgba(201,168,76,0.07)' : (idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)'),
                               transition:'opacity 0.15s',
                             }}
                           >
@@ -590,8 +607,16 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                               {formatarData(sessao.data_sessao)}
                             </div>
                             {/* Tipo de Sessão */}
-                            <div style={{fontSize:'0.85rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                            <div style={{fontSize:'0.85rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.4rem'}}>
                               {sessao.grau_sessao}
+                              {sessao.teve_visita_autoridade && (
+                                <span
+                                  title="Sessão com visita de autoridade da Potência"
+                                  style={{padding:'0.1rem 0.5rem',background:'rgba(201,168,76,0.18)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap'}}
+                                >
+                                  🎖️ Visita de Autoridade
+                                </span>
+                              )}
                             </div>
                             {/* Classificação */}
                             <div>
