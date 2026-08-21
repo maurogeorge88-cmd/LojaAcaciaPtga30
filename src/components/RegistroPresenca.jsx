@@ -25,6 +25,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [busca, setBusca] = useState('');
   const [visitantes, setVisitantes] = useState([]);
   const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '' });
+  const [visitanteEditandoId, setVisitanteEditandoId] = useState(null);
 
   useEffect(() => {
     if (sessaoId) {
@@ -307,7 +308,22 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
   const adicionarVisitante = async () => {
     if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
-    
+
+    if (visitanteEditandoId) {
+      // Modo edição: atualiza o registro existente
+      const { error } = await supabase
+        .from('visitantes_sessao')
+        .update({ ...visitanteForm })
+        .eq('id', visitanteEditandoId);
+
+      if (!error) {
+        carregarDados();
+        setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+        setVisitanteEditandoId(null);
+      }
+      return;
+    }
+
     const { error } = await supabase
       .from('visitantes_sessao')
       .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
@@ -318,13 +334,29 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     }
   };
 
+  const editarVisitante = (v) => {
+    setVisitanteForm({ nome_visitante: v.nome_visitante, nome_loja: v.nome_loja, cidade: v.cidade });
+    setVisitanteEditandoId(v.id);
+  };
+
+  const cancelarEdicaoVisitante = () => {
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    setVisitanteEditandoId(null);
+  };
+
   const excluirVisitante = async (id) => {
     const { error } = await supabase
       .from('visitantes_sessao')
       .delete()
       .eq('id', id);
     
-    if (!error) carregarDados();
+    if (!error) {
+      carregarDados();
+      if (visitanteEditandoId === id) {
+        setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+        setVisitanteEditandoId(null);
+      }
+    }
   };
 
   const handleSalvar = async () => {
@@ -606,10 +638,18 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           />
           <button
             onClick={adicionarVisitante}
-            style={{padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
+            style={{padding:"0.5rem 1rem",background:visitanteEditandoId?"#10b981":"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
-            ➕ Adicionar
+            {visitanteEditandoId ? '💾 Salvar' : '➕ Adicionar'}
           </button>
+          {visitanteEditandoId && (
+            <button
+              onClick={cancelarEdicaoVisitante}
+              style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
+            >
+              ✖️ Cancelar
+            </button>
+          )}
         </div>
 
         {/* Tabela */}
@@ -625,14 +665,22 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             </thead>
             <tbody>
               {visitantes.map((v) => (
-                <tr key={v.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s"}}>
+                <tr key={v.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s",background:visitanteEditandoId===v.id?"var(--color-accent-bg)":"transparent"}}>
                   <td style={{color:"var(--color-text)"}}>{v.nome_visitante}</td>
                   <td style={{color:"var(--color-text)"}}>{v.nome_loja}</td>
                   <td style={{color:"var(--color-text)"}}>{v.cidade}</td>
                   <td style={{color:"var(--color-text)"}}>
                     <button
+                      onClick={() => editarVisitante(v)}
+                      style={{color:"var(--color-accent)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem",marginRight:"0.5rem"}}
+                      title="Editar visitante"
+                    >
+                      ✏️
+                    </button>
+                    <button
                       onClick={() => excluirVisitante(v.id)}
                       style={{color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}
+                      title="Excluir visitante"
                     >
                       🗑️
                     </button>
