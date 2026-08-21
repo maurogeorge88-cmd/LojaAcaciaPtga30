@@ -714,24 +714,28 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           >
             {/* Coluna 1: título + quantidade */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 style={{fontSize:'0.95rem',fontWeight:'700',color:'#fff'}}>🎖️ Visitas de Autoridades</h3>
-                <span className="text-3xl">🏛️</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🏛️</span>
+                <h3 style={{fontSize:'0.95rem',fontWeight:'700',color:'#fff',whiteSpace:'nowrap'}}>Visitas de Autoridades</h3>
               </div>
               <p style={{fontSize:'3rem',fontWeight:'800',marginBottom:'0.25rem'}}>{totalVisitasAutoridade}</p>
               <p style={{fontSize:'0.82rem',opacity:0.85}}>Registradas em {new Date().getFullYear()}</p>
             </div>
-            {/* Coluna 2: lista data + sessão */}
+            {/* Coluna 2: lista sessão + data */}
             <div style={{borderLeft:'1px solid rgba(255,255,255,0.3)',paddingLeft:'1rem',display:'flex',flexDirection:'column',justifyContent:'center',gap:'0.35rem',maxHeight:'110px',overflowY:'auto'}}>
-              {visitasAutoridade.slice(0, 6).map(v => (
-                <div key={v.id} style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.95)',lineHeight:'1.3'}}>
-                  {v.sessoes_presenca?.data_sessao
-                    ? new Date(v.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
-                    : '—'}
-                  {' — '}
-                  {v.sessoes_presenca?.graus_sessao?.nome || 'Sessão'}
-                </div>
-              ))}
+              {visitasAutoridade.slice(0, 6).map(v => {
+                const nomeSessao = v.sessoes_presenca?.graus_sessao?.nome || 'Sessão';
+                const abreviado = nomeSessao.replace(/^Sessão de\s+/i, 'S. ');
+                return (
+                  <div key={v.id} style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.95)',lineHeight:'1.3',whiteSpace:'nowrap'}}>
+                    {abreviado}
+                    {' - '}
+                    {v.sessoes_presenca?.data_sessao
+                      ? new Date(v.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
+                      : '—'}
+                  </div>
+                );
+              })}
               {visitasAutoridade.length > 6 && (
                 <div style={{fontSize:'0.72rem',opacity:0.8}}>+{visitasAutoridade.length - 6} outra(s)</div>
               )}
