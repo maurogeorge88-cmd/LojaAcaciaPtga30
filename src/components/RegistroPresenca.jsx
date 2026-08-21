@@ -310,17 +310,36 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
 
     if (visitanteEditandoId) {
-      // Modo edição: atualiza o registro existente
-      const { error } = await supabase
+      // Modo edição: atualiza o registro existente.
+      // IMPORTANTE: .select() no final força o Supabase a devolver a(s)
+      // linha(s) alterada(s). Sem isso, um UPDATE bloqueado por RLS
+      // "funciona" (sem erro) mas altera 0 linhas — e passaria despercebido.
+      const { data, error } = await supabase
         .from('visitantes_sessao')
-        .update({ ...visitanteForm })
-        .eq('id', visitanteEditandoId);
+        .update({
+          nome_visitante: visitanteForm.nome_visitante,
+          nome_loja: visitanteForm.nome_loja,
+          cidade: visitanteForm.cidade,
+        })
+        .eq('id', visitanteEditandoId)
+        .select();
 
-      if (!error) {
-        carregarDados();
-        setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
-        setVisitanteEditandoId(null);
+      if (error) {
+        console.error('Erro ao atualizar visitante:', error);
+        setMensagem({ tipo: 'erro', texto: `❌ Erro ao atualizar visitante: ${error.message || error.details || 'erro desconhecido'}` });
+        return;
       }
+
+      if (!data || data.length === 0) {
+        console.error('Update de visitante retornou 0 linhas — provável bloqueio de RLS.', { visitanteEditandoId });
+        setMensagem({ tipo: 'erro', texto: '❌ A edição não foi salva: nenhuma linha foi alterada no banco (provável falta de permissão/RLS na tabela visitantes_sessao para UPDATE). Fale com o administrador do sistema.' });
+        return;
+      }
+
+      carregarDados();
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+      setVisitanteEditandoId(null);
+      setMensagem({ tipo: 'sucesso', texto: '✅ Visitante atualizado com sucesso!' });
       return;
     }
 
@@ -328,10 +347,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       .from('visitantes_sessao')
       .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
     
-    if (!error) {
-      carregarDados();
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    if (error) {
+      console.error('Erro ao adicionar visitante:', error);
+      setMensagem({ tipo: 'erro', texto: `❌ Erro ao adicionar visitante: ${error.message || error.details || 'erro desconhecido'}` });
+      return;
     }
+
+    carregarDados();
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
   };
 
   const editarVisitante = (v) => {
@@ -345,17 +368,27 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   };
 
   const excluirVisitante = async (id) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('visitantes_sessao')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .select();
     
-    if (!error) {
-      carregarDados();
-      if (visitanteEditandoId === id) {
-        setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
-        setVisitanteEditandoId(null);
-      }
+    if (error) {
+      console.error('Erro ao excluir visitante:', error);
+      setMensagem({ tipo: 'erro', texto: `❌ Erro ao excluir visitante: ${error.message || error.details || 'erro desconhecido'}` });
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setMensagem({ tipo: 'erro', texto: '❌ A exclusão não foi aplicada: nenhuma linha foi removida (provável falta de permissão/RLS).' });
+      return;
+    }
+
+    carregarDados();
+    if (visitanteEditandoId === id) {
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+      setVisitanteEditandoId(null);
     }
   };
 
