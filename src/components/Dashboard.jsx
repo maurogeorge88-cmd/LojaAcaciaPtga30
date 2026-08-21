@@ -21,6 +21,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [modalVisitasIrmaos, setModalVisitasIrmaos] = useState(false);
   const [modalVisitantesRecebidos, setModalVisitantesRecebidos] = useState(false);
   const [visitantesRecebidos, setVisitantesRecebidos] = useState([]);
+  const [visitasAutoridade, setVisitasAutoridade] = useState([]);
+  const [totalVisitasAutoridade, setTotalVisitasAutoridade] = useState(0);
+  const [modalVisitasAutoridade, setModalVisitasAutoridade] = useState(false);
 
   // Função para formatar nome (2 primeiros nomes + último se tiver "de/da")
   const formatarNome = (nomeCompleto) => {
@@ -103,6 +106,19 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         .gte('created_at', `${new Date().getFullYear()}-01-01`)
         .order('created_at', { ascending: false });
       setVisitantesRecebidos(visitantesData || []);
+
+      // Carregar visitas de autoridades da Potência (genérico, não só GLEMT por enquanto)
+      const { data: autoridadesData, count: countAutoridades } = await supabase
+        .from('visitantes_sessao')
+        .select(`
+          *,
+          sessoes_presenca(data_sessao, graus_sessao:grau_sessao_id(nome))
+        `, { count: 'exact' })
+        .eq('eh_autoridade', true)
+        .gte('created_at', `${new Date().getFullYear()}-01-01`)
+        .order('created_at', { ascending: false });
+      setVisitasAutoridade(autoridadesData || []);
+      setTotalVisitasAutoridade(countAutoridades || 0);
     };
     carregar();
   }, []);
@@ -687,8 +703,42 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
       )}
 
-      {/* CARDS DE VISITAS - GRID COM 2 COLUNAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      {/* CARDS DE VISITAS - GRID COM 3 COLUNAS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Card 0: Visitas de Autoridades da Potência */}
+        {totalVisitasAutoridade > 0 && (
+          <div
+            onDoubleClick={() => setModalVisitasAutoridade(true)}
+            style={{background:'#c9a84c',borderRadius:'var(--radius-xl)',padding:'1.5rem',color:'#fff',cursor:'pointer',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}
+            title="Clique 2x para ver detalhes"
+          >
+            {/* Coluna 1: título + quantidade */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 style={{fontSize:'0.95rem',fontWeight:'700',color:'#fff'}}>🎖️ Visitas de Autoridades</h3>
+                <span className="text-3xl">🏛️</span>
+              </div>
+              <p style={{fontSize:'3rem',fontWeight:'800',marginBottom:'0.25rem'}}>{totalVisitasAutoridade}</p>
+              <p style={{fontSize:'0.82rem',opacity:0.85}}>Registradas em {new Date().getFullYear()}</p>
+            </div>
+            {/* Coluna 2: lista data + sessão */}
+            <div style={{borderLeft:'1px solid rgba(255,255,255,0.3)',paddingLeft:'1rem',display:'flex',flexDirection:'column',justifyContent:'center',gap:'0.35rem',maxHeight:'110px',overflowY:'auto'}}>
+              {visitasAutoridade.slice(0, 6).map(v => (
+                <div key={v.id} style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.95)',lineHeight:'1.3'}}>
+                  {v.sessoes_presenca?.data_sessao
+                    ? new Date(v.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
+                    : '—'}
+                  {' — '}
+                  {v.sessoes_presenca?.graus_sessao?.nome || 'Sessão'}
+                </div>
+              ))}
+              {visitasAutoridade.length > 6 && (
+                <div style={{fontSize:'0.72rem',opacity:0.8}}>+{visitasAutoridade.length - 6} outra(s)</div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Card 1: Visitas dos Irmãos a Outras Lojas */}
         {totalVisitasIrmaos > 0 && (
           <div
@@ -1133,6 +1183,57 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <button
                 onClick={() => setModalVisitasIrmaos(false)}
                 style={{width:"100%",padding:"0.75rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Visitas de Autoridades da Potência */}
+      {modalVisitasAutoridade && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            {/* Header */}
+            <div style={{background:"#c9a84c",padding:"1.25rem 1.5rem"}}>
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"#fff",margin:0}}>🎖️ Visitas de Autoridades - {new Date().getFullYear()}</h3>
+              <p style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>Total: {totalVisitasAutoridade} visita(s)</p>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-3">
+                {visitasAutoridade.map(v => (
+                  <div key={v.id} className="rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"3px solid #c9a84c"}}>
+                    <div style={{fontSize:"0.82rem",color:"var(--color-text)"}}>
+                      <span>
+                        {v.sessoes_presenca?.data_sessao
+                          ? new Date(v.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
+                          : new Date(v.created_at).toLocaleDateString('pt-BR')}
+                      </span>
+                      <span> — </span>
+                      <span className="font-semibold">{v.sessoes_presenca?.graus_sessao?.nome || 'Sessão'}</span>
+                    </div>
+                    <div style={{fontSize:"0.85rem",fontWeight:"700",color:"var(--color-text)",marginTop:"0.25rem"}}>
+                      {v.nome_visitante}
+                    </div>
+                    {v.cargo_autoridade && (
+                      <div style={{fontSize:"0.75rem",color:"#c9a84c",fontWeight:"600"}}>{v.cargo_autoridade}</div>
+                    )}
+                    <div style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.15rem"}}>
+                      {v.nome_loja || 'Loja não informada'} - {v.cidade || 'Cidade não informada'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{borderTop:"1px solid var(--color-border)",padding:"1rem 1.5rem"}}>
+              <button
+                onClick={() => setModalVisitasAutoridade(false)}
+                style={{width:"100%",padding:"0.75rem 1.5rem",background:"#c9a84c",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 Fechar
               </button>
