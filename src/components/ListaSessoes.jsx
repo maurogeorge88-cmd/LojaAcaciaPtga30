@@ -787,6 +787,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                   value={visitaForm.irmao_id}
                   onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
                   required
                 >
                   <option value="">Selecione...</option>
@@ -803,6 +804,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                   value={visitaForm.data_visita}
                   onChange={(e) => setVisitaForm({ ...visitaForm, data_visita: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
                   required
                 />
               </div>
@@ -815,6 +817,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                     value={visitaForm.nome_loja}
                     onChange={(e) => setVisitaForm({ ...visitaForm, nome_loja: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
                     placeholder="Ex: Acácia do Cerrado"
                     required
                   />
@@ -827,6 +830,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                     value={visitaForm.oriente}
                     onChange={(e) => setVisitaForm({ ...visitaForm, oriente: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
                     placeholder="Ex: Cuiabá"
                     required
                   />
@@ -848,7 +852,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
 
                 {/* Formulário para nova potência */}
                 {mostrarFormPotencia && (
-                  <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                  <div className="mb-3 p-3 rounded-lg space-y-2" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
@@ -856,6 +860,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                         value={novaPotencia.sigla}
                         onChange={(e) => setNovaPotencia({ ...novaPotencia, sigla: e.target.value.toUpperCase() })}
                         className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
+                        style={{background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",outline:"none"}}
                       />
                       <input
                         type="text"
@@ -863,6 +868,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                         value={novaPotencia.nome_completo}
                         onChange={(e) => setNovaPotencia({ ...novaPotencia, nome_completo: e.target.value })}
                         className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
+                        style={{background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",outline:"none"}}
                       />
                     </div>
                     <button
@@ -886,12 +892,14 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                             defaultValue={pot.sigla}
                             onBlur={(e) => atualizarPotencia(pot.id, { sigla: e.target.value })}
                             className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
+                            style={{background:"var(--color-surface-2)",color:"var(--color-text)",outline:"none"}}
                           />
                           <input
                             type="text"
                             defaultValue={pot.nome_completo}
                             onBlur={(e) => atualizarPotencia(pot.id, { nome_completo: e.target.value })}
                             className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
+                            style={{background:"var(--color-surface-2)",color:"var(--color-text)",outline:"none"}}
                           />
                           <button
                             type="button"
@@ -911,7 +919,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                             onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
                             className="w-4 h-4 text-purple-600"
                           />
-                          <span className="flex-1 text-sm">
+                          <span className="flex-1 text-sm" style={{color:"var(--color-text)"}}>
                             <span className="font-medium">{pot.sigla}</span> - {pot.nome_completo}
                           </span>
                           <button
@@ -935,6 +943,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                   value={visitaForm.observacoes}
                   onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
                   rows="3"
                   placeholder="Informações adicionais..."
                 />
