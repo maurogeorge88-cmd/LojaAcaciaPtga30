@@ -24,7 +24,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [busca, setBusca] = useState('');
   const [visitantes, setVisitantes] = useState([]);
-  const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '' });
+  const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
   const [visitanteEditandoId, setVisitanteEditandoId] = useState(null);
 
   useEffect(() => {
@@ -309,6 +309,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const adicionarVisitante = async () => {
     if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
 
+    const payloadVisitante = {
+      nome_visitante: visitanteForm.nome_visitante,
+      nome_loja: visitanteForm.nome_loja,
+      cidade: visitanteForm.cidade,
+      eh_autoridade: visitanteForm.eh_autoridade,
+      cargo_autoridade: visitanteForm.eh_autoridade ? (visitanteForm.cargo_autoridade || '').trim() : null,
+    };
+
     if (visitanteEditandoId) {
       // Modo edição: atualiza o registro existente.
       // IMPORTANTE: .select() no final força o Supabase a devolver a(s)
@@ -316,11 +324,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       // "funciona" (sem erro) mas altera 0 linhas — e passaria despercebido.
       const { data, error } = await supabase
         .from('visitantes_sessao')
-        .update({
-          nome_visitante: visitanteForm.nome_visitante,
-          nome_loja: visitanteForm.nome_loja,
-          cidade: visitanteForm.cidade,
-        })
+        .update(payloadVisitante)
         .eq('id', visitanteEditandoId)
         .select();
 
@@ -337,7 +341,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       }
 
       carregarDados();
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
       setVisitanteEditandoId(null);
       setMensagem({ tipo: 'sucesso', texto: '✅ Visitante atualizado com sucesso!' });
       return;
@@ -345,7 +349,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
     const { error } = await supabase
       .from('visitantes_sessao')
-      .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
+      .insert([{ sessao_id: sessaoId, ...payloadVisitante }]);
     
     if (error) {
       console.error('Erro ao adicionar visitante:', error);
@@ -354,16 +358,22 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     }
 
     carregarDados();
-    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
   };
 
   const editarVisitante = (v) => {
-    setVisitanteForm({ nome_visitante: v.nome_visitante, nome_loja: v.nome_loja, cidade: v.cidade });
+    setVisitanteForm({
+      nome_visitante: v.nome_visitante,
+      nome_loja: v.nome_loja,
+      cidade: v.cidade,
+      eh_autoridade: v.eh_autoridade || false,
+      cargo_autoridade: v.cargo_autoridade || '',
+    });
     setVisitanteEditandoId(v.id);
   };
 
   const cancelarEdicaoVisitante = () => {
-    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
     setVisitanteEditandoId(null);
   };
 
@@ -387,7 +397,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
     carregarDados();
     if (visitanteEditandoId === id) {
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
       setVisitanteEditandoId(null);
     }
   };
@@ -685,6 +695,28 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           )}
         </div>
 
+        {/* Autoridade da Potência */}
+        <div className="mb-4" style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
+          <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",fontSize:"0.85rem",color:"var(--color-text)"}}>
+            <input
+              type="checkbox"
+              checked={visitanteForm.eh_autoridade}
+              onChange={(e) => setVisitanteForm({...visitanteForm, eh_autoridade: e.target.checked, cargo_autoridade: e.target.checked ? visitanteForm.cargo_autoridade : ''})}
+              style={{width:"16px",height:"16px",cursor:"pointer"}}
+            />
+            🎖️ É autoridade da Potência (Grão-Mestre, corpo administrativo, etc.)
+          </label>
+          {visitanteForm.eh_autoridade && (
+            <input
+              type="text"
+              placeholder="Cargo (ex: Sereníssimo Grão-Mestre)"
+              value={visitanteForm.cargo_autoridade}
+              onChange={(e) => setVisitanteForm({...visitanteForm, cargo_autoridade: e.target.value})}
+              style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid #c9a84c",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%",maxWidth:"420px"}}
+            />
+          )}
+        </div>
+
         {/* Tabela */}
         {visitantes.length > 0 ? (
           <table className="w-full text-sm">
@@ -699,7 +731,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             <tbody>
               {visitantes.map((v) => (
                 <tr key={v.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s",background:visitanteEditandoId===v.id?"var(--color-accent-bg)":"transparent"}}>
-                  <td style={{color:"var(--color-text)"}}>{v.nome_visitante}</td>
+                  <td style={{color:"var(--color-text)"}}>
+                    {v.eh_autoridade && (
+                      <span title={v.cargo_autoridade || 'Autoridade da Potência'} style={{marginRight:"0.35rem"}}>🎖️</span>
+                    )}
+                    {v.nome_visitante}
+                  </td>
                   <td style={{color:"var(--color-text)"}}>{v.nome_loja}</td>
                   <td style={{color:"var(--color-text)"}}>{v.cidade}</td>
                   <td style={{color:"var(--color-text)"}}>
