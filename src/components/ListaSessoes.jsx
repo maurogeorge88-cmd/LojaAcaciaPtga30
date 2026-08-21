@@ -262,7 +262,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
         data_visita: visita.data_visita,
         nome_loja: visita.nome_loja,
         oriente: visita.oriente,
-        potencia_id: visita.potencia_id,
+        potencia_id: visita.potencia_id != null ? String(visita.potencia_id) : '',
         observacoes: visita.observacoes || ''
       });
     } else {
@@ -287,11 +287,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
       return;
     }
 
+    // Monta o payload explicitamente — potencia_id vazio vira null (nunca
+    // string vazia, que quebra update/insert em coluna de chave estrangeira).
+    const payload = {
+      ...visitaForm,
+      potencia_id: visitaForm.potencia_id ? visitaForm.potencia_id : null,
+    };
+
     try {
       if (visitaEditando) {
         const { error } = await supabase
           .from('visitas_outras_lojas')
-          .update(visitaForm)
+          .update(payload)
           .eq('id', visitaEditando.id);
         
         if (error) throw error;
@@ -299,7 +306,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
       } else {
         const { error } = await supabase
           .from('visitas_outras_lojas')
-          .insert([visitaForm]);
+          .insert([payload]);
         
         if (error) throw error;
         setMensagem({ tipo: 'sucesso', texto: '✅ Visita cadastrada com sucesso!' });
@@ -309,7 +316,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
       carregarVisitas();
     } catch (error) {
       console.error('Erro ao salvar visita:', error);
-      setMensagem({ tipo: 'erro', texto: '❌ Erro ao salvar visita' });
+      setMensagem({ tipo: 'erro', texto: `❌ Erro ao salvar visita: ${error.message || error.details || 'erro desconhecido'}` });
     }
   };
 
@@ -915,7 +922,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                             type="radio"
                             name="potencia"
                             value={pot.id}
-                            checked={visitaForm.potencia_id === pot.id.toString()}
+                            checked={String(visitaForm.potencia_id) === String(pot.id)}
                             onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
                             className="w-4 h-4 text-purple-600"
                           />
