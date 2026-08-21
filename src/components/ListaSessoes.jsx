@@ -296,12 +296,17 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
 
     try {
       if (visitaEditando) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('visitas_outras_lojas')
           .update(payload)
-          .eq('id', visitaEditando.id);
+          .eq('id', visitaEditando.id)
+          .select();
         
         if (error) throw error;
+        if (!data || data.length === 0) {
+          setMensagem({ tipo: 'erro', texto: '❌ A edição não foi salva: nenhuma linha foi alterada no banco (provável falta de permissão/RLS na tabela visitas_outras_lojas para UPDATE).' });
+          return;
+        }
         setMensagem({ tipo: 'sucesso', texto: '✅ Visita atualizada com sucesso!' });
       } else {
         const { error } = await supabase
