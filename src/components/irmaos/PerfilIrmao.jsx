@@ -1258,70 +1258,87 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   </div>
                 )}
 
-                {historicoCargos.length > 0 ? (
-                  <div className="border rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                    <table className="min-w-full divide-y">
-                      <thead style={{background:"var(--color-surface-2)"}}>
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ano</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Cargo(s)</th>
-                          {modoEdicao && (
-                            <th className="px-4 py-3 text-center text-xs font-medium uppercase w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {historicoCargos.map((cargo, index) => (
-                          <tr key={index} className="hover:">
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold" style={{color:"var(--color-text)"}}>
-                              {cargo.ano}
-                            </td>
-                            <td className="px-4 py-3 text-sm font-bold" style={{color:"var(--color-text)"}}>
-                              {cargo.cargo.split(',').map((c, i) => (
-                                <div key={i} className="flex items-start gap-1">
-                                  <span style={{color:"var(--color-accent)"}}>{i + 1}.</span>
-                                  <span>{c.trim()}</span>
-                                </div>
-                              ))}
-                            </td>
-                            {modoEdicao && (
-                              <td className="px-4 py-3 text-center whitespace-nowrap" style={{color:"var(--color-text)"}}>
-                                <div className="flex gap-2 justify-center">
-                                  <button
-                                    onClick={() => {
-                                      const novoAno = prompt('Digite o novo ano:', cargo.ano);
-                                      const novoCargo = prompt('Digite o(s) novo(s) cargo(s) (separe por vírgula):', cargo.cargo);
-                                      if (novoAno && novoCargo) {
-                                        const novosHistorico = [...historicoCargos];
-                                        novosHistorico[index] = { ano: novoAno, cargo: novoCargo };
-                                        setHistoricoCargos(novosHistorico);
-                                      }
-                                    }}
-                                    style={{padding:"0.2rem 0.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.75rem",cursor:"pointer"}}
-                                    title="Editar"
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm('Deseja excluir este registro?')) {
-                                        setHistoricoCargos(historicoCargos.filter((_, i) => i !== index));
-                                      }
-                                    }}
-                                    style={{padding:"0.15rem 0.5rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",cursor:"pointer"}}
-                                    title="Excluir"
-                                  >
-                                    🗑️
-                                  </button>
-                                </div>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
+                {historicoCargos.length > 0 ? (() => {
+                  const total = historicoCargos.length;
+                  const meio = Math.ceil(total / 2);
+                  const colunas = [
+                    { lista: historicoCargos.slice(0, meio), offset: 0 },
+                    { lista: historicoCargos.slice(meio), offset: meio },
+                  ];
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {colunas.map((coluna, colIdx) => (
+                        coluna.lista.length > 0 && (
+                          <div key={colIdx} className="border rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                            <table className="min-w-full divide-y">
+                              <thead style={{background:"var(--color-surface-2)"}}>
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ano</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Cargo(s)</th>
+                                  {modoEdicao && (
+                                    <th className="px-4 py-3 text-center text-xs font-medium uppercase w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
+                                  )}
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {coluna.lista.map((cargo, i) => {
+                                  const index = coluna.offset + i;
+                                  return (
+                                    <tr key={index} className="hover:">
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold" style={{color:"var(--color-text)"}}>
+                                        {cargo.ano}
+                                      </td>
+                                      <td className="px-4 py-3 text-sm font-bold" style={{color:"var(--color-text)"}}>
+                                        {cargo.cargo.split(',').map((c, ci) => (
+                                          <div key={ci} className="flex items-start gap-1">
+                                            <span style={{color:"var(--color-accent)"}}>{ci + 1}.</span>
+                                            <span>{c.trim()}</span>
+                                          </div>
+                                        ))}
+                                      </td>
+                                      {modoEdicao && (
+                                        <td className="px-4 py-3 text-center whitespace-nowrap" style={{color:"var(--color-text)"}}>
+                                          <div className="flex gap-2 justify-center">
+                                            <button
+                                              onClick={() => {
+                                                const novoAno = prompt('Digite o novo ano:', cargo.ano);
+                                                const novoCargo = prompt('Digite o(s) novo(s) cargo(s) (separe por vírgula):', cargo.cargo);
+                                                if (novoAno && novoCargo) {
+                                                  const novosHistorico = [...historicoCargos];
+                                                  novosHistorico[index] = { ano: novoAno, cargo: novoCargo };
+                                                  setHistoricoCargos(novosHistorico);
+                                                }
+                                              }}
+                                              style={{padding:"0.2rem 0.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.75rem",cursor:"pointer"}}
+                                              title="Editar"
+                                            >
+                                              ✏️
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm('Deseja excluir este registro?')) {
+                                                  setHistoricoCargos(historicoCargos.filter((_, i2) => i2 !== index));
+                                                }
+                                              }}
+                                              style={{padding:"0.15rem 0.5rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",cursor:"pointer"}}
+                                              title="Excluir"
+                                            >
+                                              🗑️
+                                            </button>
+                                          </div>
+                                        </td>
+                                      )}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  );
+                })() : (
                   <div className="text-center py-8 rounded-lg">
                     <p className="text-sm">
                       Nenhum cargo registrado no histórico.
