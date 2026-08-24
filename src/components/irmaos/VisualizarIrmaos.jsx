@@ -404,7 +404,9 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
             <div
               key={irmao.id}
               className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
-              style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              style={situacao === 'licenciado'
+                ? {borderLeftColor:"#c9a84c",background:"var(--color-surface)",border:"1px solid #c9a84c",boxShadow:"0 0 0 1px rgba(201,168,76,0.35)"}
+                : {borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
               <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"6.5rem"}}>
                 {irmao.foto_url ? (
