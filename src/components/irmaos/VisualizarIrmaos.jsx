@@ -51,7 +51,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
     const cores = {
       regular:    {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},
       irregular:  {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'},
-      licenciado: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},
+      licenciado: {background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)'},
       suspenso:   {background:'rgba(249,115,22,0.15)',color:'#f97316',border:'1px solid rgba(249,115,22,0.3)'},
       desligado:  {background:'rgba(100,116,139,0.15)',color:'#64748b',border:'1px solid rgba(100,116,139,0.3)'},
       excluido:   {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'},
@@ -403,10 +403,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
           return (
             <div
               key={irmao.id}
-              className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
+              className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden"
               style={situacao === 'licenciado'
-                ? {borderLeftColor:"#c9a84c",background:"var(--color-surface)",border:"1px solid #c9a84c",boxShadow:"0 0 0 1px rgba(201,168,76,0.35)"}
-                : {borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                ? {borderTop:"2px solid #c9a84c",borderRight:"2px solid #c9a84c",borderBottom:"2px solid #c9a84c",borderLeft:"8px solid #c9a84c",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(201,168,76,0.35)"}
+                : {borderLeft:"4px solid var(--color-accent)",borderTop:"1px solid var(--color-border)",borderRight:"1px solid var(--color-border)",borderBottom:"1px solid var(--color-border)",background:"var(--color-surface)"}}>
               {/* Foto e Grau */}
               <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"6.5rem"}}>
                 {irmao.foto_url ? (
