@@ -395,7 +395,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
       </div>
 
       {/* Cards de Irmãos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{padding:"0.25rem"}}>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3" style={{padding:"0.25rem"}}>
         {irmaosFiltrados.map(irmao => {
           const grau = obterGrau(irmao);
           const situacao = (irmao.situacao || 'regular').toLowerCase();
@@ -406,7 +406,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
               style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
-              <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"10rem"}}>
+              <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"5.5rem"}}>
                 {irmao.foto_url ? (
                   <img
                     src={irmao.foto_url}
@@ -415,43 +415,31 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   />
                 ) : (
                   <div style={{width:"100%",height:"100%",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <span className="text-6xl text-white">👤</span>
+                    <span className="text-3xl text-white">👤</span>
                   </div>
                 )}
                 
                 {/* Badge do Grau */}
-                <div style={{position:"absolute",top:"0.5rem",right:"0.5rem",color:"#fff",padding:"0.2rem 0.65rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"800",...obterStyleGrau(grau)}}>
+                <div style={{position:"absolute",top:"0.35rem",right:"0.35rem",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800",...obterStyleGrau(grau)}}>
                   {grau}
                 </div>
               </div>
 
               {/* Informações */}
-              <div className="p-4">
-                <h3 className="font-bold text-lg truncate" style={{color:"var(--color-accent)"}} title={irmao.nome}>
+              <div className="p-2.5">
+                <h3 className="font-bold text-sm truncate" style={{color:"var(--color-accent)"}} title={irmao.nome}>
                   {irmao.nome}
                 </h3>
                 
-                <div className="mt-2 space-y-1">
-                  <p className="text-sm" style={{color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
-                    <span className="font-semibold" style={{color:"var(--color-accent)",fontSize:"0.8rem",letterSpacing:"0.03em"}}>CIM</span> <span style={{color:"var(--color-text)",fontWeight:"600"}}>{irmao.cim}</span>
-                  </p>
-                  
-                  {irmao.data_nascimento && (
-                    <p className="text-sm" style={{color:"var(--color-text-muted)"}}>
-                      <span className="font-semibold" style={{color:"var(--color-text)"}}>Idade:</span> {calcularIdade(irmao.data_nascimento)}
-                    </p>
-                  )}
-                  
-                  {irmao.data_iniciacao && (
-                    <p style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
-                      <span style={{fontWeight:"600",color:"var(--color-text)"}}>Iniciação:</span> {formatarData(irmao.data_iniciacao)}
-                    </p>
-                  )}
-                </div>
+                <p className="text-xs truncate mt-1" style={{color:"var(--color-text-muted)"}} title={`CIM ${irmao.cim}${irmao.data_nascimento ? ' · ' + calcularIdade(irmao.data_nascimento) : ''}${irmao.data_iniciacao ? ' · ' + formatarData(irmao.data_iniciacao) : ''}`}>
+                  <span className="font-semibold" style={{color:"var(--color-accent)"}}>CIM</span> <span style={{color:"var(--color-text)",fontWeight:"600"}}>{irmao.cim}</span>
+                  {irmao.data_nascimento && <> · {calcularIdade(irmao.data_nascimento)}</>}
+                  {irmao.data_iniciacao && <> · {formatarData(irmao.data_iniciacao)}</>}
+                </p>
 
                 {/* Badge de Situação */}
-                <div className="mt-3 flex gap-2 flex-wrap">
-                  <span style={{display:"inline-block",padding:"0.2rem 0.65rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"700",...obterStyleSituacao(situacao)}}>
+                <div className="mt-2 flex gap-1.5 flex-wrap">
+                  <span style={{display:"inline-block",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.65rem",fontWeight:"700",...obterStyleSituacao(situacao)}}>
                     {irmao.situacao || 'Regular'}
                   </span>
                   
@@ -473,8 +461,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                         showError('Erro ao atualizar: ' + error.message);
                       }
                     }}
-                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium"
-                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                    className="inline-block px-1.5 py-0.5 rounded-lg text-xs font-medium"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.65rem"}}
                     title="Periodicidade de Pagamento"
                   >
                     <option value="Mensal">📅 Mensal</option>
@@ -484,10 +472,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 </div>
 
                 {/* Botões de Ação */}
-                <div className="mt-4 flex gap-2">
+                <div className="mt-2.5 flex gap-1.5">
                   <button
                     onClick={() => onViewProfile(irmao.id)}
-                    style={{padding:"0.45rem 0.6rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"1rem",cursor:"pointer"}}
+                    style={{padding:"0.3rem 0.4rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.8rem",cursor:"pointer"}}
                     title="Ver Perfil"
                   >
                     👁️
@@ -495,7 +483,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   
                   <button
                     onClick={() => onViewPerfilCompleto && onViewPerfilCompleto(irmao.id)}
-                    style={{padding:"0.45rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.85rem",fontWeight:"600",cursor:"pointer"}}
+                    style={{padding:"0.3rem 0.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.7rem",fontWeight:"600",cursor:"pointer"}}
                     title="Perfil Completo"
                   >
                     📋
@@ -505,7 +493,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   {permissoes?.canEdit && (
                     <button
                       onClick={() => onEdit(irmao)}
-                      style={{padding:"0.45rem 0.6rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"1rem",cursor:"pointer"}}
+                      style={{padding:"0.3rem 0.4rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.8rem",cursor:"pointer"}}
                       title="Editar"
                     >
                       ✏️
@@ -514,7 +502,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   
                   <button
                     onClick={() => gerarPDF(irmao)}
-                    style={{padding:"0.45rem 0.75rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.85rem",fontWeight:"600",cursor:"pointer"}}
+                    style={{padding:"0.3rem 0.5rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.7rem",fontWeight:"600",cursor:"pointer"}}
                     title="Gerar Ficha"
                   >
                     📄
