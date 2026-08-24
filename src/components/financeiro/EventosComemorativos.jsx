@@ -338,8 +338,11 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
 //  Tabela de Participantes separada por grupo
 // ─────────────────────────────────────────────
 const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit, setModalPart, setConfirmExcluirPart, totalCotas, btnEdit, btnDanger, podeEditar = false }) => {
-  const irmaos_part   = participantes.filter(p => p.irmao_id);
-  const externos_part = participantes.filter(p => !p.irmao_id);
+  const nomeParticipante = (p) => (p.irmao_id ? (p.irmaos?.nome || '') : (p.nome_externo || ''));
+  const porNome = (a, b) => nomeParticipante(a).localeCompare(nomeParticipante(b), 'pt-BR', { sensitivity: 'base' });
+
+  const irmaos_part   = participantes.filter(p => p.irmao_id).sort(porNome);
+  const externos_part = participantes.filter(p => !p.irmao_id).sort(porNome);
 
   const thS = (center) => ({
     padding: '0.5rem 0.65rem',
