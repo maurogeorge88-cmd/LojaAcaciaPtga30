@@ -151,6 +151,7 @@ function App() {
   const [irmaoIdPerfilCompleto, setIrmaoIdPerfilCompleto] = useState(null);
   const [irmaoLogadoId, setIrmaoLogadoId] = useState(null);
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
+  const [origemRegistroPresenca, setOrigemRegistroPresenca] = useState('cadastro-sessao');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
@@ -3239,6 +3240,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <CadastroSessao 
             onSessaoCriada={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
+              setOrigemRegistroPresenca('cadastro-sessao');
               setCurrentPage('registro-presenca');
             }}
           />
@@ -3249,6 +3251,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <DashboardPresenca 
             onEditarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
+              setOrigemRegistroPresenca('dashboard-presenca');
               setCurrentPage('registro-presenca');
             }}
           />
@@ -3263,6 +3266,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             }}
             onEditarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
+              setOrigemRegistroPresenca('lista-sessoes');
               setCurrentPage('registro-presenca');
             }}
             onNovaSessao={() => setCurrentPage('cadastro-sessao')}
@@ -3285,7 +3289,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <RegistroPresenca 
             sessaoId={sessaoIdAtual}
             onVoltar={() => {
-              setCurrentPage('cadastro-sessao');
+              setCurrentPage(origemRegistroPresenca);
               setSessaoIdAtual(null);
             }}
           />
