@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import CalendarioAnual from './CalendarioAnual';
 
+// Imagens decorativas do quadro de evento — bucket público "cronograma" no Supabase Storage
+const IMG_SOL = supabase.storage.from('cronograma').getPublicUrl('sol.png').data.publicUrl;
+const IMG_LUA = supabase.storage.from('cronograma').getPublicUrl('lua.png').data.publicUrl;
+const IMG_COLUNA_B = supabase.storage.from('cronograma').getPublicUrl('coluna-b.png').data.publicUrl;
+const IMG_COLUNA_J = supabase.storage.from('cronograma').getPublicUrl('coluna-j.png').data.publicUrl;
+
 // Funções de geração de PDF (inline para evitar problemas de import)
 const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null) => {
   // Importar jsPDF dinamicamente
@@ -263,6 +269,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     cor_secundaria: '#818cf8',
     cor_destaque: '#eab308'
   });
+  const [dadosLoja, setDadosLoja] = useState({ logo_url: '', nome_loja: '' });
   const [relatorioForm, setRelatorioForm] = useState({
     mes: new Date().getMonth() + 1,
     ano: new Date().getFullYear(),
@@ -328,7 +335,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     try {
       const { data, error } = await supabase
         .from('dados_loja')
-        .select('cor_primaria, cor_secundaria, cor_destaque')
+        .select('cor_primaria, cor_secundaria, cor_destaque, logo_url, nome_loja')
         .single();
       
       if (error) {
@@ -341,6 +348,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           cor_primaria: data.cor_primaria || '#4f46e5',
           cor_secundaria: data.cor_secundaria || '#818cf8',
           cor_destaque: data.cor_destaque || '#eab308'
+        });
+        setDadosLoja({
+          logo_url: data.logo_url || '',
+          nome_loja: data.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30'
         });
       }
     } catch (error) {
@@ -537,6 +548,16 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
   const formatarData = (data) => {
     return data.split('-').reverse().join('/');
+  };
+
+  const formatarDataCompleta = (data) => {
+    if (!data) return '';
+    const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const [ano, mes, dia] = data.split('-').map(n => parseInt(n, 10));
+    const dataObj = new Date(ano, mes - 1, dia);
+    return `${diasSemana[dataObj.getDay()]}, ${dia} de ${meses[mes - 1]} de ${ano}`;
   };
 
   const formatarHora = (hora) => {
@@ -1249,87 +1270,114 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           onClick={() => setModalVisualizacao(false)}
         >
           <div 
-            className="rounded-xl max-w-2xl w-full" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}
+            className="rounded-xl max-w-lg w-full relative overflow-hidden"
+            style={{
+              background:'linear-gradient(180deg, #0f1729 0%, #1a2138 100%)',
+              border:'3px solid #c9a84c',
+              boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 rounded-t-xl text-white" style={{background:"var(--color-accent)"}}>
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📅 Detalhes do Evento</h3>
-                <button
-                  onClick={() => setModalVisualizacao(false)}
-                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1rem",fontWeight:"700"}}
-                >
-                  ×
-                </button>
-              </div>
+            {/* Botão fechar */}
+            <button
+              onClick={() => setModalVisualizacao(false)}
+              style={{position:'absolute',top:'0.75rem',right:'0.75rem',zIndex:10,background:'rgba(0,0,0,0.4)',border:'1px solid rgba(201,168,76,0.5)',color:'#c9a84c',borderRadius:'50%',width:'2rem',height:'2rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1rem',fontWeight:'700'}}
+            >
+              ×
+            </button>
+
+            {/* Sol e Lua no topo */}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'1rem 1rem 0'}}>
+              <img src={IMG_SOL} alt="" style={{width:'3.5rem',height:'3.5rem',objectFit:'contain',opacity:0.9}} />
+              <img src={IMG_LUA} alt="" style={{width:'3rem',height:'3rem',objectFit:'contain',opacity:0.9}} />
             </div>
-            <div className="p-6 space-y-4" style={{background:"var(--color-surface)",padding:"1.5rem"}}>
-              <div>
-                <h4 className="text-2xl font-bold mb-2">{eventoVisualizar.titulo}</h4>
-                <div className="flex items-center gap-2 mb-3">
-                  <span 
-                    className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
-                    style={{ backgroundColor: tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.cor || '#6b7280' }}
-                  >
-                    {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label || eventoVisualizar.tipo}
-                  </span>
-                  {eventoVisualizar.grau_sessao_id && (
-                    <span 
-                      className="inline-block px-3 py-1 rounded-full text-sm font-medium"
-                      style={{ 
-                        backgroundColor: `${tema.cor_primaria}20`,
-                        color: tema.cor_primaria
-                      }}
-                    >
-                      {getGrauNome(eventoVisualizar.grau_sessao_id)}
-                    </span>
+
+            {/* Corpo com colunas nas laterais */}
+            <div style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:'0.5rem',padding:'0 0.5rem 1rem',alignItems:'stretch'}}>
+              {/* Coluna B */}
+              <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+                <img src={IMG_COLUNA_B} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
+              </div>
+
+              {/* Pergaminho central */}
+              <div style={{background:'#f5f0e1',borderRadius:'0.5rem',border:'2px solid #c9a84c',padding:'1.25rem 1rem',boxShadow:'0 4px 12px rgba(0,0,0,0.35)'}}>
+                {/* Data/hora */}
+                <div style={{textAlign:'center',marginBottom:'0.75rem',fontFamily:'Georgia, serif'}}>
+                  <p style={{fontSize:'1rem',fontWeight:'700',color:'#1a1a1a',lineHeight:'1.4',margin:0}}>
+                    {formatarDataCompleta(eventoVisualizar.data_evento)}
+                  </p>
+                  {eventoVisualizar.hora_inicio && (
+                    <p style={{fontSize:'0.95rem',fontWeight:'700',color:'#1a1a1a',margin:0}}>
+                      Às {formatarHora(eventoVisualizar.hora_inicio)}h
+                    </p>
                   )}
                 </div>
-              </div>
-              
-              {eventoVisualizar.descricao && (
-                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                  <p>{eventoVisualizar.descricao}</p>
-                </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>📅 Data</p>
-                  <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.data_evento}</p>
+                <div style={{width:'60%',height:'2px',background:'linear-gradient(90deg,transparent,#c9a84c,transparent)',margin:'0 auto 0.75rem'}}></div>
+
+                {/* Título / tipo + grau */}
+                <div style={{textAlign:'center',marginBottom:'0.75rem'}}>
+                  <p style={{fontSize:'1.15rem',fontWeight:'800',color:'#1e3a8a',fontFamily:'Georgia, serif',margin:0,lineHeight:'1.3'}}>
+                    {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label.replace(/^[^\s]+\s/, '') || eventoVisualizar.titulo}
+                  </p>
+                  {eventoVisualizar.grau_sessao_id && (
+                    <p style={{fontSize:'1.05rem',fontWeight:'800',color:'#1a1a1a',textTransform:'uppercase',letterSpacing:'0.02em',margin:'0.15rem 0 0'}}>
+                      {getGrauNome(eventoVisualizar.grau_sessao_id).replace(/^[^\s]+\s/, '')}
+                    </p>
+                  )}
+                  {eventoVisualizar.titulo && (
+                    <p style={{fontSize:'0.85rem',color:'#444',margin:'0.25rem 0 0'}}>{eventoVisualizar.titulo}</p>
+                  )}
                 </div>
-                {eventoVisualizar.hora_inicio && (
-                  <div>
-                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>🕐 Início</p>
-                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.hora_inicio}</p>
+
+                {/* Ordem do Dia (usa a Descrição já existente) */}
+                {eventoVisualizar.descricao && (
+                  <div style={{marginBottom:'0.75rem'}}>
+                    <p style={{fontSize:'0.8rem',fontWeight:'800',color:'#b8860b',marginBottom:'0.25rem'}}>Ordem do Dia:</p>
+                    <p style={{fontSize:'0.82rem',color:'#1a1a1a',whiteSpace:'pre-wrap',lineHeight:'1.5',margin:0}}>
+                      {eventoVisualizar.descricao}
+                    </p>
                   </div>
                 )}
-                {eventoVisualizar.hora_fim && (
-                  <div>
-                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>🕑 Término</p>
-                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.hora_fim}</p>
+
+                {/* Local / Responsável */}
+                {(eventoVisualizar.local || eventoVisualizar.responsavel) && (
+                  <div style={{fontSize:'0.78rem',color:'#333',marginBottom:'0.5rem'}}>
+                    {eventoVisualizar.local && <p style={{margin:'0.1rem 0'}}>📍 {eventoVisualizar.local}</p>}
+                    {eventoVisualizar.responsavel && <p style={{margin:'0.1rem 0'}}>👤 {eventoVisualizar.responsavel}</p>}
                   </div>
                 )}
-                {eventoVisualizar.local && (
-                  <div className="col-span-2">
-                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>📍 Local</p>
-                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.local}</p>
-                  </div>
+
+                {/* Observações (texto solto, sem tratamento especial) */}
+                {eventoVisualizar.observacoes && (
+                  <p style={{fontSize:'0.82rem',fontWeight:'700',color:'#1a1a1a',whiteSpace:'pre-wrap',textAlign:'center',margin:'0.5rem 0 0'}}>
+                    {eventoVisualizar.observacoes}
+                  </p>
                 )}
-                {eventoVisualizar.responsavel && (
-                  <div className="col-span-2">
-                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>👤 Responsável</p>
-                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.responsavel}</p>
+
+                {/* Logo da Loja */}
+                {dadosLoja.logo_url && (
+                  <div style={{textAlign:'center',marginTop:'1rem'}}>
+                    <img src={dadosLoja.logo_url} alt={dadosLoja.nome_loja} style={{width:'3.5rem',height:'3.5rem',objectFit:'contain',margin:'0 auto'}} />
+                    <p style={{fontSize:'0.6rem',color:'#666',marginTop:'0.25rem'}}>{dadosLoja.nome_loja}</p>
                   </div>
                 )}
               </div>
 
-              {eventoVisualizar.observacoes && (
-                <div className="rounded-lg p-4" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
-                  <p className="text-sm font-semibold mb-1" style={{color:"var(--color-text-muted)"}}>💬 Observações</p>
-                  <p style={{color:"var(--color-text)",whiteSpace:"pre-wrap"}}>{eventoVisualizar.observacoes}</p>
-                </div>
-              )}
+              {/* Coluna J */}
+              <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+                <img src={IMG_COLUNA_J} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
+              </div>
+            </div>
+
+            {/* Status (mantido do modal original) */}
+            <div style={{padding:'0 1rem 1rem',textAlign:'center'}}>
+              <span 
+                className="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                style={statusEvento.find(s => s.value === eventoVisualizar.status)?.style || {}}
+              >
+                {statusEvento.find(s => s.value === eventoVisualizar.status)?.label || eventoVisualizar.status}
+              </span>
             </div>
           </div>
         </div>
