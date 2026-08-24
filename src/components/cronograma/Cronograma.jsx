@@ -1278,22 +1278,24 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Botão fechar */}
-            <button
-              onClick={() => setModalVisualizacao(false)}
-              style={{position:'absolute',top:'0.75rem',right:'0.75rem',zIndex:10,background:'rgba(0,0,0,0.4)',border:'1px solid rgba(201,168,76,0.5)',color:'#c9a84c',borderRadius:'50%',width:'2rem',height:'2rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1rem',fontWeight:'700'}}
-            >
-              ×
-            </button>
+            {/* Barra superior — só o botão fechar, fora da área do sol/lua */}
+            <div style={{height:'2.25rem',position:'relative'}}>
+              <button
+                onClick={() => setModalVisualizacao(false)}
+                style={{position:'absolute',top:'0.5rem',right:'0.75rem',zIndex:10,background:'rgba(0,0,0,0.5)',border:'1px solid rgba(201,168,76,0.5)',color:'#c9a84c',borderRadius:'50%',width:'2rem',height:'2rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1rem',fontWeight:'700'}}
+              >
+                ×
+              </button>
+            </div>
 
             {/* Sol e Lua no topo */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'1rem 1rem 0'}}>
-              <img src={IMG_SOL} alt="" style={{width:'3.5rem',height:'3.5rem',objectFit:'contain',opacity:0.9}} />
-              <img src={IMG_LUA} alt="" style={{width:'3rem',height:'3rem',objectFit:'contain',opacity:0.9}} />
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'0 1rem'}}>
+              <img src={IMG_SOL} alt="" style={{width:'4.5rem',height:'4.5rem',objectFit:'contain',opacity:0.9}} />
+              <img src={IMG_LUA} alt="" style={{width:'4rem',height:'4rem',objectFit:'contain',opacity:0.9}} />
             </div>
 
             {/* Corpo com colunas nas laterais */}
-            <div style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:'0.5rem',padding:'0 0.5rem 1rem',alignItems:'stretch'}}>
+            <div style={{display:'grid',gridTemplateColumns:'72px 1fr 72px',gap:'0.5rem',padding:'0 0.25rem 1rem',alignItems:'stretch'}}>
               {/* Coluna B */}
               <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
                 <img src={IMG_COLUNA_B} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
