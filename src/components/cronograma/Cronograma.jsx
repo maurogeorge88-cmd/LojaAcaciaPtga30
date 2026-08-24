@@ -1267,17 +1267,18 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       {modalVisualizacao && eventoVisualizar && (
         <div 
           className="fixed inset-0 flex items-center justify-center z-50 p-4"
-          style={{background:'#e5e7eb'}}
+          style={{background:'rgba(0,0,0,0.55)'}}
           onClick={() => setModalVisualizacao(false)}
         >
-          {/* Container externo — só serve pra posicionar o botão fechar fora do quadro */}
+          {/* Moldura cinza — só um pouco maior que o quadro (não tela toda) */}
           <div
-            className="relative w-full max-w-lg"
+            className="relative"
+            style={{background:'#e5e7eb',borderRadius:'0.75rem',padding:'2cm',boxShadow:'0 10px 40px rgba(0,0,0,0.35)',maxHeight:'92vh',overflowY:'auto'}}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setModalVisualizacao(false)}
-              style={{position:'absolute',top:'-1rem',right:'-1rem',zIndex:10,background:'#1a2138',border:'2px solid #c9a84c',color:'#c9a84c',borderRadius:'50%',width:'2.25rem',height:'2.25rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1.1rem',fontWeight:'700',boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}
+              style={{position:'absolute',top:'0.6cm',right:'0.6cm',zIndex:10,background:'#1a2138',border:'2px solid #c9a84c',color:'#c9a84c',borderRadius:'50%',width:'2.25rem',height:'2.25rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1.1rem',fontWeight:'700',boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}
             >
               ×
             </button>
@@ -1285,8 +1286,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             {/* Quadro do evento — moldura dourada pra dentro, intacto */}
             <div 
               id="quadro-evento"
-              className="rounded-xl w-full relative overflow-hidden"
+              className="rounded-xl relative overflow-hidden"
               style={{
+                width:'32rem',
+                maxWidth:'80vw',
                 background:'linear-gradient(180deg, #0f1729 0%, #1a2138 100%)',
                 border:'3px solid #c9a84c',
                 boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
