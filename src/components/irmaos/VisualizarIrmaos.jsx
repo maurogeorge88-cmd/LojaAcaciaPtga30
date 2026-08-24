@@ -411,7 +411,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   <img
                     src={irmao.foto_url}
                     alt={irmao.nome}
-                    style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",display:"block"}}
+                    style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 35%",display:"block"}}
                   />
                 ) : (
                   <div style={{width:"100%",height:"100%",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
