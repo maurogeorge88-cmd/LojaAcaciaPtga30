@@ -2128,20 +2128,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em'}}>Pendências</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-          <div className="border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p style={{fontSize:"0.7rem",color:"#f59e0b",fontWeight:"600"}}>⏳ A Receber</p>
             <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#f59e0b"}}>{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
-            <p className="text-[10px] mt-0.5">Pendentes</p>
+            <p className="text-[10px] mt-0.5 mb-2">Pendentes</p>
+            <div style={{visibility:"hidden",width:"100%",padding:"0.2rem 0.5rem",fontSize:"0.65rem",fontWeight:"600"}} aria-hidden="true">
+              💰 Espaço
+            </div>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
           <div 
-            className="rounded-lg p-3 relative cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
+            className="rounded-lg p-3 relative cursor-pointer transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}
             onDoubleClick={() => setModalDespesasPendentesAberto(true)}
             title="Clique duplo para ver detalhes"
           >
             <p className="text-xs font-medium">⏰ A Pagar 🖱️</p>
             <p className="text-lg font-bold">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
-            <p className="text-[10px] mt-0.5">Pendentes</p>
+            <p className="text-[10px] mt-0.5 mb-2">Pendentes</p>
+            <div style={{visibility:"hidden",width:"100%",padding:"0.2rem 0.5rem",fontSize:"0.65rem",fontWeight:"600"}} aria-hidden="true">
+              💰 Espaço
+            </div>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
               </div>{/* fim grid pendências */}
