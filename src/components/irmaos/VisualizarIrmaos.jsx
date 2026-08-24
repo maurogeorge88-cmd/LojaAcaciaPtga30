@@ -406,12 +406,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
               style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
-              <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"5.5rem"}}>
+              <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"6.5rem"}}>
                 {irmao.foto_url ? (
                   <img
                     src={irmao.foto_url}
                     alt={irmao.nome}
-                    style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
+                    style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 20%",display:"block"}}
                   />
                 ) : (
                   <div style={{width:"100%",height:"100%",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
