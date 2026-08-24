@@ -1266,30 +1266,34 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       {/* Modal de Visualização */}
       {modalVisualizacao && eventoVisualizar && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          style={{background:'#e5e7eb'}}
           onClick={() => setModalVisualizacao(false)}
         >
-          <div 
-            className="rounded-xl max-w-lg w-full relative overflow-hidden"
-            style={{
-              background:'linear-gradient(180deg, #0f1729 0%, #1a2138 100%)',
-              border:'3px solid #c9a84c',
-              boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
-            }}
+          {/* Container externo — só serve pra posicionar o botão fechar fora do quadro */}
+          <div
+            className="relative w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Barra superior — só o botão fechar, fora da área do sol/lua */}
-            <div style={{height:'2.25rem',position:'relative'}}>
-              <button
-                onClick={() => setModalVisualizacao(false)}
-                style={{position:'absolute',top:'0.5rem',right:'0.75rem',zIndex:10,background:'rgba(0,0,0,0.5)',border:'1px solid rgba(201,168,76,0.5)',color:'#c9a84c',borderRadius:'50%',width:'2rem',height:'2rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1rem',fontWeight:'700'}}
-              >
-                ×
-              </button>
-            </div>
+            <button
+              onClick={() => setModalVisualizacao(false)}
+              style={{position:'absolute',top:'-1rem',right:'-1rem',zIndex:10,background:'#1a2138',border:'2px solid #c9a84c',color:'#c9a84c',borderRadius:'50%',width:'2.25rem',height:'2.25rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1.1rem',fontWeight:'700',boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}
+            >
+              ×
+            </button>
 
+            {/* Quadro do evento — moldura dourada pra dentro, intacto */}
+            <div 
+              id="quadro-evento"
+              className="rounded-xl w-full relative overflow-hidden"
+              style={{
+                background:'linear-gradient(180deg, #0f1729 0%, #1a2138 100%)',
+                border:'3px solid #c9a84c',
+                boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
+              }}
+            >
             {/* Sol e Lua no topo */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'0 1rem'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'1rem 1rem 0'}}>
               <img src={IMG_SOL} alt="" style={{width:'4.5rem',height:'4.5rem',objectFit:'contain',opacity:0.9}} />
               <img src={IMG_LUA} alt="" style={{width:'4rem',height:'4rem',objectFit:'contain',opacity:0.9}} />
             </div>
@@ -1381,6 +1385,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 {statusEvento.find(s => s.value === eventoVisualizar.status)?.label || eventoVisualizar.status}
               </span>
             </div>
+            </div>{/* fim #quadro-evento */}
           </div>
         </div>
       )}
