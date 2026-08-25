@@ -719,6 +719,14 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       margin: { left: 14, right: 14 },
       didParseCell: (data) => {
         const rotulo = data.row.raw?.[0];
+        if (data.column.index === 1 && rotulo === 'Valor Calculado por Cota') {
+          data.cell.styles.textColor = [0, 0, 0];       // preto — valor calculado por cota
+          data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 1 && rotulo === 'Valor Ajustado por Cota' && evento.valor_ajustado) {
+          data.cell.styles.textColor = [22, 163, 74];    // verde — valor ajustado por cota
+          data.cell.styles.fontStyle = 'bold';
+        }
         if (data.column.index === 1 && rotulo === 'Irmaos Participantes') {
           data.cell.styles.textColor = [37, 99, 235];   // azul — valor lançado aos irmãos
           data.cell.styles.fontStyle = 'bold';
