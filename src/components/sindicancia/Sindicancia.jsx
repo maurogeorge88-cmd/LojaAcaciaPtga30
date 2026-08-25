@@ -644,7 +644,7 @@ const ModalEncerrar = ({ aberto, onFechar, onEncerrar, processo }) => {
         </div>
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ padding: '0.85rem 1rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: '#f59e0b' }}>
-            ⚠️ Após encerrado, o processo não poderá ser reaberto. Candidatos não finalizados serão mantidos com sua situação atual.
+            ⚠️ O processo ficará bloqueado para edição até ser reaberto (opção "🔓 Reabrir Processo"). Candidatos não finalizados serão mantidos com sua situação atual.
           </div>
           <div>
             <label style={lbl}>Observação Final</label>
@@ -791,6 +791,19 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     if (!error) {
       setModalEncerrar(false);
       showMsg('✅ Processo encerrado.');
+      onProcessoAtualizado();
+    }
+  };
+
+  const handleReabrir = async () => {
+    if (!window.confirm('Reabrir este processo? Ele voltará para "Em Andamento" e poderá ser editado novamente.')) return;
+    const { error } = await supabase.from('sindicancia_processos').update({
+      status: 'em_andamento',
+      data_encerramento: null,
+      observacao_final: null,
+    }).eq('id', processo.id);
+    if (!error) {
+      showMsg('🔓 Processo reaberto.');
       onProcessoAtualizado();
     }
   };
@@ -1281,6 +1294,11 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
                 🔒 Encerrar
               </button>
             </>
+          )}
+          {podeEditar && encerrado && (
+            <button onClick={handleReabrir} style={{ ...btnPrimary, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }}>
+              🔓 Reabrir Processo
+            </button>
           )}
         </div>
       </div>
