@@ -731,8 +731,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           data.cell.styles.textColor = [37, 99, 235];   // azul — valor lançado aos irmãos
           data.cell.styles.fontStyle = 'bold';
         }
-        if (data.column.index === 1 && rotulo === 'Diferenca Coberta pela Loja') {
-          data.cell.styles.textColor = [220, 38, 38];   // vermelho — valor coberto pela loja
+        if (data.column.index === 1 && (rotulo === 'Convidados Externos' || rotulo === 'Diferenca Coberta pela Loja')) {
+          data.cell.styles.textColor = [220, 38, 38];   // vermelho — coberto pela loja
           data.cell.styles.fontStyle = 'bold';
         }
       },
