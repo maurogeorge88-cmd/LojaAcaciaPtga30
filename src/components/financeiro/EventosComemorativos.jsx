@@ -696,6 +696,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
     let y = 52;
 
     // Resumo financeiro
+    const diferencaLoja = valorCota > 0 ? Math.max(0, totalDespesas - (cotasIrmaos + cotasExternos) * valorCota) : 0;
+
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
     doc.text('Resumo Financeiro', 14, y); y += 5;
     autoTable(doc, {
@@ -709,11 +711,23 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
         ['Irmaos Participantes', `${irmaos_part.length}  (${cotasIrmaos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasIrmaos * valorCota)}` : ''})`],
         ...(externos_part.length > 0 ? [['Convidados Externos', `${externos_part.length}  (${cotasExternos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasExternos * valorCota)}` : ''})`]] : []),
         ['Total Geral de Cotas', `${(cotasIrmaos + cotasExternos).toFixed(1)}${valorCota > 0 ? `  (${fmtM((cotasIrmaos + cotasExternos) * valorCota)})` : ''}`],
+        ...(diferencaLoja > 0 ? [['Diferenca Coberta pela Loja', fmtM(diferencaLoja)]] : []),
       ],
       styles: { fontSize: 9, cellPadding: 2 },
       headStyles: { fillColor: [40, 40, 40] },
       columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } },
       margin: { left: 14, right: 14 },
+      didParseCell: (data) => {
+        const rotulo = data.row.raw?.[0];
+        if (data.column.index === 1 && rotulo === 'Irmaos Participantes') {
+          data.cell.styles.textColor = [37, 99, 235];   // azul — valor lançado aos irmãos
+          data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 1 && rotulo === 'Diferenca Coberta pela Loja') {
+          data.cell.styles.textColor = [220, 38, 38];   // vermelho — valor coberto pela loja
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
     });
     y = doc.lastAutoTable.finalY + 10;
 
