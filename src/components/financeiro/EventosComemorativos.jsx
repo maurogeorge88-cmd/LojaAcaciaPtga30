@@ -667,8 +667,18 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
     const { jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
     const s = (str) => { if (!str) return ''; let r = ''; for (const c of str.normalize('NFD')) { if (c.charCodeAt(0) < 128) r += c; } return r; };
+    const fmtM = (v) => `R$ ${(parseFloat(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
     const pW = doc.internal.pageSize.getWidth();
+
+    // Agrupamento de participantes (usado no Resumo e no Rateio)
+    const nomeParticipante = (p) => (p.irmao_id ? (p.irmaos?.nome || '') : (p.nome_externo || ''));
+    const porNome = (a, b) => nomeParticipante(a).localeCompare(nomeParticipante(b), 'pt-BR', { sensitivity: 'base' });
+    const abrev = (nome) => s(nome || '').split(' ').slice(0, 2).join(' ');
+    const irmaos_part   = participantes.filter(p => p.irmao_id).sort(porNome);
+    const externos_part = participantes.filter(p => !p.irmao_id).sort(porNome);
+    const cotasIrmaos    = irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
+    const cotasExternos  = externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
 
     // Cabeçalho
     doc.setFillColor(26, 26, 26);
@@ -691,11 +701,14 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
     autoTable(doc, {
       startY: y,
       body: [
-        ['Total de Despesas', `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`],
-        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- R$ ${contribuicaoLoja.toFixed(2).replace('.', ',')}`], ['Base do Rateio', `R$ ${baseRateio.toFixed(2).replace('.', ',')}`]] : []),
+        ['Total de Despesas', fmtM(totalDespesas)],
+        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- ${fmtM(contribuicaoLoja)}`], ['Base do Rateio', fmtM(baseRateio)]] : []),
         ['Total de Cotas', totalCotas.toFixed(1)],
-        ['Valor Calculado por Cota', `R$ ${valorCalc.toFixed(2).replace('.', ',')}`],
-        ['Valor Ajustado por Cota', evento.valor_ajustado ? `R$ ${parseFloat(evento.valor_ajustado).toFixed(2).replace('.', ',')}` : 'Nao definido'],
+        ['Valor Calculado por Cota', fmtM(valorCalc)],
+        ['Valor Ajustado por Cota', evento.valor_ajustado ? fmtM(evento.valor_ajustado) : 'Nao definido'],
+        ['Irmaos Participantes', `${irmaos_part.length}  (${cotasIrmaos.toFixed(1)} cotas)`],
+        ...(externos_part.length > 0 ? [['Convidados Externos', `${externos_part.length}  (${cotasExternos.toFixed(1)} cotas)`]] : []),
+        ['Total Geral de Cotas', `${(cotasIrmaos + cotasExternos).toFixed(1)}`],
       ],
       styles: { fontSize: 9, cellPadding: 2 },
       headStyles: { fillColor: [40, 40, 40] },
@@ -715,10 +728,13 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           fmtD(d.data_vencimento),
           s(d.descricao || ''),
           d.status === 'pago' ? 'Pago' : 'Pendente',
-          `R$ ${parseFloat(d.valor).toFixed(2).replace('.', ',')}`,
+          fmtM(d.valor),
         ]),
+        foot: [['', '', 'Total', fmtM(despesas.reduce((s2, d) => s2 + parseFloat(d.valor || 0), 0))]],
+        showFoot: 'lastPage',
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [55, 55, 55], textColor: 255 },
+        footStyles: { fillColor: [235, 225, 200], textColor: [26, 26, 26], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 248, 248] },
         columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
         margin: { left: 14, right: 14 },
@@ -728,13 +744,6 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 
     // Rateio — separado em Irmãos e Convidados Externos (mesma lógica de agrupamento da tela)
     if (participantes.length > 0) {
-      const nomeParticipante = (p) => (p.irmao_id ? (p.irmaos?.nome || '') : (p.nome_externo || ''));
-      const porNome = (a, b) => nomeParticipante(a).localeCompare(nomeParticipante(b), 'pt-BR', { sensitivity: 'base' });
-      const abrev = (nome) => s(nome || '').split(' ').slice(0, 2).join(' ');
-
-      const irmaos_part   = participantes.filter(p => p.irmao_id).sort(porNome);
-      const externos_part = participantes.filter(p => !p.irmao_id).sort(porNome);
-
       // Quadro de Irmãos
       if (irmaos_part.length > 0) {
         if (y > 240) { doc.addPage(); y = 20; }
@@ -746,12 +755,12 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           body: irmaos_part.map(p => [
             abrev(p.irmaos?.nome),
             parseFloat(p.cotas).toFixed(1),
-            valorCota > 0 ? `R$ ${(parseFloat(p.cotas) * valorCota).toFixed(2).replace('.', ',')}` : '-',
+            valorCota > 0 ? fmtM(parseFloat(p.cotas) * valorCota) : '-',
           ]),
           foot: [[
             'Subtotal Irmaos',
             irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0).toFixed(1),
-            valorCota > 0 ? `R$ ${irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0).toFixed(2).replace('.', ',')}` : '-',
+            valorCota > 0 ? fmtM(irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0)) : '-',
           ]],
           showFoot: 'lastPage',
           styles: { fontSize: 8, cellPadding: 2 },
@@ -775,12 +784,12 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           body: externos_part.map(p => [
             abrev(p.nome_externo),
             parseFloat(p.cotas).toFixed(1),
-            valorCota > 0 ? `R$ ${(parseFloat(p.cotas) * valorCota).toFixed(2).replace('.', ',')}` : '-',
+            valorCota > 0 ? fmtM(parseFloat(p.cotas) * valorCota) : '-',
           ]),
           foot: [[
             'Subtotal Externos',
             externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0).toFixed(1),
-            valorCota > 0 ? `R$ ${externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0).toFixed(2).replace('.', ',')}` : '-',
+            valorCota > 0 ? fmtM(externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0)) : '-',
           ]],
           showFoot: 'lastPage',
           styles: { fontSize: 8, cellPadding: 2 },
@@ -796,7 +805,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       // Total geral do rateio
       const totalRateio = valorCota > 0 ? participantes.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0) : 0;
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(40, 40, 40);
-      doc.text(`Total do Rateio: R$ ${totalRateio.toFixed(2).replace('.', ',')}`, pW - 14, y, { align: 'right' });
+      doc.text(`Total do Rateio: ${fmtM(totalRateio)}`, pW - 14, y, { align: 'right' });
     }
 
     // Rodapé em todas as páginas
