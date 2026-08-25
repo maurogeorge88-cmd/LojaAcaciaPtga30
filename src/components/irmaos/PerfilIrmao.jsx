@@ -5,6 +5,8 @@ import GestaoSituacoes from './GestaoSituacoes';
 import InstrucoesTrabalhos from './InstrucoesTrabalhos';
 
 export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError, permissoes, userEmail, userData }) {
+  const boxCard = { background: "var(--color-surface-2)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "1.25rem" };
+  const boxTitle = { fontSize: "0.72rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.85rem" };
   const [irmao, setIrmao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -545,7 +547,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {/* ABA: Dados Pessoais */}
           {abaSelecionada === 'pessoal' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Quadro: Identificação */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>🪪 Identificação</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Nome Completo */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome Completo</label>
@@ -612,7 +617,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </div>
                   )}
                 </div>
+                </div>
+              </div>
 
+              {/* Quadro: Contato */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>📞 Contato</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Email</label>
@@ -642,7 +653,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <p>{irmao.telefone || 'Não informado'}</p>
                   )}
                 </div>
+                </div>
+              </div>
 
+              {/* Quadro: Profissional / Formação */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>🎓 Profissional / Formação</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Profissão */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Profissão</label>
@@ -732,10 +749,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <p>{irmao.escolaridade?.replace(/_/g, ' ') || 'Não informado'}</p>
                   )}
                 </div>
+                </div>
+              </div>
 
-                {/* Endereço Completo */}
-                <div className="md:col-span-3">
-                  <h4 className="font-semibold mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>📍 Endereço</h4>
+              {/* Quadro: Endereço */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>📍 Endereço</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CEP</label>
@@ -830,7 +849,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       )}
                     </div>
                   </div>
-                </div>
               </div>
             </div>
           )}
@@ -838,8 +856,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {/* ABA: Dados Maçônicos */}
           {abaSelecionada === 'maconico' && (
             <div className="space-y-6">
-              {/* LINHA 1: CIM e Situação */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Quadro: CIM e Situação */}
+              <div style={boxCard}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CIM</label>
                   {modoEdicao ? (
@@ -874,6 +893,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   ) : (
                     <p className="capitalize text-lg">{irmao.situacao || 'Regular'}</p>
                   )}
+                </div>
                 </div>
               </div>
 
@@ -1033,8 +1053,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 </div>
               </div>
 
-              {/* LINHA 4: Datas de Iniciação, Elevação e Exaltação */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Quadro: Datas Maçônicas */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>🕐 Datas Maçônicas</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🔨 Data de Iniciação</label>
                   {modoEdicao ? (
@@ -1087,10 +1109,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </p>
                   )}
                 </div>
-              </div>
+                </div>
 
-              {/* LINHA 2.5: Mestre Instalado */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4" style={{marginTop:"1rem"}}>
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>⭐ Mestre Instalado?</label>
                   {modoEdicao ? (
@@ -1138,10 +1159,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     )}
                   </div>
                 )}
+                </div>
               </div>
 
-              {/* LINHA 3: Loja Origem, Oriente e Potência */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Quadro: Loja de Origem */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>🏛️ Loja de Origem</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Loja de Origem</label>
                   {modoEdicao ? (
@@ -1183,11 +1207,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <p>{irmao.grande_oriente || 'Não informado'}</p>
                   )}
                 </div>
+                </div>
               </div>
 
-              {/* LINHA 4: Observações */}
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
+              {/* Quadro: Observações */}
+              <div style={boxCard}>
+                <h4 style={boxTitle}>📝 Observações</h4>
                 {modoEdicao ? (
                   <textarea
                     value={irmaoForm.observacoes || ''}
