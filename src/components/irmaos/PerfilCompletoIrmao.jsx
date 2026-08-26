@@ -316,10 +316,11 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
           <section style={sSection}>
             <h3 style={sSecTitle}>🏛️ Cargos Ocupados na Loja ({historicoCargos.length})</h3>
             {historicoCargos.length > 0 ? (() => {
-              const meio = Math.ceil(historicoCargos.length / 2);
-              const colunas = [historicoCargos.slice(0, meio), historicoCargos.slice(meio)];
+              const nCol = Math.min(4, historicoCargos.length);
+              const porColuna = Math.ceil(historicoCargos.length / nCol);
+              const colunas = Array.from({ length: nCol }, (_, ci) => historicoCargos.slice(ci * porColuna, (ci + 1) * porColuna));
               return (
-                <div style={{display:'grid',gridTemplateColumns:colunas[1].length>0?'1fr 1fr':'1fr',gap:'0.75rem'}}>
+                <div style={{display:'grid',gridTemplateColumns:`repeat(${nCol}, 1fr)`,gap:'0.75rem'}}>
                   {colunas.map((coluna, ci) => coluna.length > 0 && (
                     <div key={ci} style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
                       {coluna.map((c,i)=>(
@@ -346,11 +347,15 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
               <div style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)',marginBottom:'0.75rem'}}>
                 {comissoesAtivas.map((com,i)=>{
                   const orig = com.comissoes?.origem;
+                  const anoInicio = com.comissoes?.data_inicio ? new Date(com.comissoes.data_inicio).getFullYear() : null;
                   return (
                     <div key={com.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.6rem 1rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<comissoesAtivas.length-1?'1px solid var(--color-border)':'none'}}>
                       <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
                         <span style={{fontSize:'0.72rem',color:orig==='interna'?'#3b82f6':'#8b5cf6'}}>{orig==='interna'?'🏢':'🌐'}</span>
                         <span style={{fontWeight:'600',color:'var(--color-text)',fontSize:'0.875rem'}}>{com.comissoes?.nome||'Sem nome'}</span>
+                        {anoInicio && (
+                          <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>({anoInicio})</span>
+                        )}
                       </div>
                       <span style={{padding:'0.15rem 0.65rem',borderRadius:'999px',fontSize:'0.72rem',fontWeight:'700',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'}}>{com.funcao||'Membro'}</span>
                     </div>
@@ -363,12 +368,17 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
               <>
                 <p style={{fontSize:'0.78rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.4rem'}}>✗ Inativas ({comissoesInativas.length})</p>
                 <div style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)',opacity:0.75}}>
-                  {comissoesInativas.map((com,i)=>(
-                    <div key={com.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.5rem 1rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<comissoesInativas.length-1?'1px solid var(--color-border)':'none'}}>
-                      <span style={{color:'var(--color-text)',fontSize:'0.85rem'}}>{com.comissoes?.nome||'Sem nome'}</span>
-                      <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)'}}>{fmtData(com.data_saida)}</span>
-                    </div>
-                  ))}
+                  {comissoesInativas.map((com,i)=>{
+                    const anoInicio = com.comissoes?.data_inicio ? new Date(com.comissoes.data_inicio).getFullYear() : null;
+                    const anoFim = com.comissoes?.data_fim ? new Date(com.comissoes.data_fim).getFullYear() : null;
+                    const periodo = anoInicio ? (anoFim && anoFim !== anoInicio ? `${anoInicio} - ${anoFim}` : `${anoInicio}`) : (com.data_saida ? fmtData(com.data_saida) : '—');
+                    return (
+                      <div key={com.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.5rem 1rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<comissoesInativas.length-1?'1px solid var(--color-border)':'none'}}>
+                        <span style={{color:'var(--color-text)',fontSize:'0.85rem'}}>{com.comissoes?.nome||'Sem nome'}</span>
+                        <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)'}}>{periodo}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
