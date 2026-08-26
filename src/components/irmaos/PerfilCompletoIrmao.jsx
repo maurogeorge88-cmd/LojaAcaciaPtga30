@@ -11,6 +11,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [dadosPresenca, setDadosPresenca]           = useState(null);
   const [dadosFinanceiro, setDadosFinanceiro]       = useState(null);
   const [grausFilosoficos, setGrausFilosoficos]     = useState([]);
+  const [historicoCargos, setHistoricoCargos]       = useState([]);
   const [comissoesAtivas, setComissoesAtivas]       = useState([]);
   const [comissoesInativas, setComissoesInativas]   = useState([]);
   const [eventosParticipados, setEventosParticipados] = useState([]);
@@ -51,6 +52,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
       await carregarPresenca(irmaoData);
       await carregarFinanceiro();
       await carregarGrausFilosoficos();
+      await carregarHistoricoCargos();
       await carregarComissoes();
       await carregarEventos();
     } catch (err) {
@@ -140,6 +142,13 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
     } catch(e) { setGrausFilosoficos([]); }
   };
 
+  const carregarHistoricoCargos = async () => {
+    try {
+      const { data } = await supabase.from('historico_cargos').select('*').eq('irmao_id', irmaoId).order('ano', { ascending: false });
+      setHistoricoCargos(data || []);
+    } catch (e) { setHistoricoCargos([]); }
+  };
+
   const carregarComissoes = async () => {
     try {
       const { data } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome,status,origem,data_inicio,data_fim)').eq('irmao_id',irmaoId);
@@ -187,7 +196,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,padding:'1rem'}}>
-      <div style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-2xl)',width:'100%',maxWidth:'900px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',border:'1px solid var(--color-border)'}}>
+      <div style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-2xl)',width:'100%',maxWidth:'1100px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',border:'1px solid var(--color-border)'}}>
 
         {/* Header */}
         <div style={{background:'var(--color-accent)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
@@ -283,16 +292,49 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
           {/* ── Graus Filosóficos ─────────────────────────────────────────── */}
           <section style={sSection}>
             <h3 style={sSecTitle}>🎓 Graus Filosóficos ({grausFilosoficos.length})</h3>
-            {grausFilosoficos.length > 0 ? (
-              <div style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
-                {grausFilosoficos.map((g,i)=>(
-                  <div key={g.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.65rem 1rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<grausFilosoficos.length-1?'1px solid var(--color-border)':'none'}}>
-                    <p style={{fontWeight:'600',color:'var(--color-text)',margin:0}}>Grau {g.graus_maconicos?.numero_grau}° — {g.graus_maconicos?.nome_grau}</p>
-                    <span style={{fontSize:'0.78rem',color:'var(--color-text-muted)'}}>{fmtData(g.data_conquista)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : <p style={{color:'var(--color-text-muted)',textAlign:'center',padding:'1rem'}}>Nenhum grau filosófico registrado</p>}
+            {grausFilosoficos.length > 0 ? (() => {
+              const meio = Math.ceil(grausFilosoficos.length / 2);
+              const colunas = [grausFilosoficos.slice(0, meio), grausFilosoficos.slice(meio)];
+              return (
+                <div style={{display:'grid',gridTemplateColumns:colunas[1].length>0?'1fr 1fr':'1fr',gap:'0.75rem'}}>
+                  {colunas.map((coluna, ci) => coluna.length > 0 && (
+                    <div key={ci} style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
+                      {coluna.map((g,i)=>(
+                        <div key={g.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.45rem 0.75rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<coluna.length-1?'1px solid var(--color-border)':'none'}}>
+                          <p style={{fontWeight:'600',color:'var(--color-text)',margin:0,fontSize:'0.78rem'}}>Grau {g.graus_maconicos?.numero_grau}° — {g.graus_maconicos?.nome_grau}</p>
+                          <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',whiteSpace:'nowrap',marginLeft:'0.5rem'}}>{fmtData(g.data_conquista)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })() : <p style={{color:'var(--color-text-muted)',textAlign:'center',padding:'1rem'}}>Nenhum grau filosófico registrado</p>}
+          </section>
+
+          {/* ── Cargos Ocupados na Loja ───────────────────────────────────── */}
+          <section style={sSection}>
+            <h3 style={sSecTitle}>🏛️ Cargos Ocupados na Loja ({historicoCargos.length})</h3>
+            {historicoCargos.length > 0 ? (() => {
+              const meio = Math.ceil(historicoCargos.length / 2);
+              const colunas = [historicoCargos.slice(0, meio), historicoCargos.slice(meio)];
+              return (
+                <div style={{display:'grid',gridTemplateColumns:colunas[1].length>0?'1fr 1fr':'1fr',gap:'0.75rem'}}>
+                  {colunas.map((coluna, ci) => coluna.length > 0 && (
+                    <div key={ci} style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
+                      {coluna.map((c,i)=>(
+                        <div key={c.id} style={{padding:'0.5rem 0.75rem',background:i%2===0?'var(--color-surface-2)':'var(--color-surface)',borderBottom:i<coluna.length-1?'1px solid var(--color-border)':'none'}}>
+                          <p style={{fontWeight:'700',color:'var(--color-accent)',margin:'0 0 0.15rem',fontSize:'0.78rem'}}>{c.ano}</p>
+                          {c.cargo.split(',').map((cg, cgi) => (
+                            <p key={cgi} style={{margin:0,fontSize:'0.78rem',color:'var(--color-text)'}}>{cg.trim()}</p>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })() : <p style={{color:'var(--color-text-muted)',textAlign:'center',padding:'1rem'}}>Nenhum cargo registrado no histórico</p>}
           </section>
 
           {/* ── Comissões ─────────────────────────────────────────────────── */}
