@@ -2256,11 +2256,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="rounded-lg p-4 flex flex-col flex-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           {/* Cabeçalho — Saldo no topo */}
           <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-            <span className="text-3xl">🔺</span>
+            <span className="text-3xl">💰</span>
             <div className="flex-1 text-center">
               <p className="text-sm font-bold leading-tight">Arco Real</p>
               <p className="text-xs mt-0.5">Saldo acumulado</p>
-              <p style={{fontSize:"1.1rem",fontWeight:"800",color:arcoRealTotal.saldo>=0?"var(--color-text)":"#ef4444",marginTop:"0.25rem"}}>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:arcoRealTotal.saldo>=0?"#2563eb":"#ef4444",marginTop:"0.25rem"}}>
                 {showValues ? formatarMoeda(arcoRealTotal.saldo) : '••••••'}
               </p>
             </div>
