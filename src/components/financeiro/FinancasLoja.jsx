@@ -74,6 +74,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
+  const [arcoRealTotal, setArcoRealTotal] = useState({ receita: 0, despesa: 0, saldo: 0 });
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [showValues, setShowValues] = useState(false); // Ocultar valores por padrão
@@ -247,6 +248,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       calcularSaldoAnterior(),
       calcularCaixaFisicoTotal(),
       calcularTroncoTotal(),
+      calcularArcoRealTotal(),
       buscarTotalRegistros(),
       carregarMesesFechados(),
       carregarEventosComemorativos(),
@@ -1806,6 +1808,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
+  const calcularArcoRealTotal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('arco_real_lancamentos')
+        .select('tipo, valor, status');
+
+      if (error) throw error;
+
+      const lista = data || [];
+      const receita = lista
+        .filter(l => l.tipo === 'receita' && l.status === 'pago')
+        .reduce((s, l) => s + Number(l.valor || 0), 0);
+      const despesa = lista
+        .filter(l => l.tipo === 'despesa')
+        .reduce((s, l) => s + Number(l.valor || 0), 0);
+
+      setArcoRealTotal({ receita, despesa, saldo: receita - despesa });
+    } catch (error) {
+      console.error('Erro ao calcular Arco Real total:', error);
+      setArcoRealTotal({ receita: 0, despesa: 0, saldo: 0 });
+    }
+  };
+
   const buscarTotalRegistros = async () => {
     try {
       const { count, error } = await supabase
@@ -2005,7 +2030,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       </div>
 
       {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
           {/* LINHA 1: Resumo Geral */}
@@ -2220,7 +2245,72 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </div>
         </div>{/* fim container tronco */}
       </div>{/* fim col-span-1 Tronco */}
-      </div>{/* fim grid 4 colunas */}
+
+      {/* COLUNA: Arco Real (1/5 da largura) */}
+      <div className="lg:col-span-1">
+        <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(37,99,235,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #2563eb',height:'100%',display:'flex',flexDirection:'column'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+            <div style={{width:'3px',height:'10px',background:'#2563eb',borderRadius:'2px'}}/>
+            <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#2563eb',textTransform:'uppercase',letterSpacing:'0.07em'}}>Arco Real</span>
+          </div>
+        <div className="rounded-lg p-4 flex flex-col flex-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          {/* Cabeçalho — Saldo no topo */}
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+            <span className="text-3xl">🔺</span>
+            <div className="flex-1 text-center">
+              <p className="text-sm font-bold leading-tight">Arco Real</p>
+              <p className="text-xs mt-0.5">Saldo acumulado</p>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:arcoRealTotal.saldo>=0?"var(--color-text)":"#ef4444",marginTop:"0.25rem"}}>
+                {showValues ? formatarMoeda(arcoRealTotal.saldo) : '••••••'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3 flex-1 flex flex-col justify-center">
+            {/* Card Receita */}
+            <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">✅</span>
+                  <div>
+                    <p className="text-sm font-semibold">Receita</p>
+                    <p className="text-[10px] leading-tight">Recebido pela Loja</p>
+                  </div>
+                </div>
+                <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#10b981"}}>
+                  {showValues ? formatarMoeda(arcoRealTotal.receita) : '••••••'}
+                </p>
+              </div>
+            </div>
+
+            {/* Card Despesa */}
+            <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">🔺</span>
+                  <div>
+                    <p className="text-sm font-semibold">Despesa</p>
+                    <p className="text-[10px] leading-tight">Repassado ao Arco Real</p>
+                  </div>
+                </div>
+                <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#ef4444"}}>
+                  {showValues ? formatarMoeda(arcoRealTotal.despesa) : '••••••'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setModalArcoRealAberto(true)}
+              className="w-full px-2 py-1.5 text-white text-[11px] rounded hover: font-semibold transition-colors"
+              style={{background:'#2563eb'}}
+            >
+              🔺 Abrir Arco Real
+            </button>
+          </div>
+        </div>
+        </div>
+      </div>{/* fim col-span-1 Arco Real */}
+      </div>{/* fim grid 5 colunas */}
 
       {/* BANNER MÊS FECHADO */}
       {mesFechadoAtual() && (
@@ -4001,7 +4091,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* Modal Arco Real */}
       <ArcoReal
         isOpen={modalArcoRealAberto}
-        onClose={() => setModalArcoRealAberto(false)}
+        onClose={() => { setModalArcoRealAberto(false); calcularArcoRealTotal(); }}
         showSuccess={showSuccess}
         showError={showError}
       />
