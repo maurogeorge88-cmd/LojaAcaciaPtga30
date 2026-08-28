@@ -2270,12 +2270,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             {/* Card Receita */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between">
-                <div className="flex items-start gap-2">
+                <div className="flex items-center gap-2">
                   <span className="text-xl">✅</span>
-                  <div>
-                    <p className="text-sm font-semibold">Receita</p>
-                    <p className="text-[10px] leading-tight">Recebido pela Loja</p>
-                  </div>
+                  <p className="text-sm font-semibold">Receita</p>
                 </div>
                 <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#10b981"}}>
                   {showValues ? formatarMoeda(arcoRealTotal.receita) : '••••••'}
@@ -2286,12 +2283,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             {/* Card Despesa */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between">
-                <div className="flex items-start gap-2">
+                <div className="flex items-center gap-2">
                   <span className="text-xl">🔺</span>
-                  <div>
-                    <p className="text-sm font-semibold">Despesa</p>
-                    <p className="text-[10px] leading-tight">Repassado ao Arco Real</p>
-                  </div>
+                  <p className="text-sm font-semibold">Despesa</p>
                 </div>
                 <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#ef4444"}}>
                   {showValues ? formatarMoeda(arcoRealTotal.despesa) : '••••••'}
