@@ -1751,17 +1751,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const calcularTroncoTotal = async () => {
     try {
       // 1. Buscar IDs das categorias de tronco primeiro
+      // IMPORTANTE: filtro estreito (tronco + solidariedade/saida), senão
+      // "%tronco%" sozinho também pega "Tronco Arco Real" (módulo separado).
       const { data: catsTronco } = await supabase
         .from('categorias_financeiras')
         .select('id, nome, tipo')
         .ilike('nome', '%tronco%');
 
-      if (!catsTronco || catsTronco.length === 0) {
+      const catsTroncoFiltradas = (catsTronco || []).filter(c => {
+        const n = c.nome.toLowerCase();
+        return n.includes('tronco') && (n.includes('solidariedade') || n.includes('saida') || n.includes('saída')) && !n.includes('arco real');
+      });
+
+      if (catsTroncoFiltradas.length === 0) {
         setTroncoTotalGlobal({ banco: 0, especie: 0, total: 0 });
         return;
       }
 
-      const idsCatTronco = catsTronco.map(c => c.id);
+      const idsCatTronco = catsTroncoFiltradas.map(c => c.id);
 
       // 2. Buscar só lançamentos das categorias de tronco, pagos
       const { data, error } = await supabase
