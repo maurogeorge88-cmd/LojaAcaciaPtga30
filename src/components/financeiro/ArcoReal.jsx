@@ -31,8 +31,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
     try {
       const { data } = await supabase
         .from('categorias_financeiras')
-        .select('id, nome, tipo')
+        .select('id, nome, tipo, categoria_pai_id')
         .ilike('nome', '%arco real%')
+        .not('categoria_pai_id', 'is', null)
         .order('nome');
       setCategorias(data || []);
     } catch (e) { setCategorias([]); }
