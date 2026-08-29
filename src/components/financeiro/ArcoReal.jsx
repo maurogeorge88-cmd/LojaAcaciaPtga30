@@ -469,18 +469,14 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
               {/* Resumo por Subcategoria */}
               {todasSubcategorias.length > 0 && (
                 <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem',flexWrap:'wrap' }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem' }}>
                     <span style={{ fontSize:'0.82rem',fontWeight:'700',color:'var(--color-text-muted)' }}>Filtrar por subcategoria:</span>
-                    <button onClick={() => setFiltroSubcategoria('')}
-                      style={{ padding:'0.25rem 0.7rem',borderRadius:'999px',border:'1px solid',fontSize:'0.75rem',fontWeight:'600',cursor:'pointer',background:!filtroSubcategoria?'var(--color-accent)':'var(--color-surface)',color:!filtroSubcategoria?'#fff':'var(--color-text)',borderColor:!filtroSubcategoria?'var(--color-accent)':'var(--color-border)' }}>
-                      Todas
-                    </button>
-                    {todasSubcategorias.map(sub => (
-                      <button key={sub} onClick={() => setFiltroSubcategoria(sub)}
-                        style={{ padding:'0.25rem 0.7rem',borderRadius:'999px',border:'1px solid',fontSize:'0.75rem',fontWeight:'600',cursor:'pointer',background:filtroSubcategoria===sub?'var(--color-accent)':'var(--color-surface)',color:filtroSubcategoria===sub?'#fff':'var(--color-text)',borderColor:filtroSubcategoria===sub?'var(--color-accent)':'var(--color-border)' }}>
-                        {sub}
-                      </button>
-                    ))}
+                    <select value={filtroSubcategoria} onChange={e => setFiltroSubcategoria(e.target.value)} style={{...sInp,width:'auto',minWidth:'220px'}}>
+                      <option value="">Todas</option>
+                      {todasSubcategorias.map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem' }}>
