@@ -19,6 +19,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const [editandoId, setEditandoId]         = useState(null);
   const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [categorias, setCategorias] = useState([]);
+  const [anosDisponiveis, setAnosDisponiveis] = useState([agora.getFullYear()]);
   const [filtroSubcategoria, setFiltroSubcategoria] = useState('');
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
@@ -26,6 +27,22 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   });
 
   useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); } }, [isOpen, filtro, mes, ano]);
+  useEffect(() => { if (isOpen) carregarAnosDisponiveis(); }, [isOpen]);
+
+  const carregarAnosDisponiveis = async () => {
+    try {
+      const { data } = await supabase
+        .from('arco_real_lancamentos')
+        .select('data_vencimento, data_pagamento');
+      const anos = new Set();
+      (data || []).forEach(l => {
+        if (l.data_pagamento) anos.add(parseInt(l.data_pagamento.substring(0, 4), 10));
+        if (l.data_vencimento) anos.add(parseInt(l.data_vencimento.substring(0, 4), 10));
+      });
+      anos.add(agora.getFullYear()); // sempre inclui o ano atual, mesmo sem lançamentos ainda
+      setAnosDisponiveis([...anos].sort((a, b) => b - a));
+    } catch (e) { setAnosDisponiveis([agora.getFullYear()]); }
+  };
 
   const carregarCategorias = async () => {
     try {
@@ -434,7 +451,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 </select>
               )}
               <select value={ano} onChange={e=>setAno(parseInt(e.target.value))} style={{...sInp,width:'auto'}}>
-                {[2024,2025,2026,2027].map(a => <option key={a} value={a}>{a}</option>)}
+                {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
               </select>
             </>}
             <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
