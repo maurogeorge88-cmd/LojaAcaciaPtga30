@@ -2032,7 +2032,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
-        <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
+        <div className="lg:col-span-3 space-y-3 flex flex-col">
           {/* LINHA 1: Resumo Geral */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 3fr',gap:'0.5rem'}}>
 
