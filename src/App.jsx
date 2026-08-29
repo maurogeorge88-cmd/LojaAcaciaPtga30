@@ -37,6 +37,7 @@ import Estatisticas from './components/sistema/Estatisticas';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
+import ArcoReal from './components/financeiro/ArcoReal';
 import Caridade from './components/caridade/Caridade';
 import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
@@ -390,6 +391,7 @@ function App() {
           canManageUsers: true,
           canViewFinancial: true,
           canEditFinancial: true,
+          canViewArcoReal: true,
           pode_editar_biblioteca: true,
           pode_editar_comodatos: true,
           pode_editar_caridade: true,
@@ -410,6 +412,7 @@ function App() {
           canManageUsers: false,
           canViewFinancial: data.pode_visualizar_financeiro || false,
           canEditFinancial: data.pode_editar_financeiro || false,
+          canViewArcoReal: data.pode_visualizar_arco_real || false,
           pode_editar_biblioteca: data.pode_editar_biblioteca || false,
           pode_editar_comodatos: data.pode_editar_comodatos || false,
           pode_editar_caridade: data.pode_editar_caridade || false,
@@ -430,6 +433,7 @@ function App() {
           canManageUsers: data.pode_gerenciar_usuarios || false,
           canViewFinancial: data.pode_visualizar_financeiro || false,
           canEditFinancial: data.pode_editar_financeiro || false,
+          canViewArcoReal: data.pode_visualizar_arco_real || false,
           pode_editar_biblioteca: data.pode_editar_biblioteca || false,
           pode_editar_comodatos: data.pode_editar_comodatos || false,
           pode_editar_caridade: data.pode_editar_caridade || false,
@@ -450,6 +454,7 @@ function App() {
           canManageUsers: data.pode_gerenciar_usuarios || false,
           canViewFinancial: data.pode_visualizar_financeiro || false,
           canEditFinancial: data.pode_editar_financeiro || false,
+          canViewArcoReal: data.pode_visualizar_arco_real || false,
           pode_editar_biblioteca: data.pode_editar_biblioteca || false,
           pode_editar_comodatos: data.pode_editar_comodatos || false,
           pode_editar_caridade: data.pode_editar_caridade || false,
@@ -1660,6 +1665,23 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="text-base">💰</span>
                 {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
               </button>
+
+              {/* FINANÇAS ARCO REAL — só aparece pra irmão com a permissão
+                  específica marcada no Cadastro de Acesso */}
+              {permissoes?.canViewArcoReal && (
+                <button
+                  onClick={() => setCurrentPage('meu-arco-real')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'meu-arco-real'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Finanças Arco Real"
+                >
+                  <span className="text-base">🔺</span>
+                  {menuAberto && <span className="font-semibold">Finanças Arco Real</span>}
+                </button>
+              )}
 
               <button
                 onClick={() => setCurrentPage('minhas-presencas')}
@@ -2997,6 +3019,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'minhas-financas' && (
           <MinhasFinancas
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* FINANÇAS ARCO REAL - Irmão com permissão específica */}
+        {currentPage === 'meu-arco-real' && permissoes?.canViewArcoReal && (
+          <ArcoReal
+            isOpen={true}
+            onClose={() => setCurrentPage('dashboard')}
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
