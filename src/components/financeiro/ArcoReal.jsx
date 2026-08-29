@@ -18,12 +18,25 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const [salvando, setSalvando]             = useState(false);
   const [editandoId, setEditandoId]         = useState(null);
   const [confirmExcluir, setConfirmExcluir] = useState(null);
+  const [categorias, setCategorias] = useState([]);
+  const [filtroSubcategoria, setFiltroSubcategoria] = useState('');
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
-    data_vencimento: hojeISO(), status: 'pago', observacoes: ''
+    data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: ''
   });
 
-  useEffect(() => { if (isOpen) carregar(); }, [isOpen, filtro, mes, ano]);
+  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); } }, [isOpen, filtro, mes, ano]);
+
+  const carregarCategorias = async () => {
+    try {
+      const { data } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo')
+        .ilike('nome', '%arco real%')
+        .order('nome');
+      setCategorias(data || []);
+    } catch (e) { setCategorias([]); }
+  };
 
   // ── Carregar lançamentos da tabela própria ─────────────────────────────────
   const carregar = async () => {
@@ -31,7 +44,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
     try {
       let q = supabase
         .from('arco_real_lancamentos')
-        .select('*')
+        .select(`
+          *,
+          categoria_manual:categoria_id(nome),
+          lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
+        `)
         .order('data_pagamento', { ascending: false });
 
       if (filtro === 'mes') {
@@ -70,10 +87,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         observacoes:     form.observacoes.trim() || null,
         origem:          'manual',
         lancamento_loja_id: null,
+        categoria_id:    form.categoria_id || null,
       }]);
       if (error) throw error;
       showSuccess('✅ Lançamento registrado!');
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' });
       setShowForm(false);
       carregar();
     } catch(e) {
@@ -106,6 +124,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       data_vencimento: l.data_vencimento || hojeISO(),
       status:          l.status || 'pago',
       observacoes:     l.observacoes || '',
+      categoria_id:    l.categoria_id || '',
     });
     setShowForm(true);
     // Scroll para o form
@@ -127,12 +146,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         data_pagamento:  form.status === 'pago' ? form.data_vencimento : null,
         status:          form.status,
         observacoes:     form.observacoes.trim() || null,
+        categoria_id:    form.categoria_id || null,
       }).eq('id', editandoId);
       if (error) throw error;
       showSuccess('✅ Lançamento atualizado!');
       setEditandoId(null);
       setShowForm(false);
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' });
       carregar();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
@@ -150,6 +170,28 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const totPend  = recPend.reduce((s, l) => s + Number(l.valor || 0), 0);
   const totDesp  = despesas.reduce((s, l) => s + Number(l.valor || 0), 0);
   const saldo    = totRec - totDesp;
+
+  // ── Subcategoria (resolvida via join, sem depender do trigger) ─────────────
+  const subcategoria = (l) => l.categoria_manual?.nome || l.lancamento_origem?.categorias_financeiras?.nome || null;
+
+  const agruparPorSubcategoria = (lista) => {
+    const grupos = {};
+    lista.forEach(l => {
+      const nome = subcategoria(l) || 'Sem subcategoria';
+      if (!grupos[nome]) grupos[nome] = { nome, valor: 0, qtd: 0 };
+      grupos[nome].valor += Number(l.valor || 0);
+      grupos[nome].qtd += 1;
+    });
+    return Object.values(grupos).sort((a, b) => b.valor - a.valor);
+  };
+
+  const todasSubcategorias = [...new Set(lancs.map(l => subcategoria(l) || 'Sem subcategoria'))].sort();
+  const lancsFiltrados = filtroSubcategoria
+    ? lancs.filter(l => (subcategoria(l) || 'Sem subcategoria') === filtroSubcategoria)
+    : lancs;
+
+  const receitasPorSub = agruparPorSubcategoria(receitas.filter(l => lancsFiltrados.includes(l)));
+  const despesasPorSub = agruparPorSubcategoria(despesas.filter(l => lancsFiltrados.includes(l)));
 
   // ── PDF ────────────────────────────────────────────────────────────────────
   const gerarPDF = async () => {
@@ -253,15 +295,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const sInp = { background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.45rem 0.75rem',fontSize:'0.875rem',width:'100%' };
 
   const blocos = [
-    { titulo:'✅ Receitas — Pagas', lancs: recPagas, cor:'#16a34a', tot: totRec },
-    { titulo:'⏳ Receitas — Pendentes', lancs: recPend, cor:'#d97706', tot: totPend },
-    { titulo:'🔺 Repasses — Pagos', lancs: despesas.filter(l=>l.status==='pago'), cor:'#dc2626', tot: despesas.filter(l=>l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
-    { titulo:'⏳ Repasses — Pendentes', lancs: despesas.filter(l=>l.status==='pendente'), cor:'#b45309', tot: despesas.filter(l=>l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
+    { titulo:'✅ Receitas — Pagas', lancs: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pago'), cor:'#16a34a', tot: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
+    { titulo:'⏳ Receitas — Pendentes', lancs: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pendente'), cor:'#d97706', tot: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
+    { titulo:'🔺 Repasses — Pagos', lancs: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pago'), cor:'#dc2626', tot: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
+    { titulo:'⏳ Repasses — Pendentes', lancs: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pendente'), cor:'#b45309', tot: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
   ].filter(b => b.lancs.length > 0);
 
   return (
     <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' }}>
-      <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'860px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' }}>
+      <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1200px',maxHeight:'92vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' }}>
 
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
@@ -334,6 +376,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                   <input value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))}
                     placeholder="Ex: Doação Acácia ao Arco Real" style={sInp} />
                 </div>
+                <div style={{ gridColumn:'1 / -1' }}>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Subcategoria</label>
+                  <select value={form.categoria_id} onChange={e=>setForm(f=>({...f,categoria_id:e.target.value}))} style={sInp}>
+                    <option value="">— Sem subcategoria —</option>
+                    {categorias.filter(c => c.tipo === form.tipo).map(c => (
+                      <option key={c.id} value={c.id}>{c.nome}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Valor *</label>
                   <input type="number" step="0.01" value={form.valor} onChange={e=>setForm(f=>({...f,valor:e.target.value}))}
@@ -370,7 +421,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                   {salvando ? 'Salvando...' : editandoId ? '💾 Salvar Alterações' : '💾 Salvar Lançamento'}
                 </button>
                 {editandoId && (
-                  <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' }); }}
+                  <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' }); }}
                     style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
                     Cancelar
                   </button>
@@ -404,6 +455,53 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 ))}
               </div>
 
+              {/* Resumo por Subcategoria */}
+              {todasSubcategorias.length > 0 && (
+                <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem',flexWrap:'wrap' }}>
+                    <span style={{ fontSize:'0.82rem',fontWeight:'700',color:'var(--color-text-muted)' }}>Filtrar por subcategoria:</span>
+                    <button onClick={() => setFiltroSubcategoria('')}
+                      style={{ padding:'0.25rem 0.7rem',borderRadius:'999px',border:'1px solid',fontSize:'0.75rem',fontWeight:'600',cursor:'pointer',background:!filtroSubcategoria?'var(--color-accent)':'var(--color-surface)',color:!filtroSubcategoria?'#fff':'var(--color-text)',borderColor:!filtroSubcategoria?'var(--color-accent)':'var(--color-border)' }}>
+                      Todas
+                    </button>
+                    {todasSubcategorias.map(sub => (
+                      <button key={sub} onClick={() => setFiltroSubcategoria(sub)}
+                        style={{ padding:'0.25rem 0.7rem',borderRadius:'999px',border:'1px solid',fontSize:'0.75rem',fontWeight:'600',cursor:'pointer',background:filtroSubcategoria===sub?'var(--color-accent)':'var(--color-surface)',color:filtroSubcategoria===sub?'#fff':'var(--color-text)',borderColor:filtroSubcategoria===sub?'var(--color-accent)':'var(--color-border)' }}>
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem' }}>
+                    {/* Receitas por subcategoria */}
+                    <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
+                      <div style={{ padding:'0.5rem 0.85rem',background:'rgba(22,163,74,0.12)',borderBottom:'1px solid var(--color-border)' }}>
+                        <span style={{ fontWeight:'700',color:'#16a34a',fontSize:'0.82rem' }}>Receitas por Subcategoria</span>
+                      </div>
+                      {receitasPorSub.length > 0 ? receitasPorSub.map((g,i) => (
+                        <div key={g.nome} style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.5rem 0.85rem',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',borderBottom:'1px solid var(--color-border)',fontSize:'0.8rem' }}>
+                          <span style={{ color:'var(--color-text)' }}>{g.nome} <span style={{ color:'var(--color-text-muted)',fontSize:'0.72rem' }}>({g.qtd})</span></span>
+                          <span style={{ fontWeight:'700',color:'#16a34a' }}>{fmtR(g.valor)}</span>
+                        </div>
+                      )) : <p style={{ padding:'0.75rem',color:'var(--color-text-muted)',fontSize:'0.8rem',margin:0 }}>Nenhuma receita.</p>}
+                    </div>
+
+                    {/* Despesas por subcategoria */}
+                    <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
+                      <div style={{ padding:'0.5rem 0.85rem',background:'rgba(220,38,38,0.12)',borderBottom:'1px solid var(--color-border)' }}>
+                        <span style={{ fontWeight:'700',color:'#dc2626',fontSize:'0.82rem' }}>Despesas por Subcategoria</span>
+                      </div>
+                      {despesasPorSub.length > 0 ? despesasPorSub.map((g,i) => (
+                        <div key={g.nome} style={{ display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.5rem 0.85rem',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',borderBottom:'1px solid var(--color-border)',fontSize:'0.8rem' }}>
+                          <span style={{ color:'var(--color-text)' }}>{g.nome} <span style={{ color:'var(--color-text-muted)',fontSize:'0.72rem' }}>({g.qtd})</span></span>
+                          <span style={{ fontWeight:'700',color:'#dc2626' }}>{fmtR(g.valor)}</span>
+                        </div>
+                      )) : <p style={{ padding:'0.75rem',color:'var(--color-text-muted)',fontSize:'0.8rem',margin:0 }}>Nenhuma despesa.</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Lançamentos expandidos */}
               {verLancs && blocos.length > 0 && (
                 <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
@@ -414,9 +512,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                         <span style={{ fontWeight:'800',color:bloco.cor }}>{fmtR(bloco.tot)}</span>
                       </div>
                       {bloco.lancs.map((l,i) => (
-                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 60px 90px 60px auto',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 60px 90px 60px auto',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
                           <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
                           <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
+                          <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
+                            {subcategoria(l) || '—'}
+                          </span>
                           <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
                             background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
                             color:l.origem==='manual'?'#6366f1':'#64748b' }}>
