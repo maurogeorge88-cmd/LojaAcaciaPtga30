@@ -22,6 +22,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     pode_editar_cadastros: false,
     pode_visualizar_financeiro: false,
     pode_editar_financeiro: false,
+    pode_visualizar_arco_real: false,
     pode_gerenciar_usuarios: false
   });
 
@@ -47,6 +48,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -62,6 +64,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: true,
       pode_editar_comodatos: false,
@@ -77,6 +80,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -92,6 +96,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -107,6 +112,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -122,6 +128,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -137,6 +144,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -152,6 +160,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: true,
       pode_editar_biblioteca: true,
       pode_editar_comodatos: true,
@@ -167,6 +176,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: true,
       pode_editar_biblioteca: true,
       pode_editar_comodatos: true,
@@ -198,6 +208,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false,
       pode_gerenciar_usuarios: false,
       pode_editar_biblioteca: false,
       pode_editar_comodatos: false,
@@ -261,6 +272,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
                        (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
+          pode_visualizar_arco_real: usuarioForm.pode_visualizar_arco_real,
           pode_editar_financeiro: usuarioForm.pode_editar_financeiro,
           pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios,
           pode_editar_biblioteca: usuarioForm.pode_editar_biblioteca,
@@ -320,6 +332,7 @@ IMPORTANTE: Copie estas informações agora!
           ativo: usuarioForm.ativo,
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
+          pode_visualizar_arco_real: usuarioForm.pode_visualizar_arco_real,
           pode_editar_financeiro: usuarioForm.pode_editar_financeiro,
           pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios,
           pode_editar_biblioteca: usuarioForm.pode_editar_biblioteca,
@@ -401,6 +414,7 @@ IMPORTANTE: Copie estas informações agora!
       ativo: usuario.ativo,
       pode_editar_cadastros: usuario.pode_editar_cadastros || false,
       pode_visualizar_financeiro: usuario.pode_visualizar_financeiro || false,
+      pode_visualizar_arco_real: usuario.pode_visualizar_arco_real || false,
       pode_editar_financeiro: usuario.pode_editar_financeiro || false,
       pode_gerenciar_usuarios: usuario.pode_gerenciar_usuarios || false,
       pode_editar_biblioteca: usuario.pode_editar_biblioteca || false,
@@ -680,6 +694,27 @@ IMPORTANTE: Copie estas informações agora!
                 <div>
                   <span className="font-medium" style={{ color: 'var(--color-text)' }}>💰 Editar Finanças</span>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Criar/editar lançamentos</p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+              >
+                <input
+                  type="checkbox"
+                  checked={usuarioForm.pode_visualizar_arco_real}
+                  onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_visualizar_arco_real: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <div>
+                  <span className="font-medium" style={{ color: 'var(--color-text)' }}>🔺 Arco Real</span>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Acesso à tela de Finanças do Arco Real</p>
                 </div>
               </label>
 
@@ -1032,6 +1067,16 @@ IMPORTANTE: Copie estas informações agora!
                           borderRadius: 'var(--radius-sm)',
                           fontWeight: '600'
                         }}>💰</span>
+                      )}
+                      {usuario.pode_visualizar_arco_real && (
+                        <span title="Arco Real" style={{
+                          fontSize: '0.75rem',
+                          background: 'var(--color-accent-bg)',
+                          color: 'var(--color-accent)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontWeight: '600'
+                        }}>🔺</span>
                       )}
                       {usuario.pode_gerenciar_usuarios && (
                         <span style={{
