@@ -238,23 +238,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text('Extrato de Movimentação — ' + labelFiltro, 105, y, { align:'center' }); y += 10;
 
-      // Tabela resumo
-      [
-        { label:'Receitas Arco Real - Pg', val: totRec,  cor:[16,120,60] },
-        { label:'Receitas Arco Real - Pend.', val: totPend, cor:[200,130,0] },
-        { label:'Despesas Arco Real - Pg', val: totDesp, cor:[200,0,0] },
-        { label: 'Saldo', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
-      ].forEach((lr, i) => {
-        const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
-        doc.rect(15, y, 180, 7, 'F');
-        doc.setDrawColor(200); doc.setLineWidth(0.2); doc.rect(15, y, 180, 7, 'S');
-        doc.setFont('helvetica','bold'); doc.setTextColor(60); doc.setFontSize(9);
-        doc.text(lr.label, 20, y+4.5);
-        doc.setTextColor(lr.cor[0], lr.cor[1], lr.cor[2]); doc.text(fmtR(lr.val), 192, y+4.5, { align:'right' });
-        y += 7;
-      });
-      y += 8;
-
       const renderBanner = (titulo, corBanner) => {
         if (y > 260) { doc.addPage(); y = 15; }
         doc.setFillColor(corBanner[0], corBanner[1], corBanner[2]);
@@ -324,6 +307,83 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
       renderTipo('receita', receitasParaPDF, [33,150,243], [16,120,60]);
       renderTipo('despesa', despesasParaPDF, [154,205,50], [220,38,38]);
+
+      // ── Resumo por Subcategoria (Receita/Despesa) ─────────────────────────
+      if (y > 230) { doc.addPage(); y = 15; }
+      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+      doc.text('Resumo por Subcategoria', 15, y); y += 6;
+
+      const receitasPorSubPDF = agruparPorSubcategoria(receitasParaPDF);
+      const despesasPorSubPDF = agruparPorSubcategoria(despesasParaPDF);
+
+      if (receitasPorSubPDF.length > 0) {
+        doc.setFillColor(33,150,243); doc.rect(15, y, 180, 6, 'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+        doc.text('Receitas', 17, y+4.2);
+        y += 9;
+        doc.setFontSize(8.5); doc.setTextColor(0);
+        receitasPorSubPDF.forEach((g,i) => {
+          if (y > 275) { doc.addPage(); y = 15; }
+          doc.setFillColor(i%2===0?248:255,i%2===0?248:255,i%2===0?248:255); doc.rect(15,y-3.7,180,5,'F');
+          doc.setFont('helvetica','normal'); doc.setTextColor(0);
+          doc.text(g.nome + ' (' + g.qtd + ')', 17, y);
+          doc.setFont('helvetica','bold'); doc.setTextColor(16,120,60);
+          doc.text(fmtR(g.valor), 192, y, { align:'right' });
+          doc.setTextColor(0);
+          y += 5;
+        });
+        y += 3;
+      }
+
+      if (despesasPorSubPDF.length > 0) {
+        if (y > 260) { doc.addPage(); y = 15; }
+        doc.setFillColor(154,205,50); doc.rect(15, y, 180, 6, 'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+        doc.text('Despesas', 17, y+4.2);
+        y += 9;
+        doc.setFontSize(8.5); doc.setTextColor(0);
+        despesasPorSubPDF.forEach((g,i) => {
+          if (y > 275) { doc.addPage(); y = 15; }
+          doc.setFillColor(i%2===0?248:255,i%2===0?248:255,i%2===0?248:255); doc.rect(15,y-3.7,180,5,'F');
+          doc.setFont('helvetica','normal'); doc.setTextColor(0);
+          doc.text(g.nome + ' (' + g.qtd + ')', 17, y);
+          doc.setFont('helvetica','bold'); doc.setTextColor(220,38,38);
+          doc.text(fmtR(g.valor), 192, y, { align:'right' });
+          doc.setTextColor(0);
+          y += 5;
+        });
+        y += 3;
+      }
+
+      // Saldo do período filtrado
+      if (y > 265) { doc.addPage(); y = 15; }
+      const saldoPeriodo = receitasParaPDF.reduce((s,l)=>s+Number(l.valor||0),0) - despesasParaPDF.reduce((s,l)=>s+Number(l.valor||0),0);
+      doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 5;
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+      doc.text('Saldo do Período', 150, y, { align:'right' });
+      doc.setTextColor(saldoPeriodo>0?37:saldoPeriodo<0?220:16, saldoPeriodo>0?99:saldoPeriodo<0?38:120, saldoPeriodo>0?235:saldoPeriodo<0?38:60);
+      doc.text(fmtR(saldoPeriodo), 192, y, { align:'right' });
+      doc.setTextColor(0);
+      y += 12;
+
+      // ── Quadro Resumo (final) ──────────────────────────────────────────────
+      if (y > 240) { doc.addPage(); y = 15; }
+      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+      doc.text('Quadro Resumo', 15, y); y += 6;
+      [
+        { label:'Receitas Arco Real - Pg', val: totRec,  cor:[16,120,60] },
+        { label:'Receitas Arco Real - Pend.', val: totPend, cor:[200,130,0] },
+        { label:'Despesas Arco Real - Pg', val: totDesp, cor:[200,0,0] },
+        { label: 'Saldo', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
+      ].forEach((lr, i) => {
+        const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
+        doc.rect(15, y, 180, 7, 'F');
+        doc.setDrawColor(200); doc.setLineWidth(0.2); doc.rect(15, y, 180, 7, 'S');
+        doc.setFont('helvetica','bold'); doc.setTextColor(60); doc.setFontSize(9);
+        doc.text(lr.label, 20, y+4.5);
+        doc.setTextColor(lr.cor[0], lr.cor[1], lr.cor[2]); doc.text(fmtR(lr.val), 192, y+4.5, { align:'right' });
+        y += 7;
+      });
 
       rodape();
       doc.save('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf');
