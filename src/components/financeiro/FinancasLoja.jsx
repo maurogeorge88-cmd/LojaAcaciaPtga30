@@ -2204,33 +2204,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             {/* Card Banco */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-2">
-                  <span className="text-xl">🏦</span>
-                  <div>
-                    <p className="text-sm font-semibold">Banco</p>
-                    <p className="text-[10px] leading-tight">PIX, Transf., Cartão</p>
-                  </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xl">🏦</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Banco</p>
+                  <p className="text-[10px] leading-tight">PIX, Transf., Cartão</p>
+                  <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.banco>=0?"var(--color-accent)":"#ef4444",marginTop:"0.3rem"}}>
+                    {showValues ? formatarMoeda(troncoTotalGlobal.banco) : '••••••'}
+                  </p>
                 </div>
-                <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.banco>=0?"var(--color-accent)":"#ef4444"}}>
-                  {showValues ? formatarMoeda(troncoTotalGlobal.banco) : '••••••'}
-                </p>
               </div>
             </div>
 
             {/* Card Espécie */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-xl">💵</span>
-                  <div>
-                    <p className="text-sm font-semibold">Espécie</p>
-                    <p className="text-[10px] leading-tight">Dinheiro físico</p>
-                  </div>
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-xl">💵</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">Espécie</p>
+                  <p className="text-[10px] leading-tight">Dinheiro físico</p>
+                  <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.especie>=0?"#10b981":"#ef4444",marginTop:"0.3rem"}}>
+                    {showValues ? formatarMoeda(troncoTotalGlobal.especie) : '••••••'}
+                  </p>
                 </div>
-                <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.especie>=0?"#10b981":"#ef4444"}}>
-                  {showValues ? formatarMoeda(troncoTotalGlobal.especie) : '••••••'}
-                </p>
               </div>
               {troncoTotalGlobal.especie > 0 && (
                 <button
@@ -2269,27 +2265,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             {/* Card Receita */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">✅</span>
+              <div className="flex items-start gap-2">
+                <span className="text-xl">✅</span>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">Receita</p>
+                  <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#10b981",marginTop:"0.3rem"}}>
+                    {showValues ? formatarMoeda(arcoRealTotal.receita) : '••••••'}
+                  </p>
                 </div>
-                <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#10b981"}}>
-                  {showValues ? formatarMoeda(arcoRealTotal.receita) : '••••••'}
-                </p>
               </div>
             </div>
 
             {/* Card Despesa */}
             <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🔺</span>
+              <div className="flex items-start gap-2">
+                <span className="text-xl">🔺</span>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold">Despesa</p>
+                  <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#ef4444",marginTop:"0.3rem"}}>
+                    {showValues ? formatarMoeda(arcoRealTotal.despesa) : '••••••'}
+                  </p>
                 </div>
-                <p style={{fontSize:"0.95rem",fontWeight:"800",color:"#ef4444"}}>
-                  {showValues ? formatarMoeda(arcoRealTotal.despesa) : '••••••'}
-                </p>
               </div>
             </div>
 
