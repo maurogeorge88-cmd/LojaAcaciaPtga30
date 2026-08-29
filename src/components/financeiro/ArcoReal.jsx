@@ -29,11 +29,21 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
   const carregarCategorias = async () => {
     try {
+      // 1. Encontrar a(s) categoria(s)-pai "Arco Real" (uma para receita, uma para despesa)
+      const { data: pais } = await supabase
+        .from('categorias_financeiras')
+        .select('id')
+        .ilike('nome', 'arco real')
+        .is('categoria_pai_id', null);
+
+      const idsPais = (pais || []).map(p => p.id);
+      if (idsPais.length === 0) { setCategorias([]); return; }
+
+      // 2. Buscar todas as subcategorias filhas dessas categorias-pai
       const { data } = await supabase
         .from('categorias_financeiras')
         .select('id, nome, tipo, categoria_pai_id')
-        .ilike('nome', '%arco real%')
-        .not('categoria_pai_id', 'is', null)
+        .in('categoria_pai_id', idsPais)
         .order('nome');
       setCategorias(data || []);
     } catch (e) { setCategorias([]); }
