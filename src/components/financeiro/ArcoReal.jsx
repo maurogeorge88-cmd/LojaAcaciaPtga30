@@ -255,43 +255,75 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       });
       y += 8;
 
-      const renderBloco = (titulo, lista, corTit, corVal) => {
-        if (!lista.length) return;
-        if (y > 240) { doc.addPage(); y = 15; }
-        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(corTit[0], corTit[1], corTit[2]);
-        doc.text(titulo, 15, y); y += 3;
-        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
-        doc.setFillColor(230,230,230); doc.rect(15, y, 180, 6, 'F');
-        doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-        doc.text('Data', 17, y+4); doc.text('Descrição', 43, y+4);
-        doc.text('Origem', 140, y+4); doc.text('Valor', 192, y+4, { align:'right' });
-        y += 11;
-        let sub = 0;
-        doc.setFontSize(8); doc.setFont('helvetica','normal');
-        lista.forEach(l => {
-          if (y > 275) { doc.addPage(); y = 15; }
-          const val = Number(l.valor||0); sub += val;
-          doc.setTextColor(0);
-          doc.text(fmtD(l.data_pagamento || l.data_vencimento), 17, y);
-          doc.text((l.descricao||'').substring(0,50), 43, y);
-          if (l.origem==='manual') doc.setTextColor(99,102,241); else doc.setTextColor(100,100,100);
-          doc.text(l.origem==='manual'?'Manual':'Loja', 140, y);
-          doc.setTextColor(corVal[0], corVal[1], corVal[2]); doc.text(fmtR(val), 192, y, { align:'right' });
-          doc.setTextColor(0); y += 5;
-        });
-        y += 1;
-        doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
-        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-        doc.text('Sub Total:', 140, y, { align:'right' });
-        doc.setTextColor(corVal[0], corVal[1], corVal[2]); doc.text(fmtR(sub), 192, y, { align:'right' });
-        y += 2; doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 12;
+      const renderBanner = (titulo, corBanner) => {
+        if (y > 260) { doc.addPage(); y = 15; }
+        doc.setFillColor(corBanner[0], corBanner[1], corBanner[2]);
+        doc.rect(15, y, 180, 8, 'F');
+        doc.setTextColor(255,255,255); doc.setFontSize(12); doc.setFont('helvetica','bold');
+        doc.text(titulo, 105, y+5.5, { align:'center' });
         doc.setTextColor(0);
+        y += 12;
       };
 
-      renderBloco('Receitas Arco Real - Pg', recPagas, [16,120,60], [16,120,60]);
-      renderBloco('Receitas Arco Real - Pend.', recPend, [200,130,0], [200,130,0]);
-      renderBloco('Despesas Arco Real - Pg', despesas.filter(l=>l.status==='pago'), [200,0,0], [200,0,0]);
-      renderBloco('Despesas Arco Real - Pend.', despesas.filter(l=>l.status==='pendente'), [150,50,0], [150,50,0]);
+      // Mesmo padrão visual do relatório da Loja: faixa por tipo (Receita/Despesa),
+      // sub-faixa por subcategoria, itens, subtotal por subcategoria.
+      const renderTipo = (tipo, lista, corBanner, corSubtotal) => {
+        const grupos = agruparPorSubcategoria(lista);
+        if (grupos.length === 0) return;
+
+        renderBanner(tipo === 'receita' ? 'Receita' : 'Despesa', corBanner);
+
+        grupos.forEach(grupo => {
+          if (y > 250) { doc.addPage(); y = 15; }
+
+          // Sub-faixa da subcategoria (mesmo azul claro usado na Loja)
+          doc.setFillColor(173,216,230);
+          doc.rect(15, y, 180, 6, 'F');
+          doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+          doc.text(grupo.nome, 17, y+4.2);
+          y += 9;
+
+          // Cabeçalho das colunas
+          doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(60);
+          doc.text('Data', 17, y); doc.text('Descrição', 43, y);
+          doc.text('Origem', 140, y); doc.text('Status', 165, y);
+          doc.text('Valor', 192, y, { align:'right' });
+          y += 4;
+          doc.setDrawColor(180); doc.setLineWidth(0.2); doc.line(15, y, 195, y); y += 3;
+
+          doc.setFont('helvetica','normal');
+          const itens = lista.filter(l => (subcategoria(l) || 'Sem subcategoria') === grupo.nome);
+          itens.forEach(l => {
+            if (y > 275) { doc.addPage(); y = 15; }
+            doc.setTextColor(0);
+            doc.text(fmtD(l.data_pagamento || l.data_vencimento), 17, y);
+            doc.text((l.descricao||'').substring(0,42), 43, y);
+            doc.setTextColor(l.origem==='manual'?99:100, l.origem==='manual'?102:100, l.origem==='manual'?241:100);
+            doc.text(l.origem==='manual'?'Manual':'Loja', 140, y);
+            doc.setTextColor(l.status==='pago'?22:217, l.status==='pago'?163:119, l.status==='pago'?74:6);
+            doc.text(l.status==='pago'?'Pago':'Pend.', 165, y);
+            doc.setTextColor(corSubtotal[0], corSubtotal[1], corSubtotal[2]);
+            doc.text(fmtR(l.valor), 192, y, { align:'right' });
+            doc.setTextColor(0);
+            y += 5;
+          });
+
+          y += 1;
+          doc.setDrawColor(0); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 4.5;
+          doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+          doc.text('Sub Total ' + grupo.nome, 150, y, { align:'right' });
+          doc.setTextColor(corSubtotal[0], corSubtotal[1], corSubtotal[2]);
+          doc.text(fmtR(grupo.valor), 192, y, { align:'right' });
+          doc.setTextColor(0);
+          y += 9;
+        });
+      };
+
+      const receitasParaPDF = lancsFiltrados.filter(l => l.tipo === 'receita');
+      const despesasParaPDF = lancsFiltrados.filter(l => l.tipo === 'despesa');
+
+      renderTipo('receita', receitasParaPDF, [33,150,243], [16,120,60]);
+      renderTipo('despesa', despesasParaPDF, [154,205,50], [220,38,38]);
 
       rodape();
       doc.save('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf');
