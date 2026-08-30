@@ -508,67 +508,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
         <div style={{ flex:1,overflowY: modoPagina ? 'visible' : 'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
 
-          {/* Filtros — mesmo padrão do Finanças da Loja */}
-          <div style={{ background:'var(--color-surface-2)',padding:'0.85rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
-            <div style={{ display:'flex',gap:'1rem',alignItems:'flex-end',flexWrap:'wrap' }}>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Mês</label>
-                <select value={filtros.mes} onChange={e=>setFiltros(f=>({...f,mes:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
-                  <option value={0}>Todos</option>
-                  {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Ano</label>
-                <select value={filtros.ano} onChange={e=>setFiltros(f=>({...f,ano:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
-                  {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Tipo</label>
-                <select value={filtros.tipo} onChange={e=>setFiltros(f=>({...f,tipo:e.target.value}))} style={{...sInp,width:'auto'}}>
-                  <option value="">Todos</option>
-                  <option value="receita">Receita</option>
-                  <option value="despesa">Despesa</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Categoria</label>
-                <select value={filtros.categoria} onChange={e=>setFiltros(f=>({...f,categoria:e.target.value}))} style={{...sInp,width:'auto',minWidth:'180px'}}>
-                  <option value="">Todas</option>
-                  {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                  <option value="Sem subcategoria">Sem subcategoria</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Status</label>
-                <select value={filtros.status} onChange={e=>setFiltros(f=>({...f,status:e.target.value}))} style={{...sInp,width:'auto'}}>
-                  <option value="">Todos</option>
-                  <option value="pago">Pago</option>
-                  <option value="pendente">Pendente</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Origem</label>
-                <select value={filtros.origem} onChange={e=>setFiltros(f=>({...f,origem:e.target.value}))} style={{...sInp,width:'auto'}}>
-                  <option value="">Todas</option>
-                  <option value="manual">Manual</option>
-                  <option value="loja">Loja</option>
-                </select>
-              </div>
-              <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
-                <button onClick={() => setShowForm(v=>!v)}
-                  style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface)',color:showForm?'#fff':'var(--color-text)' }}>
-                  {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
-                </button>
-                <button onClick={gerarPDF}
-                  style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
-                  📄 PDF
-                </button>
-              </div>
-            </div>
-          </div>
-
           {/* Formulário novo lançamento */}
           {showForm && (
             <div id="arco-form" style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
@@ -731,6 +670,67 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                 </div>
               </div>
               </div>{/* fim linha 2 */}
+
+              {/* Filtros — mesmo padrão do Finanças da Loja (abaixo dos quadros) */}
+              <div style={{ background:'var(--color-surface-2)',padding:'0.85rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
+                <div style={{ display:'flex',gap:'1rem',alignItems:'flex-end',flexWrap:'wrap' }}>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Mês</label>
+                    <select value={filtros.mes} onChange={e=>setFiltros(f=>({...f,mes:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
+                      <option value={0}>Todos</option>
+                      {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Ano</label>
+                    <select value={filtros.ano} onChange={e=>setFiltros(f=>({...f,ano:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
+                      {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Tipo</label>
+                    <select value={filtros.tipo} onChange={e=>setFiltros(f=>({...f,tipo:e.target.value}))} style={{...sInp,width:'auto'}}>
+                      <option value="">Todos</option>
+                      <option value="receita">Receita</option>
+                      <option value="despesa">Despesa</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Categoria</label>
+                    <select value={filtros.categoria} onChange={e=>setFiltros(f=>({...f,categoria:e.target.value}))} style={{...sInp,width:'auto',minWidth:'180px'}}>
+                      <option value="">Todas</option>
+                      {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                      <option value="Sem subcategoria">Sem subcategoria</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Status</label>
+                    <select value={filtros.status} onChange={e=>setFiltros(f=>({...f,status:e.target.value}))} style={{...sInp,width:'auto'}}>
+                      <option value="">Todos</option>
+                      <option value="pago">Pago</option>
+                      <option value="pendente">Pendente</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Origem</label>
+                    <select value={filtros.origem} onChange={e=>setFiltros(f=>({...f,origem:e.target.value}))} style={{...sInp,width:'auto'}}>
+                      <option value="">Todas</option>
+                      <option value="manual">Manual</option>
+                      <option value="loja">Loja</option>
+                    </select>
+                  </div>
+                  <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
+                    <button onClick={() => setShowForm(v=>!v)}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface)',color:showForm?'#fff':'var(--color-text)' }}>
+                      {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
+                    </button>
+                    <button onClick={gerarPDF}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
+                      📄 PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               {/* Resumo por Subcategoria */}
               {todasSubcategorias.length > 0 && (
