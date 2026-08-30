@@ -136,6 +136,35 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
     }
   };
 
+  // Pra membros importados antes de existir o campo de foto — busca de novo
+  // a foto atual do irmão vinculado na Loja e atualiza o cadastro do Arco Real.
+  const atualizarFotoDoIrmao = async (m) => {
+    if (!m.irmao_vinculado_id) return;
+    try {
+      const { data: irmao, error: e1 } = await supabase
+        .from('irmaos')
+        .select('foto_url')
+        .eq('id', m.irmao_vinculado_id)
+        .maybeSingle();
+      if (e1) throw e1;
+      if (!irmao?.foto_url) { showError('Esse irmão não tem foto cadastrada na Acácia.'); return; }
+
+      const { data, error } = await supabase
+        .from('arco_real_membros')
+        .update({ foto_url: irmao.foto_url })
+        .eq('id', m.id)
+        .select();
+      if (error) throw error;
+      if (!data || data.length === 0) { showError('❌ Nada foi atualizado — provável falta de permissão (RLS).'); return; }
+
+      showSuccess('✅ Foto atualizada a partir do cadastro da Loja!');
+      setMembroAtual(data[0]);
+      carregar();
+    } catch (e) {
+      showError('Erro ao atualizar foto: ' + e.message);
+    }
+  };
+
   const voltarLista = () => {
     setPagina('lista');
     setMembroAtual(null);
@@ -381,13 +410,24 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
         {/* Cabeçalho com foto */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
-          <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #4ade80', flexShrink: 0 }}>
-            {m.foto_url ? (
-              <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="text-3xl text-white">🔺</span>
-              </div>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #4ade80' }}>
+              {m.foto_url ? (
+                <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span className="text-3xl text-white">🔺</span>
+                </div>
+              )}
+            </div>
+            {m.irmao_vinculado_id && (
+              <button
+                onClick={() => atualizarFotoDoIrmao(m)}
+                title="Buscar foto atual do cadastro na Acácia"
+                style={{ position: 'absolute', bottom: '-0.2rem', right: '-0.2rem', width: '1.9rem', height: '1.9rem', borderRadius: '50%', background: '#2d6a9f', border: '2px solid var(--color-surface)', color: '#fff', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                🔄
+              </button>
             )}
           </div>
           <div>
