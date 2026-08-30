@@ -15,9 +15,6 @@ const ITENS_MENU = [
 
 export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
   const [pagina, setPagina] = useState('dashboard');
-  const [financasAberto, setFinancasAberto] = useState(false);
-
-  const irParaFinancas = () => setFinancasAberto(true);
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -41,11 +38,7 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             <button
               key={item.id}
               disabled={!item.pronto}
-              onClick={() => {
-                if (!item.pronto) return;
-                if (item.id === 'financeiro') { irParaFinancas(); return; }
-                setPagina(item.id);
-              }}
+              onClick={() => { if (item.pronto) setPagina(item.id); }}
               className="w-full px-4 py-2.5 flex items-center gap-2 text-sm transition"
               style={{
                 background: pagina === item.id && item.pronto ? 'rgba(45,106,159,0.25)' : 'transparent',
@@ -87,21 +80,21 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
         {pagina === 'membros' && (
           <CadastroArcoRealMembros showSuccess={showSuccess} showError={showError} />
         )}
-        {pagina !== 'dashboard' && pagina !== 'membros' && (
+        {pagina === 'financeiro' && (
+          <ArcoReal
+            isOpen={true}
+            modoPagina={true}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
           </div>
         )}
       </main>
-
-      {/* Financeiro reaproveita o componente já existente, como modal */}
-      <ArcoReal
-        isOpen={financasAberto}
-        onClose={() => setFinancasAberto(false)}
-        showSuccess={showSuccess}
-        showError={showError}
-      />
     </div>
   );
 }
