@@ -974,6 +974,7 @@ function App() {
     setPermissoes(null);
     setCurrentPage('dashboard');
     setPortalAtivo('irmaos'); // Resetar para portal irmãos
+    setAreaEscolhida(null); // Resetar escolha Loja/Arco Real pro próximo login
   };
 
   // ========================================
