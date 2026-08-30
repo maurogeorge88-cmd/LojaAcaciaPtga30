@@ -10,8 +10,16 @@ const VAZIO = {
 
 const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
 const labelStyle = { display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.03em' };
-const boxCard = { background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem' };
+const boxCard = { background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', overflow: 'hidden' };
 const boxTitle = { fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.85rem' };
+
+// Faixa colorida de título de seção (mesmo azul do cabeçalho do Financeiro
+// do Arco Real) — usada no topo de cada quadro de cadastro/visualização.
+const Faixa = ({ children }) => (
+  <div style={{ background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', margin: '-1.25rem -1.25rem 0.85rem -1.25rem', padding: '0.55rem 1.25rem' }}>
+    <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{children}</span>
+  </div>
+);
 
 const situacaoCor = (s) => ({
   regular:    { bg: 'rgba(16,185,129,0.15)', cor: '#10b981' },
@@ -473,7 +481,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             <>
               {/* Identificação */}
               <div style={boxCard}>
-                <p style={boxTitle}>Identificação</p>
+                <Faixa>Identificação</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div><label style={labelStyle}>CPF</label><p style={{ color: 'var(--color-text)' }}>{m.cpf || 'Não informado'}</p></div>
                   <div><label style={labelStyle}>RG</label><p style={{ color: 'var(--color-text)' }}>{m.rg || 'Não informado'}</p></div>
@@ -487,7 +495,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
               {/* Contato */}
               <div style={boxCard}>
-                <p style={boxTitle}>Contato</p>
+                <Faixa>Contato</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><label style={labelStyle}>Email</label><p style={{ color: 'var(--color-text)' }}>{m.email || 'Não informado'}</p></div>
                   <div><label style={labelStyle}>Telefone</label><p style={{ color: 'var(--color-text)' }}>{m.telefone || 'Não informado'}</p></div>
@@ -496,7 +504,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
               {/* Endereço */}
               <div style={boxCard}>
-                <p style={boxTitle}>Endereço</p>
+                <Faixa>Endereço</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div><label style={labelStyle}>CEP</label><p style={{ color: 'var(--color-text)' }}>{m.cep || 'Não informado'}</p></div>
                   <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><p style={{ color: 'var(--color-text)' }}>{m.endereco || 'Não informado'}{m.numero ? `, ${m.numero}` : ''}</p></div>
@@ -509,7 +517,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
               {/* Dados do Arco Real */}
               <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
-                <p style={{ ...boxTitle, color: '#4ade80' }}>🔺 Dados do Arco Real</p>
+                <Faixa>🔺 Dados do Arco Real</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div><label style={labelStyle}>Cargo</label><p style={{ color: 'var(--color-text)' }}>{m.cargo || 'Não informado'}</p></div>
                   <div><label style={labelStyle}>Situação</label><p className="capitalize" style={{ color: 'var(--color-text)' }}>{m.situacao}</p></div>
@@ -520,7 +528,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
               {/* Observações */}
               {m.observacoes && (
                 <div style={boxCard}>
-                  <p style={boxTitle}>Observações</p>
+                  <Faixa>Observações</Faixa>
                   <p style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{m.observacoes}</p>
                 </div>
               )}
@@ -539,7 +547,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                 <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1.5rem' }}>Carregando...</p>
               ) : (
                 <div style={boxCard}>
-                  <p style={boxTitle}>🏛️ Datas Maçônicas (Loja Simbólica — {m.irmaos?.nome || 'Acácia'})</p>
+                  <Faixa>🏛️ Datas Maçônicas (Loja Simbólica — {m.irmaos?.nome || 'Acácia'})</Faixa>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div><label style={labelStyle}>🔨 Iniciação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_iniciacao)}</p></div>
                     <div><label style={labelStyle}>📐 Elevação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_elevacao)}</p></div>
@@ -590,7 +598,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Identificação */}
         <div style={boxCard}>
-          <p style={boxTitle}>Identificação</p>
+          <Faixa>Identificação</Faixa>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label style={labelStyle}>Nome Completo *</label>
@@ -608,7 +616,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
         {/* Contato */}
         <div style={boxCard}>
-          <p style={boxTitle}>Contato</p>
+          <Faixa>Contato</Faixa>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label style={labelStyle}>Email</label><input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
             <div><label style={labelStyle}>Telefone</label><input value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} style={inputStyle} /></div>
@@ -617,7 +625,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
         {/* Endereço */}
         <div style={boxCard}>
-          <p style={boxTitle}>Endereço</p>
+          <Faixa>Endereço</Faixa>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div><label style={labelStyle}>CEP</label><input value={form.cep} onChange={e => setForm(f => ({ ...f, cep: e.target.value }))} style={inputStyle} /></div>
             <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><input value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} style={inputStyle} /></div>
@@ -633,7 +641,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
         {/* Dados do Arco Real */}
         <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
-          <p style={{ ...boxTitle, color: '#4ade80' }}>🔺 Dados do Arco Real</p>
+          <Faixa>🔺 Dados do Arco Real</Faixa>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label style={labelStyle}>Cargo</label>
