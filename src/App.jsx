@@ -37,7 +37,8 @@ import Estatisticas from './components/sistema/Estatisticas';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
-import ArcoReal from './components/financeiro/ArcoReal';
+import ArcoRealApp from './components/arcoreal/ArcoRealApp';
+import EscolhaArea from './components/arcoreal/EscolhaArea';
 import Caridade from './components/caridade/Caridade';
 import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
@@ -123,6 +124,10 @@ const obterDiaSemana = (data) => {
 // ========================================
 // COMPONENTE PRINCIPAL
 function App() {
+  // Área escolhida no login, pra quem acumula acesso à Loja e ao Arco Real
+  // (null = ainda não escolheu; 'loja' ou 'arco_real' depois de escolher)
+  const [areaEscolhida, setAreaEscolhida] = useState(null);
+
   // ========================================
   // CARREGAR TEMA DO SISTEMA
   // ========================================
@@ -1414,6 +1419,48 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
     />;
   }
 
+  // ── Roteamento Loja x Arco Real ─────────────────────────────────────────
+  // Usuário SEM nenhum vínculo com a Loja (nivel_acesso dedicado) — nunca
+  // vê nada do sistema da Acácia, cai direto na área do Arco Real.
+  if (userData?.nivel_acesso === 'arco_real') {
+    return (
+      <ArcoRealApp
+        userData={userData}
+        podeVoltarLoja={false}
+        onSair={handleLogout}
+        showSuccess={showSuccess}
+        showError={showError}
+      />
+    );
+  }
+
+  // Usuário que acumula os dois acessos (é irmão da Loja E tem a permissão
+  // de Arco Real marcada) — escolhe qual área usar nesta sessão.
+  if (permissoes?.canViewArcoReal) {
+    if (areaEscolhida === null) {
+      return (
+        <EscolhaArea
+          nomeUsuario={userData?.nome}
+          onEscolher={(area) => setAreaEscolhida(area)}
+          onSair={handleLogout}
+        />
+      );
+    }
+    if (areaEscolhida === 'arco_real') {
+      return (
+        <ArcoRealApp
+          userData={userData}
+          podeVoltarLoja={true}
+          onTrocarSistema={() => setAreaEscolhida(null)}
+          onSair={handleLogout}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      );
+    }
+    // areaEscolhida === 'loja' → segue o fluxo normal abaixo
+  }
+
   // Contagens por situação
   const irmaosRegulares = irmaos.filter(i => i.situacao === 'Regular');
   const irmaosIrregulares = irmaos.filter(i => i.situacao === 'Irregular');
@@ -1665,23 +1712,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="text-base">💰</span>
                 {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
               </button>
-
-              {/* FINANÇAS ARCO REAL — só aparece pra irmão com a permissão
-                  específica marcada no Cadastro de Acesso */}
-              {permissoes?.canViewArcoReal && (
-                <button
-                  onClick={() => setCurrentPage('meu-arco-real')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'meu-arco-real'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Finanças Arco Real"
-                >
-                  <span className="text-base">🔺</span>
-                  {menuAberto && <span className="font-semibold">Finanças Arco Real</span>}
-                </button>
-              )}
 
               <button
                 onClick={() => setCurrentPage('minhas-presencas')}
@@ -3019,16 +3049,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'minhas-financas' && (
           <MinhasFinancas
             userEmail={userData?.email}
-          />
-        )}
-
-        {/* FINANÇAS ARCO REAL - Irmão com permissão específica */}
-        {currentPage === 'meu-arco-real' && permissoes?.canViewArcoReal && (
-          <ArcoReal
-            isOpen={true}
-            onClose={() => setCurrentPage('dashboard')}
-            showSuccess={showSuccess}
-            showError={showError}
           />
         )}
 
