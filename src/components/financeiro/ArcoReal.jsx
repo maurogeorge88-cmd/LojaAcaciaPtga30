@@ -456,13 +456,14 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const sInp = { background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.45rem 0.75rem',fontSize:'0.875rem',width:'100%' };
 
   // Página cheia (dentro da área do Arco Real) ou modal (aberto de dentro
-  // do Finanças da Loja) — o conteúdo interno é o mesmo nos dois casos.
+  // do Finanças da Loja) — no modo página não existe "moldura" de card
+  // nenhuma, tudo fica direto na tela, igual ao Finanças da Loja.
   const wrapperStyle = modoPagina
-    ? { padding:'1.5rem', maxWidth:'1400px', margin:'0 auto' }
+    ? {}
     : { position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' };
 
   const cardStyle = modoPagina
-    ? { background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }
+    ? { background:'transparent' }
     : { background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1200px',maxHeight:'92vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' };
 
   return (
@@ -470,7 +471,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       <div style={cardStyle}>
 
         {/* Header */}
-        <div style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+        <div style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',borderRadius: modoPagina ? 'var(--radius-xl)' : 0, marginBottom: modoPagina ? '1rem' : 0 }}>
           <div>
             <h2 style={{ color:'#fff',fontWeight:'800',fontSize:'1.2rem',margin:0 }}>🔺 Arco Real — Controle Financeiro</h2>
             <p style={{ color:'rgba(255,255,255,0.75)',margin:'0.2rem 0 0',fontSize:'0.82rem' }}>{lancs.length} registro(s) no período</p>
@@ -596,6 +597,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
             <div style={{ textAlign:'center',padding:'2rem',color:'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
             <>
+              {/* LINHA 1: Saldo Anterior | Receitas · Despesas · Saldo */}
+              <div style={{ display:'grid', gridTemplateColumns: filtro !== 'geral' ? '1fr 3fr' : '1fr', gap:'0.5rem' }}>
+
               {/* Saldo Anterior */}
               {filtro !== 'geral' && (
                 <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
@@ -630,6 +634,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   ))}
                 </div>
               </div>
+              </div>{/* fim linha 1 */}
+
+              {/* LINHA 2: Saldos Atuais | Pendências */}
+              <div style={{ display:'grid', gridTemplateColumns:'3fr 2fr', gap:'0.5rem' }}>
 
               {/* Saldos Atuais (sempre o total corrente, não filtrado por período) */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #3b82f6' }}>
@@ -668,6 +676,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   </div>
                 </div>
               </div>
+              </div>{/* fim linha 2 */}
 
               {/* Resumo por Subcategoria */}
               {todasSubcategorias.length > 0 && (
