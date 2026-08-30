@@ -341,7 +341,7 @@ IMPORTANTE: Copie estas informações agora!
 
     try {
       // Atualizar dados na tabela usuarios
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('usuarios')
         .update({
           nome: usuarioForm.nome,
@@ -364,9 +364,16 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca
         })
-        .eq('id', usuarioEditando.id);
+        .eq('id', usuarioEditando.id)
+        .select();
 
       if (error) throw error;
+
+      if (!data || data.length === 0) {
+        showError('❌ Nada foi salvo: nenhuma linha foi alterada no banco (provável falta de permissão/RLS na tabela usuarios para UPDATE). Fale com o administrador do sistema.');
+        setLoading(false);
+        return;
+      }
 
       showSuccess('✅ Usuário atualizado com sucesso!');
       onUpdate();
