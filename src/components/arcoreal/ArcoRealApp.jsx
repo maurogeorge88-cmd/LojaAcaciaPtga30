@@ -22,13 +22,13 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
       {/* SIDEBAR — 100% dedicada ao Arco Real, sem nenhum item da Loja */}
       <aside
         className="w-64 fixed h-screen shadow-2xl flex flex-col"
-        style={{ background: 'linear-gradient(180deg, #1a1500 0%, #2a2000 100%)', borderRight: '2px solid #c9a84c' }}
+        style={{ background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)', borderRight: '2px solid #4ade80' }}
       >
         <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid rgba(201,168,76,0.3)' }}>
           <div className="flex items-center gap-2">
             <span style={{ fontSize: '1.6rem' }}>🔺</span>
             <div>
-              <p style={{ color: '#c9a84c', fontWeight: '800', fontSize: '1rem', lineHeight: 1 }}>Arco Real</p>
+              <p style={{ color: '#4ade80', fontWeight: '800', fontSize: '1rem', lineHeight: 1 }}>Arco Real</p>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.68rem', marginTop: '0.15rem' }}>{userData?.nome}</p>
             </div>
           </div>
@@ -46,8 +46,8 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
               }}
               className="w-full px-4 py-2.5 flex items-center gap-2 text-sm transition"
               style={{
-                background: pagina === item.id && item.pronto ? 'rgba(201,168,76,0.18)' : 'transparent',
-                borderLeft: pagina === item.id && item.pronto ? '4px solid #c9a84c' : '4px solid transparent',
+                background: pagina === item.id && item.pronto ? 'rgba(74,222,128,0.18)' : 'transparent',
+                borderLeft: pagina === item.id && item.pronto ? '4px solid #4ade80' : '4px solid transparent',
                 color: item.pronto ? '#fff' : 'rgba(255,255,255,0.35)',
                 cursor: item.pronto ? 'pointer' : 'not-allowed',
               }}
