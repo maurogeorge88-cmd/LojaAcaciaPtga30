@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { supabase } from '../../supabaseClient';
 import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
+
+// Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
+const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
 
 const ITENS_MENU = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', pronto: true },
@@ -24,7 +28,7 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
         style={{ background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)', borderRight: '2px solid #2d6a9f' }}
       >
         <div style={{ padding: '1.25rem 1rem', background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', textAlign: 'center' }}>
-          <img src="/assets/arco-real/logo.png" alt="Arco Real" style={{ width: '4rem', height: '4rem', objectFit: 'contain', margin: '0 auto 0.6rem' }} />
+          <img src={LOGO_ARCO_REAL} alt="Arco Real" style={{ width: '4rem', height: '4rem', objectFit: 'contain', margin: '0 auto 0.6rem' }} />
           <p style={{ color: '#fff', fontWeight: '800', fontSize: '0.9rem', lineHeight: 1.2 }}>Capítulo Guardiões da Aliança nº 04</p>
           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.68rem', marginTop: '0.3rem' }}>{userData?.nome}</p>
         </div>
