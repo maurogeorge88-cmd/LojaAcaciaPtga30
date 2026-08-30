@@ -187,6 +187,22 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_corpo_admin: true,
       pode_editar_presenca: true,
       pode_editar_projetos: true
+    },
+    'arco_real_externo': {
+      pode_editar_cadastros: false,
+      pode_visualizar_financeiro: false,
+      pode_editar_financeiro: false,
+      pode_visualizar_arco_real: true,
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false,
+      pode_editar_projetos: false
     }
   };
 
@@ -268,7 +284,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           cargo: usuarioForm.cargo,
           ativo: usuarioForm.ativo,
           senha_temporaria: usuarioForm.senha, // Salvar para referência
-          nivel_acesso: usuarioForm.cargo === 'irmao' ? 'irmao' : 
+          nivel_acesso: usuarioForm.cargo === 'arco_real_externo' ? 'arco_real' :
+                       usuarioForm.cargo === 'irmao' ? 'irmao' : 
                        (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
@@ -329,6 +346,9 @@ IMPORTANTE: Copie estas informações agora!
         .update({
           nome: usuarioForm.nome,
           cargo: usuarioForm.cargo,
+          nivel_acesso: usuarioForm.cargo === 'arco_real_externo' ? 'arco_real' :
+                       usuarioForm.cargo === 'irmao' ? 'irmao' :
+                       (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           ativo: usuarioForm.ativo,
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
@@ -603,6 +623,7 @@ IMPORTANTE: Copie estas informações agora!
                 <option value="orador">Orador</option>
                 <option value="veneravel">Venerável</option>
                 <option value="administrador">Administrador</option>
+                <option value="arco_real_externo">🔺 Arco Real (Externo — não é irmão da Loja)</option>
               </select>
               {!modoEdicao && (
                 <p className="form-hint" style={{ color: 'var(--color-accent)' }}>
