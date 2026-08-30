@@ -15,7 +15,7 @@ const boxTitle = { fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-tex
 
 const situacaoCor = (s) => ({
   regular:    { bg: 'rgba(16,185,129,0.15)', cor: '#10b981' },
-  licenciado: { bg: 'rgba(201,168,76,0.15)', cor: '#c9a84c' },
+  licenciado: { bg: 'rgba(74,222,128,0.15)', cor: '#4ade80' },
   desligado:  { bg: 'rgba(100,116,139,0.15)', cor: '#64748b' },
   excluido:   { bg: 'rgba(239,68,68,0.15)', cor: '#ef4444' },
   falecido:   { bg: 'rgba(139,92,246,0.15)', cor: '#8b5cf6' },
@@ -42,6 +42,9 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
   const [pagina, setPagina] = useState('lista');
   const [membroAtual, setMembroAtual] = useState(null); // registro completo (modo ver/editar)
   const [form, setForm] = useState(VAZIO);
+  const [abaVer, setAbaVer] = useState('pessoal'); // 'pessoal' | 'maconico'
+  const [dadosMaconicos, setDadosMaconicos] = useState(null);
+  const [carregandoMaconico, setCarregandoMaconico] = useState(false);
 
   const [modalImportar, setModalImportar] = useState(false);
   const [irmaosDisponiveis, setIrmaosDisponiveis] = useState([]);
@@ -110,7 +113,27 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
   const abrirVisualizar = (m) => {
     setMembroAtual(m);
+    setAbaVer('pessoal');
+    setDadosMaconicos(null);
     setPagina('ver');
+    if (m.irmao_vinculado_id) carregarDadosMaconicos(m.irmao_vinculado_id);
+  };
+
+  const carregarDadosMaconicos = async (irmaoId) => {
+    setCarregandoMaconico(true);
+    try {
+      const { data, error } = await supabase
+        .from('irmaos')
+        .select('data_iniciacao, data_elevacao, data_exaltacao, data_instalacao, mestre_instalado')
+        .eq('id', irmaoId)
+        .maybeSingle();
+      if (error) throw error;
+      setDadosMaconicos(data || null);
+    } catch (e) {
+      showError('Erro ao carregar dados maçônicos: ' + e.message);
+    } finally {
+      setCarregandoMaconico(false);
+    }
   };
 
   const voltarLista = () => {
@@ -258,7 +281,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             <button onClick={abrirImportar} style={{ padding: '0.55rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer' }}>
               📥 Importar Irmão Existente
             </button>
-            <button onClick={abrirNovo} style={{ padding: '0.55rem 1rem', background: '#c9a84c', color: '#1a1500', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+            <button onClick={abrirNovo} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
               ➕ Novo Membro
             </button>
           </div>
@@ -294,14 +317,14 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                   className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden cursor-pointer"
                   onClick={() => abrirVisualizar(m)}
                   style={licenciado
-                    ? { borderTop: '2px solid #c9a84c', borderRight: '2px solid #c9a84c', borderBottom: '2px solid #c9a84c', borderLeft: '8px solid #c9a84c', background: 'var(--color-surface)', boxShadow: '0 0 0 1px rgba(201,168,76,0.35)' }
-                    : { borderLeft: '4px solid #c9a84c', borderTop: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+                    ? { borderTop: '2px solid #4ade80', borderRight: '2px solid #4ade80', borderBottom: '2px solid #4ade80', borderLeft: '8px solid #4ade80', background: 'var(--color-surface)', boxShadow: '0 0 0 1px rgba(74,222,128,0.35)' }
+                    : { borderLeft: '4px solid #4ade80', borderTop: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
                 >
                   <div className="relative" style={{ background: 'var(--color-surface-2)', overflow: 'hidden', height: '6.5rem' }}>
                     {m.foto_url ? (
                       <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%', display: 'block' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', background: '#c9a84c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span className="text-3xl text-white">🔺</span>
                       </div>
                     )}
@@ -311,7 +334,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                   </div>
 
                   <div className="p-2.5">
-                    <h3 className="font-bold text-sm truncate" style={{ color: '#c9a84c' }} title={m.nome}>{m.nome}</h3>
+                    <h3 className="font-bold text-sm truncate" style={{ color: '#4ade80' }} title={m.nome}>{m.nome}</h3>
                     <p className="text-xs truncate mt-1" style={{ color: 'var(--color-text-muted)' }} title={m.cargo || ''}>{m.cargo || 'Sem cargo definido'}</p>
 
                     <div className="mt-2 flex gap-1.5 flex-wrap">
@@ -322,7 +345,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
                     <div className="mt-2.5 flex gap-1.5" onClick={e => e.stopPropagation()}>
                       <button onClick={() => abrirVisualizar(m)} style={{ padding: '0.3rem 0.4rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Visualizar">👁️</button>
-                      <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(201,168,76,0.12)', color: '#c9a84c', border: '1px solid #c9a84c', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Editar">✏️</button>
+                      <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid #4ade80', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Editar">✏️</button>
                       <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Excluir">🗑️</button>
                     </div>
                   </div>
@@ -351,18 +374,18 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             ← Voltar
           </button>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => abrirEditar(m)} style={{ padding: '0.55rem 1rem', background: '#c9a84c', color: '#1a1500', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>✏️ Editar</button>
+            <button onClick={() => abrirEditar(m)} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>✏️ Editar</button>
             <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.55rem 1rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>🗑️ Excluir</button>
           </div>
         </div>
 
         {/* Cabeçalho com foto */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
-          <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #c9a84c', flexShrink: 0 }}>
+          <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #4ade80', flexShrink: 0 }}>
             {m.foto_url ? (
               <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <div style={{ width: '100%', height: '100%', background: '#c9a84c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span className="text-3xl text-white">🔺</span>
               </div>
             )}
@@ -380,58 +403,115 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Identificação */}
-          <div style={boxCard}>
-            <p style={boxTitle}>Identificação</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><label style={labelStyle}>CPF</label><p style={{ color: 'var(--color-text)' }}>{m.cpf || 'Não informado'}</p></div>
-              <div><label style={labelStyle}>RG</label><p style={{ color: 'var(--color-text)' }}>{m.rg || 'Não informado'}</p></div>
-              <div>
-                <label style={labelStyle}>Data de Nascimento</label>
-                <p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_nascimento)}</p>
-                {m.data_nascimento && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{calcularIdade(m.data_nascimento)}</p>}
+          {/* Abas */}
+          <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--color-border)', marginBottom: '0.25rem' }}>
+            <button
+              onClick={() => setAbaVer('pessoal')}
+              style={{
+                padding: '0.6rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer',
+                fontWeight: '700', fontSize: '0.85rem',
+                color: abaVer === 'pessoal' ? '#4ade80' : 'var(--color-text-muted)',
+                borderBottom: abaVer === 'pessoal' ? '2px solid #4ade80' : '2px solid transparent',
+              }}
+            >
+              👤 Dados Pessoais
+            </button>
+            <button
+              onClick={() => setAbaVer('maconico')}
+              style={{
+                padding: '0.6rem 1rem', background: 'transparent', border: 'none', cursor: 'pointer',
+                fontWeight: '700', fontSize: '0.85rem',
+                color: abaVer === 'maconico' ? '#4ade80' : 'var(--color-text-muted)',
+                borderBottom: abaVer === 'maconico' ? '2px solid #4ade80' : '2px solid transparent',
+              }}
+            >
+              🏛️ Dados Maçônicos
+            </button>
+          </div>
+
+          {abaVer === 'pessoal' && (
+            <>
+              {/* Identificação */}
+              <div style={boxCard}>
+                <p style={boxTitle}>Identificação</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div><label style={labelStyle}>CPF</label><p style={{ color: 'var(--color-text)' }}>{m.cpf || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>RG</label><p style={{ color: 'var(--color-text)' }}>{m.rg || 'Não informado'}</p></div>
+                  <div>
+                    <label style={labelStyle}>Data de Nascimento</label>
+                    <p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_nascimento)}</p>
+                    {m.data_nascimento && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{calcularIdade(m.data_nascimento)}</p>}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Contato */}
-          <div style={boxCard}>
-            <p style={boxTitle}>Contato</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label style={labelStyle}>Email</label><p style={{ color: 'var(--color-text)' }}>{m.email || 'Não informado'}</p></div>
-              <div><label style={labelStyle}>Telefone</label><p style={{ color: 'var(--color-text)' }}>{m.telefone || 'Não informado'}</p></div>
-            </div>
-          </div>
+              {/* Contato */}
+              <div style={boxCard}>
+                <p style={boxTitle}>Contato</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label style={labelStyle}>Email</label><p style={{ color: 'var(--color-text)' }}>{m.email || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Telefone</label><p style={{ color: 'var(--color-text)' }}>{m.telefone || 'Não informado'}</p></div>
+                </div>
+              </div>
 
-          {/* Endereço */}
-          <div style={boxCard}>
-            <p style={boxTitle}>Endereço</p>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div><label style={labelStyle}>CEP</label><p style={{ color: 'var(--color-text)' }}>{m.cep || 'Não informado'}</p></div>
-              <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><p style={{ color: 'var(--color-text)' }}>{m.endereco || 'Não informado'}{m.numero ? `, ${m.numero}` : ''}</p></div>
-              <div><label style={labelStyle}>Complemento</label><p style={{ color: 'var(--color-text)' }}>{m.complemento || '-'}</p></div>
-              <div><label style={labelStyle}>Bairro</label><p style={{ color: 'var(--color-text)' }}>{m.bairro || 'Não informado'}</p></div>
-              <div><label style={labelStyle}>Cidade</label><p style={{ color: 'var(--color-text)' }}>{m.cidade || 'Não informado'}</p></div>
-              <div><label style={labelStyle}>Estado</label><p style={{ color: 'var(--color-text)' }}>{m.estado || 'Não informado'}</p></div>
-            </div>
-          </div>
+              {/* Endereço */}
+              <div style={boxCard}>
+                <p style={boxTitle}>Endereço</p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div><label style={labelStyle}>CEP</label><p style={{ color: 'var(--color-text)' }}>{m.cep || 'Não informado'}</p></div>
+                  <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><p style={{ color: 'var(--color-text)' }}>{m.endereco || 'Não informado'}{m.numero ? `, ${m.numero}` : ''}</p></div>
+                  <div><label style={labelStyle}>Complemento</label><p style={{ color: 'var(--color-text)' }}>{m.complemento || '-'}</p></div>
+                  <div><label style={labelStyle}>Bairro</label><p style={{ color: 'var(--color-text)' }}>{m.bairro || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Cidade</label><p style={{ color: 'var(--color-text)' }}>{m.cidade || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Estado</label><p style={{ color: 'var(--color-text)' }}>{m.estado || 'Não informado'}</p></div>
+                </div>
+              </div>
 
-          {/* Dados do Arco Real */}
-          <div style={{ ...boxCard, border: '1px solid rgba(201,168,76,0.35)' }}>
-            <p style={{ ...boxTitle, color: '#c9a84c' }}>🔺 Dados do Arco Real</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><label style={labelStyle}>Cargo</label><p style={{ color: 'var(--color-text)' }}>{m.cargo || 'Não informado'}</p></div>
-              <div><label style={labelStyle}>Situação</label><p className="capitalize" style={{ color: 'var(--color-text)' }}>{m.situacao}</p></div>
-              <div><label style={labelStyle}>Data de Exaltação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_exaltacao)}</p></div>
-            </div>
-          </div>
+              {/* Dados do Arco Real */}
+              <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
+                <p style={{ ...boxTitle, color: '#4ade80' }}>🔺 Dados do Arco Real</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div><label style={labelStyle}>Cargo</label><p style={{ color: 'var(--color-text)' }}>{m.cargo || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Situação</label><p className="capitalize" style={{ color: 'var(--color-text)' }}>{m.situacao}</p></div>
+                  <div><label style={labelStyle}>Data de Exaltação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_exaltacao)}</p></div>
+                </div>
+              </div>
 
-          {/* Observações */}
-          {m.observacoes && (
-            <div style={boxCard}>
-              <p style={boxTitle}>Observações</p>
-              <p style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{m.observacoes}</p>
-            </div>
+              {/* Observações */}
+              {m.observacoes && (
+                <div style={boxCard}>
+                  <p style={boxTitle}>Observações</p>
+                  <p style={{ color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{m.observacoes}</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {abaVer === 'maconico' && (
+            <>
+              {!m.irmao_vinculado_id ? (
+                <div style={boxCard}>
+                  <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1.5rem' }}>
+                    Este membro não está vinculado a um irmão da Loja Acácia — não há dados maçônicos simbólicos pra exibir.
+                  </p>
+                </div>
+              ) : carregandoMaconico ? (
+                <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1.5rem' }}>Carregando...</p>
+              ) : (
+                <div style={boxCard}>
+                  <p style={boxTitle}>🏛️ Datas Maçônicas (Loja Simbólica — {m.irmaos?.nome || 'Acácia'})</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label style={labelStyle}>🔨 Iniciação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_iniciacao)}</p></div>
+                    <div><label style={labelStyle}>📐 Elevação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_elevacao)}</p></div>
+                    <div><label style={labelStyle}>🏛️ Exaltação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_exaltacao)}</p></div>
+                    <div><label style={labelStyle}>⭐ Mestre Instalado?</label><p style={{ color: 'var(--color-text)' }}>{dadosMaconicos?.mestre_instalado ? 'Sim' : 'Não'}</p></div>
+                    {dadosMaconicos?.mestre_instalado && (
+                      <div><label style={labelStyle}>📅 Instalação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_instalacao)}</p></div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -512,8 +592,8 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
         </div>
 
         {/* Dados do Arco Real */}
-        <div style={{ ...boxCard, border: '1px solid rgba(201,168,76,0.35)' }}>
-          <p style={{ ...boxTitle, color: '#c9a84c' }}>🔺 Dados do Arco Real</p>
+        <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
+          <p style={{ ...boxTitle, color: '#4ade80' }}>🔺 Dados do Arco Real</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label style={labelStyle}>Cargo</label>
@@ -543,7 +623,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginTop: '1.5rem', paddingBottom: '2rem' }}>
         <button onClick={voltarLista} style={{ padding: '0.6rem 1.3rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '600' }}>Cancelar</button>
-        <button onClick={salvar} style={{ padding: '0.6rem 1.3rem', background: '#c9a84c', color: '#1a1500', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '700' }}>💾 Salvar</button>
+        <button onClick={salvar} style={{ padding: '0.6rem 1.3rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '700' }}>💾 Salvar</button>
       </div>
 
       <ModalImportar />
