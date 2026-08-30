@@ -361,7 +361,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                     {m.foto_url ? (
                       <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%', display: 'block' }} />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span className="text-3xl text-white">🔺</span>
                       </div>
                     )}
@@ -423,7 +423,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
               {m.foto_url ? (
                 <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '100%', height: '100%', background: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <span className="text-3xl text-white">🔺</span>
                 </div>
               )}
