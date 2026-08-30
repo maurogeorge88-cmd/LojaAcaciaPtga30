@@ -5,7 +5,7 @@ const VAZIO = {
   irmao_vinculado_id: null,
   nome: '', cpf: '', rg: '', data_nascimento: '', email: '', telefone: '',
   cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
-  cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true,
+  cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true, foto_url: '',
 };
 
 const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
@@ -59,7 +59,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
       const idsJaVinculados = membros.filter(m => m.irmao_vinculado_id).map(m => m.irmao_vinculado_id);
       let q = supabase
         .from('irmaos')
-        .select('id, nome, cpf, rg, data_nascimento, email, telefone, cep, endereco, numero, complemento, bairro, cidade, estado')
+        .select('id, nome, cpf, rg, data_nascimento, email, telefone, cep, endereco, numero, complemento, bairro, cidade, estado, foto_url')
         .order('nome');
       if (idsJaVinculados.length > 0) {
         q = q.not('id', 'in', `(${idsJaVinculados.join(',')})`);
@@ -88,6 +88,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
       bairro: m.bairro || '', cidade: m.cidade || '', estado: m.estado || '',
       cargo: m.cargo || '', situacao: m.situacao || 'regular',
       data_exaltacao: m.data_exaltacao || '', observacoes: m.observacoes || '', ativo: m.ativo,
+      foto_url: m.foto_url || '',
     });
     setModalAberto(true);
   };
@@ -106,6 +107,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
       data_nascimento: irmao.data_nascimento || '', email: irmao.email || '', telefone: irmao.telefone || '',
       cep: irmao.cep || '', endereco: irmao.endereco || '', numero: irmao.numero || '',
       complemento: irmao.complemento || '', bairro: irmao.bairro || '', cidade: irmao.cidade || '', estado: irmao.estado || '',
+      foto_url: irmao.foto_url || '',
     });
     setModalImportar(false);
     setEditandoId(null);
@@ -122,7 +124,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
         cep: form.cep || null, endereco: form.endereco || null, numero: form.numero || null,
         complemento: form.complemento || null, bairro: form.bairro || null, cidade: form.cidade || null, estado: form.estado || null,
         cargo: form.cargo || null, situacao: form.situacao, data_exaltacao: form.data_exaltacao || null,
-        observacoes: form.observacoes || null, ativo: form.ativo,
+        observacoes: form.observacoes || null, ativo: form.ativo, foto_url: form.foto_url || null,
       };
 
       if (editandoId) {
@@ -208,42 +210,56 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
           <p>Nenhum membro cadastrado ainda.</p>
         </div>
       ) : (
-        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead style={{ background: 'var(--color-surface-2)' }}>
-              <tr>
-                {['Nome', 'Origem', 'Cargo', 'Situação', 'Contato', 'Ações'].map(h => (
-                  <th key={h} style={{ padding: '0.65rem 0.85rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {membrosFiltrados.map((m, i) => {
-                const cor = situacaoCor(m.situacao);
-                return (
-                  <tr key={m.id} style={{ background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '0.6rem 0.85rem', fontWeight: '600', color: 'var(--color-text)' }}>{m.nome}</td>
-                    <td style={{ padding: '0.6rem 0.85rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                      {m.irmao_vinculado_id ? `🏛️ Loja (${m.irmaos?.nome || '—'})` : '🔺 Externo'}
-                    </td>
-                    <td style={{ padding: '0.6rem 0.85rem', fontSize: '0.82rem', color: 'var(--color-text)' }}>{m.cargo || '—'}</td>
-                    <td style={{ padding: '0.6rem 0.85rem' }}>
-                      <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '700', background: cor.bg, color: cor.cor }}>
-                        {m.situacao}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.6rem 0.85rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{m.telefone || m.email || '—'}</td>
-                    <td style={{ padding: '0.6rem 0.85rem' }}>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.5rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }}>✏️</button>
-                        <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.3rem 0.5rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3" style={{ padding: '0.25rem' }}>
+          {membrosFiltrados.map(m => {
+            const cor = situacaoCor(m.situacao);
+            const licenciado = m.situacao === 'licenciado';
+            return (
+              <div
+                key={m.id}
+                className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden"
+                style={licenciado
+                  ? { borderTop: '2px solid #c9a84c', borderRight: '2px solid #c9a84c', borderBottom: '2px solid #c9a84c', borderLeft: '8px solid #c9a84c', background: 'var(--color-surface)', boxShadow: '0 0 0 1px rgba(201,168,76,0.35)' }
+                  : { borderLeft: '4px solid #c9a84c', borderTop: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+              >
+                {/* Foto + Origem */}
+                <div className="relative" style={{ background: 'var(--color-surface-2)', overflow: 'hidden', height: '6.5rem' }}>
+                  {m.foto_url ? (
+                    <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 35%', display: 'block' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: '100%', background: '#c9a84c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span className="text-3xl text-white">🔺</span>
+                    </div>
+                  )}
+                  <div style={{ position: 'absolute', top: '0.35rem', right: '0.35rem', color: '#fff', padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.6rem', fontWeight: '800', background: m.irmao_vinculado_id ? 'rgba(37,99,235,0.9)' : 'rgba(100,116,139,0.9)' }}>
+                    {m.irmao_vinculado_id ? 'LOJA' : 'EXTERNO'}
+                  </div>
+                </div>
+
+                {/* Informações */}
+                <div className="p-2.5">
+                  <h3 className="font-bold text-sm truncate" style={{ color: '#c9a84c' }} title={m.nome}>
+                    {m.nome}
+                  </h3>
+
+                  <p className="text-xs truncate mt-1" style={{ color: 'var(--color-text-muted)' }} title={m.cargo || ''}>
+                    {m.cargo || 'Sem cargo definido'}
+                  </p>
+
+                  <div className="mt-2 flex gap-1.5 flex-wrap">
+                    <span style={{ display: 'inline-block', padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.65rem', fontWeight: '700', background: cor.bg, color: cor.cor }}>
+                      {m.situacao}
+                    </span>
+                  </div>
+
+                  <div className="mt-2.5 flex gap-1.5">
+                    <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(201,168,76,0.12)', color: '#c9a84c', border: '1px solid #c9a84c', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Editar">✏️</button>
+                    <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Excluir">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -304,6 +320,10 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                   <div style={{ gridColumn: '1 / -1' }}>
                     <label style={labelStyle}>Nome Completo *</label>
                     <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inputStyle} />
+                  </div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>URL da Foto</label>
+                    <input value={form.foto_url} onChange={e => setForm(f => ({ ...f, foto_url: e.target.value }))} placeholder="https://..." style={inputStyle} />
                   </div>
                   <div>
                     <label style={labelStyle}>CPF</label>
