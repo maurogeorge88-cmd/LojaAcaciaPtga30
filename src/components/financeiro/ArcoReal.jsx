@@ -6,6 +6,25 @@ const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') 
 const hojeISO = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
 const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+// Busca todas as páginas de uma consulta, em blocos de 1000 (limite padrão
+// do Supabase por requisição) — evita truncar dados silenciosamente quando
+// arco_real_lancamentos crescer além de 1000 registros.
+// "montarQuery" deve ser uma função que retorna um NOVO query builder a
+// cada chamada (sem .range() aplicado), pra poder reaplicar range por página.
+const buscarPaginado = async (montarQuery) => {
+  const TAMANHO = 1000;
+  let pagina = 0;
+  let todos = [];
+  while (true) {
+    const { data, error } = await montarQuery().range(pagina * TAMANHO, pagina * TAMANHO + TAMANHO - 1);
+    if (error) throw error;
+    todos = todos.concat(data || []);
+    if (!data || data.length < TAMANHO) break;
+    pagina++;
+  }
+  return todos;
+};
+
 export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modoPagina = false }) {
   const agora = new Date();
   const [lancs, setLancs]       = useState([]);
@@ -37,9 +56,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   const carregarAnosDisponiveis = async () => {
     try {
-      const { data } = await supabase
-        .from('arco_real_lancamentos')
-        .select('data_vencimento, data_pagamento');
+      const data = await buscarPaginado(() =>
+        supabase.from('arco_real_lancamentos').select('data_vencimento, data_pagamento')
+      );
       const anos = new Set();
       (data || []).forEach(l => {
         if (l.data_pagamento) anos.add(parseInt(l.data_pagamento.substring(0, 4), 10));
@@ -76,30 +95,34 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const carregar = async () => {
     setLoading(true);
     try {
-      let q = supabase
-        .from('arco_real_lancamentos')
-        .select(`
-          *,
-          categoria_manual:categoria_id(nome),
-          lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
-        `)
-        .order('data_pagamento', { ascending: false });
-
       const ano = filtros.ano;
-      if (filtros.mes && filtros.mes !== 0) {
-        const ini = `${ano}-${String(filtros.mes).padStart(2,'0')}-01`;
-        const fim = `${ano}-${String(filtros.mes).padStart(2,'0')}-${new Date(ano, filtros.mes, 0).getDate()}`;
-        q = q.or(`and(data_pagamento.gte.${ini},data_pagamento.lte.${fim}),and(data_pagamento.is.null,data_vencimento.gte.${ini},data_vencimento.lte.${fim})`);
-      } else {
-        q = q.or(`and(data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),and(data_pagamento.is.null,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`);
-      }
 
-      if (filtros.tipo)   q = q.eq('tipo', filtros.tipo);
-      if (filtros.status) q = q.eq('status', filtros.status);
-      if (filtros.origem) q = q.eq('origem', filtros.origem);
+      const montarQuery = () => {
+        let q = supabase
+          .from('arco_real_lancamentos')
+          .select(`
+            *,
+            categoria_manual:categoria_id(nome),
+            lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
+          `)
+          .order('data_pagamento', { ascending: false });
 
-      const { data, error } = await q;
-      if (error) throw error;
+        if (filtros.mes && filtros.mes !== 0) {
+          const ini = `${ano}-${String(filtros.mes).padStart(2,'0')}-01`;
+          const fim = `${ano}-${String(filtros.mes).padStart(2,'0')}-${new Date(ano, filtros.mes, 0).getDate()}`;
+          q = q.or(`and(data_pagamento.gte.${ini},data_pagamento.lte.${fim}),and(data_pagamento.is.null,data_vencimento.gte.${ini},data_vencimento.lte.${fim})`);
+        } else {
+          q = q.or(`and(data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),and(data_pagamento.is.null,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`);
+        }
+
+        if (filtros.tipo)   q = q.eq('tipo', filtros.tipo);
+        if (filtros.status) q = q.eq('status', filtros.status);
+        if (filtros.origem) q = q.eq('origem', filtros.origem);
+
+        return q;
+      };
+
+      const data = await buscarPaginado(montarQuery);
 
       let lista = data || [];
       if (filtros.categoria) {
@@ -119,14 +142,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   // respeitando os filtros de Tipo, Categoria e Origem — igual à tabela.
   const carregarTotaisGerais = async () => {
     try {
-      const { data, error } = await supabase
-        .from('arco_real_lancamentos')
-        .select(`
-          tipo, valor, status, data_pagamento, data_vencimento, origem,
-          categoria_manual:categoria_id(nome),
-          lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
-        `);
-      if (error) throw error;
+      const data = await buscarPaginado(() =>
+        supabase
+          .from('arco_real_lancamentos')
+          .select(`
+            tipo, valor, status, data_pagamento, data_vencimento, origem,
+            categoria_manual:categoria_id(nome),
+            lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
+          `)
+      );
       let todos = data || [];
 
       if (filtros.tipo)   todos = todos.filter(l => l.tipo === filtros.tipo);
