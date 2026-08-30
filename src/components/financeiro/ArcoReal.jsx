@@ -21,12 +21,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const [categorias, setCategorias] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([agora.getFullYear()]);
   const [filtroSubcategoria, setFiltroSubcategoria] = useState('');
+  const [totaisGerais, setTotaisGerais] = useState({ saldoAnterior: 0, recebidoGeral: 0, despesaGeral: 0, saldoGeral: 0, pendReceitaGeral: 0, pendDespesaGeral: 0 });
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
     data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: ''
   });
 
-  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); } }, [isOpen, filtro, mes, ano]);
+  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); } }, [isOpen, filtro, mes, ano]);
   useEffect(() => { if (isOpen) carregarAnosDisponiveis(); }, [isOpen]);
 
   const carregarAnosDisponiveis = async () => {
@@ -95,6 +96,47 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       showError('Erro ao carregar: ' + e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Totais gerais (independentes do filtro de período) ──────────────────
+  // Saldo Anterior: tudo até o início do período filtrado.
+  // Saldos Atuais / Pendências: sempre o total corrente, igual ao padrão
+  // usado no Finanças da Loja (não fica restrito ao mês/ano selecionado).
+  const carregarTotaisGerais = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('arco_real_lancamentos')
+        .select('tipo, valor, status, data_pagamento, data_vencimento');
+      if (error) throw error;
+      const todos = data || [];
+
+      let dataLimite = null;
+      if (filtro === 'mes') dataLimite = `${ano}-${String(mes).padStart(2,'0')}-01`;
+      else if (filtro === 'ano') dataLimite = `${ano}-01-01`;
+
+      const dataEfetiva = (l) => l.data_pagamento || l.data_vencimento;
+
+      const antesDoPeriodo = dataLimite ? todos.filter(l => dataEfetiva(l) && dataEfetiva(l) < dataLimite) : [];
+      const saldoAnterior = antesDoPeriodo
+        .filter(l => l.tipo === 'receita' ? l.status === 'pago' : true)
+        .reduce((s, l) => s + (l.tipo === 'receita' ? Number(l.valor||0) : -Number(l.valor||0)), 0);
+
+      const recebidoGeral = todos.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((s,l)=>s+Number(l.valor||0),0);
+      const despesaGeral  = todos.filter(l => l.tipo === 'despesa').reduce((s,l)=>s+Number(l.valor||0),0);
+      const pendReceitaGeral = todos.filter(l => l.tipo === 'receita' && l.status === 'pendente').reduce((s,l)=>s+Number(l.valor||0),0);
+      const pendDespesaGeral = todos.filter(l => l.tipo === 'despesa' && l.status === 'pendente').reduce((s,l)=>s+Number(l.valor||0),0);
+
+      setTotaisGerais({
+        saldoAnterior,
+        recebidoGeral,
+        despesaGeral,
+        saldoGeral: recebidoGeral - despesaGeral,
+        pendReceitaGeral,
+        pendDespesaGeral,
+      });
+    } catch (e) {
+      console.error('Erro ao carregar totais gerais do Arco Real:', e.message);
     }
   };
 
@@ -414,13 +456,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
   const sInp = { background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.45rem 0.75rem',fontSize:'0.875rem',width:'100%' };
 
-  const blocos = [
-    { titulo:'✅ Receitas — Pagas', lancs: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pago'), cor:'#16a34a', tot: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
-    { titulo:'⏳ Receitas — Pendentes', lancs: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pendente'), cor:'#d97706', tot: lancsFiltrados.filter(l=>l.tipo==='receita'&&l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
-    { titulo:'🔺 Repasses — Pagos', lancs: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pago'), cor:'#dc2626', tot: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
-    { titulo:'⏳ Repasses — Pendentes', lancs: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pendente'), cor:'#b45309', tot: lancsFiltrados.filter(l=>l.tipo==='despesa'&&l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
-  ].filter(b => b.lancs.length > 0);
-
   return (
     <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' }}>
       <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1200px',maxHeight:'92vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' }}>
@@ -554,25 +589,77 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
             <div style={{ textAlign:'center',padding:'2rem',color:'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
             <>
-              {/* Cards resumo */}
-              <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem' }}>
-                {[
-                  { label:'Recebido (Pago)',  val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a',bg:'rgba(22,163,74,0.08)', brd:'rgba(22,163,74,0.3)' },
-                  { label:'Pendente',          val:totPend, sub:recPend.length+' lançamento(s)',  cor:'#d97706',bg:'rgba(217,119,6,0.08)',  brd:'rgba(217,119,6,0.3)' },
-                  { label:'Despesas Arco Real', val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626',bg:'rgba(220,38,38,0.08)',  brd:'rgba(220,38,38,0.3)' },
-                  { label: 'Saldo',
-                    val:saldo,
-                    sub: saldo>0?'Positivo':saldo<0?'Negativo':'Zerado',
-                    cor: saldo>0?'#2563eb':saldo<0?'#dc2626':'#16a34a',
-                    bg:  saldo>0?'rgba(37,99,235,0.08)':saldo<0?'rgba(220,38,38,0.08)':'rgba(22,163,74,0.08)',
-                    brd: saldo>0?'rgba(37,99,235,0.3)':saldo<0?'rgba(220,38,38,0.3)':'rgba(22,163,74,0.3)' },
-                ].map((c,i) => (
-                  <div key={i} style={{ background:c.bg,border:'1px solid '+c.brd,borderLeft:'4px solid '+c.cor,borderRadius:'var(--radius-lg)',padding:'1rem' }}>
-                    <p style={{ margin:'0 0 0.25rem',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>{c.label}</p>
-                    <p style={{ margin:'0 0 0.25rem',fontSize:'1.5rem',fontWeight:'800',color:c.cor }}>{fmtR(c.val)}</p>
-                    <p style={{ margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)' }}>{c.sub}</p>
+              {/* Saldo Anterior */}
+              {filtro !== 'geral' && (
+                <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.5rem' }}>
+                    <div style={{ width:'3px', height:'10px', background:'#1e3a5f', borderRadius:'2px' }} />
+                    <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldo Anterior</span>
                   </div>
-                ))}
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Saldo Anterior</p>
+                    <p style={{ margin:0, fontSize:'1.5rem', fontWeight:'800', color: totaisGerais.saldoAnterior >= 0 ? '#3b82f6' : '#dc2626' }}>{fmtR(totaisGerais.saldoAnterior)}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Receitas · Despesas · Saldo (do período filtrado) */}
+              <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(45,106,159,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #2d6a9f' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.5rem' }}>
+                  <div style={{ width:'3px', height:'10px', background:'#2d6a9f', borderRadius:'2px' }} />
+                  <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#60a5fa', textTransform:'uppercase', letterSpacing:'0.07em' }}>Receitas · Despesas · Saldo</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label:'Recebido (Pago)',  val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a' },
+                    { label:'Despesas Arco Real', val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626' },
+                    { label: 'Saldo do Período', val:saldo, sub: saldo>0?'Positivo':saldo<0?'Negativo':'Zerado', cor: saldo>0?'#2563eb':saldo<0?'#dc2626':'#16a34a' },
+                  ].map((c,i) => (
+                    <div key={i} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                      <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>{c.label}</p>
+                      <p style={{ margin:'0 0 0.25rem', fontSize:'1.3rem', fontWeight:'800', color:c.cor }}>{fmtR(c.val)}</p>
+                      <p style={{ margin:0, fontSize:'0.68rem', color:'var(--color-text-muted)' }}>{c.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Saldos Atuais (sempre o total corrente, não filtrado por período) */}
+              <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #3b82f6' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.5rem' }}>
+                  <div style={{ width:'3px', height:'10px', background:'#3b82f6', borderRadius:'2px' }} />
+                  <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldos Atuais</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label:'Recebido (Total)', val:totaisGerais.recebidoGeral, cor:'#16a34a' },
+                    { label:'Repassado (Total)', val:totaisGerais.despesaGeral, cor:'#dc2626' },
+                    { label:'Saldo Total', val:totaisGerais.saldoGeral, cor: totaisGerais.saldoGeral>0?'#3b82f6':totaisGerais.saldoGeral<0?'#dc2626':'#16a34a' },
+                  ].map((c,i) => (
+                    <div key={i} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                      <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>{c.label}</p>
+                      <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:c.cor }}>{fmtR(c.val)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pendências (sempre o total corrente) */}
+              <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(14,165,233,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #0ea5e9' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.5rem' }}>
+                  <div style={{ width:'3px', height:'10px', background:'#0ea5e9', borderRadius:'2px' }} />
+                  <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#0ea5e9', textTransform:'uppercase', letterSpacing:'0.07em' }}>Pendências</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Receber</p>
+                    <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendReceitaGeral)}</p>
+                  </div>
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Pagar</p>
+                    <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendDespesaGeral)}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Resumo por Subcategoria */}
@@ -618,49 +705,50 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 </div>
               )}
 
-              {/* Lançamentos expandidos */}
-              {verLancs && blocos.length > 0 && (
-                <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-                  {blocos.map((bloco,bi) => (
-                    <div key={bi} style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
-                      <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.03)' }}>
-                        <span style={{ fontWeight:'700',color:bloco.cor,fontSize:'0.9rem' }}>{bloco.titulo}</span>
-                        <span style={{ fontWeight:'800',color:bloco.cor }}>{fmtR(bloco.tot)}</span>
+              {/* Lançamentos — tabela única, mesmo padrão da Loja */}
+              {verLancs && lancsFiltrados.length > 0 && (
+                <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
+                  <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)' }}>
+                    <span style={{ fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>📋 Lançamentos ({lancsFiltrados.length})</span>
+                  </div>
+                  <div style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 90px 70px 90px 70px',gap:'0.5rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
+                    <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status</span>
+                  </div>
+                  {lancsFiltrados.map((l,i) => (
+                    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 90px 70px 90px 70px',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+                      <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
+                      <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
+                      <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
+                        {subcategoria(l) || '—'}
+                      </span>
+                      <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
+                        background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
+                        color:l.origem==='manual'?'#6366f1':'#64748b' }}>
+                        {l.origem==='manual'?'Manual':'Loja'}
+                      </span>
+                      <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
+                        {l.tipo==='receita'?'Receita':'Despesa'}
+                      </span>
+                      <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right' }}>{fmtR(l.valor)}</span>
+                      <div style={{ display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center' }}>
+                        <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600' }}>
+                          {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
+                        </span>
+                        <button onClick={() => abrirEditar(l)} title="Editar"
+                          style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700 }}>
+                          ✏️
+                        </button>
+                        <button onClick={() => setConfirmExcluir(l)} title="Excluir"
+                          style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700 }}>
+                          🗑️
+                        </button>
                       </div>
-                      {bloco.lancs.map((l,i) => (
-                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 60px 90px 60px auto',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
-                          <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
-                          <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
-                          <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
-                            {subcategoria(l) || '—'}
-                          </span>
-                          <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
-                            background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
-                            color:l.origem==='manual'?'#6366f1':'#64748b' }}>
-                            {l.origem==='manual'?'Manual':'Loja'}
-                          </span>
-                          <span style={{ fontWeight:'700',color:bloco.cor,textAlign:'right' }}>{fmtR(l.valor)}</span>
-                          <span style={{ fontSize:'0.68rem',color:l.status==='pago'?'#16a34a':'#d97706',textAlign:'center',fontWeight:'600' }}>
-                            {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
-                          </span>
-                          <div style={{ display:'flex',gap:'0.25rem',justifyContent:'flex-end' }}>
-                            <button onClick={() => abrirEditar(l)} title="Editar"
-                              style={{ padding:'0.2rem 0.4rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.68rem',fontWeight:700 }}>
-                              ✏️
-                            </button>
-                            <button onClick={() => setConfirmExcluir(l)} title="Excluir"
-                              style={{ padding:'0.2rem 0.4rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.68rem',fontWeight:700 }}>
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   ))}
                 </div>
               )}
 
-              {verLancs && blocos.length === 0 && (
+              {verLancs && lancsFiltrados.length === 0 && (
                 <p style={{ textAlign:'center',color:'var(--color-text-muted)',padding:'1rem' }}>Nenhum lançamento no período.</p>
               )}
             </>
