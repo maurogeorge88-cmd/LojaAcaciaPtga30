@@ -23,14 +23,10 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
         className="w-64 fixed h-screen shadow-2xl flex flex-col"
         style={{ background: 'linear-gradient(180deg, #111827 0%, #1f2937 100%)', borderRight: '2px solid #2d6a9f' }}
       >
-        <div style={{ padding: '1.25rem 1rem', background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)' }}>
-          <div className="flex items-center gap-2">
-            <span style={{ fontSize: '1.6rem' }}>🔺</span>
-            <div>
-              <p style={{ color: '#fff', fontWeight: '800', fontSize: '0.9rem', lineHeight: 1.2 }}>Capítulo Guardiões da Aliança nº 04</p>
-              <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.68rem', marginTop: '0.3rem' }}>{userData?.nome}</p>
-            </div>
-          </div>
+        <div style={{ padding: '1.25rem 1rem', background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', textAlign: 'center' }}>
+          <img src="/assets/arco-real/logo.png" alt="Arco Real" style={{ width: '4rem', height: '4rem', objectFit: 'contain', margin: '0 auto 0.6rem' }} />
+          <p style={{ color: '#fff', fontWeight: '800', fontSize: '0.9rem', lineHeight: 1.2 }}>Capítulo Guardiões da Aliança nº 04</p>
+          <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.68rem', marginTop: '0.3rem' }}>{userData?.nome}</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
