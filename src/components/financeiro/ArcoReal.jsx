@@ -8,9 +8,6 @@ const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','A
 
 export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modoPagina = false }) {
   const agora = new Date();
-  const [filtro, setFiltro]     = useState('mes');
-  const [mes, setMes]           = useState(agora.getMonth() + 1);
-  const [ano, setAno]           = useState(agora.getFullYear());
   const [lancs, setLancs]       = useState([]);
   const [loading, setLoading]   = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -19,14 +16,23 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [categorias, setCategorias] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([agora.getFullYear()]);
-  const [filtroSubcategoria, setFiltroSubcategoria] = useState('');
   const [totaisGerais, setTotaisGerais] = useState({ saldoAnterior: 0, recebidoGeral: 0, despesaGeral: 0, saldoGeral: 0, pendReceitaGeral: 0, pendDespesaGeral: 0 });
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
     data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: ''
   });
 
-  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); } }, [isOpen, filtro, mes, ano]);
+  // Filtros — mesmo padrão da tela do Finanças da Loja
+  const [filtros, setFiltros] = useState({
+    mes: 0,                     // 0 = Todos
+    ano: agora.getFullYear(),   // sempre um ano específico (nunca "todos")
+    tipo: '',                   // '' | 'receita' | 'despesa'
+    categoria: '',              // nome da subcategoria
+    status: '',                 // '' | 'pago' | 'pendente'
+    origem: '',                 // '' | 'manual' | 'loja'
+  });
+
+  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); } }, [isOpen, filtros.mes, filtros.ano, filtros.tipo, filtros.categoria, filtros.status, filtros.origem]);
   useEffect(() => { if (isOpen) carregarAnosDisponiveis(); }, [isOpen]);
 
   const carregarAnosDisponiveis = async () => {
@@ -79,18 +85,27 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         `)
         .order('data_pagamento', { ascending: false });
 
-      if (filtro === 'mes') {
-        // Buscar mais amplo e filtrar no JS pela data efetiva
-        const ini = `${ano}-${String(mes).padStart(2,'0')}-01`;
-        const fim = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
+      const ano = filtros.ano;
+      if (filtros.mes && filtros.mes !== 0) {
+        const ini = `${ano}-${String(filtros.mes).padStart(2,'0')}-01`;
+        const fim = `${ano}-${String(filtros.mes).padStart(2,'0')}-${new Date(ano, filtros.mes, 0).getDate()}`;
         q = q.or(`and(data_pagamento.gte.${ini},data_pagamento.lte.${fim}),and(data_pagamento.is.null,data_vencimento.gte.${ini},data_vencimento.lte.${fim})`);
-      } else if (filtro === 'ano') {
+      } else {
         q = q.or(`and(data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),and(data_pagamento.is.null,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`);
       }
 
+      if (filtros.tipo)   q = q.eq('tipo', filtros.tipo);
+      if (filtros.status) q = q.eq('status', filtros.status);
+      if (filtros.origem) q = q.eq('origem', filtros.origem);
+
       const { data, error } = await q;
       if (error) throw error;
-      setLancs(data || []);
+
+      let lista = data || [];
+      if (filtros.categoria) {
+        lista = lista.filter(l => (subcategoria(l) || 'Sem subcategoria') === filtros.categoria);
+      }
+      setLancs(lista);
     } catch(e) {
       showError('Erro ao carregar: ' + e.message);
     } finally {
@@ -98,25 +113,36 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
     }
   };
 
-  // ── Totais gerais (independentes do filtro de período) ──────────────────
-  // Saldo Anterior: tudo até o início do período filtrado.
-  // Saldos Atuais / Pendências: sempre o total corrente, igual ao padrão
-  // usado no Finanças da Loja (não fica restrito ao mês/ano selecionado).
+  // ── Totais gerais (Saldos Atuais / Pendências) ───────────────────────────
+  // Saldo Anterior: tudo antes do início do período (mês/ano) selecionado.
+  // Saldos Atuais / Pendências: total corrente (sem limite de data), mas
+  // respeitando os filtros de Tipo, Categoria e Origem — igual à tabela.
   const carregarTotaisGerais = async () => {
     try {
       const { data, error } = await supabase
         .from('arco_real_lancamentos')
-        .select('tipo, valor, status, data_pagamento, data_vencimento');
+        .select(`
+          tipo, valor, status, data_pagamento, data_vencimento, origem,
+          categoria_manual:categoria_id(nome),
+          lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
+        `);
       if (error) throw error;
-      const todos = data || [];
+      let todos = data || [];
 
-      let dataLimite = null;
-      if (filtro === 'mes') dataLimite = `${ano}-${String(mes).padStart(2,'0')}-01`;
-      else if (filtro === 'ano') dataLimite = `${ano}-01-01`;
+      if (filtros.tipo)   todos = todos.filter(l => l.tipo === filtros.tipo);
+      if (filtros.origem) todos = todos.filter(l => l.origem === filtros.origem);
+      if (filtros.categoria) {
+        todos = todos.filter(l => (subcategoria(l) || 'Sem subcategoria') === filtros.categoria);
+      }
+
+      const ano = filtros.ano;
+      const dataLimite = filtros.mes && filtros.mes !== 0
+        ? `${ano}-${String(filtros.mes).padStart(2,'0')}-01`
+        : `${ano}-01-01`;
 
       const dataEfetiva = (l) => l.data_pagamento || l.data_vencimento;
 
-      const antesDoPeriodo = dataLimite ? todos.filter(l => dataEfetiva(l) && dataEfetiva(l) < dataLimite) : [];
+      const antesDoPeriodo = todos.filter(l => dataEfetiva(l) && dataEfetiva(l) < dataLimite);
       const saldoAnterior = antesDoPeriodo
         .filter(l => l.tipo === 'receita' ? l.status === 'pago' : true)
         .reduce((s, l) => s + (l.tipo === 'receita' ? Number(l.valor||0) : -Number(l.valor||0)), 0);
@@ -138,6 +164,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       console.error('Erro ao carregar totais gerais do Arco Real:', e.message);
     }
   };
+
 
   // ── Salvar lançamento manual na tabela própria ─────────────────────────────
   const salvarLancamento = async () => {
@@ -255,9 +282,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   };
 
   const todasSubcategorias = [...new Set(lancs.map(l => subcategoria(l) || 'Sem subcategoria'))].sort();
-  const lancsFiltrados = filtroSubcategoria
-    ? lancs.filter(l => (subcategoria(l) || 'Sem subcategoria') === filtroSubcategoria)
-    : lancs;
+  const lancsFiltrados = lancs; // filtragem já acontece toda em carregar()
 
   const receitasPorSub = agruparPorSubcategoria(receitas.filter(l => lancsFiltrados.includes(l)));
   const despesasPorSub = agruparPorSubcategoria(despesas.filter(l => lancsFiltrados.includes(l)));
@@ -292,7 +317,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       doc.text(nomeLoja, 105, y, { align:'center' }); y += 6;
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(80);
       doc.text('Arco Real - Controle Financeiro', 105, y, { align:'center' }); y += 5;
-      const labelFiltro = filtro === 'mes' ? MESES[mes-1] + '/' + ano : filtro === 'ano' ? 'Ano ' + ano : 'Todos os Períodos';
+      const labelFiltro = (filtros.mes && filtros.mes !== 0 ? MESES[filtros.mes-1] + '/' : 'Ano ') + filtros.ano;
       doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text('Extrato de Movimentação — ' + labelFiltro, 105, y, { align:'center' }); y += 10;
 
@@ -483,33 +508,64 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
         <div style={{ flex:1,overflowY: modoPagina ? 'visible' : 'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
 
-          {/* Filtros + ações */}
-          <div style={{ display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap',background:'var(--color-surface-2)',padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
-            {[['mes','Mês'],['ano','Ano'],['geral','Geral']].map(([v,l]) => (
-              <button key={v} onClick={() => setFiltro(v)}
-                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:filtro===v?'#2d6a9f':'var(--color-surface)',color:filtro===v?'#fff':'var(--color-text)',borderColor:filtro===v?'#2d6a9f':'var(--color-border)' }}>
-                {l}
-              </button>
-            ))}
-            {filtro !== 'geral' && <>
-              {filtro === 'mes' && (
-                <select value={mes} onChange={e=>setMes(parseInt(e.target.value))} style={{...sInp,width:'auto'}}>
+          {/* Filtros — mesmo padrão do Finanças da Loja */}
+          <div style={{ background:'var(--color-surface-2)',padding:'0.85rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
+            <div style={{ display:'flex',gap:'1rem',alignItems:'flex-end',flexWrap:'wrap' }}>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Mês</label>
+                <select value={filtros.mes} onChange={e=>setFiltros(f=>({...f,mes:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
+                  <option value={0}>Todos</option>
                   {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                 </select>
-              )}
-              <select value={ano} onChange={e=>setAno(parseInt(e.target.value))} style={{...sInp,width:'auto'}}>
-                {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </>}
-            <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
-              <button onClick={() => setShowForm(v=>!v)}
-                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface-2)',color:showForm?'#fff':'var(--color-text)' }}>
-                {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
-              </button>
-              <button onClick={gerarPDF}
-                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
-                📄 PDF
-              </button>
+              </div>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Ano</label>
+                <select value={filtros.ano} onChange={e=>setFiltros(f=>({...f,ano:parseInt(e.target.value)}))} style={{...sInp,width:'auto'}}>
+                  {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Tipo</label>
+                <select value={filtros.tipo} onChange={e=>setFiltros(f=>({...f,tipo:e.target.value}))} style={{...sInp,width:'auto'}}>
+                  <option value="">Todos</option>
+                  <option value="receita">Receita</option>
+                  <option value="despesa">Despesa</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Categoria</label>
+                <select value={filtros.categoria} onChange={e=>setFiltros(f=>({...f,categoria:e.target.value}))} style={{...sInp,width:'auto',minWidth:'180px'}}>
+                  <option value="">Todas</option>
+                  {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                  <option value="Sem subcategoria">Sem subcategoria</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Status</label>
+                <select value={filtros.status} onChange={e=>setFiltros(f=>({...f,status:e.target.value}))} style={{...sInp,width:'auto'}}>
+                  <option value="">Todos</option>
+                  <option value="pago">Pago</option>
+                  <option value="pendente">Pendente</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display:'block',fontSize:'0.7rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Origem</label>
+                <select value={filtros.origem} onChange={e=>setFiltros(f=>({...f,origem:e.target.value}))} style={{...sInp,width:'auto'}}>
+                  <option value="">Todas</option>
+                  <option value="manual">Manual</option>
+                  <option value="loja">Loja</option>
+                </select>
+              </div>
+              <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
+                <button onClick={() => setShowForm(v=>!v)}
+                  style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface)',color:showForm?'#fff':'var(--color-text)' }}>
+                  {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
+                </button>
+                <button onClick={gerarPDF}
+                  style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
+                  📄 PDF
+                </button>
+              </div>
             </div>
           </div>
 
@@ -598,11 +654,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           ) : (
             <>
               {/* LINHA 1: Saldo Anterior | Receitas · Despesas · Saldo */}
-              <div style={{ display:'grid', gridTemplateColumns: filtro !== 'geral' ? '1fr 3fr' : '1fr', gap:'0.5rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 3fr', gap:'0.5rem' }}>
 
               {/* Saldo Anterior */}
-              {filtro !== 'geral' && (
-                <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
+              <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.5rem' }}>
                     <div style={{ width:'3px', height:'10px', background:'#1e3a5f', borderRadius:'2px' }} />
                     <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldo Anterior</span>
@@ -611,8 +666,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Saldo Anterior</p>
                     <p style={{ margin:0, fontSize:'1.5rem', fontWeight:'800', color: totaisGerais.saldoAnterior >= 0 ? '#3b82f6' : '#dc2626' }}>{fmtR(totaisGerais.saldoAnterior)}</p>
                   </div>
-                </div>
-              )}
+              </div>
 
               {/* Receitas · Despesas · Saldo (do período filtrado) */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(45,106,159,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #2d6a9f' }}>
@@ -681,16 +735,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               {/* Resumo por Subcategoria */}
               {todasSubcategorias.length > 0 && (
                 <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem' }}>
-                    <span style={{ fontSize:'0.82rem',fontWeight:'700',color:'var(--color-text-muted)' }}>Filtrar por subcategoria:</span>
-                    <select value={filtroSubcategoria} onChange={e => setFiltroSubcategoria(e.target.value)} style={{...sInp,width:'auto',minWidth:'220px'}}>
-                      <option value="">Todas</option>
-                      {todasSubcategorias.map(sub => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
-                    </select>
-                  </div>
-
                   <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem' }}>
                     {/* Receitas por subcategoria */}
                     <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
