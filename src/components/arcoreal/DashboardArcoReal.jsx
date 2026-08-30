@@ -31,8 +31,6 @@ export default function DashboardArcoReal() {
   };
 
   const total = membros.length;
-  const daLoja = membros.filter(m => m.irmao_vinculado_id).length;
-  const externos = total - daLoja;
 
   if (loading) {
     return <div className="p-6" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>Carregando...</div>;
@@ -46,18 +44,10 @@ export default function DashboardArcoReal() {
       </div>
 
       {/* Total geral */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        <div style={{ ...boxCard, background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', border: 'none' }}>
+      <div className="mb-4">
+        <div style={{ ...boxCard, background: 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', border: 'none', maxWidth: '320px' }}>
           <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.72rem', fontWeight: '700', textTransform: 'uppercase' }}>Total de Membros</p>
           <p style={{ color: '#fff', fontSize: '2rem', fontWeight: '800', marginTop: '0.25rem' }}>{total}</p>
-        </div>
-        <div style={boxCard}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', fontWeight: '700', textTransform: 'uppercase' }}>🏛️ Irmãos da Loja</p>
-          <p style={{ color: 'var(--color-text)', fontSize: '2rem', fontWeight: '800', marginTop: '0.25rem' }}>{daLoja}</p>
-        </div>
-        <div style={boxCard}>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', fontWeight: '700', textTransform: 'uppercase' }}>🔺 Membros Externos</p>
-          <p style={{ color: 'var(--color-text)', fontSize: '2rem', fontWeight: '800', marginTop: '0.25rem' }}>{externos}</p>
         </div>
       </div>
 
