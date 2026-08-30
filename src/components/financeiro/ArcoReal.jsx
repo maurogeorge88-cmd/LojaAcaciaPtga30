@@ -6,14 +6,13 @@ const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') 
 const hojeISO = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
 const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
+export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modoPagina = false }) {
   const agora = new Date();
   const [filtro, setFiltro]     = useState('mes');
   const [mes, setMes]           = useState(agora.getMonth() + 1);
   const [ano, setAno]           = useState(agora.getFullYear());
   const [lancs, setLancs]       = useState([]);
   const [loading, setLoading]   = useState(false);
-  const [verLancs, setVerLancs] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [salvando, setSalvando]             = useState(false);
   const [editandoId, setEditandoId]         = useState(null);
@@ -456,9 +455,19 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
   const sInp = { background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.45rem 0.75rem',fontSize:'0.875rem',width:'100%' };
 
+  // Página cheia (dentro da área do Arco Real) ou modal (aberto de dentro
+  // do Finanças da Loja) — o conteúdo interno é o mesmo nos dois casos.
+  const wrapperStyle = modoPagina
+    ? { padding:'1.5rem', maxWidth:'1400px', margin:'0 auto' }
+    : { position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' };
+
+  const cardStyle = modoPagina
+    ? { background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }
+    : { background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1200px',maxHeight:'92vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' };
+
   return (
-    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' }}>
-      <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1200px',maxHeight:'92vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' }}>
+    <div style={wrapperStyle}>
+      <div style={cardStyle}>
 
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
@@ -466,10 +475,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
             <h2 style={{ color:'#fff',fontWeight:'800',fontSize:'1.2rem',margin:0 }}>🔺 Arco Real — Controle Financeiro</h2>
             <p style={{ color:'rgba(255,255,255,0.75)',margin:'0.2rem 0 0',fontSize:'0.82rem' }}>{lancs.length} registro(s) no período</p>
           </div>
-          <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2.25rem',height:'2.25rem',fontSize:'1.3rem',fontWeight:'700',cursor:'pointer' }}>×</button>
+          {!modoPagina && (
+            <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2.25rem',height:'2.25rem',fontSize:'1.3rem',fontWeight:'700',cursor:'pointer' }}>×</button>
+          )}
         </div>
 
-        <div style={{ flex:1,overflowY:'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
+        <div style={{ flex:1,overflowY: modoPagina ? 'visible' : 'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
 
           {/* Filtros + ações */}
           <div style={{ display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap',background:'var(--color-surface-2)',padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
@@ -493,10 +504,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
               <button onClick={() => setShowForm(v=>!v)}
                 style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface-2)',color:showForm?'#fff':'var(--color-text)' }}>
                 {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
-              </button>
-              <button onClick={() => setVerLancs(v=>!v)}
-                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:verLancs?'var(--color-accent-bg)':'var(--color-surface-2)',color:verLancs?'var(--color-accent)':'var(--color-text)' }}>
-                {verLancs ? '📋 Ocultar' : '📋 Ver Lançamentos'}
               </button>
               <button onClick={gerarPDF}
                 style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
@@ -706,7 +713,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
               )}
 
               {/* Lançamentos — tabela única, mesmo padrão da Loja */}
-              {verLancs && lancsFiltrados.length > 0 && (
+              {lancsFiltrados.length > 0 && (
                 <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
                   <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)' }}>
                     <span style={{ fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>📋 Lançamentos ({lancsFiltrados.length})</span>
@@ -748,7 +755,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 </div>
               )}
 
-              {verLancs && lancsFiltrados.length === 0 && (
+              {lancsFiltrados.length === 0 && (
                 <p style={{ textAlign:'center',color:'var(--color-text-muted)',padding:'1rem' }}>Nenhum lançamento no período.</p>
               )}
             </>
