@@ -28,7 +28,7 @@ export default function EscolhaArea({ nomeUsuario, onEscolher, onSair }) {
           <button
             onClick={() => onEscolher('arco_real')}
             style={{
-              background: 'var(--color-surface)', border: '2px solid #c9a84c', borderRadius: 'var(--radius-xl)',
+              background: 'var(--color-surface)', border: '2px solid #4ade80', borderRadius: 'var(--radius-xl)',
               padding: '2rem 1.5rem', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem',
               transition: 'transform 0.15s',
             }}
