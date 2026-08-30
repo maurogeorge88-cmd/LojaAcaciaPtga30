@@ -727,13 +727,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)' }}>
                     <span style={{ fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>📋 Lançamentos ({lancsFiltrados.length})</span>
                   </div>
-                  <div style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 90px 70px 90px 70px',gap:'0.5rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
-                    <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status</span>
+                  <div style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
+                    <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
                   </div>
                   {lancsFiltrados.map((l,i) => (
-                    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 160px 90px 70px 90px 70px',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+                    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
                       <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
-                      <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
+                      <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.descricao}>{l.descricao}</span>
                       <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
                         {subcategoria(l) || '—'}
                       </span>
@@ -745,17 +745,17 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
                         {l.tipo==='receita'?'Receita':'Despesa'}
                       </span>
-                      <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right' }}>{fmtR(l.valor)}</span>
-                      <div style={{ display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center' }}>
-                        <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600' }}>
+                      <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right',whiteSpace:'nowrap' }}>{fmtR(l.valor)}</span>
+                      <div style={{ display:'flex',gap:'0.35rem',justifyContent:'flex-end',alignItems:'center',flexWrap:'nowrap' }}>
+                        <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600',whiteSpace:'nowrap' }}>
                           {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
                         </span>
                         <button onClick={() => abrirEditar(l)} title="Editar"
-                          style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700 }}>
+                          style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
                           ✏️
                         </button>
                         <button onClick={() => setConfirmExcluir(l)} title="Excluir"
-                          style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700 }}>
+                          style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
                           🗑️
                         </button>
                       </div>
