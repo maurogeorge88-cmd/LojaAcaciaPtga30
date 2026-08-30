@@ -354,8 +354,8 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
                   className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden cursor-pointer"
                   onClick={() => abrirVisualizar(m)}
                   style={licenciado
-                    ? { borderTop: '2px solid #4ade80', borderRight: '2px solid #4ade80', borderBottom: '2px solid #4ade80', borderLeft: '8px solid #4ade80', background: 'var(--color-surface)', boxShadow: '0 0 0 1px rgba(74,222,128,0.35)' }
-                    : { borderLeft: '4px solid #4ade80', borderTop: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+                    ? { borderTop: '2px solid #2d6a9f', borderRight: '2px solid #2d6a9f', borderBottom: '2px solid #2d6a9f', borderLeft: '8px solid #2d6a9f', background: 'var(--color-surface)', boxShadow: '0 0 0 1px rgba(45,106,159,0.35)' }
+                    : { borderLeft: '4px solid #2d6a9f', borderTop: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
                 >
                   <div className="relative" style={{ background: 'var(--color-surface-2)', overflow: 'hidden', height: '6.5rem' }}>
                     {m.foto_url ? (
@@ -419,7 +419,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
         {/* Cabeçalho com foto */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #4ade80' }}>
+            <div style={{ width: '5.5rem', height: '5.5rem', borderRadius: '50%', overflow: 'hidden', border: '3px solid #2d6a9f' }}>
               {m.foto_url ? (
                 <img src={m.foto_url} alt={m.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
