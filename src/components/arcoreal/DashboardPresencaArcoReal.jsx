@@ -169,8 +169,8 @@ export default function DashboardPresencaArcoReal({ onAbrirPresenca, showSuccess
           </span>
         </div>
 
-        {/* Cabeçalho colunas */}
-        <div style={{ display: 'grid', gridTemplateColumns: '100px 130px 1fr 130px 130px auto', gap: '0.75rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
+        {/* Cabeçalho colunas — só desktop */}
+        <div className="hidden md:grid" style={{ gridTemplateColumns: '100px 130px 1fr 130px 130px auto', gap: '0.75rem', padding: '0.5rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
           {['DATA', 'CLASSIFICAÇÃO', 'OBSERVAÇÃO', 'PRESENÇA', '%', 'AÇÕES'].map((h, i) => (
             <div key={h} style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: i === 5 ? 'right' : (i === 3 || i === 4) ? 'center' : 'left' }}>{h}</div>
           ))}
@@ -187,51 +187,95 @@ export default function DashboardPresencaArcoReal({ onAbrirPresenca, showSuccess
           const [bgCl, txtCl, bdCl] = corClassificacao(s.classificacao);
           const c = contagens[s.id] || { total: 0, presentes: 0 };
           const pct = c.total > 0 ? Math.round((c.presentes / c.total) * 100) : null;
+          const acoes = (
+            <>
+              <button onClick={() => onAbrirPresenca(s.id)} title="Registrar Presença" style={{ padding: '0.3rem 0.55rem', background: 'rgba(45,106,159,0.15)', color: '#2d6a9f', border: '1px solid rgba(45,106,159,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}>
+                📋
+              </button>
+              <button onClick={() => setSessaoVisualizando(s.id)} title="Visualizar" style={{ padding: '0.3rem 0.55rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}>
+                👁️
+              </button>
+              <button onClick={() => { setSessaoEditando(s); setModalSessaoAberto(true); }} title="Editar Sessão" style={{ padding: '0.3rem 0.55rem', background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}>
+                ✏️
+              </button>
+              <button onClick={() => setConfirmExcluir(s)} title="Excluir" style={{ padding: '0.3rem 0.55rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer' }}>
+                🗑
+              </button>
+            </>
+          );
           return (
-            <div key={s.id} style={{
-              display: 'grid', gridTemplateColumns: '100px 130px 1fr 130px 130px auto', gap: '0.75rem',
-              padding: '0.65rem 1.25rem', alignItems: 'center',
-              background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
-              borderBottom: '1px solid var(--color-border)',
-            }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-text)' }}>
-                {new Date(s.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
+            <div key={s.id}>
+              {/* Linha — versão desktop (grid) */}
+              <div className="hidden md:grid" style={{
+                gridTemplateColumns: '100px 130px 1fr 130px 130px auto', gap: '0.75rem',
+                padding: '0.65rem 1.25rem', alignItems: 'center',
+                background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                borderBottom: '1px solid var(--color-border)',
+              }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-text)' }}>
+                  {new Date(s.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
+                </div>
+                <div>
+                  {s.classificacao ? (
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '999px', background: bgCl, color: txtCl, border: `1px solid ${bdCl}` }}>
+                      {s.classificacao}
+                    </span>
+                  ) : <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>—</span>}
+                </div>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  {s.observacoes ? (
+                    <p style={{ fontSize: '0.78rem', color: 'var(--color-text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={s.observacoes}>💬 {s.observacoes}</p>
+                  ) : <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>—</span>}
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--color-text)', fontWeight: '700' }}>
+                  {pct === null ? '—' : `${c.presentes}/${c.total}`}
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  {pct === null ? (
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Sem registro</span>
+                  ) : (
+                    <span style={{ fontSize: '0.78rem', fontWeight: '800', color: corPercentual(pct) }}>{pct}%</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                  {acoes}
+                </div>
               </div>
-              <div>
-                {s.classificacao ? (
-                  <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '999px', background: bgCl, color: txtCl, border: `1px solid ${bdCl}` }}>
-                    {s.classificacao}
-                  </span>
-                ) : <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>—</span>}
-              </div>
-              <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                {s.observacoes ? (
-                  <p style={{ fontSize: '0.78rem', color: 'var(--color-text)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={s.observacoes}>💬 {s.observacoes}</p>
-                ) : <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>—</span>}
-              </div>
-              <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--color-text)', fontWeight: '700' }}>
-                {pct === null ? '—' : `${c.presentes}/${c.total}`}
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                {pct === null ? (
-                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Sem registro</span>
-                ) : (
-                  <span style={{ fontSize: '0.78rem', fontWeight: '800', color: corPercentual(pct) }}>{pct}%</span>
+
+              {/* Card — versão celular */}
+              <div className="md:hidden" style={{
+                padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                borderBottom: '1px solid var(--color-border)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '800', color: 'var(--color-text)', margin: 0 }}>
+                      {new Date(s.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                    {s.classificacao && (
+                      <span style={{ display: 'inline-block', marginTop: '0.25rem', fontSize: '0.68rem', fontWeight: '700', padding: '0.12rem 0.5rem', borderRadius: '999px', background: bgCl, color: txtCl, border: `1px solid ${bdCl}` }}>
+                        {s.classificacao}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    {pct === null ? (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Sem registro</span>
+                    ) : (
+                      <>
+                        <p style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: corPercentual(pct) }}>{pct}%</p>
+                        <p style={{ margin: 0, fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>{c.presentes}/{c.total} presentes</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {s.observacoes && (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--color-text)', margin: 0 }}>💬 {s.observacoes}</p>
                 )}
-              </div>
-              <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
-                <button onClick={() => onAbrirPresenca(s.id)} title="Registrar Presença" style={{ padding: '0.25rem 0.55rem', background: 'rgba(45,106,159,0.15)', color: '#2d6a9f', border: '1px solid rgba(45,106,159,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
-                  📋
-                </button>
-                <button onClick={() => setSessaoVisualizando(s.id)} title="Visualizar" style={{ padding: '0.25rem 0.55rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
-                  👁️
-                </button>
-                <button onClick={() => { setSessaoEditando(s); setModalSessaoAberto(true); }} title="Editar Sessão" style={{ padding: '0.25rem 0.55rem', background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
-                  ✏️
-                </button>
-                <button onClick={() => setConfirmExcluir(s)} title="Excluir" style={{ padding: '0.25rem 0.55rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
-                  🗑
-                </button>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {acoes}
+                </div>
               </div>
             </div>
           );
