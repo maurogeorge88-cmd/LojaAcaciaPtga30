@@ -55,7 +55,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // Filtros — mesmo padrão da tela do Finanças da Loja
   const [filtros, setFiltros] = useState({
-    mes: 0,                     // 0 = Todos
+    mes: agora.getMonth() + 1,  // padrão: mês atual
     ano: agora.getFullYear(),   // sempre um ano específico (nunca "todos")
     tipo: '',                   // '' | 'receita' | 'despesa'
     categoria: '',              // nome da subcategoria
@@ -693,7 +693,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               </div>{/* fim linha 1 */}
 
               {/* LINHA 2: Saldos Atuais | Pendências */}
-              <div style={{ display:'grid', gridTemplateColumns:'3fr 2fr', gap:'0.5rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0.5rem' }}>
 
               {/* Saldos Atuais (sempre o total corrente, não filtrado por período) */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #3b82f6' }}>
