@@ -163,16 +163,29 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       const dataLimite = filtros.mes && filtros.mes !== 0
         ? `${ano}-${String(filtros.mes).padStart(2,'0')}-01`
         : `${ano}-01-01`;
+      const dataFimPeriodo = filtros.mes && filtros.mes !== 0
+        ? `${ano}-${String(filtros.mes).padStart(2,'0')}-${new Date(ano, filtros.mes, 0).getDate()}`
+        : `${ano}-12-31`;
 
       const dataEfetiva = (l) => l.data_pagamento || l.data_vencimento;
 
+      // Tudo ANTES do período selecionado (histórico acumulado)
       const antesDoPeriodo = todos.filter(l => dataEfetiva(l) && dataEfetiva(l) < dataLimite);
-      const saldoAnterior = antesDoPeriodo
-        .filter(l => l.tipo === 'receita' ? l.status === 'pago' : true)
-        .reduce((s, l) => s + (l.tipo === 'receita' ? Number(l.valor||0) : -Number(l.valor||0)), 0);
+      const recebidoAntes = antesDoPeriodo.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((s,l)=>s+Number(l.valor||0),0);
+      const despesaAntes  = antesDoPeriodo.filter(l => l.tipo === 'despesa').reduce((s,l)=>s+Number(l.valor||0),0);
+      const saldoAnterior = recebidoAntes - despesaAntes;
 
-      const recebidoGeral = todos.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((s,l)=>s+Number(l.valor||0),0);
-      const despesaGeral  = todos.filter(l => l.tipo === 'despesa').reduce((s,l)=>s+Number(l.valor||0),0);
+      // Só o período selecionado (mês, ou ano inteiro se mês="Todos")
+      const doPeriodo = todos.filter(l => dataEfetiva(l) && dataEfetiva(l) >= dataLimite && dataEfetiva(l) <= dataFimPeriodo);
+      const recebidoPeriodo = doPeriodo.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((s,l)=>s+Number(l.valor||0),0);
+      const despesaPeriodo  = doPeriodo.filter(l => l.tipo === 'despesa').reduce((s,l)=>s+Number(l.valor||0),0);
+
+      // Saldos Atuais = Saldo Anterior + resultado do período selecionado
+      // (garantido por construção, não é uma consulta "geral" independente)
+      const recebidoGeral = recebidoAntes + recebidoPeriodo;
+      const despesaGeral  = despesaAntes + despesaPeriodo;
+      const saldoGeral    = saldoAnterior + (recebidoPeriodo - despesaPeriodo);
+
       const pendReceitaGeral = todos.filter(l => l.tipo === 'receita' && l.status === 'pendente').reduce((s,l)=>s+Number(l.valor||0),0);
       const pendDespesaGeral = todos.filter(l => l.tipo === 'despesa' && l.status === 'pendente').reduce((s,l)=>s+Number(l.valor||0),0);
 
@@ -180,7 +193,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         saldoAnterior,
         recebidoGeral,
         despesaGeral,
-        saldoGeral: recebidoGeral - despesaGeral,
+        saldoGeral,
         pendReceitaGeral,
         pendDespesaGeral,
       });
