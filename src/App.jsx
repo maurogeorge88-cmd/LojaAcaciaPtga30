@@ -145,6 +145,10 @@ function App() {
   // ========================================
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Trava adicional: evita mostrar a tela da Loja "piscando" antes de saber
+  // se a pessoa tem acesso ao Arco Real também. Some sozinha em até 4s,
+  // mesmo se algo der errado no carregamento do perfil (trava de segurança).
+  const [perfilCarregado, setPerfilCarregado] = useState(false);
   const [userData, setUserData] = useState(null);
   const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
@@ -287,6 +291,7 @@ function App() {
         supabase.auth.signOut();
         sessionStorage.removeItem('portalAtivo');
         setLoading(false);
+        setPerfilCarregado(true);
         return;
       }
 
@@ -296,6 +301,7 @@ function App() {
         setPortalAtivo('cunhadas');
         setCurrentPage('dashboard-cunhadas');
         setLoading(false);
+        setPerfilCarregado(true);
         return;
       }
 
@@ -315,6 +321,9 @@ function App() {
         loadLivros();
         loadEmprestimos();
         loadCronograma();
+      } else {
+        // Sem sessão nenhuma: não há perfil pra esperar, libera direto
+        setPerfilCarregado(true);
       }
       setLoading(false);
     });
@@ -325,6 +334,15 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Trava de segurança: se por algum motivo o perfil nunca terminar de
+  // carregar (erro de rede, etc.), libera a tela mesmo assim depois de 4s —
+  // nunca deixa a pessoa presa numa tela preta.
+  useEffect(() => {
+    if (!session || perfilCarregado) return;
+    const timer = setTimeout(() => setPerfilCarregado(true), 4000);
+    return () => clearTimeout(timer);
+  }, [session, perfilCarregado]);
 
 
   // Filtrar balaustres por grau
@@ -351,6 +369,7 @@ function App() {
   // FUNÇÕES DE CARREGAMENTO
   // ========================================
   const loadUserData = async (userEmail) => {
+   try {
     const { data, error } = await supabase
       .from('usuarios')
       .select('*')
@@ -473,6 +492,13 @@ function App() {
         });
       }
     }
+   } catch (err) {
+     console.error('Erro ao carregar dados do usuário:', err);
+   } finally {
+     // Libera a tela de carregamento independente de sucesso ou erro —
+     // nunca deixa a pessoa presa numa tela preta.
+     setPerfilCarregado(true);
+   }
   };
 
   const loadIrmaos = async () => {
@@ -868,6 +894,7 @@ function App() {
         setPortalAtivo('cunhadas');
         setCurrentPage('dashboard-cunhadas');
         setLoading(false);
+        setPerfilCarregado(true);
         return; // Cunhada não carrega dados dos irmãos
       }
 
@@ -975,6 +1002,7 @@ function App() {
     setCurrentPage('dashboard');
     setPortalAtivo('irmaos'); // Resetar para portal irmãos
     setAreaEscolhida(null); // Resetar escolha Loja/Arco Real pro próximo login
+    setPerfilCarregado(false); // Reexibe a tela de carregamento no próximo login
   };
 
   // ========================================
@@ -1404,10 +1432,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
   // ========================================
   // RENDERIZAÇÃO
   // ========================================
-  if (loading && !session) {
+  if ((loading && !session) || (session && !perfilCarregado)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Carregando...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background:'#000' }}>
+        <img src={LOGO_URL} alt="Acácia de Paranatinga" style={{ width:'12rem', height:'12rem', objectFit:'contain' }} />
       </div>
     );
   }
