@@ -547,12 +547,17 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
         <div style={{ flex:1,overflowY: modoPagina ? 'visible' : 'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
 
-          {/* Formulário novo lançamento */}
+          {/* Modal: novo lançamento / editar lançamento */}
           {showForm && (
-            <div id="arco-form" style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-              <p style={{ margin:0,fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>
-                {editandoId ? '✏️ Editar Lançamento' : '+ Novo Lançamento Manual'}
-              </p>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{zIndex:10000}} onClick={() => { setShowForm(false); setEditandoId(null); }}>
+              <div id="arco-form" className="rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto" style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)' }} onClick={e => e.stopPropagation()}>
+                <div className="sticky top-0 border-b px-6 py-4" style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',borderColor:'var(--color-border)' }}>
+                  <h3 className="text-lg font-bold" style={{ color:'#fff' }}>
+                    {editandoId ? '✏️ Editar Lançamento' : '+ Novo Lançamento Manual'}
+                  </h3>
+                </div>
+
+                <div className="p-6" style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
 
               {/* Tipo */}
               <div style={{ display:'flex',gap:'0.5rem' }}>
@@ -617,12 +622,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   style={{ flex:1,padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
                   {salvando ? 'Salvando...' : editandoId ? '💾 Salvar Alterações' : '💾 Salvar Lançamento'}
                 </button>
-                {editandoId && (
-                  <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' }); }}
-                    style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
-                    Cancelar
-                  </button>
-                )}
+                <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' }); }}
+                  style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
+                  Cancelar
+                </button>
+              </div>
+                </div>
               </div>
             </div>
           )}
