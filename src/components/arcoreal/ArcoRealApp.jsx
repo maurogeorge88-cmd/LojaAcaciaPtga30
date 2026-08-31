@@ -3,6 +3,8 @@ import { supabase } from '../../supabaseClient';
 import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
+import CadastroSessaoArcoReal from './CadastroSessaoArcoReal';
+import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
 const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
@@ -10,7 +12,7 @@ const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png'
 const ITENS_MENU = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', pronto: true },
   { id: 'membros', label: 'Cadastro de Membros', icone: '👥', pronto: true },
-  { id: 'presenca', label: 'Presença', icone: '📋', pronto: false },
+  { id: 'presenca', label: 'Presença', icone: '📋', pronto: true },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: false },
   { id: 'exaltacao', label: 'Processo de Exaltação', icone: '⭐', pronto: false },
@@ -19,6 +21,7 @@ const ITENS_MENU = [
 
 export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
   const [pagina, setPagina] = useState('dashboard');
+  const [sessaoPresencaId, setSessaoPresencaId] = useState(null); // sessão aberta na tela de Registro de Presença
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--color-bg)' }}>
@@ -38,7 +41,7 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             <button
               key={item.id}
               disabled={!item.pronto}
-              onClick={() => { if (item.pronto) setPagina(item.id); }}
+              onClick={() => { if (item.pronto) { setPagina(item.id); setSessaoPresencaId(null); } }}
               className="w-full px-4 py-2.5 flex items-center gap-2 text-sm transition"
               style={{
                 background: pagina === item.id && item.pronto ? 'rgba(45,106,159,0.25)' : 'transparent',
@@ -88,7 +91,22 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             showError={showError}
           />
         )}
-        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && (
+        {pagina === 'presenca' && sessaoPresencaId === null && (
+          <CadastroSessaoArcoReal
+            onAbrirPresenca={(id) => setSessaoPresencaId(id)}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+        {pagina === 'presenca' && sessaoPresencaId !== null && (
+          <RegistroPresencaArcoReal
+            sessaoId={sessaoPresencaId}
+            onVoltar={() => setSessaoPresencaId(null)}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
