@@ -6,6 +6,16 @@ const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', {
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 const hojeISO = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
 const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const TIPOS_PAGAMENTO = [
+  { value: 'dinheiro', label: '💵 Dinheiro' },
+  { value: 'pix', label: '📱 PIX' },
+  { value: 'transferencia', label: '🏦 Transferência' },
+  { value: 'deposito', label: '🏧 Depósito' },
+  { value: 'debito', label: '💳 Débito' },
+  { value: 'credito', label: '💳 Crédito' },
+  { value: 'cheque', label: '📝 Cheque' },
+  { value: 'compensacao', label: '🔄 Compensação' },
+];
 
 // Busca todas as páginas de uma consulta, em blocos de 1000 (limite padrão
 // do Supabase por requisição) — evita truncar dados silenciosamente quando
@@ -40,7 +50,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const [totaisGerais, setTotaisGerais] = useState({ saldoAnterior: 0, recebidoGeral: 0, despesaGeral: 0, saldoGeral: 0, pendReceitaGeral: 0, pendDespesaGeral: 0 });
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
-    data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: ''
+    data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: '', tipo_pagamento: 'pix'
   });
 
   // Filtros — mesmo padrão da tela do Finanças da Loja
@@ -223,10 +233,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         origem:          'manual',
         lancamento_loja_id: null,
         categoria_id:    form.categoria_id || null,
+        tipo_pagamento:  form.tipo_pagamento || null,
       }]);
       if (error) throw error;
       showSuccess('✅ Lançamento registrado!');
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' });
       setShowForm(false);
       carregar();
     } catch(e) {
@@ -260,6 +271,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       status:          l.status || 'pago',
       observacoes:     l.observacoes || '',
       categoria_id:    l.categoria_id || '',
+      tipo_pagamento:  l.tipo_pagamento || 'pix',
     });
     setShowForm(true);
     // Scroll para o form
@@ -282,12 +294,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         status:          form.status,
         observacoes:     form.observacoes.trim() || null,
         categoria_id:    form.categoria_id || null,
+        tipo_pagamento:  form.tipo_pagamento || null,
       }).eq('id', editandoId);
       if (error) throw error;
       showSuccess('✅ Lançamento atualizado!');
       setEditandoId(null);
       setShowForm(false);
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' });
       carregar();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
@@ -596,6 +609,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Data de Pagamento *</label>
                   <input type="date" value={form.data_vencimento} onChange={e=>setForm(f=>({...f,data_vencimento:e.target.value}))} style={sInp} />
                 </div>
+                <div>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Tipo de Pagamento</label>
+                  <select value={form.tipo_pagamento} onChange={e=>setForm(f=>({...f,tipo_pagamento:e.target.value}))} style={sInp}>
+                    {TIPOS_PAGAMENTO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
                 <div style={{ gridColumn:'1 / -1' }}>
                   <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Status *</label>
                   <div style={{ display:'flex',gap:'0.5rem' }}>
@@ -622,7 +641,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   style={{ flex:1,padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
                   {salvando ? 'Salvando...' : editandoId ? '💾 Salvar Alterações' : '💾 Salvar Lançamento'}
                 </button>
-                <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'' }); }}
+                <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' }); }}
                   style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
                   Cancelar
                 </button>
