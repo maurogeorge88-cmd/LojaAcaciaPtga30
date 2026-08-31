@@ -675,17 +675,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <div style={{ width:'3px', height:'10px', background:'#3b82f6', borderRadius:'2px' }} />
                   <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldos Atuais</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label:'Recebido (Total)', val:totaisGerais.recebidoGeral, cor:'#16a34a' },
-                    { label:'Repassado (Total)', val:totaisGerais.despesaGeral, cor:'#dc2626' },
-                    { label:'Saldo Total', val:totaisGerais.saldoGeral, cor: totaisGerais.saldoGeral>0?'#3b82f6':totaisGerais.saldoGeral<0?'#dc2626':'#16a34a' },
-                  ].map((c,i) => (
-                    <div key={i} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                      <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>{c.label}</p>
-                      <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:c.cor }}>{fmtR(c.val)}</p>
-                    </div>
-                  ))}
+                <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
+                  <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Valor Atual</p>
+                  <p style={{ margin:0, fontSize:'1.5rem', fontWeight:'800', color: totaisGerais.saldoGeral>0?'#3b82f6':totaisGerais.saldoGeral<0?'#dc2626':'#16a34a' }}>{fmtR(totaisGerais.saldoGeral)}</p>
                 </div>
               </div>
 
