@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -30,6 +31,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const [lancs, setLancs]       = useState([]);
   const [loading, setLoading]   = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [modalLoteAberto, setModalLoteAberto] = useState(false);
   const [salvando, setSalvando]             = useState(false);
   const [editandoId, setEditandoId]         = useState(null);
   const [confirmExcluir, setConfirmExcluir] = useState(null);
@@ -753,6 +755,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface)',color:showForm?'#fff':'var(--color-text)' }}>
                       {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
                     </button>
+                    <button onClick={() => setModalLoteAberto(true)}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
+                      👥 Lançamento em Lote
+                    </button>
                     <button onClick={gerarPDF}
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
                       📄 PDF
@@ -879,6 +885,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           <button onClick={onClose} style={{ padding:'0.5rem 1.5rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>Fechar</button>
         </div>
       </div>
+
+      <LancamentoLoteArcoReal
+        isOpen={modalLoteAberto}
+        showSuccess={showSuccess}
+        showError={showError}
+        onClose={(atualizar) => {
+          setModalLoteAberto(false);
+          if (atualizar) { carregar(); carregarTotaisGerais(); }
+        }}
+      />
     </div>
   );
 }
