@@ -656,7 +656,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           ) : (
             <>
               {/* LINHA 1: Saldo Anterior | Receitas · Despesas · Saldo */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 3fr', gap:'0.5rem' }}>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-2">
 
               {/* Saldo Anterior */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
@@ -676,7 +676,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <div style={{ width:'3px', height:'10px', background:'#2d6a9f', borderRadius:'2px' }} />
                   <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#60a5fa', textTransform:'uppercase', letterSpacing:'0.07em' }}>Receitas · Despesas · Saldo</span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { label:'Recebido (Pago)',  val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a' },
                     { label:'Despesas Arco Real', val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626' },
@@ -693,7 +693,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               </div>{/* fim linha 1 */}
 
               {/* LINHA 2: Saldos Atuais | Pendências */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:'0.5rem' }}>
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-2">
 
               {/* Saldos Atuais (sempre o total corrente, não filtrado por período) */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #3b82f6' }}>
@@ -794,7 +794,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               {/* Resumo por Subcategoria */}
               {todasSubcategorias.length > 0 && (
                 <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-                  <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Receitas por subcategoria */}
                     <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
                       <div style={{ padding:'0.5rem 0.85rem',background:'rgba(22,163,74,0.12)',borderBottom:'1px solid var(--color-border)' }}>
@@ -830,6 +830,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)' }}>
                     <span style={{ fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>📋 Lançamentos ({lancsFiltrados.length})</span>
                   </div>
+                  <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: '760px' }}>
                   <div style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
                     <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
                   </div>
@@ -864,6 +866,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       </div>
                     </div>
                   ))}
+                  </div>
+                  </div>
                 </div>
               )}
 
