@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
-import CadastroSessaoArcoReal from './CadastroSessaoArcoReal';
+import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
@@ -92,7 +92,7 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
           />
         )}
         {pagina === 'presenca' && sessaoPresencaId === null && (
-          <CadastroSessaoArcoReal
+          <DashboardPresencaArcoReal
             onAbrirPresenca={(id) => setSessaoPresencaId(id)}
             showSuccess={showSuccess}
             showError={showError}
