@@ -121,7 +121,6 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       const { data: corpo } = await supabase
         .from('corpo_administrativo')
         .select('cargo, ano_exercicio, irmaos(nome)')
-        .eq('posse_realizada', true)
         .order('ano_exercicio', { ascending: false });
 
       if (corpo && corpo.length > 0) {
