@@ -46,7 +46,6 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
     const { data: corpo, error: errCorpo } = await supabase
       .from('corpo_administrativo')
       .select('cargo, ano_exercicio, irmao_id')
-      .eq('posse_realizada', true)
       .order('ano_exercicio', { ascending: false });
 
     if (errCorpo) { console.error('Erro ao buscar corpo administrativo:', errCorpo); return; }
