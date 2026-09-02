@@ -779,6 +779,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
+        // Registrar log de criação (inserção individual)
+        if (userData?.id) {
+          try {
+            await supabase.from('logs_acesso').insert([{
+              usuario_id: userData.id,
+              acao: 'criar',
+              detalhes: `Criou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+          } catch (logError) {
+            console.error('Erro ao registrar log:', logError);
+          }
+        }
+
         // Criar vínculo com projeto (novo lançamento)
         if (dados.projeto_id && novoLanc?.id) {
           const irmaoNome = dados.origem_irmao_id
@@ -857,6 +872,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .select('id, origem_irmao_id');
 
       if (error) throw error;
+
+      // Registrar log de criação — UMA linha só resumindo o lote inteiro
+      // (nunca uma linha por irmão), conforme padrão pedido: descrição +
+      // tipo (receita/despesa) + quantos irmãos foram contemplados.
+      if (userData?.id) {
+        try {
+          const tipoLote = lancamentosParaInserir[0]?.tipo === 'despesa' ? 'despesa' : 'receita';
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'criar',
+            detalhes: `Criou lançamento financeiro em lote (${tipoLote}): ${lancamentoIrmaos.descricao} - R$ ${parseFloat(lancamentoIrmaos.valor).toFixed(2)} cada - ${lancamentosParaInserir.length} irmão(s) contemplado(s)`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
 
       // Espelhar no projeto (receitas_projeto) — se o lote tiver projeto
       // vinculado, cada lançamento criado também vira uma linha no projeto,
@@ -1298,6 +1331,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           observacoes: observacao || ''
         }]);
         if (errDesp) throw errDesp;
+
+        // Registrar log de criação (saída de dinheiro / despesa)
+        if (userData?.id) {
+          try {
+            await supabase.from('logs_acesso').insert([{
+              usuario_id: userData.id,
+              acao: 'criar',
+              detalhes: `Criou lançamento financeiro: ${descricao_despesa.trim()} - R$ ${valorSangria.toFixed(2)}`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+          } catch (logError) {
+            console.error('Erro ao registrar log:', logError);
+          }
+        }
+
         showSuccess('✅ Saída de dinheiro registrada!');
         setFormSangria(formReset);
         setModalSangriaAberto(false);
@@ -1346,6 +1395,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         observacoes: `Depósito. ${observacao || ''}`
       }]);
       if (errorDeposito) throw errorDeposito;
+
+      // Registrar log de criação (sangria + depósito são 2 lançamentos,
+      // mas contam como 1 ação do usuário — registra em 1 linha só)
+      if (userData?.id) {
+        try {
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'criar',
+            detalhes: `Criou sangria financeira: R$ ${valorSangria.toFixed(2)}${observacao ? ` - ${observacao}` : ''}`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
+
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
       setFormSangria(formReset);
       setModalSangriaAberto(false);
@@ -1435,7 +1501,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }]);
       
       if (errorEntrada) throw errorEntrada;
-      
+
+      // Registrar log de criação (sangria do Tronco + depósito = 1 ação)
+      if (userData?.id) {
+        try {
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'criar',
+            detalhes: `Criou sangria do Tronco de Solidariedade: R$ ${valorSangria.toFixed(2)}${observacao ? ` - ${observacao}` : ''}`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
+
       showSuccess(`✅ Sangria Tronco de ${formatarMoeda(valorSangria)} realizada!`);
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaTroncoAberto(false);
