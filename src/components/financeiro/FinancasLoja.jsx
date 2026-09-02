@@ -54,6 +54,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     return `${partes[0]} ${partes[1]}`;
   };
 
+  // Busca o nome do irmão vinculado a um lançamento pra usar nos logs de
+  // acesso (criar/editar/excluir). Cobre também irmãos desligados/fora da
+  // lista ativa, usando irmaoEditando como fallback (mesmo padrão já usado
+  // em editarLancamento).
+  const nomeIrmaoParaLog = (origemIrmaoId) => {
+    if (!origemIrmaoId) return null;
+    const id = parseInt(origemIrmaoId);
+    const doAtivos = irmaos?.find(i => i.id === id);
+    if (doAtivos) return doAtivos.nome;
+    if (irmaoEditando && parseInt(irmaoEditando.id) === id) return irmaoEditando.nome;
+    return null;
+  };
+
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -769,13 +782,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Registrar log de edição
+        // Registrar log de edição — inclui o nome do irmão vinculado, quando houver
         if (userData?.id) {
           try {
+            const nomeIrmao = nomeIrmaoParaLog(dados.origem_irmao_id);
+            const sufixoIrmao = nomeIrmao ? ` - ${nomeCurtoLog(nomeIrmao)}` : '';
             await supabase.from('logs_acesso').insert([{
               usuario_id: userData.id,
               acao: 'editar',
-              detalhes: `Editou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}`,
+              detalhes: `Editou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}${sufixoIrmao}`,
               ip: 'Browser',
               user_agent: navigator.userAgent
             }]);
@@ -798,10 +813,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         // do irmão vinculado ao lançamento, quando houver.
         if (userData?.id) {
           try {
-            const irmaoDoLancamento = dados.origem_irmao_id
-              ? irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))
-              : null;
-            const sufixoIrmao = irmaoDoLancamento ? ` - ${nomeCurtoLog(irmaoDoLancamento.nome)}` : '';
+            const nomeIrmao = nomeIrmaoParaLog(dados.origem_irmao_id);
+            const sufixoIrmao = nomeIrmao ? ` - ${nomeCurtoLog(nomeIrmao)}` : '';
             await supabase.from('logs_acesso').insert([{
               usuario_id: userData.id,
               acao: 'criar',
@@ -1081,6 +1094,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
+      // Busca os dados atuais direto do banco (com o nome do irmão já
+      // junto) ANTES de excluir — evita qualquer inconsistência com o
+      // estado local (`lancamentos`) que possa estar desatualizado no
+      // momento do clique, garantindo que o nome sempre apareça no log.
+      const { data: lancAtual } = await supabase
+        .from('lancamentos_loja')
+        .select('descricao, valor, origem_irmao_id, irmaos(nome)')
+        .eq('id', id)
+        .maybeSingle();
+
       // Não mexe mais em receitas_projeto/custos_projeto — uma vez criada a
       // linha do projeto, ela só é alterada/excluída manualmente na tela de
       // Projetos, nunca automaticamente a partir de uma ação no Finanças.
@@ -1091,17 +1114,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       if (error) throw error;
 
-      // Registrar log de exclusão
+      // Registrar log de exclusão — inclui o nome do irmão vinculado, quando houver
       if (userData?.id) {
         try {
-          const lancamento = lancamentos.find(l => l.id === id);
-          const descricao = lancamento?.descricao || 'Lançamento';
-          const valor = lancamento?.valor || 0;
-          
+          const descricao = lancAtual?.descricao || lancamento?.descricao || 'Lançamento';
+          const valor = lancAtual?.valor ?? lancamento?.valor ?? 0;
+          const origemIrmaoId = lancAtual?.origem_irmao_id ?? lancamento?.origem_irmao_id;
+          const nomeIrmao = lancAtual?.irmaos?.nome || nomeIrmaoParaLog(origemIrmaoId);
+          const sufixoIrmao = nomeIrmao ? ` - ${nomeCurtoLog(nomeIrmao)}` : '';
+
           await supabase.from('logs_acesso').insert([{
             usuario_id: userData.id,
             acao: 'excluir',
-            detalhes: `Excluiu lançamento financeiro: ${descricao} - R$ ${valor.toFixed(2)}`,
+            detalhes: `Excluiu lançamento financeiro: ${descricao} - R$ ${parseFloat(valor).toFixed(2)}${sufixoIrmao}`,
             ip: 'Browser',
             user_agent: navigator.userAgent
           }]);
