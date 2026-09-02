@@ -538,7 +538,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
       {/* Direção da Loja — Venerável Mestre, 1º e 2º Vigilante em destaque */}
       {(direcaoLoja.veneravel || direcaoLoja.vig1 || direcaoLoja.vig2) && (
-        <div style={{position:'relative', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.75rem 1.25rem 1.25rem', marginBottom:'1.5rem'}}>
+        <div style={{position:'relative', border:'2px solid #f59e0b', borderRadius:'var(--radius-xl)', padding:'1.75rem 1.25rem 1.25rem', marginBottom:'1.5rem'}}>
           <span style={{position:'absolute', top:'-0.7rem', left:'50%', transform:'translateX(-50%)', background:'var(--color-bg)', padding:'0.1rem 1rem', fontSize:'0.78rem', fontWeight:'700', letterSpacing:'0.05em', color:'var(--color-text-muted)', whiteSpace:'nowrap'}}>
             Exercício - {direcaoLoja.ano}
           </span>
@@ -550,9 +550,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             ].map(d => (
               <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'1.1rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
                 {d.irmao?.foto_url ? (
-                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'64px', height:'64px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
+                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'96px', height:'96px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
                 ) : (
-                  <div style={{width:'64px', height:'64px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.6rem', flexShrink:0}}>
+                  <div style={{width:'96px', height:'96px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2.2rem', flexShrink:0}}>
                     {d.irmao ? '👤' : '❔'}
                   </div>
                 )}
