@@ -54,6 +54,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     return `${partes[0]} ${partes[1]}`;
   };
 
+  // Normaliza texto pra comparação: minúsculas + remove acentos (NFD).
+  // Usado pra buscar categoria por nome sem depender de o cadastro ter sido
+  // digitado com ou sem acento ("Saída"/"Saida", "Depósito"/"Deposito"...).
+  const normalizarTexto = (texto) =>
+    (texto || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
   // Busca o nome do irmão vinculado a um lançamento pra usar nos logs de
   // acesso (criar/editar/excluir). Cobre também irmãos desligados/fora da
   // lista ativa, usando irmaoEditando como fallback (mesmo padrão já usado
@@ -1401,9 +1410,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // ── Sangria para depósito bancário ─────────────────────────────────
-      const categoriaSangria = categorias.find(c => c.nome.toLowerCase().includes('sangria') && c.tipo === 'despesa');
+      const categoriaSangria = categorias.find(c => normalizarTexto(c.nome).includes('sangria') && c.tipo === 'despesa');
       if (!categoriaSangria) { showError('Categoria Sangria não encontrada.'); setLoading(false); return; }
-      const categoriaDeposito = categorias.find(c => c.nome.toLowerCase().includes('depósito') && c.tipo === 'receita');
+      const categoriaDeposito = categorias.find(c => normalizarTexto(c.nome).includes('deposito') && c.tipo === 'receita');
       if (!categoriaDeposito) { showError('Categoria Depósito não encontrada.'); setLoading(false); return; }
 
       const { error: errorSangria } = await supabase.from('lancamentos_loja').insert([{
@@ -1491,14 +1500,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       // Buscar categoria Tronco Saída (despesa)
       const categoriaTroncoSaida = categorias.find(c => 
-        c.nome.toLowerCase().includes('tronco') && 
-        c.nome.toLowerCase().includes('saida')
+        normalizarTexto(c.nome).includes('tronco') && 
+        normalizarTexto(c.nome).includes('saida')
       );
       
       // Buscar categoria Tronco de Solidariedade (receita)
       const categoriaTroncoReceita = categorias.find(c => 
-        c.nome.toLowerCase().includes('tronco') && 
-        c.nome.toLowerCase().includes('solidariedade')
+        normalizarTexto(c.nome).includes('tronco') && 
+        normalizarTexto(c.nome).includes('solidariedade')
       );
       
       if (!categoriaTroncoSaida || !categoriaTroncoReceita) {
