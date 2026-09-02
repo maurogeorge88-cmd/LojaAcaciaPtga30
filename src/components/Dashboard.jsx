@@ -14,6 +14,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [modalSituacao, setModalSituacao] = useState({ aberto: false, titulo: '', irmaos: [] });
   const [historicoCargos, setHistoricoCargos] = useState([]);
   const [filtroComCargo, setFiltroComCargo] = useState(false);
+  const [direcaoLoja, setDirecaoLoja] = useState({ veneravel: null, vig1: null, vig2: null, ano: null });
   
   // Estados para visitas
   const [visitasIrmaos, setVisitasIrmaos] = useState([]);
@@ -119,6 +120,55 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         .order('created_at', { ascending: false });
       setVisitasAutoridade(autoridadesData || []);
       setTotalVisitasAutoridade(countAutoridades || 0);
+
+      // Carregar a Direção atual da Loja (Venerável, 1º e 2º Vigilante) pra
+      // destacar no topo do Dashboard. Usa o mesmo cadastro de Corpo
+      // Administrativo — se o ano atual ainda não tiver Venerável Mestre
+      // registrado (início de gestão, cadastro atrasado), cai automaticamente
+      // pro ano mais recente que já tiver.
+      const { data: corpoData } = await supabase
+        .from('corpo_administrativo')
+        .select('cargo, ano_exercicio, irmao_id');
+
+      if (corpoData && corpoData.length > 0) {
+        const normCargo = (c) => (c || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const ehVeneravel = (c) => normCargo(c).includes('veneravel');
+        const ehVig1 = (c) => { const n = normCargo(c); return (n.includes('1') && n.includes('vigilante')) || (n.includes('primeiro') && n.includes('vigilante')); };
+        const ehVig2 = (c) => { const n = normCargo(c); return (n.includes('2') && n.includes('vigilante')) || (n.includes('segundo') && n.includes('vigilante')); };
+
+        // Ano mais recente que já tem Venerável Mestre cadastrado (âncora)
+        const anosComVeneravel = [...new Set(
+          corpoData.filter(c => ehVeneravel(c.cargo)).map(c => parseInt(c.ano_exercicio))
+        )].sort((a, b) => b - a);
+
+        const anoGestao = anosComVeneravel[0];
+        if (anoGestao) {
+          const entriesDoAno = corpoData.filter(c => parseInt(c.ano_exercicio) === anoGestao);
+          const veneravelEntry = entriesDoAno.find(c => ehVeneravel(c.cargo));
+          const vig1Entry = entriesDoAno.find(c => ehVig1(c.cargo));
+          const vig2Entry = entriesDoAno.find(c => ehVig2(c.cargo));
+
+          // Busca os dados do irmão direto do banco (nome, foto, CIM) — não
+          // depende do prop `irmaos` já estar carregado neste momento.
+          const idsNecessarios = [veneravelEntry?.irmao_id, vig1Entry?.irmao_id, vig2Entry?.irmao_id].filter(Boolean);
+          let irmaosDirecao = [];
+          if (idsNecessarios.length > 0) {
+            const { data: irmaosDirecaoData } = await supabase
+              .from('irmaos')
+              .select('id, nome, foto_url, cim')
+              .in('id', idsNecessarios);
+            irmaosDirecao = irmaosDirecaoData || [];
+          }
+          const buscarIrmao = (entry) => entry ? (irmaosDirecao.find(i => i.id === entry.irmao_id) || null) : null;
+
+          setDirecaoLoja({
+            veneravel: buscarIrmao(veneravelEntry),
+            vig1: buscarIrmao(vig1Entry),
+            vig2: buscarIrmao(vig2Entry),
+            ano: anoGestao,
+          });
+        }
+      }
     };
     carregar();
   }, []);
@@ -485,6 +535,37 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
   return (
     <div style={{padding:'1.5rem 2rem',minHeight:'100vh',background:'var(--color-bg)',overflowX:'hidden'}}>
+
+      {/* Direção da Loja — Venerável Mestre, 1º e 2º Vigilante em destaque */}
+      {(direcaoLoja.veneravel || direcaoLoja.vig1 || direcaoLoja.vig2) && (
+        <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1rem', alignItems:'stretch'}}>
+          {[
+            { cargo: 'Venerável Mestre', irmao: direcaoLoja.veneravel, gradiente: 'linear-gradient(135deg, #c9a84c 0%, #a3792f 100%)' },
+            { cargo: '1º Vigilante',     irmao: direcaoLoja.vig1,      gradiente: 'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)' },
+            { cargo: '2º Vigilante',     irmao: direcaoLoja.vig2,      gradiente: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' },
+          ].map(d => (
+            <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'1.1rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
+              {d.irmao?.foto_url ? (
+                <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'64px', height:'64px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
+              ) : (
+                <div style={{width:'64px', height:'64px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.6rem', flexShrink:0}}>
+                  {d.irmao ? '👤' : '❔'}
+                </div>
+              )}
+              <div style={{minWidth:0}}>
+                <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.75)', margin:'0 0 0.3rem'}}>{d.cargo}</p>
+                <p style={{fontSize:'1.05rem', fontWeight:'800', margin:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                  {d.irmao ? formatarNome(d.irmao.nome) : 'Vago'}
+                </p>
+                {d.irmao?.cim && (
+                  <p style={{fontSize:'0.7rem', opacity:0.8, margin:'0.1rem 0 0'}}>CIM {d.irmao.cim}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Cards de Graus */}
       <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1.5rem', alignItems:'stretch'}}>
 
