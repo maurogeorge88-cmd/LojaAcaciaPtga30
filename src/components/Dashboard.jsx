@@ -538,31 +538,36 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
       {/* Direção da Loja — Venerável Mestre, 1º e 2º Vigilante em destaque */}
       {(direcaoLoja.veneravel || direcaoLoja.vig1 || direcaoLoja.vig2) && (
-        <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1rem', alignItems:'stretch'}}>
-          {[
-            { cargo: 'Venerável Mestre', irmao: direcaoLoja.veneravel, gradiente: 'linear-gradient(135deg, #c9a84c 0%, #a3792f 100%)' },
-            { cargo: '1º Vigilante',     irmao: direcaoLoja.vig1,      gradiente: 'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)' },
-            { cargo: '2º Vigilante',     irmao: direcaoLoja.vig2,      gradiente: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' },
-          ].map(d => (
-            <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'1.1rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
-              {d.irmao?.foto_url ? (
-                <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'64px', height:'64px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
-              ) : (
-                <div style={{width:'64px', height:'64px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.6rem', flexShrink:0}}>
-                  {d.irmao ? '👤' : '❔'}
-                </div>
-              )}
-              <div style={{minWidth:0}}>
-                <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.75)', margin:'0 0 0.3rem'}}>{d.cargo}</p>
-                <p style={{fontSize:'1.05rem', fontWeight:'800', margin:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
-                  {d.irmao ? formatarNome(d.irmao.nome) : 'Vago'}
-                </p>
-                {d.irmao?.cim && (
-                  <p style={{fontSize:'0.7rem', opacity:0.8, margin:'0.1rem 0 0'}}>CIM {d.irmao.cim}</p>
+        <div style={{position:'relative', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.75rem 1.25rem 1.25rem', marginBottom:'1.5rem'}}>
+          <span style={{position:'absolute', top:'-0.7rem', left:'50%', transform:'translateX(-50%)', background:'var(--color-bg)', padding:'0.1rem 1rem', fontSize:'0.78rem', fontWeight:'700', letterSpacing:'0.05em', color:'var(--color-text-muted)', whiteSpace:'nowrap'}}>
+            Exercício - {direcaoLoja.ano}
+          </span>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', alignItems:'stretch'}}>
+            {[
+              { cargo: 'Venerável Mestre', irmao: direcaoLoja.veneravel, gradiente: 'linear-gradient(135deg, #c9a84c 0%, #a3792f 100%)' },
+              { cargo: '1º Vigilante',     irmao: direcaoLoja.vig1,      gradiente: 'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)' },
+              { cargo: '2º Vigilante',     irmao: direcaoLoja.vig2,      gradiente: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' },
+            ].map(d => (
+              <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'1.1rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
+                {d.irmao?.foto_url ? (
+                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'64px', height:'64px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
+                ) : (
+                  <div style={{width:'64px', height:'64px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.6rem', flexShrink:0}}>
+                    {d.irmao ? '👤' : '❔'}
+                  </div>
                 )}
+                <div style={{minWidth:0}}>
+                  <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.75)', margin:'0 0 0.3rem'}}>{d.cargo}</p>
+                  <p style={{fontSize:'1.05rem', fontWeight:'800', margin:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    {d.irmao ? formatarNome(d.irmao.nome) : 'Vago'}
+                  </p>
+                  {d.irmao?.cim && (
+                    <p style={{fontSize:'0.7rem', opacity:0.8, margin:'0.1rem 0 0'}}>CIM {d.irmao.cim}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
