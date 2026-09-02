@@ -97,9 +97,44 @@ export default function ModalLancamento({
         {/* Linha 1: Categoria e Descrição */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-              Categoria *
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
+                Categoria *
+              </label>
+              {/* Atalho — preenche tudo pra registrar uma Sangria do Tronco
+                  de uma vez, sem precisar procurar a subcategoria na lista */}
+              {tipo === 'despesa' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const subSangriaTronco = categoriasFiltradas.find(c => {
+                      const nome = c.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                      return c.nivel === 2 && nome.includes('sangria') && nome.includes('tronco');
+                    });
+                    if (!subSangriaTronco) return;
+                    const hoje = new Date().toISOString().split('T')[0];
+                    setFormData({
+                      ...formData,
+                      categoria_id: subSangriaTronco.id,
+                      descricao: 'Sangria Tronco',
+                      data_lancamento: hoje,
+                      data_vencimento: hoje,
+                      data_pagamento: hoje,
+                      status: 'pago',
+                      tipo_pagamento: 'pix',
+                    });
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                    padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700',
+                    cursor: 'pointer', border: '1px solid rgba(245,158,11,0.4)',
+                    background: 'rgba(245,158,11,0.12)', color: '#f59e0b',
+                  }}
+                >
+                  🔥 Sangria Tronco
+                </button>
+              )}
+            </div>
             <select
               value={formData.categoria_id}
               onChange={(e) => setFormData({ ...formData, categoria_id: e.target.value })}
