@@ -39,6 +39,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // editar financeiro (admin/cargo com acesso total continuam liberados,
   // já que canEditFinancial vem true pra eles desde o App.jsx).
   const somenteLeitura = permissoes && !permissoes.canEditFinancial;
+
+  // Nome curto pros logs de acesso: primeiro nome + segundo nome. Se o
+  // segundo "nome" for uma preposição (de/da/do/dos/das), pula pra pegar
+  // o ÚLTIMO nome no lugar (evita "João Da" — vira "João Silva").
+  const nomeCurtoLog = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(/\s+/);
+    if (partes.length <= 2) return nomeCompleto;
+    const preposicoes = ['de', 'da', 'do', 'dos', 'das'];
+    if (preposicoes.includes(partes[1].toLowerCase())) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
+    }
+    return `${partes[0]} ${partes[1]}`;
+  };
+
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -779,13 +794,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Registrar log de criação (inserção individual)
+        // Registrar log de criação (inserção individual) — inclui o nome
+        // do irmão vinculado ao lançamento, quando houver.
         if (userData?.id) {
           try {
+            const irmaoDoLancamento = dados.origem_irmao_id
+              ? irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))
+              : null;
+            const sufixoIrmao = irmaoDoLancamento ? ` - ${nomeCurtoLog(irmaoDoLancamento.nome)}` : '';
             await supabase.from('logs_acesso').insert([{
               usuario_id: userData.id,
               acao: 'criar',
-              detalhes: `Criou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}`,
+              detalhes: `Criou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}${sufixoIrmao}`,
               ip: 'Browser',
               user_agent: navigator.userAgent
             }]);
