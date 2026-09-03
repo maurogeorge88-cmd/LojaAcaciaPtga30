@@ -140,12 +140,31 @@ export default function Eventos({ userPermissions, userData }) {
   };
 
   const salvarItens = async (eventoId) => {
+    let houveErro = false;
     for (const item of itensEvento) {
-      if (!item.id) await supabase.from('eventos_itens').insert([{ evento_id: eventoId, descricao: item.descricao, quantidade: item.quantidade, valor: item.valor }]);
+      // Campos numéricos vazios ('') quebram o insert/update no Postgres
+      // ("invalid input syntax for type numeric"). Convertendo pra null
+      // quando não preenchido, resolve o erro ao salvar.
+      const payload = {
+        evento_id: eventoId,
+        descricao: item.descricao,
+        quantidade: (item.quantidade === '' || item.quantidade === null || item.quantidade === undefined) ? null : parseFloat(item.quantidade),
+        valor: (item.valor === '' || item.valor === null || item.valor === undefined) ? null : parseFloat(item.valor),
+      };
+      if (!item.id) {
+        const { error } = await supabase.from('eventos_itens').insert([payload]);
+        if (error) { console.error('Erro ao salvar item do evento:', error); houveErro = true; }
+      } else {
+        // Itens já existentes (carregados do banco) também precisam ser
+        // atualizados aqui — antes eram ignorados e a edição se perdia.
+        const { error } = await supabase.from('eventos_itens').update(payload).eq('id', item.id).select();
+        if (error) { console.error('Erro ao atualizar item do evento:', error); houveErro = true; }
+      }
     }
     for (const part of participantes) {
       if (!part.id) await supabase.from('eventos_participantes').insert([{ evento_id: eventoId, irmao_id: part.irmao_id }]);
     }
+    if (houveErro) alert('Um ou mais itens/custos não foram salvos corretamente. Verifique os valores informados.');
   };
 
   const excluirEvento = async (id) => {
