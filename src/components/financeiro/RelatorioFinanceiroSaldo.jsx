@@ -37,6 +37,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
   const [filtrarPendentesPorPeriodo, setFiltrarPendentesPorPeriodo] = useState(false);
   const [caixaDetalhes, setCaixaDetalhes] = useState({ recDinheiro: 0, sangrias: 0, despDinheiro: 0 });
   const [troncoGlobal, setTroncoGlobal] = useState({ banco: 0, especie: 0, total: 0 });
+  const [arcoRealGlobal, setArcoRealGlobal] = useState({ receita: 0, despesa: 0, total: 0 });
   const [saldoAntB, setSaldoAntB] = useState({ bancario: 0, caixa: 0 });
   const [quadrosOpcionais, setQuadrosOpcionais] = useState({ q3: true, q6: true, q7: true });
   const [mostrarOpcoesPDF, setMostrarOpcoesPDF] = useState(false);
@@ -298,6 +299,22 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
         } else {
           setTroncoGlobal({ banco: 0, especie: 0, total: 0 });
         }
+
+        // Arco Real — valor único (Receita paga − Despesa), histórico completo.
+        // Mesma lógica de calcularArcoRealTotal() do FinancasLoja.jsx, direto
+        // na tabela arco_real_lancamentos (não depende de categoria por nome).
+        const { data: dadosArcoReal } = await supabase
+          .from('arco_real_lancamentos')
+          .select('tipo, valor, status');
+
+        const listaAR = dadosArcoReal || [];
+        const receitaAR = listaAR
+          .filter(l => l.tipo === 'receita' && l.status === 'pago')
+          .reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+        const despesaAR = listaAR
+          .filter(l => l.tipo === 'despesa')
+          .reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+        setArcoRealGlobal({ receita: receitaAR, despesa: despesaAR, total: receitaAR - despesaAR });
       }
 
       // Calcular saldo anterior para o período padrão
@@ -834,6 +851,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
                     showSuccess,
                     quadrosOpcionais,
                     troncoGlobal,
+                    arcoRealGlobal,
                   });
                 }}
                 style={{marginTop:'0.65rem', width:'100%', padding:'0.4rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
