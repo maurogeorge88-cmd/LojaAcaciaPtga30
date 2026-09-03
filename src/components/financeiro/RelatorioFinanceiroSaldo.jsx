@@ -271,15 +271,33 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
         setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
         setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
 
-        // Tronco de Solidariedade — busca separada por categoria_id (igual ao calcularTroncoTotal do FinancasLoja)
-        // Evita o limite de 1000 linhas do Supabase ao buscar dadosCaixa
-        const { data: catsTronco } = await supabase
+        // Tronco de Solidariedade — mesma lógica exata de calcularTroncoTotal()
+        // do FinancasLoja.jsx: categorias EXATAS por nome (não '%tronco%', que
+        // também pegava "Tronco Arco Real" por engano e inflava o valor).
+        const { data: catReceitaTronco } = await supabase
           .from('categorias_financeiras')
-          .select('id, nome, tipo')
-          .ilike('nome', '%tronco%');
+          .select('id')
+          .ilike('nome', 'Tronco de Solidariedade')
+          .maybeSingle();
 
-        if (catsTronco && catsTronco.length > 0) {
-          const idsCatTronco = catsTronco.map(c => c.id);
+        const { data: catDespesaTroncoPai } = await supabase
+          .from('categorias_financeiras')
+          .select('id')
+          .ilike('nome', 'Tronco Saida')
+          .maybeSingle();
+
+        const idsCatTronco = [];
+        if (catReceitaTronco?.id) idsCatTronco.push(catReceitaTronco.id);
+        if (catDespesaTroncoPai?.id) {
+          idsCatTronco.push(catDespesaTroncoPai.id);
+          const { data: filhasTronco } = await supabase
+            .from('categorias_financeiras')
+            .select('id')
+            .eq('categoria_pai_id', catDespesaTroncoPai.id);
+          (filhasTronco || []).forEach(f => idsCatTronco.push(f.id));
+        }
+
+        if (idsCatTronco.length > 0) {
           const dadosTronco = await buscarTodosRegistros(() =>
             supabase
               .from('lancamentos_loja')
