@@ -111,6 +111,39 @@ export const gerarPDFRelatorioFinanceiro = async ({
       }
     };
 
+    // Desenha uma seção como UM único quadro com borda fina — título, linhas
+    // de detalhe (sem faixa de cor por linha) e uma linha final em destaque.
+    // Usado pra deixar o relatório menos "poluído" (Conta Bancária, Caixa
+    // Físico, Tronco e Arco Real).
+    const desenharQuadro = (titulo, linhasInfo, corDestaque, linhaFinal) => {
+      const alturaLinha = 5.5;
+      const alturaTitulo = 7;
+      const alturaFinal = 8;
+      const alturaTotal = alturaTitulo + linhasInfo.length * alturaLinha + alturaFinal;
+      novaPageSeNecessario(alturaTotal + 4);
+
+      rect(margin, y, colRight - margin, alturaTotal, COR_FUNDO, 2);
+      doc.setDrawColor(...corDestaque);
+      doc.setLineWidth(0.4);
+      doc.rect(margin, y, colRight - margin, alturaTotal, 'S');
+
+      let yy = y + 5;
+      txt(titulo, margin + 3, yy, { bold: true, size: 8, color: corDestaque });
+      yy += alturaTitulo - 2;
+
+      linhasInfo.forEach(l => {
+        txt(l.label, margin + 3, yy, { size: 8, color: [70, 70, 70] });
+        txt((l.prefixo || '') + formatarMoeda(Math.abs(l.valor)), colRight - 3, yy, { size: 8, color: l.cor || [30, 30, 30], bold: !!l.bold, align: 'right' });
+        yy += alturaLinha;
+      });
+
+      linha(yy - 3, margin + 3, colRight - 3, [215, 215, 220]);
+      txt(linhaFinal.label, margin + 3, yy + 3.5, { bold: true, size: 9, color: corDestaque });
+      txt(formatarMoeda(linhaFinal.valor), colRight - 3, yy + 3.5, { bold: true, size: 10, color: linhaFinal.valor >= 0 ? corDestaque : COR_VERM, align: 'right' });
+
+      y += alturaTotal + 5;
+    };
+
     const rodape = () => {
       const pg = doc.internal.getNumberOfPages();
       doc.setFont('helvetica', 'normal');
@@ -184,67 +217,38 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt('2. EXTRATO DO PERÍODO', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     y += 9;
 
-    // Conta Bancária
-    rect(margin, y, colRight - margin, 5, [219, 234, 254], 1);
-    txt('CONTA BANCÁRIA', margin + 2, y + 3.5, { bold: true, size: 8, color: COR_AZUL });
-    y += 7;
-
-    const linhasExtrato = [
-      { label: 'Saldo Anterior', valor: saldoAntA.bancario, cor: COR_CINZA, negrito: false },
-      { label: '+ Receitas Bancárias', valor: dadosA.recBanco, cor: COR_VERDE },
-      dadosA.depositos > 0 ? { label: '+ Depósitos (sangrias)', valor: dadosA.depositos, cor: COR_VERDE } : null,
-      { label: '− Despesas Bancárias', valor: -dadosA.despBanco, cor: COR_VERM },
-    ].filter(Boolean);
-
-    linhasExtrato.forEach((l, i) => {
-      if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-      txt(l.label, margin + 3, y + 3, { size: 8, color: l.negrito === false ? COR_CINZA : [30,30,30] });
-      txt(formatarMoeda(Math.abs(l.valor)), colRight - 3, y + 3, { size: 8, color: l.cor, bold: true, align: 'right' });
-      y += 5.5;
-    });
-
-    // Linha resultado do período (receitas - despesas)
+    // Conta Bancária — 1 quadro só, sem faixa colorida por linha
     const resultadoPeriodo = dadosA.recBanco - dadosA.despBanco;
     const corResultado = resultadoPeriodo >= 0 ? COR_VERDE : COR_VERM;
-    rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-    txt('Resultado do Período (Rec. − Desp.)', margin + 3, y + 3, { size: 8, color: [30,30,30] });
-    txt((resultadoPeriodo >= 0 ? '+' : '') + formatarMoeda(resultadoPeriodo), colRight - 3, y + 3, { size: 8, color: corResultado, bold: true, align: 'right' });
-    y += 5.5;
+    desenharQuadro(
+      'CONTA BANCÁRIA',
+      [
+        { label: 'Saldo Anterior', valor: saldoAntA.bancario, cor: [110, 110, 110] },
+        { label: '+ Receitas Bancárias', valor: dadosA.recBanco, cor: COR_VERDE },
+        ...(dadosA.depositos > 0 ? [{ label: '+ Depósitos (sangrias)', valor: dadosA.depositos, cor: COR_VERDE }] : []),
+        { label: '− Despesas Bancárias', valor: -dadosA.despBanco, cor: COR_VERM },
+        { label: 'Resultado do Período (Rec. − Desp.)', valor: resultadoPeriodo, cor: corResultado, prefixo: resultadoPeriodo >= 0 ? '+' : '' },
+      ],
+      COR_AZUL,
+      { label: '= Saldo Bancário', valor: dadosA.saldoBancario }
+    );
 
-    linha(y, margin, colRight, COR_AZUL);
-    y += 1;
-    rect(margin, y, colRight - margin, 6.5, [219, 234, 254], 1);
-    txt('= Saldo Bancário', margin + 3, y + 4.5, { bold: true, size: 9, color: COR_AZUL });
-    txt(formatarMoeda(dadosA.saldoBancario), colRight - 3, y + 4.5, { bold: true, size: 10, color: dadosA.saldoBancario >= 0 ? COR_AZUL : COR_VERM, align: 'right' });
-    y += 10;
+    // Caixa Físico — 1 quadro só
+    desenharQuadro(
+      'CAIXA FÍSICO (Histórico Completo)',
+      [
+        { label: '+ Receitas em Dinheiro', valor: caixaDetalhes?.recDinheiro || 0, cor: COR_VERDE },
+        ...(caixaDetalhes?.sangrias > 0 ? [{ label: '− Sangrias Depositadas', valor: -(caixaDetalhes.sangrias), cor: [180, 120, 0] }] : []),
+        ...(caixaDetalhes?.despDinheiro > 0 ? [{ label: '− Despesas em Dinheiro', valor: -(caixaDetalhes.despDinheiro), cor: COR_VERM }] : []),
+      ],
+      [180, 120, 0],
+      { label: '= Saldo Caixa Físico', valor: caixaFisicoHistorico }
+    );
 
-    // Caixa Físico
-    novaPageSeNecessario(30);
-    rect(margin, y, colRight - margin, 5, [254, 243, 199], 1);
-    txt('CAIXA FÍSICO (Histórico Completo)', margin + 2, y + 3.5, { bold: true, size: 8, color: [180, 120, 0] });
-    y += 7;
-
-    [
-      { label: '+ Receitas em Dinheiro', valor: caixaDetalhes?.recDinheiro || 0, cor: COR_VERDE },
-      caixaDetalhes?.sangrias > 0 ? { label: '− Sangrias Depositadas', valor: -(caixaDetalhes.sangrias), cor: [245, 158, 11] } : null,
-      caixaDetalhes?.despDinheiro > 0 ? { label: '− Despesas em Dinheiro', valor: -(caixaDetalhes.despDinheiro), cor: COR_VERM } : null,
-    ].filter(Boolean).forEach((l, i) => {
-      if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-      txt(l.label, margin + 3, y + 3, { size: 8 });
-      txt(formatarMoeda(Math.abs(l.valor)), colRight - 3, y + 3, { size: 8, color: l.cor, bold: true, align: 'right' });
-      y += 5.5;
-    });
-
-    linha(y, margin, colRight, [245, 158, 11]);
-    y += 1;
-    rect(margin, y, colRight - margin, 6.5, [254, 243, 199], 1);
-    txt('= Saldo Caixa Físico', margin + 3, y + 4.5, { bold: true, size: 9, color: [180, 120, 0] });
-    txt(formatarMoeda(caixaFisicoHistorico), colRight - 3, y + 4.5, { bold: true, size: 10, color: caixaFisicoHistorico >= 0 ? [180, 120, 0] : COR_VERM, align: 'right' });
-    y += 10;
-
-    // Saldo Total
+    // Saldo Total — linha de destaque única, sem preenchimento colorido pesado
     const saldoTotal = dadosA.saldoBancario + caixaFisicoHistorico;
-    rect(margin, y, colRight - margin, 9, saldoTotal >= 0 ? [209, 250, 229] : [254, 226, 226], 2);
+    novaPageSeNecessario(13);
+    rect(margin, y, colRight - margin, 9, COR_FUNDO, 2);
     doc.setDrawColor(...(saldoTotal >= 0 ? COR_VERDE : COR_VERM));
     doc.setLineWidth(0.6);
     doc.rect(margin, y, colRight - margin, 9, 'S');
@@ -252,56 +256,30 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt(formatarMoeda(saldoTotal), colRight - 3, y + 5.5, { bold: true, size: 12, color: saldoTotal >= 0 ? COR_VERDE : COR_VERM, align: 'right' });
     y += 14;
 
-    // ── Tronco de Solidariedade ───────────────────────────────────────────
-    novaPageSeNecessario(28);
+    // Tronco de Solidariedade + Arco Real — 1 quadro cobrindo os dois
     const COR_TRONCO = [16, 100, 80];
-    rect(margin, y, colRight - margin, 5, [167, 243, 208], 1);
-    txt('TRONCO DE SOLIDARIEDADE (Historico Completo)', margin + 3, y + 3.5, { bold: true, size: 8, color: COR_TRONCO });
-    y += 7;
-
-    const tW = (colRight - margin - 4) / 3;
-    const troncoCards = [
-      { label: 'Saldo Bancario',   valor: troncoGlobal.banco,   cor: COR_AZUL },
-      { label: 'Caixa / Especie',  valor: troncoGlobal.especie, cor: [245, 158, 11] },
-      { label: 'Total Disponivel', valor: troncoGlobal.total,   cor: troncoGlobal.total >= 0 ? COR_TRONCO : COR_VERM },
-    ];
-    troncoCards.forEach((b, i) => {
-      const bx = margin + i * (tW + 2);
-      rect(bx, y, tW, 16, COR_FUNDO, 2);
-      doc.setDrawColor(...b.cor); doc.setLineWidth(0.4); doc.rect(bx, y, tW, 16, 'S');
-      txt(b.label, bx + tW / 2, y + 5.5, { size: 7, color: COR_CINZA, align: 'center' });
-      txt(formatarMoeda(b.valor), bx + tW / 2, y + 12, { bold: true, size: 10, color: b.cor, align: 'center' });
-    });
-    y += 20;
-
-    // ── Arco Real (valor disponível dentro da conta da Loja) ──────────────
-    // A conta bancária é compartilhada com o Arco Real — este quadro mostra
-    // quanto do saldo acima já "pertence" ao Arco Real, não à Loja.
-    novaPageSeNecessario(24);
     const COR_ARCO_REAL = [37, 99, 235];
-    rect(margin, y, colRight - margin, 5, [219, 234, 254], 1);
-    txt('ARCO REAL (Historico Completo)', margin + 3, y + 3.5, { bold: true, size: 8, color: COR_ARCO_REAL });
-    y += 7;
-
-    rect(margin, y, colRight - margin, 12, COR_FUNDO, 2);
-    doc.setDrawColor(...COR_ARCO_REAL); doc.setLineWidth(0.4); doc.rect(margin, y, colRight - margin, 12, 'S');
-    txt('Valor Disponivel do Arco Real', margin + 3, y + 5, { size: 7.5, color: COR_CINZA });
-    txt(
-      formatarMoeda(arcoRealGlobal.total),
-      colRight - 3, y + 8,
-      { bold: true, size: 11, color: arcoRealGlobal.total >= 0 ? COR_ARCO_REAL : COR_VERM, align: 'right' }
+    desenharQuadro(
+      'TRONCO DE SOLIDARIEDADE E ARCO REAL (Histórico Completo)',
+      [
+        { label: 'Tronco — Saldo Bancário', valor: troncoGlobal.banco, cor: [110, 110, 110] },
+        { label: 'Tronco — Caixa / Espécie', valor: troncoGlobal.especie, cor: [110, 110, 110] },
+        { label: 'Tronco — Total Disponível', valor: troncoGlobal.total, cor: troncoGlobal.total >= 0 ? COR_TRONCO : COR_VERM, bold: true },
+        { label: 'Arco Real — Total Disponível', valor: arcoRealGlobal.total, cor: arcoRealGlobal.total >= 0 ? COR_ARCO_REAL : COR_VERM, bold: true },
+      ],
+      COR_TRONCO,
+      { label: '= Tronco + Arco Real', valor: troncoGlobal.total + arcoRealGlobal.total }
     );
-    y += 16;
 
-    // ── Valor disponível de fato da Loja Acácia ────────────────────────────
-    // Saldo Total menos o que já está reservado pro Tronco e pro Arco Real.
-    novaPageSeNecessario(14);
+    // Valor disponível de fato da Loja Acácia — Saldo Total menos o que já
+    // está reservado pro Tronco e pro Arco Real.
     const saldoLivreDaLoja = saldoTotal - troncoGlobal.total - arcoRealGlobal.total;
-    rect(margin, y, colRight - margin, 9, [237, 233, 254], 2);
+    novaPageSeNecessario(13);
+    rect(margin, y, colRight - margin, 9, COR_FUNDO, 2);
     doc.setDrawColor(124, 58, 237);
     doc.setLineWidth(0.6);
     doc.rect(margin, y, colRight - margin, 9, 'S');
-    txt('VALOR DISPONIVEL DA LOJA ACACIA', margin + 3, y + 5.5, { bold: true, size: 9 });
+    txt('VALOR DISPONÍVEL DA LOJA ACÁCIA', margin + 3, y + 5.5, { bold: true, size: 9 });
     txt(formatarMoeda(saldoLivreDaLoja), colRight - 3, y + 5.5, { bold: true, size: 11, color: saldoLivreDaLoja >= 0 ? [124, 58, 237] : COR_VERM, align: 'right' });
     y += 14;
 
