@@ -38,6 +38,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
   showSuccess,
   quadrosOpcionais = { q3: true, q6: true, q7: true },
   troncoGlobal = { banco: 0, especie: 0, total: 0 },
+  arcoRealGlobal = { receita: 0, despesa: 0, total: 0 },
 }) => {
   try {
     showSuccess?.('Gerando PDF...');
@@ -139,11 +140,13 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt('1. RESUMO FINANCEIRO', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     y += 9;
 
-    // Três caixas: Banco | Caixa | Total
-    const boxW = (colRight - margin - 6) / 3;
+    // Quatro caixas: Banco | Caixa | Tronco e Arco | Total
+    const boxW = (colRight - margin - 9) / 4;
+    const troncoEArco = troncoGlobal.total + arcoRealGlobal.total;
     const boxes = [
       { label: 'SALDO BANCÁRIO', valor: dadosA.saldoBancario, cor: COR_AZUL },
       { label: 'CAIXA FÍSICO',   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
+      { label: 'TRONCO E ARCO',  valor: troncoEArco, cor: [16, 100, 80] },
       { label: 'SALDO TOTAL',    valor: dadosA.saldoBancario + caixaFisicoHistorico, cor: dadosA.saldoBancario + caixaFisicoHistorico >= 0 ? COR_VERDE : COR_VERM },
     ];
 
@@ -153,8 +156,8 @@ export const gerarPDFRelatorioFinanceiro = async ({
       doc.setDrawColor(...b.cor);
       doc.setLineWidth(0.5);
       doc.rect(bx, y, boxW, 16, 'S');
-      txt(b.label, bx + boxW / 2, y + 5.5, { size: 7.5, color: COR_CINZA, align: 'center' });
-      txt(formatarMoeda(b.valor), bx + boxW / 2, y + 11.5, { bold: true, size: 10, color: b.cor, align: 'center' });
+      txt(b.label, bx + boxW / 2, y + 5.5, { size: 6.8, color: COR_CINZA, align: 'center' });
+      txt(formatarMoeda(b.valor), bx + boxW / 2, y + 11.5, { bold: true, size: 9.2, color: b.cor, align: 'center' });
     });
     y += 20;
 
@@ -253,6 +256,37 @@ export const gerarPDFRelatorioFinanceiro = async ({
       txt(formatarMoeda(b.valor), bx + tW / 2, y + 12, { bold: true, size: 10, color: b.cor, align: 'center' });
     });
     y += 20;
+
+    // ── Arco Real (valor disponível dentro da conta da Loja) ──────────────
+    // A conta bancária é compartilhada com o Arco Real — este quadro mostra
+    // quanto do saldo acima já "pertence" ao Arco Real, não à Loja.
+    novaPageSeNecessario(24);
+    const COR_ARCO_REAL = [37, 99, 235];
+    rect(margin, y, colRight - margin, 5, [219, 234, 254], 1);
+    txt('ARCO REAL (Historico Completo)', margin + 3, y + 3.5, { bold: true, size: 8, color: COR_ARCO_REAL });
+    y += 7;
+
+    rect(margin, y, colRight - margin, 12, COR_FUNDO, 2);
+    doc.setDrawColor(...COR_ARCO_REAL); doc.setLineWidth(0.4); doc.rect(margin, y, colRight - margin, 12, 'S');
+    txt('Valor Disponivel do Arco Real', margin + 3, y + 5, { size: 7.5, color: COR_CINZA });
+    txt(
+      formatarMoeda(arcoRealGlobal.total),
+      colRight - 3, y + 8,
+      { bold: true, size: 11, color: arcoRealGlobal.total >= 0 ? COR_ARCO_REAL : COR_VERM, align: 'right' }
+    );
+    y += 16;
+
+    // ── Valor disponível de fato da Loja Acácia ────────────────────────────
+    // Saldo Total menos o que já está reservado pro Tronco e pro Arco Real.
+    novaPageSeNecessario(14);
+    const saldoLivreDaLoja = saldoTotal - troncoGlobal.total - arcoRealGlobal.total;
+    rect(margin, y, colRight - margin, 9, [237, 233, 254], 2);
+    doc.setDrawColor(124, 58, 237);
+    doc.setLineWidth(0.6);
+    doc.rect(margin, y, colRight - margin, 9, 'S');
+    txt('VALOR DISPONIVEL DA LOJA ACACIA', margin + 3, y + 5.5, { bold: true, size: 9 });
+    txt(formatarMoeda(saldoLivreDaLoja), colRight - 3, y + 5.5, { bold: true, size: 11, color: saldoLivreDaLoja >= 0 ? [124, 58, 237] : COR_VERM, align: 'right' });
+    y += 14;
 
     // ─── 3. RECEITAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
