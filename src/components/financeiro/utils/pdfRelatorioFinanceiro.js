@@ -144,6 +144,23 @@ export const gerarPDFRelatorioFinanceiro = async ({
       y += alturaTotal + 5;
     };
 
+    // Desenha uma borda fina ao redor de tudo que renderFn desenhar — usado
+    // pras seções de lista (Receitas/Despesas por Categoria, Resultado por
+    // Mês, Evolução Mensal, Pendências). Se a seção quebrar de página no
+    // meio, a borda é pulada (evita desenhar um quadro errado cruzando
+    // páginas diferentes).
+    const comMoldura = (corBorda, renderFn) => {
+      const yIni = y;
+      const paginaIni = doc.internal.getNumberOfPages();
+      renderFn();
+      const paginaFim = doc.internal.getNumberOfPages();
+      if (paginaFim === paginaIni) {
+        doc.setDrawColor(...corBorda);
+        doc.setLineWidth(0.5);
+        doc.rect(margin, yIni, colRight - margin, y - yIni - 2, 'S');
+      }
+    };
+
     const rodape = () => {
       const pg = doc.internal.getNumberOfPages();
       doc.setFont('helvetica', 'normal');
@@ -312,113 +329,168 @@ export const gerarPDFRelatorioFinanceiro = async ({
 
     // ─── 3. RECEITAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
-    rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-    txt('3. RECEITAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
-    const totalRec = dadosA.recBanco + dadosA.recCaixa;
-    txt(formatarMoeda(totalRec), colRight - 3, y + 4.2, { bold: true, size: 9, color: [200, 255, 220], align: 'right' });
-    y += 9;
+    comMoldura(COR_ACCENT, () => {
+      rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+      txt('3. RECEITAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+      const totalRec = dadosA.recBanco + dadosA.recCaixa;
+      txt(formatarMoeda(totalRec), colRight - 3, y + 4.2, { bold: true, size: 9, color: [200, 255, 220], align: 'right' });
+      y += 9;
 
-    gruposReceitas.forEach(g => {
-      novaPageSeNecessario(12);
-      const pct = totalRec > 0 ? (g.valor / totalRec * 100).toFixed(1) : '0.0';
+      gruposReceitas.forEach(g => {
+        novaPageSeNecessario(12);
+        const pct = totalRec > 0 ? (g.valor / totalRec * 100).toFixed(1) : '0.0';
 
-      rect(margin, y, colRight - margin, 6, COR_FUNDO2, 1);
-      txt(g.nome, margin + 3, y + 4, { bold: true, size: 8.5 });
-      txt(`${pct}%`, margin + 95, y + 4, { size: 7.5, color: COR_CINZA });
-      txt(formatarMoeda(g.valor), colRight - 3, y + 4, { bold: true, size: 8.5, color: COR_VERDE, align: 'right' });
+        rect(margin, y, colRight - margin, 6, COR_FUNDO2, 1);
+        txt(g.nome, margin + 3, y + 4, { bold: true, size: 8.5 });
+        txt(`${pct}%`, margin + 95, y + 4, { size: 7.5, color: COR_CINZA });
+        txt(formatarMoeda(g.valor), colRight - 3, y + 4, { bold: true, size: 8.5, color: COR_VERDE, align: 'right' });
 
-      const barW = 80;
-      rect(margin + 3, y + 5, barW, 1.5, [220, 220, 220]);
-      rect(margin + 3, y + 5, barW * parseFloat(pct) / 100, 1.5, COR_VERDE);
-      y += 8;
+        const barW = 80;
+        rect(margin + 3, y + 5, barW, 1.5, [220, 220, 220]);
+        rect(margin + 3, y + 5, barW * parseFloat(pct) / 100, 1.5, COR_VERDE);
+        y += 8;
 
-      if (g.filhos?.length > 0) {
-        g.filhos.sort((a, b) => b.valor - a.valor).forEach(f => {
-          novaPageSeNecessario(6);
-          const pctF = g.valor > 0 ? (f.valor / g.valor * 100).toFixed(1) : '0.0';
-          txt(`  > ${f.nome}`, margin + 3, y + 3.5, { size: 7.5, color: COR_CINZA });
-          txt(`${pctF}%`, margin + 95, y + 3.5, { size: 7, color: COR_CINZA });
-          txt(formatarMoeda(f.valor), colRight - 3, y + 3.5, { size: 7.5, color: COR_VERDE, align: 'right' });
-          y += 5;
-        });
-      }
-      linha(y, margin, colRight);
-      y += 2;
+        if (g.filhos?.length > 0) {
+          g.filhos.sort((a, b) => b.valor - a.valor).forEach(f => {
+            novaPageSeNecessario(6);
+            const pctF = g.valor > 0 ? (f.valor / g.valor * 100).toFixed(1) : '0.0';
+            txt(`  > ${f.nome}`, margin + 3, y + 3.5, { size: 7.5, color: COR_CINZA });
+            txt(`${pctF}%`, margin + 95, y + 3.5, { size: 7, color: COR_CINZA });
+            txt(formatarMoeda(f.valor), colRight - 3, y + 3.5, { size: 7.5, color: COR_VERDE, align: 'right' });
+            y += 5;
+          });
+        }
+        linha(y, margin, colRight);
+        y += 2;
+      });
     });
+    y += 3;
 
     // ─── 4. DESPESAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
-    rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-    txt('4. DESPESAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
-    const totalDesp = dadosA.despBanco + dadosA.despCaixa;
-    txt(formatarMoeda(totalDesp), colRight - 3, y + 4.2, { bold: true, size: 9, color: [255, 200, 200], align: 'right' });
-    y += 9;
+    comMoldura(COR_ACCENT, () => {
+      rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+      txt('4. DESPESAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+      const totalDesp = dadosA.despBanco + dadosA.despCaixa;
+      txt(formatarMoeda(totalDesp), colRight - 3, y + 4.2, { bold: true, size: 9, color: [255, 200, 200], align: 'right' });
+      y += 9;
 
-    gruposDespesas.forEach(g => {
-      novaPageSeNecessario(12);
-      const pct = totalDesp > 0 ? (g.valor / totalDesp * 100).toFixed(1) : '0.0';
+      gruposDespesas.forEach(g => {
+        novaPageSeNecessario(12);
+        const pct = totalDesp > 0 ? (g.valor / totalDesp * 100).toFixed(1) : '0.0';
 
-      rect(margin, y, colRight - margin, 6, COR_FUNDO2, 1);
-      txt(g.nome, margin + 3, y + 4, { bold: true, size: 8.5 });
-      txt(`${pct}%`, margin + 95, y + 4, { size: 7.5, color: COR_CINZA });
-      txt(formatarMoeda(g.valor), colRight - 3, y + 4, { bold: true, size: 8.5, color: COR_VERM, align: 'right' });
+        rect(margin, y, colRight - margin, 6, COR_FUNDO2, 1);
+        txt(g.nome, margin + 3, y + 4, { bold: true, size: 8.5 });
+        txt(`${pct}%`, margin + 95, y + 4, { size: 7.5, color: COR_CINZA });
+        txt(formatarMoeda(g.valor), colRight - 3, y + 4, { bold: true, size: 8.5, color: COR_VERM, align: 'right' });
 
-      const barW = 80;
-      rect(margin + 3, y + 5, barW, 1.5, [220, 220, 220]);
-      rect(margin + 3, y + 5, barW * parseFloat(pct) / 100, 1.5, COR_VERM);
-      y += 8;
+        const barW = 80;
+        rect(margin + 3, y + 5, barW, 1.5, [220, 220, 220]);
+        rect(margin + 3, y + 5, barW * parseFloat(pct) / 100, 1.5, COR_VERM);
+        y += 8;
 
-      if (g.filhos?.length > 0) {
-        g.filhos.sort((a, b) => b.valor - a.valor).forEach(f => {
-          novaPageSeNecessario(6);
-          const pctF = g.valor > 0 ? (f.valor / g.valor * 100).toFixed(1) : '0.0';
-          txt(`  > ${f.nome}`, margin + 3, y + 3.5, { size: 7.5, color: COR_CINZA });
-          txt(`${pctF}%`, margin + 95, y + 3.5, { size: 7, color: COR_CINZA });
-          txt(formatarMoeda(f.valor), colRight - 3, y + 3.5, { size: 7.5, color: COR_VERM, align: 'right' });
-          y += 5;
-        });
-      }
-      linha(y, margin, colRight);
-      y += 2;
+        if (g.filhos?.length > 0) {
+          g.filhos.sort((a, b) => b.valor - a.valor).forEach(f => {
+            novaPageSeNecessario(6);
+            const pctF = g.valor > 0 ? (f.valor / g.valor * 100).toFixed(1) : '0.0';
+            txt(`  > ${f.nome}`, margin + 3, y + 3.5, { size: 7.5, color: COR_CINZA });
+            txt(`${pctF}%`, margin + 95, y + 3.5, { size: 7, color: COR_CINZA });
+            txt(formatarMoeda(f.valor), colRight - 3, y + 3.5, { size: 7.5, color: COR_VERM, align: 'right' });
+            y += 5;
+          });
+        }
+        linha(y, margin, colRight);
+        y += 2;
+      });
     });
+    y += 3;
 
     // ─── 5. RESULTADO POR MÊS ────────────────────────────────────────────
     if (quadrosOpcionais.q3 && periodoA.ano > 0 && dadosMensais?.length > 0) {
       const mesesComMov = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0);
       if (mesesComMov.length > 0) {
         novaPageSeNecessario(20);
+        comMoldura(COR_ACCENT, () => {
+          rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+          txt('5. RESULTADO POR MES', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+          txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
+          y += 9;
+
+          rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
+          const cM = { mes: margin + 2, rec: margin + 33, desp: margin + 76, res: margin + 122, bar: margin + 156 };
+          txt('Mes',       cM.mes,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+          txt('Receitas',  cM.rec,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+          txt('Despesas',  cM.desp, y + 4, { size: 7, bold: true, color: [255,255,255] });
+          txt('Resultado', cM.res,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+          y += 7;
+
+          const maxAbsRes = Math.max(...mesesComMov.map(m => Math.abs((m.recBanco + m.recCaixa) - (m.despBanco + m.despCaixa))), 1);
+          const barMaxW = 26;
+
+          mesesComMov.forEach((m, i) => {
+            novaPageSeNecessario(6);
+            if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+            const recTotal  = m.recBanco + m.recCaixa;
+            const despTotal = m.despBanco + m.despCaixa;
+            const res = recTotal - despTotal;
+            const corRes = res >= 0 ? COR_VERDE : COR_VERM;
+            const barW = Math.abs(res) / maxAbsRes * barMaxW;
+
+            txt(m.mes,                                       cM.mes,  y + 3.5, { size: 7.5, bold: true });
+            txt(formatarMoeda(recTotal),                     cM.rec,  y + 3.5, { size: 7,   color: COR_VERDE });
+            txt(formatarMoeda(despTotal),                    cM.desp, y + 3.5, { size: 7,   color: COR_VERM });
+            txt((res >= 0 ? '+' : '') + formatarMoeda(res), cM.res,  y + 3.5, { size: 7.5, bold: true, color: corRes });
+
+            rect(cM.bar, y + 1.5, barMaxW, 2.5, [220, 220, 220]);
+            if (barW > 0) rect(cM.bar, y + 1.5, barW, 2.5, corRes);
+            y += 5.5;
+          });
+
+          novaPageSeNecessario(10);
+          linha(y, margin, colRight, COR_ACCENT);
+          y += 1;
+          rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
+          const totalRecMes  = dadosMensais.reduce((s, m) => s + m.recBanco + m.recCaixa, 0);
+          const totalDespMes = dadosMensais.reduce((s, m) => s + m.despBanco + m.despCaixa, 0);
+          const totalResMes  = totalRecMes - totalDespMes;
+          const corTotalRes  = totalResMes >= 0 ? COR_VERDE : COR_VERM;
+          txt('TOTAL', cM.mes, y + 4.5, { bold: true, size: 8 });
+          txt(formatarMoeda(totalRecMes),  cM.rec,  y + 4.5, { bold: true, size: 7.5, color: COR_VERDE });
+          txt(formatarMoeda(totalDespMes), cM.desp, y + 4.5, { bold: true, size: 7.5, color: COR_VERM });
+          txt((totalResMes >= 0 ? '+' : '') + formatarMoeda(totalResMes), cM.res, y + 4.5, { bold: true, size: 8, color: corTotalRes });
+          y += 8;
+        });
+        y += 4;
+      }
+    }
+
+    // ─── 6. EVOLUÇÃO MENSAL ───────────────────────────────────────────────
+    if (quadrosOpcionais.q6 && periodoA.ano > 0 && dadosMensais?.length > 0) {
+      novaPageSeNecessario(20);
+      comMoldura(COR_ACCENT, () => {
         rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-        txt('5. RESULTADO POR MES', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+        txt('6. EVOLUCAO MENSAL', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
         txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
         y += 9;
 
-        rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
-        const cM = { mes: margin + 2, rec: margin + 33, desp: margin + 76, res: margin + 122, bar: margin + 156 };
-        txt('Mes',       cM.mes,  y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Receitas',  cM.rec,  y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Despesas',  cM.desp, y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Resultado', cM.res,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+        const cols = { mes: 14, recB: 45, recC: 75, despB: 105, despC: 135, saldoB: 165 };
+        rect(margin, y, colRight - margin, 6, [79, 70, 229], 1);
+        [['Mes', cols.mes], ['Rec. Banco', cols.recB], ['Rec. Caixa', cols.recC],
+         ['Desp. Banco', cols.despB], ['Desp. Caixa', cols.despC], ['Saldo Banco', cols.saldoB]
+        ].forEach(([h, x]) => txt(h, x, y + 4, { size: 7, bold: true, color: [255,255,255] }));
         y += 7;
 
-        const maxAbsRes = Math.max(...mesesComMov.map(m => Math.abs((m.recBanco + m.recCaixa) - (m.despBanco + m.despCaixa))), 1);
-        const barMaxW = 26;
-
-        mesesComMov.forEach((m, i) => {
+        const mesesComDados = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0 || m.mesJaOcorreu);
+        mesesComDados.forEach((m, i) => {
           novaPageSeNecessario(6);
           if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-          const recTotal  = m.recBanco + m.recCaixa;
-          const despTotal = m.despBanco + m.despCaixa;
-          const res = recTotal - despTotal;
-          const corRes = res >= 0 ? COR_VERDE : COR_VERM;
-          const barW = Math.abs(res) / maxAbsRes * barMaxW;
-
-          txt(m.mes,                                       cM.mes,  y + 3.5, { size: 7.5, bold: true });
-          txt(formatarMoeda(recTotal),                     cM.rec,  y + 3.5, { size: 7,   color: COR_VERDE });
-          txt(formatarMoeda(despTotal),                    cM.desp, y + 3.5, { size: 7,   color: COR_VERM });
-          txt((res >= 0 ? '+' : '') + formatarMoeda(res), cM.res,  y + 3.5, { size: 7.5, bold: true, color: corRes });
-
-          rect(cM.bar, y + 1.5, barMaxW, 2.5, [220, 220, 220]);
-          if (barW > 0) rect(cM.bar, y + 1.5, barW, 2.5, corRes);
+          const temMov = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0;
+          txt(m.mes, cols.mes, y + 3, { size: 7.5, bold: true });
+          txt(temMov ? formatarMoeda(m.recBanco) : '—', cols.recB, y + 3, { size: 7, color: COR_VERDE });
+          txt(temMov ? formatarMoeda(m.recCaixa) : '—', cols.recC, y + 3, { size: 7, color: COR_VERDE });
+          txt(temMov ? formatarMoeda(m.despBanco) : '—', cols.despB, y + 3, { size: 7, color: COR_VERM });
+          txt(temMov ? formatarMoeda(m.despCaixa) : '—', cols.despC, y + 3, { size: 7, color: COR_VERM });
+          txt(m.saldoBancario !== null && m.mesJaOcorreu ? formatarMoeda(m.saldoBancario) : '—', cols.saldoB, y + 3, { size: 7, bold: true, color: m.saldoBancario >= 0 ? COR_AZUL : COR_VERM });
           y += 5.5;
         });
 
@@ -426,149 +498,109 @@ export const gerarPDFRelatorioFinanceiro = async ({
         linha(y, margin, colRight, COR_ACCENT);
         y += 1;
         rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
-        const totalRecMes  = dadosMensais.reduce((s, m) => s + m.recBanco + m.recCaixa, 0);
-        const totalDespMes = dadosMensais.reduce((s, m) => s + m.despBanco + m.despCaixa, 0);
-        const totalResMes  = totalRecMes - totalDespMes;
-        const corTotalRes  = totalResMes >= 0 ? COR_VERDE : COR_VERM;
-        txt('TOTAL', cM.mes, y + 4.5, { bold: true, size: 8 });
-        txt(formatarMoeda(totalRecMes),  cM.rec,  y + 4.5, { bold: true, size: 7.5, color: COR_VERDE });
-        txt(formatarMoeda(totalDespMes), cM.desp, y + 4.5, { bold: true, size: 7.5, color: COR_VERM });
-        txt((totalResMes >= 0 ? '+' : '') + formatarMoeda(totalResMes), cM.res, y + 4.5, { bold: true, size: 8, color: corTotalRes });
-        y += 12;
-      }
-    }
-
-    // ─── 6. EVOLUÇÃO MENSAL ───────────────────────────────────────────────
-    if (quadrosOpcionais.q6 && periodoA.ano > 0 && dadosMensais?.length > 0) {
-      novaPageSeNecessario(20);
-      rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-      txt('6. EVOLUCAO MENSAL', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
-      txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
-      y += 9;
-
-      const cols = { mes: 14, recB: 45, recC: 75, despB: 105, despC: 135, saldoB: 165 };
-      rect(margin, y, colRight - margin, 6, [79, 70, 229], 1);
-      [['Mes', cols.mes], ['Rec. Banco', cols.recB], ['Rec. Caixa', cols.recC],
-       ['Desp. Banco', cols.despB], ['Desp. Caixa', cols.despC], ['Saldo Banco', cols.saldoB]
-      ].forEach(([h, x]) => txt(h, x, y + 4, { size: 7, bold: true, color: [255,255,255] }));
-      y += 7;
-
-      const mesesComDados = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0 || m.mesJaOcorreu);
-      mesesComDados.forEach((m, i) => {
-        novaPageSeNecessario(6);
-        if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-        const temMov = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0;
-        txt(m.mes, cols.mes, y + 3, { size: 7.5, bold: true });
-        txt(temMov ? formatarMoeda(m.recBanco) : '—', cols.recB, y + 3, { size: 7, color: COR_VERDE });
-        txt(temMov ? formatarMoeda(m.recCaixa) : '—', cols.recC, y + 3, { size: 7, color: COR_VERDE });
-        txt(temMov ? formatarMoeda(m.despBanco) : '—', cols.despB, y + 3, { size: 7, color: COR_VERM });
-        txt(temMov ? formatarMoeda(m.despCaixa) : '—', cols.despC, y + 3, { size: 7, color: COR_VERM });
-        txt(m.saldoBancario !== null && m.mesJaOcorreu ? formatarMoeda(m.saldoBancario) : '—', cols.saldoB, y + 3, { size: 7, bold: true, color: m.saldoBancario >= 0 ? COR_AZUL : COR_VERM });
-        y += 5.5;
+        txt('TOTAL', cols.mes, y + 5, { bold: true, size: 8 });
+        txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recBanco,0)),  cols.recB,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
+        txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recCaixa,0)),  cols.recC,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
+        txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despBanco,0)), cols.despB, y + 5, { bold: true, size: 7.5, color: COR_VERM });
+        txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0)), cols.despC, y + 5, { bold: true, size: 7.5, color: COR_VERM });
+        txt(formatarMoeda(dadosA.saldoBancario), cols.saldoB, y + 5, { bold: true, size: 8, color: COR_AZUL });
+        y += 6;
       });
-
-      novaPageSeNecessario(10);
-      linha(y, margin, colRight, COR_ACCENT);
-      y += 1;
-      rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
-      txt('TOTAL', cols.mes, y + 5, { bold: true, size: 8 });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recBanco,0)),  cols.recB,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recCaixa,0)),  cols.recC,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despBanco,0)), cols.despB, y + 5, { bold: true, size: 7.5, color: COR_VERM });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0)), cols.despC, y + 5, { bold: true, size: 7.5, color: COR_VERM });
-      txt(formatarMoeda(dadosA.saldoBancario), cols.saldoB, y + 5, { bold: true, size: 8, color: COR_AZUL });
-      y += 10;
+      y += 6;
     }
 
     // ─── 7. PENDÊNCIAS ───────────────────────────────────────────────────────
     if (quadrosOpcionais.q7 && pendentes && (pendentes.receitas?.length > 0 || pendentes.despesas?.length > 0)) {
       novaPageSeNecessario(20);
-      const totalRecPend  = (pendentes.receitas  || []).reduce((s,l) => s + parseFloat(l.valor), 0);
-      const totalDespPend = (pendentes.despesas || []).reduce((s,l) => s + parseFloat(l.valor), 0);
-      const hoje = new Date().toISOString().split('T')[0];
-      const recVenc  = (pendentes.receitas  || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
-      const despVenc = (pendentes.despesas || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
-      const saldoProj = dadosA.saldoBancario + caixaFisicoHistorico + totalRecPend - totalDespPend;
+      comMoldura(COR_ACCENT, () => {
+        const totalRecPend  = (pendentes.receitas  || []).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const totalDespPend = (pendentes.despesas || []).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const hoje = new Date().toISOString().split('T')[0];
+        const recVenc  = (pendentes.receitas  || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const despVenc = (pendentes.despesas || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const saldoProj = dadosA.saldoBancario + caixaFisicoHistorico + totalRecPend - totalDespPend;
 
-      rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-      txt('7. PENDENCIAS', margin + 3, y + 4.2, { bold: true, size: 9, color: [255,255,255] });
-      y += 9;
+        rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+        txt('7. PENDENCIAS', margin + 3, y + 4.2, { bold: true, size: 9, color: [255,255,255] });
+        y += 9;
 
-      // Cards resumo
-      const bw3 = (colRight - margin - 4) / 3;
-      [
-        { label: 'A Receber', valor: totalRecPend, venc: recVenc, cor: COR_VERDE },
-        { label: 'A Pagar',   valor: totalDespPend, venc: despVenc, cor: COR_VERM },
-        { label: 'Saldo Projetado', valor: saldoProj, venc: null, cor: saldoProj >= 0 ? [139,92,246] : COR_VERM },
-      ].forEach((b, i) => {
-        const bx = margin + i * (bw3 + 2);
-        rect(bx, y, bw3, 18, COR_FUNDO, 2);
-        doc.setDrawColor(...b.cor); doc.setLineWidth(0.4); doc.rect(bx, y, bw3, 18, 'S');
-        txt(b.label, bx + bw3/2, y + 5, { size: 7.5, color: COR_CINZA, align: 'center' });
-        txt(formatarMoeda(b.valor), bx + bw3/2, y + 10.5, { bold: true, size: 9, color: b.cor, align: 'center' });
-        if (b.venc !== null && b.venc > 0) txt(`Vencido: ${formatarMoeda(b.venc)}`, bx + bw3/2, y + 15, { size: 6.5, color: COR_VERM, align: 'center' });
+        // Cards resumo
+        const bw3 = (colRight - margin - 4) / 3;
+        [
+          { label: 'A Receber', valor: totalRecPend, venc: recVenc, cor: COR_VERDE },
+          { label: 'A Pagar',   valor: totalDespPend, venc: despVenc, cor: COR_VERM },
+          { label: 'Saldo Projetado', valor: saldoProj, venc: null, cor: saldoProj >= 0 ? [139,92,246] : COR_VERM },
+        ].forEach((b, i) => {
+          const bx = margin + i * (bw3 + 2);
+          rect(bx, y, bw3, 18, COR_FUNDO, 2);
+          doc.setDrawColor(...b.cor); doc.setLineWidth(0.4); doc.rect(bx, y, bw3, 18, 'S');
+          txt(b.label, bx + bw3/2, y + 5, { size: 7.5, color: COR_CINZA, align: 'center' });
+          txt(formatarMoeda(b.valor), bx + bw3/2, y + 10.5, { bold: true, size: 9, color: b.cor, align: 'center' });
+          if (b.venc !== null && b.venc > 0) txt(`Vencido: ${formatarMoeda(b.venc)}`, bx + bw3/2, y + 15, { size: 6.5, color: COR_VERM, align: 'center' });
+        });
+        y += 22;
+
+        // Tabela receitas pendentes
+        if (pendentes.receitas?.length > 0) {
+          novaPageSeNecessario(15);
+          rect(margin, y, colRight - margin, 5, [209, 250, 229], 1);
+          txt('Receitas a Receber por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [4, 120, 87] });
+          y += 7;
+
+          const gruposRecPend = {};
+          pendentes.receitas.forEach(l => {
+            const k = l.cat_nome || 'Sem categoria';
+            if (!gruposRecPend[k]) gruposRecPend[k] = { valor: 0, vencido: 0 };
+            gruposRecPend[k].valor += parseFloat(l.valor);
+            if (l.data_vencimento < hoje) gruposRecPend[k].vencido += parseFloat(l.valor);
+          });
+
+          Object.entries(gruposRecPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
+            novaPageSeNecessario(6);
+            if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+            txt(nome, margin + 3, y + 3, { size: 8 });
+            if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
+            txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERDE, bold: true, align: 'right' });
+            y += 5.5;
+          });
+          linha(y, margin, colRight, COR_VERDE);
+          y += 1;
+          txt('TOTAL A RECEBER:', margin + 3, y + 4, { bold: true, size: 8 });
+          txt(formatarMoeda(totalRecPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERDE, align: 'right' });
+          y += 8;
+        }
+
+        // Tabela despesas pendentes
+        if (pendentes.despesas?.length > 0) {
+          novaPageSeNecessario(15);
+          rect(margin, y, colRight - margin, 5, [254, 226, 226], 1);
+          txt('Despesas a Pagar por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [185, 28, 28] });
+          y += 7;
+
+          const gruposDespPend = {};
+          pendentes.despesas.forEach(l => {
+            const k = l.cat_nome || 'Sem categoria';
+            if (!gruposDespPend[k]) gruposDespPend[k] = { valor: 0, vencido: 0 };
+            gruposDespPend[k].valor += parseFloat(l.valor);
+            if (l.data_vencimento < hoje) gruposDespPend[k].vencido += parseFloat(l.valor);
+          });
+
+          Object.entries(gruposDespPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
+            novaPageSeNecessario(6);
+            if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+            txt(nome, margin + 3, y + 3, { size: 8 });
+            if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
+            txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERM, bold: true, align: 'right' });
+            y += 5.5;
+          });
+          linha(y, margin, colRight, COR_VERM);
+          y += 1;
+          txt('TOTAL A PAGAR:', margin + 3, y + 4, { bold: true, size: 8 });
+          txt(formatarMoeda(totalDespPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERM, align: 'right' });
+          y += 4;
+        }
       });
-      y += 22;
-
-      // Tabela receitas pendentes
-      if (pendentes.receitas?.length > 0) {
-        novaPageSeNecessario(15);
-        rect(margin, y, colRight - margin, 5, [209, 250, 229], 1);
-        txt('Receitas a Receber por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [4, 120, 87] });
-        y += 7;
-
-        const gruposRecPend = {};
-        pendentes.receitas.forEach(l => {
-          const k = l.cat_nome || 'Sem categoria';
-          if (!gruposRecPend[k]) gruposRecPend[k] = { valor: 0, vencido: 0 };
-          gruposRecPend[k].valor += parseFloat(l.valor);
-          if (l.data_vencimento < hoje) gruposRecPend[k].vencido += parseFloat(l.valor);
-        });
-
-        Object.entries(gruposRecPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
-          novaPageSeNecessario(6);
-          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-          txt(nome, margin + 3, y + 3, { size: 8 });
-          if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
-          txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERDE, bold: true, align: 'right' });
-          y += 5.5;
-        });
-        linha(y, margin, colRight, COR_VERDE);
-        y += 1;
-        txt('TOTAL A RECEBER:', margin + 3, y + 4, { bold: true, size: 8 });
-        txt(formatarMoeda(totalRecPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERDE, align: 'right' });
-        y += 8;
-      }
-
-      // Tabela despesas pendentes
-      if (pendentes.despesas?.length > 0) {
-        novaPageSeNecessario(15);
-        rect(margin, y, colRight - margin, 5, [254, 226, 226], 1);
-        txt('Despesas a Pagar por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [185, 28, 28] });
-        y += 7;
-
-        const gruposDespPend = {};
-        pendentes.despesas.forEach(l => {
-          const k = l.cat_nome || 'Sem categoria';
-          if (!gruposDespPend[k]) gruposDespPend[k] = { valor: 0, vencido: 0 };
-          gruposDespPend[k].valor += parseFloat(l.valor);
-          if (l.data_vencimento < hoje) gruposDespPend[k].vencido += parseFloat(l.valor);
-        });
-
-        Object.entries(gruposDespPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
-          novaPageSeNecessario(6);
-          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-          txt(nome, margin + 3, y + 3, { size: 8 });
-          if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
-          txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERM, bold: true, align: 'right' });
-          y += 5.5;
-        });
-        linha(y, margin, colRight, COR_VERM);
-        y += 1;
-        txt('TOTAL A PAGAR:', margin + 3, y + 4, { bold: true, size: 8 });
-        txt(formatarMoeda(totalDespPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERM, align: 'right' });
-        y += 8;
-      }
+      y += 6;
     }
 
     // ─── 8. RESUMO GERAL DO PERÍODO + COMPENSAÇÕES ───────────────────────
