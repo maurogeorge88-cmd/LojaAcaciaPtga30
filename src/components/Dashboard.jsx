@@ -548,11 +548,11 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               { cargo: '1º Vigilante',     irmao: direcaoLoja.vig1,      gradiente: 'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)' },
               { cargo: '2º Vigilante',     irmao: direcaoLoja.vig2,      gradiente: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' },
             ].map(d => (
-              <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'0.66rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
+              <div key={d.cargo} style={{background: d.gradiente, borderRadius:'var(--radius-xl)', padding:'0.13rem 1.25rem', color:'#fff', display:'flex', alignItems:'center', gap:'0.9rem'}}>
                 {d.irmao?.foto_url ? (
-                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'110px', height:'110px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
+                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{width:'130px', height:'130px', borderRadius:'50%', objectFit:'cover', border:'2px solid rgba(255,255,255,0.6)', flexShrink:0}} />
                 ) : (
-                  <div style={{width:'110px', height:'110px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2.2rem', flexShrink:0}}>
+                  <div style={{width:'130px', height:'130px', borderRadius:'50%', background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2.2rem', flexShrink:0}}>
                     {d.irmao ? '👤' : '❔'}
                   </div>
                 )}
