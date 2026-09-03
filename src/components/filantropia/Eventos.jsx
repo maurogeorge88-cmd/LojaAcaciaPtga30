@@ -41,7 +41,7 @@ export default function Eventos({ userPermissions, userData }) {
   }, []);
 
   const carregarTodosItens = async () => {
-    const { data, error } = await supabase.from('eventos_itens').select('*');
+    const { data, error } = await supabase.from('eventos_loja_itens').select('*');
     if (!error) setTodosItens(data || []);
   };
 
@@ -113,7 +113,7 @@ export default function Eventos({ userPermissions, userData }) {
   };
 
   const carregarItensEvento = async (eventoId) => {
-    const { data, error } = await supabase.from('eventos_itens').select('*').eq('evento_id', eventoId).order('created_at');
+    const { data, error } = await supabase.from('eventos_loja_itens').select('*').eq('evento_id', eventoId).order('created_at');
     if (!error) setItensEvento(data || []);
   };
 
@@ -152,12 +152,12 @@ export default function Eventos({ userPermissions, userData }) {
         valor: (item.valor === '' || item.valor === null || item.valor === undefined) ? null : parseFloat(item.valor),
       };
       if (!item.id) {
-        const { error } = await supabase.from('eventos_itens').insert([payload]);
+        const { error } = await supabase.from('eventos_loja_itens').insert([payload]);
         if (error) { console.error('Erro ao salvar item do evento:', error); houveErro = true; }
       } else {
         // Itens já existentes (carregados do banco) também precisam ser
         // atualizados aqui — antes eram ignorados e a edição se perdia.
-        const { error } = await supabase.from('eventos_itens').update(payload).eq('id', item.id).select();
+        const { error } = await supabase.from('eventos_loja_itens').update(payload).eq('id', item.id).select();
         if (error) { console.error('Erro ao atualizar item do evento:', error); houveErro = true; }
       }
     }
@@ -169,7 +169,7 @@ export default function Eventos({ userPermissions, userData }) {
 
   const excluirEvento = async (id) => {
     if (!confirm('Deseja realmente excluir este evento?')) return;
-    await supabase.from('eventos_itens').delete().eq('evento_id', id);
+    await supabase.from('eventos_loja_itens').delete().eq('evento_id', id);
     await supabase.from('eventos_participantes').delete().eq('evento_id', id);
     const { error } = await supabase.from('eventos_loja').delete().eq('id', id);
     if (error) alert('Erro ao excluir evento!');
@@ -189,7 +189,7 @@ export default function Eventos({ userPermissions, userData }) {
   const editarItem = (i) => { setNovoItem(itensEvento[i]); setItemEditando(i); };
   const cancelarEdicaoItem = () => { setNovoItem({ descricao: '', quantidade: '', valor: '' }); setItemEditando(null); };
   const removerItem = async (index, itemId) => {
-    if (itemId) await supabase.from('eventos_itens').delete().eq('id', itemId);
+    if (itemId) await supabase.from('eventos_loja_itens').delete().eq('id', itemId);
     setItensEvento(itensEvento.filter((_, i) => i !== index));
   };
 
