@@ -473,7 +473,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
         txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
         y += 9;
 
-        const cols = { mes: 14, recB: 45, recC: 75, despB: 105, despC: 135, saldoB: 165 };
+        const cols = { mes: margin + 2, recB: 45, recC: 75, despB: 105, despC: 135, saldoB: 165 };
         rect(margin, y, colRight - margin, 6, [79, 70, 229], 1);
         [['Mes', cols.mes], ['Rec. Banco', cols.recB], ['Rec. Caixa', cols.recC],
          ['Desp. Banco', cols.despB], ['Desp. Caixa', cols.despC], ['Saldo Banco', cols.saldoB]
