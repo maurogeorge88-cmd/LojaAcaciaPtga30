@@ -140,26 +140,43 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt('1. RESUMO FINANCEIRO', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     y += 9;
 
-    // Quatro caixas: Banco | Caixa | Tronco e Arco | Total
-    const boxW = (colRight - margin - 9) / 4;
+    // Cinco caixas: Banco | Físico | Atual | Tronco e Arco Real | Disponível Loja
+    // (separadas pra ficar claro que a 4ª e a 5ª são um RECORTE de dentro do
+    // Saldo Atual, e não algo a somar por cima dele)
+    const boxW = (colRight - margin - 12) / 5;
+    const saldoAtual = dadosA.saldoBancario + caixaFisicoHistorico;
     const troncoEArco = troncoGlobal.total + arcoRealGlobal.total;
+    const saldoDisponivelLoja = saldoAtual - troncoEArco;
     const boxes = [
-      { label: 'SALDO BANCÁRIO', valor: dadosA.saldoBancario, cor: COR_AZUL },
-      { label: 'CAIXA FÍSICO',   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
-      { label: 'TRONCO E ARCO',  valor: troncoEArco, cor: [16, 100, 80] },
-      { label: 'SALDO TOTAL',    valor: dadosA.saldoBancario + caixaFisicoHistorico, cor: dadosA.saldoBancario + caixaFisicoHistorico >= 0 ? COR_VERDE : COR_VERM },
+      { linhas: ['SALDO BANCÁRIO'], valor: dadosA.saldoBancario, cor: COR_AZUL },
+      { linhas: ['SALDO FÍSICO'],   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
+      { linhas: ['SALDO ATUAL'],    valor: saldoAtual, cor: saldoAtual >= 0 ? COR_VERDE : COR_VERM },
+      {
+        linhas: ['TRONCO E', 'ARCO REAL'],
+        valor: troncoEArco,
+        cor: [16, 100, 80],
+        sub: `Tronco ${formatarMoeda(troncoGlobal.total)} | Arco ${formatarMoeda(arcoRealGlobal.total)}`,
+      },
+      { linhas: ['SALDO DISPONÍVEL', 'LOJA'], valor: saldoDisponivelLoja, cor: saldoDisponivelLoja >= 0 ? [124, 58, 237] : COR_VERM },
     ];
 
+    const boxH = 22;
     boxes.forEach((b, i) => {
       const bx = margin + i * (boxW + 3);
-      rect(bx, y, boxW, 16, COR_FUNDO, 2);
+      rect(bx, y, boxW, boxH, COR_FUNDO, 2);
       doc.setDrawColor(...b.cor);
       doc.setLineWidth(0.5);
-      doc.rect(bx, y, boxW, 16, 'S');
-      txt(b.label, bx + boxW / 2, y + 5.5, { size: 6.8, color: COR_CINZA, align: 'center' });
-      txt(formatarMoeda(b.valor), bx + boxW / 2, y + 11.5, { bold: true, size: 9.2, color: b.cor, align: 'center' });
+      doc.rect(bx, y, boxW, boxH, 'S');
+      b.linhas.forEach((linha, li) => {
+        txt(linha, bx + boxW / 2, y + 4.5 + li * 3.4, { size: 6, color: COR_CINZA, align: 'center' });
+      });
+      const yValor = y + 4.5 + b.linhas.length * 3.4 + 3.5;
+      txt(formatarMoeda(b.valor), bx + boxW / 2, yValor, { bold: true, size: 8.6, color: b.cor, align: 'center' });
+      if (b.sub) {
+        txt(b.sub, bx + boxW / 2, yValor + 4.2, { size: 5.2, color: COR_CINZA, align: 'center' });
+      }
     });
-    y += 20;
+    y += boxH + 4;
 
     // ─── 2. EXTRATO DO PERÍODO ────────────────────────────────────────────
     novaPageSeNecessario(60);
