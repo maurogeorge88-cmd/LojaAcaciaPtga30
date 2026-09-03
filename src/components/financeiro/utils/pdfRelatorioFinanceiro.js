@@ -84,7 +84,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
           '\u00fa':'u','\u00fb':'u','\u00f9':'u','\u00da':'U','\u00db':'U',
           '\u00d9':'U','\u00ed':'i','\u00ee':'i','\u00ec':'i','\u00cd':'I',
           '\u00ce':'I','\u00cc':'I','\u00fc':'u','\u00dc':'U','\u00f1':'n',
-          '\u00d1':'N','%':'pct','\u2514':'-','\u2518':'-',
+          '\u00d1':'N','\u2514':'-','\u2518':'-',
         };
         return String(s).split('').map(c => map[c] !== undefined ? map[c] : c.charCodeAt(0) < 128 ? c : '').join('');
       };
