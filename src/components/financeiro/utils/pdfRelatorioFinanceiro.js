@@ -173,17 +173,46 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt('1. RESUMO FINANCEIRO', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     y += 9;
 
-    // Cinco caixas: Banco | Físico | Atual | Tronco e Arco Real | Disponível Loja
-    // (separadas pra ficar claro que a 4ª e a 5ª são um RECORTE de dentro do
-    // Saldo Atual, e não algo a somar por cima dele)
-    const boxW = (colRight - margin - 12) / 5;
+    // Quadro único (moldura) cobrindo as duas linhas de caixas — mesmo
+    // estilo de borda fina usado nas outras seções do relatório.
     const saldoAtual = dadosA.saldoBancario + caixaFisicoHistorico;
     const troncoEArco = troncoGlobal.total + arcoRealGlobal.total;
     const saldoDisponivelLoja = saldoAtual - troncoEArco;
-    const boxes = [
-      { linhas: ['SALDO BANCÁRIO'], valor: dadosA.saldoBancario, cor: COR_AZUL },
-      { linhas: ['SALDO FÍSICO'],   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
-      { linhas: ['SALDO ATUAL'],    valor: saldoAtual, cor: saldoAtual >= 0 ? COR_VERDE : COR_VERM },
+
+    const padFrame = 3;
+    const gapBox = 3;
+    const linha1BoxH = 24;
+    const linha2BoxH = 27;
+    const larguraInterna = (colRight - margin) - padFrame * 2;
+    const alturaFrame = linha1BoxH + linha2BoxH + padFrame * 2 + 4;
+
+    novaPageSeNecessario(alturaFrame + 4);
+    rect(margin, y, colRight - margin, alturaFrame, COR_FUNDO, 2);
+    doc.setDrawColor(...COR_ACCENT);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, y, colRight - margin, alturaFrame, 'S');
+
+    let yLinha = y + padFrame;
+    const xInterno = margin + padFrame;
+
+    // Linha 1 — Saldo Bancário | Saldo Físico | Saldo Atual
+    const linha1 = [
+      { label: 'SALDO BANCÁRIO', valor: dadosA.saldoBancario, cor: COR_AZUL },
+      { label: 'SALDO FÍSICO',   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
+      { label: 'SALDO ATUAL',    valor: saldoAtual, cor: saldoAtual >= 0 ? COR_VERDE : COR_VERM },
+    ];
+    const boxW1 = (larguraInterna - gapBox * 2) / 3;
+    linha1.forEach((b, i) => {
+      const bx = xInterno + i * (boxW1 + gapBox);
+      rect(bx, yLinha, boxW1, linha1BoxH, COR_FUNDO, 2);
+      doc.setDrawColor(...COR_ACCENT); doc.setLineWidth(0.5); doc.rect(bx, yLinha, boxW1, linha1BoxH, 'S');
+      txt(b.label, bx + boxW1 / 2, yLinha + 7, { size: 7.5, color: COR_CINZA, align: 'center' });
+      txt(formatarMoeda(b.valor), bx + boxW1 / 2, yLinha + 16, { bold: true, size: 11, color: b.cor, align: 'center' });
+    });
+    yLinha += linha1BoxH + 4;
+
+    // Linha 2 — Tronco e Arco Real | Saldo Disponível Loja
+    const linha2 = [
       {
         linhas: ['TRONCO E', 'ARCO REAL'],
         valor: troncoEArco,
@@ -192,24 +221,22 @@ export const gerarPDFRelatorioFinanceiro = async ({
       },
       { linhas: ['SALDO DISPONÍVEL', 'LOJA'], valor: saldoDisponivelLoja, cor: saldoDisponivelLoja >= 0 ? [124, 58, 237] : COR_VERM },
     ];
-
-    const boxH = 22;
-    boxes.forEach((b, i) => {
-      const bx = margin + i * (boxW + 3);
-      rect(bx, y, boxW, boxH, COR_FUNDO, 2);
-      doc.setDrawColor(...b.cor);
-      doc.setLineWidth(0.5);
-      doc.rect(bx, y, boxW, boxH, 'S');
-      b.linhas.forEach((linha, li) => {
-        txt(linha, bx + boxW / 2, y + 4.5 + li * 3.4, { size: 6, color: COR_CINZA, align: 'center' });
+    const boxW2 = (larguraInterna - gapBox) / 2;
+    linha2.forEach((b, i) => {
+      const bx = xInterno + i * (boxW2 + gapBox);
+      rect(bx, yLinha, boxW2, linha2BoxH, COR_FUNDO, 2);
+      doc.setDrawColor(...COR_ACCENT); doc.setLineWidth(0.5); doc.rect(bx, yLinha, boxW2, linha2BoxH, 'S');
+      b.linhas.forEach((l, li) => {
+        txt(l, bx + boxW2 / 2, yLinha + 6 + li * 4, { size: 7.5, color: COR_CINZA, align: 'center' });
       });
-      const yValor = y + 4.5 + b.linhas.length * 3.4 + 3.5;
-      txt(formatarMoeda(b.valor), bx + boxW / 2, yValor, { bold: true, size: 8.6, color: b.cor, align: 'center' });
+      const yValor = yLinha + 6 + b.linhas.length * 4 + 4;
+      txt(formatarMoeda(b.valor), bx + boxW2 / 2, yValor, { bold: true, size: 12, color: b.cor, align: 'center' });
       if (b.sub) {
-        txt(b.sub, bx + boxW / 2, yValor + 4.2, { size: 5.2, color: COR_CINZA, align: 'center' });
+        txt(b.sub, bx + boxW2 / 2, yValor + 5, { size: 6.5, color: COR_CINZA, align: 'center' });
       }
     });
-    y += boxH + 4;
+
+    y += alturaFrame + 5;
 
     // ─── 2. EXTRATO DO PERÍODO ────────────────────────────────────────────
     novaPageSeNecessario(60);
