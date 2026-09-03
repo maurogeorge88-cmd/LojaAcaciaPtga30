@@ -19,15 +19,15 @@ const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','
 const anoAtual = new Date().getFullYear();
 
 // ── Card de indicador ────────────────────────────────────────────────────────
-const Card = ({label, valor, sub, cor='var(--color-accent)', icon}) => (
+const Card = ({label, valor, sub, cor='var(--color-accent)', icon, compacto=false}) => (
   <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderTop:`3px solid ${cor}`,borderRadius:'var(--radius-lg)',padding:'1rem'}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-      <div>
+      <div style={{minWidth:0}}>
         <p style={{fontSize:'0.68rem',fontWeight:700,color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',margin:'0 0 0.3rem'}}>{label}</p>
-        <p style={{fontSize:'1.5rem',fontWeight:800,color:cor,margin:0,lineHeight:1}}>{valor}</p>
+        <p style={{fontSize: compacto ? 'clamp(1rem, 2.1vw, 1.3rem)' : '1.5rem', fontWeight:800,color:cor,margin:0,lineHeight:1.15,wordBreak:'break-word'}}>{valor}</p>
         {sub && <p style={{fontSize:'0.72rem',color:'var(--color-text-muted)',margin:'0.3rem 0 0'}}>{sub}</p>}
       </div>
-      {icon && <span style={{fontSize:'1.6rem',opacity:0.7}}>{icon}</span>}
+      {icon && <span style={{fontSize:'1.6rem',opacity:0.7,flexShrink:0}}>{icon}</span>}
     </div>
   </div>
 );
@@ -696,12 +696,12 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           PAINEL 3 — FINANCEIRO
       ══════════════════════════════════════════════════════════════════════ */}
       <Painel titulo="💰 Financeiro">
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',gap:'0.75rem',marginBottom:'1.25rem'}}>
-          <Card label={`Receitas ${anoSel}`}  valor={fmtR(stats.totalReceita)} sub="Entradas pagas"           cor={VERDE}    icon="📈"/>
-          <Card label={`Despesas ${anoSel}`}  valor={fmtR(stats.totalDespesa)} sub="Saídas pagas"             cor={VERMELHO} icon="📉"/>
-          <Card label="Resultado"         valor={fmtR(stats.totalReceita-stats.totalDespesa)} sub={stats.totalReceita>=stats.totalDespesa?'Superávit':'Déficit'} cor={stats.totalReceita>=stats.totalDespesa?VERDE:VERMELHO} icon="⚖️"/>
-          <Card label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor="var(--color-accent)" icon="🏆"/>
-          <Card label="Saldo Bancário" valor={saldoBancarioAtual===null ? '...' : fmtR(saldoBancarioAtual)} sub="PIX, Transf., Cartão" cor="#0ea5e9" icon="🏦"/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:'0.75rem',marginBottom:'1.25rem'}}>
+          <Card compacto label={`Receitas ${anoSel}`}  valor={fmtR(stats.totalReceita)} sub="Entradas pagas"           cor={VERDE}    icon="📈"/>
+          <Card compacto label={`Despesas ${anoSel}`}  valor={fmtR(stats.totalDespesa)} sub="Saídas pagas"             cor={VERMELHO} icon="📉"/>
+          <Card compacto label="Resultado"         valor={fmtR(stats.totalReceita-stats.totalDespesa)} sub={stats.totalReceita>=stats.totalDespesa?'Superávit':'Déficit'} cor={stats.totalReceita>=stats.totalDespesa?VERDE:VERMELHO} icon="⚖️"/>
+          <Card compacto label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor="var(--color-accent)" icon="🏆"/>
+          <Card compacto label="Saldo Bancário" valor={saldoBancarioAtual===null ? '...' : fmtR(saldoBancarioAtual)} sub="PIX, Transf., Cartão" cor="#0ea5e9" icon="🏦"/>
         </div>
 
         {/* Receita vs Despesa mensal */}
