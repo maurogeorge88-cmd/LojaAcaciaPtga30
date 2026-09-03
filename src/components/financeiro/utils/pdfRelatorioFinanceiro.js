@@ -144,21 +144,24 @@ export const gerarPDFRelatorioFinanceiro = async ({
       y += alturaTotal + 5;
     };
 
-    // Desenha uma borda fina ao redor de tudo que renderFn desenhar — usado
-    // pras seções de lista (Receitas/Despesas por Categoria, Resultado por
-    // Mês, Evolução Mensal, Pendências). Se a seção quebrar de página no
-    // meio, a borda é pulada (evita desenhar um quadro errado cruzando
-    // páginas diferentes).
-    const comMoldura = (corBorda, renderFn) => {
+    // Desenha uma borda fina ao redor do CONTEÚDO que renderFn desenhar —
+    // fica abaixo da faixa colorida do título (não sobrepõe o título), e
+    // deixa uma folga antes da última linha pra não cortar o texto do total.
+    // Usado pras seções de lista (Receitas/Despesas por Categoria, Resultado
+    // por Mês, Evolução Mensal, Pendências).
+    const comMoldura = (corBorda, renderFn, alturaCabecalho = 9) => {
       const yIni = y;
       const paginaIni = doc.internal.getNumberOfPages();
       renderFn();
       const paginaFim = doc.internal.getNumberOfPages();
       if (paginaFim === paginaIni) {
+        const yTopo = yIni + alturaCabecalho;
+        const yBase = y + 2;
         doc.setDrawColor(...corBorda);
         doc.setLineWidth(0.5);
-        doc.rect(margin, yIni, colRight - margin, y - yIni - 2, 'S');
+        doc.rect(margin, yTopo, colRight - margin, yBase - yTopo, 'S');
       }
+      y += 6;
     };
 
     const rodape = () => {
@@ -364,7 +367,6 @@ export const gerarPDFRelatorioFinanceiro = async ({
         y += 2;
       });
     });
-    y += 3;
 
     // ─── 4. DESPESAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
@@ -403,7 +405,6 @@ export const gerarPDFRelatorioFinanceiro = async ({
         y += 2;
       });
     });
-    y += 3;
 
     // ─── 5. RESULTADO POR MÊS ────────────────────────────────────────────
     if (quadrosOpcionais.q3 && periodoA.ano > 0 && dadosMensais?.length > 0) {
@@ -460,7 +461,6 @@ export const gerarPDFRelatorioFinanceiro = async ({
           txt((totalResMes >= 0 ? '+' : '') + formatarMoeda(totalResMes), cM.res, y + 4.5, { bold: true, size: 8, color: corTotalRes });
           y += 8;
         });
-        y += 4;
       }
     }
 
@@ -504,9 +504,8 @@ export const gerarPDFRelatorioFinanceiro = async ({
         txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despBanco,0)), cols.despB, y + 5, { bold: true, size: 7.5, color: COR_VERM });
         txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0)), cols.despC, y + 5, { bold: true, size: 7.5, color: COR_VERM });
         txt(formatarMoeda(dadosA.saldoBancario), cols.saldoB, y + 5, { bold: true, size: 8, color: COR_AZUL });
-        y += 6;
+        y += 9;
       });
-      y += 6;
     }
 
     // ─── 7. PENDÊNCIAS ───────────────────────────────────────────────────────
@@ -600,7 +599,6 @@ export const gerarPDFRelatorioFinanceiro = async ({
           y += 4;
         }
       });
-      y += 6;
     }
 
     // ─── 8. RESUMO GERAL DO PERÍODO + COMPENSAÇÕES ───────────────────────
