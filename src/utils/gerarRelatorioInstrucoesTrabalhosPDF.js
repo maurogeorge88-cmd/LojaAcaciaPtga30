@@ -145,21 +145,23 @@ export const gerarRelatorioInstrucoesTrabalhosPDF = (irmao, registros, dadosLoja
 
     doc.autoTable({
       startY: y,
-      head: [['Instrução', 'Ministração da Instrução', 'Apresentação da Instrução', 'Observações']],
+      head: [['Instrução', 'Ministração da Instrução', 'Apresentação da Instrução', 'Tema', 'Observações']],
       body: doGrau.map(reg => [
         reg.numero_instrucao || '—',
         fmtData(reg.data_instrucao),
         reg.data_apresentacao ? fmtData(reg.data_apresentacao) : 'Pendente de apresentação',
+        sanitizeTexto(reg.tema) || '—',
         sanitizeTexto(reg.observacoes) || '—',
       ]),
       theme: 'grid',
       styles: { fontSize: 9, cellPadding: 2.2 },
       headStyles: { fillColor: [230, 230, 230], textColor: 30, fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 32 },
-        1: { cellWidth: 32 },
-        2: { cellWidth: 42 },
-        3: { cellWidth: larguraUtil - 106 },
+        0: { cellWidth: 28 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 36 },
+        3: { cellWidth: (larguraUtil - 92) / 2 },
+        4: { cellWidth: (larguraUtil - 92) / 2 },
       },
       margin: { left: M, right: M },
       didParseCell: (data) => {
