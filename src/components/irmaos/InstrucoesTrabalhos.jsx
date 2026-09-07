@@ -20,6 +20,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const [nomeOrador, setNomeOrador] = useState('');
   const [nomeSecretario, setNomeSecretario] = useState('');
   const [incluirPresencas, setIncluirPresencas] = useState(false);
+  const [modalAberto, setModalAberto] = useState(false);
 
   useEffect(() => {
     if (irmao?.id) carregarRegistros();
@@ -74,6 +75,13 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const limparForm = () => {
     setForm({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', tema: '', observacoes: '' });
     setEditandoId(null);
+    setModalAberto(false);
+  };
+
+  const abrirNovo = () => {
+    setForm({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', tema: '', observacoes: '' });
+    setEditandoId(null);
+    setModalAberto(true);
   };
 
   const salvar = async (e) => {
@@ -129,6 +137,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       observacoes: registro.observacoes || '',
     });
     setEditandoId(registro.id);
+    setModalAberto(true);
   };
 
   const excluir = async (id) => {
@@ -318,57 +327,13 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           >
             {gerandoPdf ? '⏳ Gerando...' : '📄 Gerar Relatório (PDF)'}
           </button>
-        </div>
-      </div>
-
-      {/* Formulário — usa <div>, não <form>: esse componente fica dentro do
-          formulário principal de cadastro do irmão, e HTML não permite
-          formulário aninhado (o botão "type=submit" acabava disparando o
-          formulário de fora inteiro, tirando da tela sem salvar certo). */}
-      <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr 1fr 1fr 1.3fr 1.3fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
-        <div>
-          <label style={sLabel}>Grau</label>
-          <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
-            {GRAUS.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={sLabel}>Instrução</label>
-          <select value={form.numero_instrucao} onChange={e => {
-            const novoTipo = e.target.value;
-            setForm({ ...form, numero_instrucao: novoTipo, data_instrucao: TIPOS_SEM_INSTRUCAO.includes(novoTipo) ? '' : form.data_instrucao });
-          }} style={sInput}>
-            {NUMEROS_INSTRUCAO.map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={sLabel}>Data da Instrução {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '' : '*'}</label>
-          <input type="date" value={form.data_instrucao} onChange={e => setForm({ ...form, data_instrucao: e.target.value })} style={sInput} disabled={TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao)} />
-        </div>
-        <div>
-          <label style={sLabel}>Data da Apresentação {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '*' : ''}</label>
-          <input type="date" value={form.data_apresentacao} onChange={e => setForm({ ...form, data_apresentacao: e.target.value })} style={sInput} />
-          <p style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>
-            {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? 'Data em que o trabalho foi apresentado' : 'Deixe em branco se ainda não apresentou'}
-          </p>
-        </div>
-        <div>
-          <label style={sLabel}>Tema</label>
-          <input type="text" value={form.tema} onChange={e => setForm({ ...form, tema: e.target.value })} style={sInput} placeholder="Tema do trabalho" />
-        </div>
-        <div>
-          <label style={sLabel}>Observações</label>
-          <input type="text" value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} style={sInput} placeholder="Opcional" />
-        </div>
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <button type="button" onClick={salvar} style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', background: '#10b981', color: '#fff', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            {editandoId ? 'Salvar' : '+ Adicionar'}
+          <button
+            type="button"
+            onClick={abrirNovo}
+            style={{ padding: '0.5rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', background: '#10b981', color: '#fff', whiteSpace: 'nowrap' }}
+          >
+            + Novo Registro
           </button>
-          {editandoId && (
-            <button type="button" onClick={limparForm} style={{ padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-muted)', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer' }}>
-              ✕
-            </button>
-          )}
         </div>
       </div>
 
@@ -431,6 +396,79 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
             </div>
           );
         })
+      )}
+
+      {/* ── MODAL — Novo/Editar Registro ──────────────────────────────── */}
+      {modalAberto && (
+        <div onClick={limparForm} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface-2)', position: 'sticky', top: 0, zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span style={{ fontSize: '1.2rem' }}>📚</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: 'var(--color-text)' }}>
+                    {editandoId ? 'Editar Registro' : 'Novo Registro'}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                    {editandoId ? 'Atualize os dados do trabalho' : 'Instrução recebida ou trabalho apresentado'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={limparForm} style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.3rem', cursor: 'pointer', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-md)', lineHeight: 1 }}>✕</button>
+            </div>
+
+            {/* Corpo — usa <div>, não <form>: esse componente fica dentro do
+                formulário principal de cadastro do irmão, e HTML não permite
+                formulário aninhado (o botão "type=submit" acabava disparando
+                o formulário de fora inteiro, tirando da tela sem salvar certo). */}
+            <div style={{ padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={sLabel}>Grau</label>
+                <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
+                  {GRAUS.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={sLabel}>Instrução</label>
+                <select value={form.numero_instrucao} onChange={e => {
+                  const novoTipo = e.target.value;
+                  setForm({ ...form, numero_instrucao: novoTipo, data_instrucao: TIPOS_SEM_INSTRUCAO.includes(novoTipo) ? '' : form.data_instrucao });
+                }} style={sInput}>
+                  {NUMEROS_INSTRUCAO.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={sLabel}>Data da Instrução {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '' : '*'}</label>
+                <input type="date" value={form.data_instrucao} onChange={e => setForm({ ...form, data_instrucao: e.target.value })} style={sInput} disabled={TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao)} />
+              </div>
+              <div>
+                <label style={sLabel}>Data da Apresentação {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '*' : ''}</label>
+                <input type="date" value={form.data_apresentacao} onChange={e => setForm({ ...form, data_apresentacao: e.target.value })} style={sInput} />
+                <p style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', margin: '0.3rem 0 0' }}>
+                  {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? 'Data em que o trabalho foi apresentado' : 'Deixe em branco se ainda não apresentou'}
+                </p>
+              </div>
+              <div>
+                <label style={sLabel}>Tema</label>
+                <input type="text" value={form.tema} onChange={e => setForm({ ...form, tema: e.target.value })} style={sInput} placeholder="Tema do trabalho" />
+              </div>
+              <div>
+                <label style={sLabel}>Observações</label>
+                <input type="text" value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} style={sInput} placeholder="Opcional" />
+              </div>
+              <div style={{ display: 'flex', gap: '0.65rem', paddingTop: '0.25rem' }}>
+                <button type="button" onClick={limparForm} style={{ flex: 1, height: '40px', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button type="button" onClick={salvar} style={{ flex: 2, height: '40px', background: '#10b981', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                  {editandoId ? '✏️ Salvar Alterações' : '✅ Adicionar Registro'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
