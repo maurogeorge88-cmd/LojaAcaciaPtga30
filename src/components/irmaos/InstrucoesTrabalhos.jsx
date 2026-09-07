@@ -14,7 +14,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   const [loading, setLoading] = useState(false);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
-  const [form, setForm] = useState({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', observacoes: '' });
+  const [form, setForm] = useState({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', tema: '', observacoes: '' });
   const [dadosLoja, setDadosLoja] = useState(null);
   const [nomeVeneravel, setNomeVeneravel] = useState('');
   const [nomeOrador, setNomeOrador] = useState('');
@@ -72,7 +72,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
   };
 
   const limparForm = () => {
-    setForm({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', observacoes: '' });
+    setForm({ grau: 'Aprendiz', numero_instrucao: '1ª Instrução', data_instrucao: '', data_apresentacao: '', tema: '', observacoes: '' });
     setEditandoId(null);
   };
 
@@ -102,6 +102,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       // pra manter ordenação/exibição funcionando sem exigir a data duas vezes.
       data_instrucao: form.data_instrucao || form.data_apresentacao,
       data_apresentacao: form.data_apresentacao || null,
+      tema: form.tema || null,
       observacoes: form.observacoes || null,
     };
 
@@ -124,6 +125,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       numero_instrucao: registro.numero_instrucao || '1ª Instrução',
       data_instrucao: registro.data_instrucao,
       data_apresentacao: registro.data_apresentacao || '',
+      tema: registro.tema || '',
       observacoes: registro.observacoes || '',
     });
     setEditandoId(registro.id);
@@ -323,7 +325,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           formulário principal de cadastro do irmão, e HTML não permite
           formulário aninhado (o botão "type=submit" acabava disparando o
           formulário de fora inteiro, tirando da tela sem salvar certo). */}
-      <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr 1fr 1fr 1.3fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '0.9fr 1.1fr 1fr 1fr 1.3fr 1.3fr auto', gap: '0.6rem', alignItems: 'end', marginBottom: '1.25rem', padding: '0.9rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
         <div>
           <label style={sLabel}>Grau</label>
           <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
@@ -349,6 +351,10 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
           <p style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>
             {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? 'Data em que o trabalho foi apresentado' : 'Deixe em branco se ainda não apresentou'}
           </p>
+        </div>
+        <div>
+          <label style={sLabel}>Tema</label>
+          <input type="text" value={form.tema} onChange={e => setForm({ ...form, tema: e.target.value })} style={sInput} placeholder="Tema do trabalho" />
         </div>
         <div>
           <label style={sLabel}>Observações</label>
@@ -389,6 +395,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Instrução</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ministração da Instrução</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Apresentação da Instrução</th>
+                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tema</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Observações</th>
                     <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
                   </tr>
@@ -409,6 +416,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                           <span style={{ color: '#f59e0b', fontWeight: '600' }}>⏳ Pendente</span>
                         )}
                       </td>
+                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '500' }}>{r.tema || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{r.observacoes || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center' }}>
