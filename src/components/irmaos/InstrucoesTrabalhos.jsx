@@ -389,21 +389,21 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                 <span style={{ fontWeight: '800', fontSize: '0.85rem', color: corGrau[grau] }}>{grau}</span>
                 <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>({doGrau.length})</span>
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--color-border)', borderTop: 'none' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', border: '1px solid var(--color-border)', borderTop: 'none' }}>
                 <thead>
                   <tr style={{ background: 'var(--color-surface-2)' }}>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Instrução</th>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ministração da Instrução</th>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Apresentação da Instrução</th>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tema</th>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Observações</th>
-                    <th style={{ padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
+                    <th style={{ width: '10%', padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Instrução</th>
+                    <th style={{ width: '11%', padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ministração da Instrução</th>
+                    <th style={{ width: '13%', padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Apresentação da Instrução</th>
+                    <th style={{ width: '38%', padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tema</th>
+                    <th style={{ width: '18%', padding: '0.5rem 0.75rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Observações</th>
+                    <th style={{ width: '10%', padding: '0.5rem 0.75rem', textAlign: 'center', fontSize: '0.68rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {doGrau.map((r, idx) => (
                     <tr key={r.id} style={{ background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '600' }}>{r.numero_instrucao || '—'}</td>
+                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '600', overflowWrap: 'break-word' }}>{r.numero_instrucao || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.82rem', color: 'var(--color-text)' }}>
                         {new Date(r.data_instrucao + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </td>
@@ -416,8 +416,8 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                           <span style={{ color: '#f59e0b', fontWeight: '600' }}>⏳ Pendente</span>
                         )}
                       </td>
-                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '500' }}>{r.tema || '—'}</td>
-                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{r.observacoes || '—'}</td>
+                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '500', overflowWrap: 'break-word' }}>{r.tema || '—'}</td>
+                      <td style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', overflowWrap: 'break-word' }}>{r.observacoes || '—'}</td>
                       <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'center' }}>
                           <button type="button" onClick={() => editar(r)} style={{ padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: 'pointer' }}>✏️</button>
