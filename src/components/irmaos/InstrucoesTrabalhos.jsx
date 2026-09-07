@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { gerarRelatorioInstrucoesTrabalhosPDF } from '../../utils/gerarRelatorioInstrucoesTrabalhosPDF';
 
 const GRAUS = ['Aprendiz', 'Companheiro', 'Mestre'];
-const NUMEROS_INSTRUCAO = ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global'];
+const NUMEROS_INSTRUCAO = ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global', 'Peça de Arquitetura'];
 const corGrau = { Aprendiz: '#3b82f6', Companheiro: '#8b5cf6', Mestre: '#f59e0b' };
 
 export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
