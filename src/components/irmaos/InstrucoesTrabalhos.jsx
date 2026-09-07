@@ -4,6 +4,9 @@ import { gerarRelatorioInstrucoesTrabalhosPDF } from '../../utils/gerarRelatorio
 
 const GRAUS = ['Aprendiz', 'Companheiro', 'Mestre'];
 const NUMEROS_INSTRUCAO = ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global', 'Peça de Arquitetura'];
+// Esses dois não são "instrução" de verdade — não faz sentido exigir Data da
+// Instrução pra eles. O que importa nesses casos é a Data da Apresentação.
+const TIPOS_SEM_INSTRUCAO = ['Trabalho Global', 'Peça de Arquitetura'];
 const corGrau = { Aprendiz: '#3b82f6', Companheiro: '#8b5cf6', Mestre: '#f59e0b' };
 
 export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
@@ -75,7 +78,18 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
 
   const salvar = async (e) => {
     if (e?.preventDefault) e.preventDefault();
-    if (!form.grau || !form.data_instrucao) {
+    const ehSemInstrucao = TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao);
+
+    if (!form.grau) {
+      showError('Preencha o grau.');
+      return;
+    }
+    if (ehSemInstrucao) {
+      if (!form.data_apresentacao) {
+        showError('Preencha a data da apresentação.');
+        return;
+      }
+    } else if (!form.data_instrucao) {
       showError('Preencha o grau e a data da instrução.');
       return;
     }
@@ -83,7 +97,10 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       irmao_id: irmao.id,
       grau: form.grau,
       numero_instrucao: form.numero_instrucao,
-      data_instrucao: form.data_instrucao,
+      // Sem data de instrução de verdade (Trabalho Global / Peça de
+      // Arquitetura) — usa a data da apresentação também nesse campo, só
+      // pra manter ordenação/exibição funcionando sem exigir a data duas vezes.
+      data_instrucao: form.data_instrucao || form.data_apresentacao,
       data_apresentacao: form.data_apresentacao || null,
       observacoes: form.observacoes || null,
     };
@@ -315,18 +332,23 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
         </div>
         <div>
           <label style={sLabel}>Instrução</label>
-          <select value={form.numero_instrucao} onChange={e => setForm({ ...form, numero_instrucao: e.target.value })} style={sInput}>
+          <select value={form.numero_instrucao} onChange={e => {
+            const novoTipo = e.target.value;
+            setForm({ ...form, numero_instrucao: novoTipo, data_instrucao: TIPOS_SEM_INSTRUCAO.includes(novoTipo) ? '' : form.data_instrucao });
+          }} style={sInput}>
             {NUMEROS_INSTRUCAO.map(n => <option key={n} value={n}>{n}</option>)}
           </select>
         </div>
         <div>
-          <label style={sLabel}>Data da Instrução *</label>
-          <input type="date" value={form.data_instrucao} onChange={e => setForm({ ...form, data_instrucao: e.target.value })} style={sInput} />
+          <label style={sLabel}>Data da Instrução {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '' : '*'}</label>
+          <input type="date" value={form.data_instrucao} onChange={e => setForm({ ...form, data_instrucao: e.target.value })} style={sInput} disabled={TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao)} />
         </div>
         <div>
-          <label style={sLabel}>Data da Apresentação</label>
+          <label style={sLabel}>Data da Apresentação {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? '*' : ''}</label>
           <input type="date" value={form.data_apresentacao} onChange={e => setForm({ ...form, data_apresentacao: e.target.value })} style={sInput} />
-          <p style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>Deixe em branco se ainda não apresentou</p>
+          <p style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>
+            {TIPOS_SEM_INSTRUCAO.includes(form.numero_instrucao) ? 'Data em que o trabalho foi apresentado' : 'Deixe em branco se ainda não apresentou'}
+          </p>
         </div>
         <div>
           <label style={sLabel}>Observações</label>
