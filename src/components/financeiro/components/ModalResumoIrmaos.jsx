@@ -231,8 +231,11 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     const hojeStr = hoje.toISOString().split('T')[0];
     const anoMesAtual = hojeStr.substring(0, 7); // 'YYYY-MM'
     const pendenteContaNoFiltro = (l) => {
-      if (filtroSituacaoValor === 'mes_atual') return (l.data_vencimento || '').startsWith(anoMesAtual);
+      const vencMes = (l.data_vencimento || '').substring(0, 7); // 'YYYY-MM'
+      if (filtroSituacaoValor === 'mes_atual') return vencMes === anoMesAtual;
       if (filtroSituacaoValor === 'vencidos') return (l.data_vencimento || '') < hojeStr;
+      if (filtroSituacaoValor === 'mes_atual_vencidos') return vencMes === anoMesAtual || (l.data_vencimento || '') < hojeStr;
+      if (filtroSituacaoValor === 'futuros') return vencMes > anoMesAtual;
       return true; // 'total'
     };
 
@@ -295,6 +298,8 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
 
   const labelSituacaoValor = filtroSituacaoValor === 'mes_atual' ? 'Pendências do Mês Atual'
     : filtroSituacaoValor === 'vencidos' ? 'Pendências Vencidas'
+    : filtroSituacaoValor === 'mes_atual_vencidos' ? 'Pendências do Mês Atual + Vencidas'
+    : filtroSituacaoValor === 'futuros' ? 'Pendências Futuras'
     : 'Valor Total Pendente';
 
   return (
@@ -349,10 +354,12 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
               ['total', '📊 Valor Total'],
               ['mes_atual', '📅 Mês Atual'],
               ['vencidos', '⏰ Vencidos'],
+              ['mes_atual_vencidos', '📅⏰ Mês Atual + Vencidos'],
+              ['futuros', '🔮 Futuros'],
             ].map(([val, lbl]) => (
               <button key={val} onClick={() => setFiltroSituacaoValor(val)}
                 style={{ padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
-                  background: filtroSituacaoValor === val ? (val === 'vencidos' ? '#dc2626' : val === 'mes_atual' ? '#0891b2' : '#2563eb') : 'var(--color-surface-2)',
+                  background: filtroSituacaoValor === val ? (val === 'vencidos' ? '#dc2626' : val === 'mes_atual' ? '#0891b2' : val === 'mes_atual_vencidos' ? '#b45309' : val === 'futuros' ? '#7c3aed' : '#2563eb') : 'var(--color-surface-2)',
                   color: filtroSituacaoValor === val ? '#fff' : 'var(--color-text)' }}>
                 {lbl}
               </button>
