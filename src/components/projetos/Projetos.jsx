@@ -661,46 +661,46 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <div className="text-center py-8"><p>📋 Nenhuma receita registrada para este projeto</p></div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full">
+                      <table style={{width:'100%', tableLayout:'fixed', borderCollapse:'collapse'}}>
                         <thead style={{background:"var(--color-surface-2)"}}>
                           <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Origem</th>
-                            <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
-                            {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
+                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
+                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
+                            <th style={{width:'13%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Origem</th>
+                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
+                            <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
+                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
+                            {permissoes?.canEdit && <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {receitasAgrupadas.map((receita) => (
                             <tr key={receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
                                 {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.descricao}</td>
-                              <td className="px-4 py-3 text-sm">
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.descricao}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem'}}>
                                 {receita.origem === 'Finanças Loja' ? (
-                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Finanças Loja</span>
+                                  <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Fin. Loja</span>
                                 ) : (
-                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>{receita.origem}</span>
+                                  <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>{receita.origem}</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#10b981"}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',textAlign:'right',fontWeight:700,color:"#10b981",whiteSpace:'nowrap'}}>
                                 R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.forma_pagamento}</td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.forma_pagamento}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.responsavel}</td>
                               {permissoes?.canEdit && (
-                                <td className="px-4 py-3 text-center">
+                                <td style={{padding:'0.45rem 0.6rem',textAlign:'center'}}>
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
                                     <button onClick={() => editarReceita(receita)} title="Corrigir manualmente"
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
+                                      style={{padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.68rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
                                       ✏️
                                     </button>
                                     <button onClick={() => excluirReceita(receita.id)}
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      style={{padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.68rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
                                       🗑️
                                     </button>
                                   </div>
@@ -711,8 +711,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tbody>
                         <tfoot>
                           <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                            <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
-                            <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:"1.05rem"}}>
+                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem'}}>TOTAL:</td>
+                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:'0.85rem'}}>
                               R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
@@ -742,46 +742,46 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <div className="text-center py-8"><p>📋 Nenhum custo registrado para este projeto</p></div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full">
+                      <table style={{width:'100%', tableLayout:'fixed', borderCollapse:'collapse'}}>
                         <thead style={{background:"var(--color-surface-2)"}}>
                           <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Categoria</th>
-                            <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
-                            <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
-                            {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
+                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
+                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
+                            <th style={{width:'13%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Categoria</th>
+                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
+                            <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
+                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
+                            {permissoes?.canEdit && <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {custosAgrupados.map((custo) => (
                             <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
                                 {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.descricao}</td>
-                              <td className="px-4 py-3 text-sm">
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.descricao}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem'}}>
                                 {custo.categoria === 'Finanças Loja' ? (
-                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Finanças Loja</span>
+                                  <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Fin. Loja</span>
                                 ) : (
-                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>{custo.categoria}</span>
+                                  <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>{custo.categoria}</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#ef4444"}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',textAlign:'right',fontWeight:700,color:"#ef4444",whiteSpace:'nowrap'}}>
                                 R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.forma_pagamento}</td>
-                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.forma_pagamento}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.responsavel}</td>
                               {permissoes?.canEdit && (
-                                <td className="px-4 py-3 text-center">
+                                <td style={{padding:'0.45rem 0.6rem',textAlign:'center'}}>
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
                                     <button onClick={() => editarCusto(custo)} title="Corrigir manualmente"
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
+                                      style={{padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.68rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",cursor:"pointer"}}>
                                       ✏️
                                     </button>
                                     <button onClick={() => excluirCusto(custo.id)}
-                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      style={{padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.68rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
                                       🗑️
                                     </button>
                                   </div>
@@ -792,8 +792,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tbody>
                         <tfoot>
                           <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                            <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
-                            <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:"1.05rem"}}>
+                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem'}}>TOTAL:</td>
+                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:'0.85rem'}}>
                               R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
