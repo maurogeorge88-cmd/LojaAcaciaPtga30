@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { supabase } from '../../../supabaseClient';
 
-export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
+export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }) {
   const [dadosLoja, setDadosLoja] = useState(null);
 
   useEffect(() => {
@@ -79,32 +79,43 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
       year: 'numeric'
     });
     doc.text(`Data: ${dataAtual}`, 105, 47, { align: 'center' });
-    
+
+    // Filtro aplicado (Valor Total / Mês Atual / Vencidos)
+    let yResumo = 55;
+    if (tituloFiltro) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(37, 99, 235);
+      doc.text(`Filtro: ${tituloFiltro}`, 105, 53, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      yResumo = 61;
+    }
+
     // RESUMO GERAL
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text('RESUMO GERAL:', 15, 55);
-    
+    doc.text('RESUMO GERAL:', 15, yResumo);
+
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Total de Irmãos com Pendências: ${irmaosComPendencias.length}`, 15, 62);
-    doc.text(`Total de Despesas: R$ ${totalDespesas.toFixed(2)}`, 15, 68);
-    doc.text(`Total de Receitas: R$ ${totalReceitas.toFixed(2)}`, 15, 74);
-    
+    doc.text(`Total de Irmãos com Pendências: ${irmaosComPendencias.length}`, 15, yResumo + 7);
+    doc.text(`Total de Despesas: R$ ${totalDespesas.toFixed(2)}`, 15, yResumo + 13);
+    doc.text(`Total de Receitas: R$ ${totalReceitas.toFixed(2)}`, 15, yResumo + 19);
+
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 87, 34); // Laranja para pendências
-    doc.text(`Saldo Total em Aberto: R$ ${Math.abs(saldoTotal).toFixed(2)}`, 15, 80);
+    doc.text(`Saldo Total em Aberto: R$ ${Math.abs(saldoTotal).toFixed(2)}`, 15, yResumo + 25);
     doc.setTextColor(0, 0, 0); // Volta para preto
-    
+
     // TABELA DE IRMÃOS
     const tableData = irmaosComPendencias.map(irmao => [
       irmao.nomeIrmao,
       `R$ ${Math.abs(irmao.saldo).toFixed(2)}`,
       'Devedor'
     ]);
-    
+
     doc.autoTable({
-      startY: 88,
+      startY: yResumo + 33,
       head: [['Nome', 'Saldo', 'Status']],
       body: tableData,
       headStyles: {
