@@ -18,6 +18,9 @@ const anoAtual = new Date().getFullYear();
 const ANOS = Array.from({length:5}, (_,i) => anoAtual - i);
 
 export default function ModalEdicaoLote({ aberto, onFechar, categorias, verificarMesBloqueado, onAtualizar }) {
+  // ── Ágape (evento comemorativo) e Projeto — pra vincular/corrigir em lote ──
+  const [eventosComemorativos, setEventosComemorativos] = useState([]);
+  const [projetos, setProjetos] = useState([]);
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [filtroMes,        setFiltroMes]        = useState(new Date().getMonth() + 1);
   const [filtroAno,        setFiltroAno]        = useState(anoAtual);
@@ -48,12 +51,44 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
     valor:            { ativo: false, valor: '' },
     status:           { ativo: false, valor: 'pendente' },
     categoria_id:     { ativo: false, valor: '' },
+    evento_comemorativo_id: { ativo: false, valor: '' },
+    projeto_id:       { ativo: false, valor: '' },
   });
+
+  const CAMPOS_INICIAIS = {
+    data_vencimento:  { ativo: false, valor: '' },
+    data_lancamento:  { ativo: false, valor: '' },
+    descricao:        { ativo: false, valor: '' },
+    valor:            { ativo: false, valor: '' },
+    status:           { ativo: false, valor: 'pendente' },
+    categoria_id:     { ativo: false, valor: '' },
+    evento_comemorativo_id: { ativo: false, valor: '' },
+    projeto_id:       { ativo: false, valor: '' },
+  };
 
   const [confirmExcluir, setConfirmExcluir] = useState(false);
 
   useEffect(() => {
     if (!aberto) { setResultados([]); setSelecionados(new Set()); setBuscaFeita(false); setMsg(''); setConfirmExcluir(false); setFiltroCategoriaPai(''); setFiltroCategoria(''); }
+  }, [aberto]);
+
+  // Carrega Ágapes (eventos comemorativos) e Projetos só quando o modal abre
+  useEffect(() => {
+    if (!aberto) return;
+    (async () => {
+      const { data: eventosData } = await supabase
+        .from('eventos_comemorativos_fin')
+        .select('id, nome, ano')
+        .order('ano', { ascending: false })
+        .order('nome');
+      setEventosComemorativos(eventosData || []);
+
+      const { data: projData } = await supabase
+        .from('projetos')
+        .select('id, nome')
+        .order('nome');
+      setProjetos(projData || []);
+    })();
   }, [aberto]);
 
   if (!aberto) return null;
@@ -156,6 +191,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
       camposAtivos.forEach(([k,v])=>{
         if (k==='valor') payload[k] = parseFloat(v.valor);
         else if (k==='categoria_id') payload[k] = parseInt(v.valor);
+        else if (k==='evento_comemorativo_id' || k==='projeto_id') payload[k] = v.valor ? parseInt(v.valor) : null;
         else payload[k] = v.valor || null;
       });
 
@@ -170,9 +206,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
       setMsg(`✅ ${ids.length} registro(s) atualizados com sucesso!`); setMsgTipo('ok');
       setSelecionados(new Set());
       // Resetar campos
-      setCampos({ data_vencimento:{ativo:false,valor:''}, data_lancamento:{ativo:false,valor:''},
-        descricao:{ativo:false,valor:''}, valor:{ativo:false,valor:''},
-        status:{ativo:false,valor:'pendente'}, categoria_id:{ativo:false,valor:''} });
+      setCampos(CAMPOS_INICIAIS);
       await buscar();
       onAtualizar?.();
     } catch(e) {
@@ -404,6 +438,8 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
                         {key:'valor',            label:'Valor (R$)',       tipo:'number'},
                         {key:'status',           label:'Status',           tipo:'select', opts:[{v:'pendente',l:'Pendente'},{v:'pago',l:'Pago'},{v:'cancelado',l:'Cancelado'}]},
                         {key:'categoria_id',     label:'Categoria',        tipo:'select_cat'},
+                        {key:'evento_comemorativo_id', label:'🎉 Ágape (Evento)', tipo:'select_evento'},
+                        {key:'projeto_id',       label:'📁 Projeto',       tipo:'select_projeto'},
                       ].map(({key,label,tipo,opts})=>(
                         <div key={key} style={{padding:'0.6rem',borderRadius:'var(--radius-md)',border:'1px solid',borderColor:campos[key].ativo?'#7c3aed':'var(--color-border)',background:campos[key].ativo?'rgba(124,58,237,0.05)':'transparent'}}>
                           <label style={{display:'flex',alignItems:'center',gap:'0.4rem',cursor:'pointer',marginBottom:'0.4rem'}}>
@@ -425,6 +461,16 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
                             value={campos[key].valor} onChange={e=>setCampo(key,'valor',e.target.value)}>
                             <option value="">Selecione...</option>
                             {categorias.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+                          </select>}
+                          {tipo==='select_evento' && <select style={{...inp,opacity:campos[key].ativo?1:0.4}} disabled={!campos[key].ativo}
+                            value={campos[key].valor} onChange={e=>setCampo(key,'valor',e.target.value)}>
+                            <option value="">— Nenhum —</option>
+                            {eventosComemorativos.map(ev=><option key={ev.id} value={ev.id}>{ev.nome} {ev.ano ? `(${ev.ano})` : ''}</option>)}
+                          </select>}
+                          {tipo==='select_projeto' && <select style={{...inp,opacity:campos[key].ativo?1:0.4}} disabled={!campos[key].ativo}
+                            value={campos[key].valor} onChange={e=>setCampo(key,'valor',e.target.value)}>
+                            <option value="">— Nenhum —</option>
+                            {projetos.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}
                           </select>}
                         </div>
                       ))}
