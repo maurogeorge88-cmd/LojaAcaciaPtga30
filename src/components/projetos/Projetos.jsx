@@ -664,19 +664,19 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       <table style={{width:'100%', tableLayout:'fixed', borderCollapse:'collapse'}}>
                         <thead style={{background:"var(--color-surface-2)"}}>
                           <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
-                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
-                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
-                            <th style={{width:'13%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Origem</th>
-                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
+                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
+                            <th style={{width:'27%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
+                            <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Origem</th>
+                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
                             <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
-                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
-                            {permissoes?.canEdit && <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
+                            <th style={{width:'28%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
+                            {permissoes?.canEdit && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {receitasAgrupadas.map((receita) => (
                             <tr key={receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",whiteSpace:'nowrap'}}>
                                 {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.descricao}</td>
@@ -745,19 +745,19 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       <table style={{width:'100%', tableLayout:'fixed', borderCollapse:'collapse'}}>
                         <thead style={{background:"var(--color-surface-2)"}}>
                           <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
-                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
-                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
-                            <th style={{width:'13%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Categoria</th>
-                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
+                            <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
+                            <th style={{width:'27%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
+                            <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Categoria</th>
+                            <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
                             <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
-                            <th style={{width:'25%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
-                            {permissoes?.canEdit && <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
+                            <th style={{width:'28%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
+                            {permissoes?.canEdit && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
                           {custosAgrupados.map((custo) => (
                             <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",whiteSpace:'nowrap'}}>
                                 {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.descricao}</td>
