@@ -175,7 +175,20 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const adicionarCusto = async (e) => {
     e.preventDefault();
-    const dadosCusto = { ...custoForm, projeto_id: projetoSelecionado.id, valor: parseFloat(custoForm.valor) || 0 };
+    // Monta o payload só com colunas reais da tabela — nunca espalha o
+    // formulário inteiro, porque quando o registro vem da lista agrupada
+    // (custosAgrupados) ele carrega um campo extra "qtd" (só de exibição,
+    // não existe na tabela) que quebrava o salvamento.
+    const dadosCusto = {
+      projeto_id: projetoSelecionado.id,
+      data_custo: custoForm.data_custo,
+      descricao: custoForm.descricao,
+      valor: parseFloat(custoForm.valor) || 0,
+      categoria: custoForm.categoria,
+      forma_pagamento: custoForm.forma_pagamento,
+      responsavel: custoForm.responsavel || null,
+      observacao: custoForm.observacao || null,
+    };
 
     if (custoEditando) {
       const { error } = await supabase.from('custos_projeto').update(dadosCusto).eq('id', custoEditando.id);
@@ -214,7 +227,19 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const adicionarReceita = async (e) => {
     e.preventDefault();
-    const dadosReceita = { ...receitaForm, projeto_id: projetoSelecionado.id, valor: parseFloat(receitaForm.valor) || 0 };
+    // Mesma correção — payload só com colunas reais de receitas_projeto,
+    // nunca espalhando o formulário inteiro (que pode carregar o campo
+    // "qtd" injetado pela lista agrupada, e quebrava o salvamento).
+    const dadosReceita = {
+      projeto_id: projetoSelecionado.id,
+      data_receita: receitaForm.data_receita,
+      descricao: receitaForm.descricao,
+      valor: parseFloat(receitaForm.valor) || 0,
+      origem: receitaForm.origem,
+      forma_pagamento: receitaForm.forma_pagamento,
+      responsavel: receitaForm.responsavel || null,
+      observacao: receitaForm.observacao || null,
+    };
 
     if (receitaEditando) {
       // Correção manual de uma linha já existente — inclusive as que vieram
