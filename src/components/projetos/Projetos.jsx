@@ -13,6 +13,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
   const [mostrarFinanceiro, setMostrarFinanceiro] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('receitas');
+  // Visualização Agrupada (padrão) x Detalhada. Agrupada é só leitura —
+  // edição fica bloqueada nela de propósito, porque uma linha agrupada
+  // pode somar vários registros reais, e editar ali corrompe o registro
+  // errado (já aconteceu). Pra editar, precisa desmarcar e ver Detalhado.
+  const [verAgrupado, setVerAgrupado] = useState(true);
   const [custoForm, setCustoForm] = useState({});
   const [receitaForm, setReceitaForm] = useState({});
   const [receitaEditando, setReceitaEditando] = useState(null);
@@ -307,14 +312,27 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     return <div style={{textAlign:"center",padding:"3rem",color:"var(--color-text-muted)"}}>⏳ Carregando projetos...</div>;
   }
 
-  // Lista de receitas/custos SEM agrupamento — cada linha é um registro
-  // real e único do banco. Antes isso era agrupado por data (somando tudo
-  // que caía no mesmo dia em uma única linha), o que causava um bug sério:
-  // clicar em "editar" podia acabar editando o registro ERRADO quando dois
-  // lançamentos caíam na mesma data. Cada linha agora sempre corresponde
-  // exatamente a 1 registro, com o id certo.
-  const receitasAgrupadas = [...receitasDoModal].sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
-  const custosAgrupados = [...custosDoModal].sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
+  // Lista de receitas/custos pra exibição — alterna conforme "verAgrupado":
+  // Detalhado: cada linha é um registro real e único do banco (o id bate
+  // certinho, então dá pra editar com segurança).
+  // Agrupado: soma por data (Finanças Loja) ou por data+descrição (manual),
+  // só pra visão geral — NUNCA editável (não corresponde a um único id real).
+  const listaReceitasOrdenada = [...receitasDoModal].sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
+  const listaCustosOrdenada = [...custosDoModal].sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
+
+  const agrupar = (lista, campoData, campoOrigemOuCategoria) => Object.values(
+    lista.reduce((acc, r) => {
+      const isFL = r[campoOrigemOuCategoria] === 'Finanças Loja';
+      const key = isFL ? (r[campoData] || '') + '|FL' : (r[campoData] || '') + '|' + (r.descricao || '');
+      if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+      acc[key].valor += parseFloat(r.valor || 0);
+      acc[key].qtd++;
+      return acc;
+    }, {})
+  ).sort((a, b) => (b[campoData] || '').localeCompare(a[campoData] || ''));
+
+  const receitasAgrupadas = verAgrupado ? agrupar(listaReceitasOrdenada, 'data_receita', 'origem') : listaReceitasOrdenada;
+  const custosAgrupados = verAgrupado ? agrupar(listaCustosOrdenada, 'data_custo', 'categoria') : listaCustosOrdenada;
 
   const totalReceitasModal = receitasDoModal.reduce((s, r) => s + parseFloat(r.valor || 0), 0);
   const totalCustosModal = custosDoModal.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
@@ -643,6 +661,31 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
             <div className="p-6">
 
+              {/* Alterna Agrupado (padrão, só leitura) x Detalhado (editável) */}
+              <div style={{display:'flex',alignItems:'center',gap:'0.6rem',marginBottom:'1rem',padding:'0.6rem 0.8rem',borderRadius:'var(--radius-md)',background:'var(--color-surface-2)',border:'1px solid var(--color-border)'}}>
+                <div style={{display:'flex',borderRadius:'var(--radius-md)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
+                  <button
+                    onClick={() => setVerAgrupado(true)}
+                    style={{padding:'0.35rem 0.9rem',fontSize:'0.78rem',fontWeight:700,border:'none',cursor:'pointer',
+                      background: verAgrupado ? 'var(--color-accent)' : 'var(--color-surface)',
+                      color: verAgrupado ? '#fff' : 'var(--color-text-muted)'}}>
+                    🗂️ Agrupado
+                  </button>
+                  <button
+                    onClick={() => setVerAgrupado(false)}
+                    style={{padding:'0.35rem 0.9rem',fontSize:'0.78rem',fontWeight:700,border:'none',cursor:'pointer',
+                      background: !verAgrupado ? 'var(--color-accent)' : 'var(--color-surface)',
+                      color: !verAgrupado ? '#fff' : 'var(--color-text-muted)'}}>
+                    📋 Detalhado
+                  </button>
+                </div>
+                <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                  {verAgrupado
+                    ? 'Somando por data — só visualização. Pra editar ou excluir um registro, mude pra Detalhado.'
+                    : 'Cada linha é um registro individual — edição e exclusão liberadas.'}
+                </span>
+              </div>
+
               {/* ABA RECEITAS */}
               {abaAtiva === 'receitas' && (
                 <>
@@ -670,7 +713,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
                             <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
                             <th style={{width:'28%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
-                            {permissoes?.canEdit && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
+                            {permissoes?.canEdit && !verAgrupado && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -679,7 +722,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",whiteSpace:'nowrap'}}>
                                 {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.descricao}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                {receita.descricao}
+                                {verAgrupado && receita.qtd > 1 && (
+                                  <span style={{marginLeft:'0.4rem',fontSize:'0.65rem',fontWeight:700,color:'var(--color-accent)',whiteSpace:'nowrap'}}>({receita.qtd}x)</span>
+                                )}
+                              </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem'}}>
                                 {receita.origem === 'Finanças Loja' ? (
                                   <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Fin. Loja</span>
@@ -691,8 +739,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                                 R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.forma_pagamento}</td>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{receita.responsavel}</td>
-                              {permissoes?.canEdit && (
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                {verAgrupado && receita.qtd > 1 ? <span style={{fontStyle:'italic',color:'var(--color-text-muted)'}}>Vários irmãos</span> : receita.responsavel}
+                              </td>
+                              {permissoes?.canEdit && !verAgrupado && (
                                 <td style={{padding:'0.45rem 0.6rem',textAlign:'center'}}>
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
                                     <button onClick={() => editarReceita(receita)} title="Corrigir manualmente"
@@ -715,7 +765,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:'0.85rem'}}>
                               R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
+                            <td colSpan={(permissoes?.canEdit && !verAgrupado) ? 3 : 2}></td>
                           </tr>
                         </tfoot>
                       </table>
@@ -751,7 +801,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <th style={{width:'8%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
                             <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
                             <th style={{width:'28%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
-                            {permissoes?.canEdit && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
+                            {permissoes?.canEdit && !verAgrupado && <th style={{width:'9%',padding:'0.5rem 0.6rem',textAlign:'center',fontSize:'0.72rem',fontWeight:700}}>Ações</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -760,7 +810,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",whiteSpace:'nowrap'}}>
                                 {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
                               </td>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.descricao}</td>
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                {custo.descricao}
+                                {verAgrupado && custo.qtd > 1 && (
+                                  <span style={{marginLeft:'0.4rem',fontSize:'0.65rem',fontWeight:700,color:'var(--color-accent)',whiteSpace:'nowrap'}}>({custo.qtd}x)</span>
+                                )}
+                              </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem'}}>
                                 {custo.categoria === 'Finanças Loja' ? (
                                   <span style={{display:'inline-block',whiteSpace:'nowrap',padding:"0.15rem 0.4rem",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Fin. Loja</span>
@@ -772,8 +827,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                                 R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </td>
                               <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.forma_pagamento}</td>
-                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.responsavel}</td>
-                              {permissoes?.canEdit && (
+                              <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                {verAgrupado && custo.qtd > 1 ? <span style={{fontStyle:'italic',color:'var(--color-text-muted)'}}>Vários</span> : custo.responsavel}
+                              </td>
+                              {permissoes?.canEdit && !verAgrupado && (
                                 <td style={{padding:'0.45rem 0.6rem',textAlign:'center'}}>
                                   <div style={{display:'flex',gap:'0.3rem',justifyContent:'center',alignItems:'center'}}>
                                     <button onClick={() => editarCusto(custo)} title="Corrigir manualmente"
@@ -796,7 +853,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:'0.85rem'}}>
                               R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
+                            <td colSpan={(permissoes?.canEdit && !verAgrupado) ? 3 : 2}></td>
                           </tr>
                         </tfoot>
                       </table>
