@@ -761,8 +761,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tbody>
                         <tfoot>
                           <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem'}}>TOTAL:</td>
-                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:'0.85rem'}}>
+                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem',whiteSpace:'nowrap'}}>TOTAL:</td>
+                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:'0.85rem',whiteSpace:'nowrap'}}>
                               R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td colSpan={(permissoes?.canEdit && !verAgrupado) ? 3 : 2}></td>
@@ -849,8 +849,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tbody>
                         <tfoot>
                           <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem'}}>TOTAL:</td>
-                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:'0.85rem'}}>
+                            <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem',whiteSpace:'nowrap'}}>TOTAL:</td>
+                            <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:'0.85rem',whiteSpace:'nowrap'}}>
                               R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td colSpan={(permissoes?.canEdit && !verAgrupado) ? 3 : 2}></td>
