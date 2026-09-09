@@ -97,6 +97,7 @@ function TabelaIrmaos({ lista, ordem, titulo, corTitulo, bgTitulo, selecionadoId
 
 export default function ModalResumoIrmaos({ isOpen, onClose }) {
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroSituacaoValor, setFiltroSituacaoValor] = useState('total'); // total | mes_atual | vencidos — filtra o VALOR PENDENTE mostrado
   const [ordem, setOrdem]               = useState('alfa');
   const [filtroAno, setFiltroAno]       = useState('todos');
   const [filtroMes, setFiltroMes]       = useState('todos');
@@ -214,7 +215,6 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     if (!isOpen || todosLanc.length === 0) return;
 
     // Filtrar lançamentos pelo período
-    // Filtrar lançamentos pelo período
     // PAGOS: filtrados pelo período (data_vencimento ou data_pagamento)
     // PENDENTES: SEMPRE todos, sem corte de data — mostrar toda a dívida real
     const lancFiltrados = todosLanc.filter(l => {
@@ -224,6 +224,17 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       if (filtroMes !== 'todos' && dataRef?.substring(5,7) !== filtroMes) return false;
       return true;
     });
+
+    // Situação do valor PENDENTE a considerar: Total (tudo) | Mês Atual
+    // (vencimento cai no mês/ano corrente) | Vencidos (vencimento já passou)
+    const hoje = new Date();
+    const hojeStr = hoje.toISOString().split('T')[0];
+    const anoMesAtual = hojeStr.substring(0, 7); // 'YYYY-MM'
+    const pendenteContaNoFiltro = (l) => {
+      if (filtroSituacaoValor === 'mes_atual') return (l.data_vencimento || '').startsWith(anoMesAtual);
+      if (filtroSituacaoValor === 'vencidos') return (l.data_vencimento || '') < hojeStr;
+      return true; // 'total'
+    };
 
     // Montar resumo por irmão
     const resumoPorIrmao = {};
@@ -248,10 +259,10 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       const tipo = lanc.categorias_financeiras?.tipo || lanc.tipo;
       if (tipo === 'despesa') {
         resumoPorIrmao[id].totalDespesas += valor;
-        if (lanc.status === 'pendente') resumoPorIrmao[id].despesasPendentes += valor;
+        if (lanc.status === 'pendente' && pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].despesasPendentes += valor;
       } else if (tipo === 'receita') {
         resumoPorIrmao[id].totalReceitas += valor;
-        if (lanc.status === 'pendente') resumoPorIrmao[id].receitasPendentes += valor;
+        if (lanc.status === 'pendente' && pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].receitasPendentes += valor;
       }
     });
 
@@ -261,7 +272,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     const ativos   = arr.filter(i => SITUACOES_ATIVAS.includes(i.situacao)).map(i => ({ ...i, _grupo: 'ativo' }));
     const inativos = arr.filter(i => !SITUACOES_ATIVAS.includes(i.situacao) && (i.receitasPendentes > 0 || i.despesasPendentes > 0)).map(i => ({ ...i, _grupo: 'inativo' }));
     setResumoIrmaos([...ativos, ...inativos]);
-  }, [isOpen, todosLanc, filtroAno, filtroMes, irmaosMap]);
+  }, [isOpen, todosLanc, filtroAno, filtroMes, filtroSituacaoValor, irmaosMap]);
 
   if (!isOpen) return null;
 
@@ -282,6 +293,10 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     : filtroMes === 'todos' ? `Ano ${filtroAno}`
     : `${MESES_NOME[parseInt(filtroMes)-1]} / ${filtroAno}`;
 
+  const labelSituacaoValor = filtroSituacaoValor === 'mes_atual' ? 'Pendências do Mês Atual'
+    : filtroSituacaoValor === 'vencidos' ? 'Pendências Vencidas'
+    : 'Valor Total Pendente';
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '1100px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -290,7 +305,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
         <div style={{ background: 'var(--color-accent)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 style={{ color: '#fff', fontWeight: '800', fontSize: '1.25rem', margin: 0 }}>💰 Resumo Financeiro dos Irmãos</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem', margin: '0.2rem 0 0' }}>{labelPeriodo}</p>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem', margin: '0.2rem 0 0' }}>{labelPeriodo} · {labelSituacaoValor}</p>
           </div>
           <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '2.25rem', height: '2.25rem', fontSize: '1.4rem', fontWeight: '700', cursor: 'pointer' }}>×</button>
         </div>
@@ -327,6 +342,23 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
             {loading && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>⏳ Carregando...</span>}
           </div>
 
+          {/* ── Filtro de Situação dos Valores (Total / Mês Atual / Vencidos) ── */}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>💰 Valores Pendentes:</span>
+            {[
+              ['total', '📊 Valor Total'],
+              ['mes_atual', '📅 Mês Atual'],
+              ['vencidos', '⏰ Vencidos'],
+            ].map(([val, lbl]) => (
+              <button key={val} onClick={() => setFiltroSituacaoValor(val)}
+                style={{ padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
+                  background: filtroSituacaoValor === val ? (val === 'vencidos' ? '#dc2626' : val === 'mes_atual' ? '#0891b2' : '#2563eb') : 'var(--color-surface-2)',
+                  color: filtroSituacaoValor === val ? '#fff' : 'var(--color-text)' }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+
           {/* ── Filtros de status + ordenação ── */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
             {[
@@ -347,7 +379,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
                   {lbl}
                 </button>
               ))}
-              <RelatorioIrmaosPendencias resumoIrmaos={resumoIrmaos} />
+              <RelatorioIrmaosPendencias resumoIrmaos={resumoIrmaos} tituloFiltro={labelSituacaoValor} />
             </div>
           </div>
 
