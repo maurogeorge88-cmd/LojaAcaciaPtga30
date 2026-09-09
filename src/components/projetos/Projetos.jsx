@@ -799,18 +799,26 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
         </div>
       )}
 
-      {/* Modal Nova Receita */}
-      {mostrarFormReceita && projetoSelecionado && (
+      {/* Modal Nova/Editar Receita */}
+      {mostrarFormReceita && projetoSelecionado && (() => {
+        const ehFinancasLoja = receitaEditando?.origem === 'Finanças Loja';
+        const campoTravado = { border:"1px solid var(--color-border)", background:"var(--color-surface-3)", color:"var(--color-text-muted)", cursor:'not-allowed' };
+        return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[60]">
           <div className="rounded-xl shadow-2xl w-full max-w-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div style={{background:"#10b981",padding:"1rem 1.5rem",borderRadius:"0.75rem 0.75rem 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
-                <h3 className="text-lg font-bold text-white">💵 Nova Receita</h3>
+                <h3 className="text-lg font-bold text-white">{receitaEditando ? '✏️ Editar Receita' : '💵 Nova Receita'}</h3>
                 <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
               </div>
               <button onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); setReceitaEditando(null); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
             </div>
             <form onSubmit={adicionarReceita} className="p-5 space-y-3">
+              {ehFinancasLoja && (
+                <div style={{padding:'0.6rem 0.8rem',borderRadius:'var(--radius-md)',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',fontSize:'0.78rem',color:'var(--color-text)'}}>
+                  🏦 Este registro veio do Finanças Loja. Valor, Origem, Forma de Pagamento e Observação ficam travados aqui — só Data, Descrição e Responsável podem ser corrigidos.
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
@@ -819,8 +827,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Valor (R$) *</label>
-                  <input type="number" step="0.01" required placeholder="0,00" value={receitaForm.valor || ''} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                  <input type="number" step="0.01" required disabled={ehFinancasLoja} placeholder="0,00" value={receitaForm.valor || ''} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
                 </div>
               </div>
               <div>
@@ -831,16 +839,20 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Origem *</label>
-                  <select required value={receitaForm.origem || ''} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                    <option value="">Selecione...</option>
-                    {origensReceita.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  {ehFinancasLoja ? (
+                    <input type="text" disabled value="Finanças Loja" className="w-full px-3 py-2 rounded-lg" style={campoTravado} />
+                  ) : (
+                    <select required value={receitaForm.origem || ''} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                      <option value="">Selecione...</option>
+                      {origensReceita.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Forma Pagamento *</label>
-                  <select required value={receitaForm.forma_pagamento || ''} onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                  <select required disabled={ehFinancasLoja} value={receitaForm.forma_pagamento || ''} onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                     <option value="">Selecione...</option>
                     {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
@@ -853,8 +865,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               </div>
               <div>
                 <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Observação</label>
-                <input type="text" placeholder="Observação opcional" value={receitaForm.observacao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                <input type="text" disabled={ehFinancasLoja} placeholder="Observação opcional" value={receitaForm.observacao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" style={{flex:1,padding:"0.6rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
@@ -868,20 +880,29 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </form>
           </div>
         </div>
-      )}
+        );
+      })()}
 
-      {/* Modal Novo Custo */}
-      {mostrarFormCusto && projetoSelecionado && (
+      {/* Modal Novo/Editar Custo */}
+      {mostrarFormCusto && projetoSelecionado && (() => {
+        const ehFinancasLoja = custoEditando?.categoria === 'Finanças Loja';
+        const campoTravado = { border:"1px solid var(--color-border)", background:"var(--color-surface-3)", color:"var(--color-text-muted)", cursor:'not-allowed' };
+        return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[60]">
           <div className="rounded-xl shadow-2xl w-full max-w-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem",borderRadius:"0.75rem 0.75rem 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
-                <h3 className="text-lg font-bold text-white">💸 Novo Custo</h3>
+                <h3 className="text-lg font-bold text-white">{custoEditando ? '✏️ Editar Custo' : '💸 Novo Custo'}</h3>
                 <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
               </div>
               <button onClick={() => { setMostrarFormCusto(false); setCustoForm({}); setCustoEditando(null); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
             </div>
             <form onSubmit={adicionarCusto} className="p-5 space-y-3">
+              {ehFinancasLoja && (
+                <div style={{padding:'0.6rem 0.8rem',borderRadius:'var(--radius-md)',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',fontSize:'0.78rem',color:'var(--color-text)'}}>
+                  🏦 Este registro veio do Finanças Loja. Valor, Categoria, Forma de Pagamento e Observação ficam travados aqui — só Data, Descrição e Responsável podem ser corrigidos.
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
@@ -890,8 +911,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Valor (R$) *</label>
-                  <input type="number" step="0.01" required placeholder="0,00" value={custoForm.valor || ''} onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                  <input type="number" step="0.01" required disabled={ehFinancasLoja} placeholder="0,00" value={custoForm.valor || ''} onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
                 </div>
               </div>
               <div>
@@ -902,16 +923,20 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Categoria *</label>
-                  <select required value={custoForm.categoria || ''} onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                    <option value="">Selecione...</option>
-                    {categoriasCusto.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
+                  {ehFinancasLoja ? (
+                    <input type="text" disabled value="Finanças Loja" className="w-full px-3 py-2 rounded-lg" style={campoTravado} />
+                  ) : (
+                    <select required value={custoForm.categoria || ''} onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                      <option value="">Selecione...</option>
+                      {categoriasCusto.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Forma Pagamento *</label>
-                  <select required value={custoForm.forma_pagamento || ''} onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                  <select required disabled={ehFinancasLoja} value={custoForm.forma_pagamento || ''} onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                     <option value="">Selecione...</option>
                     {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
                   </select>
@@ -924,8 +949,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               </div>
               <div>
                 <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Observação</label>
-                <input type="text" placeholder="Observação opcional" value={custoForm.observacao || ''} onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                <input type="text" disabled={ehFinancasLoja} placeholder="Observação opcional" value={custoForm.observacao || ''} onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={ehFinancasLoja ? campoTravado : {border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="submit" style={{flex:1,padding:"0.6rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
@@ -939,7 +964,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </form>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
