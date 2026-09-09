@@ -176,9 +176,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const adicionarCusto = async (e) => {
     e.preventDefault();
     // Monta o payload só com colunas reais da tabela — nunca espalha o
-    // formulário inteiro, porque quando o registro vem da lista agrupada
-    // (custosAgrupados) ele carrega um campo extra "qtd" (só de exibição,
-    // não existe na tabela) que quebrava o salvamento.
+    // formulário inteiro (mantém como camada extra de segurança, mesmo
+    // com o agrupamento por data já removido da tela).
     const dadosCusto = {
       projeto_id: projetoSelecionado.id,
       data_custo: custoForm.data_custo,
@@ -228,8 +227,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const adicionarReceita = async (e) => {
     e.preventDefault();
     // Mesma correção — payload só com colunas reais de receitas_projeto,
-    // nunca espalhando o formulário inteiro (que pode carregar o campo
-    // "qtd" injetado pela lista agrupada, e quebrava o salvamento).
+    // nunca espalhando o formulário inteiro (mantém como camada extra de
+    // segurança, mesmo com o agrupamento por data já removido da tela).
     const dadosReceita = {
       projeto_id: projetoSelecionado.id,
       data_receita: receitaForm.data_receita,
@@ -308,28 +307,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     return <div style={{textAlign:"center",padding:"3rem",color:"var(--color-text-muted)"}}>⏳ Carregando projetos...</div>;
   }
 
-  // --- Dados agrupados para o modal ---
-  const receitasAgrupadas = Object.values(
-    receitasDoModal.reduce((acc, r) => {
-      const isFL = r.origem === 'Finanças Loja';
-      const key = isFL ? (r.data_receita || '') + '|FL' : (r.data_receita || '') + '|' + (r.descricao || '');
-      if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-      acc[key].valor += parseFloat(r.valor || 0);
-      acc[key].qtd++;
-      return acc;
-    }, {})
-  ).sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
-
-  const custosAgrupados = Object.values(
-    custosDoModal.reduce((acc, r) => {
-      const isFL = r.categoria === 'Finanças Loja';
-      const key = isFL ? (r.data_custo || '') + '|FL' : (r.data_custo || '') + '|' + (r.descricao || '');
-      if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-      acc[key].valor += parseFloat(r.valor || 0);
-      acc[key].qtd++;
-      return acc;
-    }, {})
-  ).sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
+  // Lista de receitas/custos SEM agrupamento — cada linha é um registro
+  // real e único do banco. Antes isso era agrupado por data (somando tudo
+  // que caía no mesmo dia em uma única linha), o que causava um bug sério:
+  // clicar em "editar" podia acabar editando o registro ERRADO quando dois
+  // lançamentos caíam na mesma data. Cada linha agora sempre corresponde
+  // exatamente a 1 registro, com o id certo.
+  const receitasAgrupadas = [...receitasDoModal].sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
+  const custosAgrupados = [...custosDoModal].sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
 
   const totalReceitasModal = receitasDoModal.reduce((s, r) => s + parseFloat(r.valor || 0), 0);
   const totalCustosModal = custosDoModal.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
