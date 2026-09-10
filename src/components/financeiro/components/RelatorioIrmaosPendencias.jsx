@@ -149,7 +149,7 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
 
     // Desenha um grupo (título + tabela + linha de subtotal). Retorna o Y
     // final, já depois do subtotal, pra próxima seção continuar dali.
-    const desenharGrupo = (titulo, corTitulo, grupo, totais) => {
+    const desenharGrupo = (titulo, corTitulo, grupo, totais, tituloCurto) => {
       if (grupo.length === 0) return y;
 
       if (y + 16 > 280) { doc.addPage(); y = 15; }
@@ -188,7 +188,7 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       doc.rect(15, y, 180, 7, 'F');
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Subtotal ${titulo}:`, 18, y + 5);
+      doc.text(`Subtotal ${tituloCurto || titulo}:`, 18, y + 5);
       doc.setFont('helvetica', 'normal');
       doc.text(fmtOuTraço(totais.saldoVencido), 105, y + 5, { align: 'right' });
       doc.text(fmtOuTraço(totais.saldoMesAtual), 135, y + 5, { align: 'right' });
@@ -199,8 +199,8 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       return y;
     };
 
-    y = desenharGrupo('IRMÃOS ATIVOS E LICENCIADOS', [37, 99, 235], ativosELicenciados, totAtivos);
-    y = desenharGrupo('IRMÃOS INATIVOS (Ex-Ofício, Desligados, Excluídos, Irregulares, etc.)', [234, 88, 12], inativos, totInativos);
+    y = desenharGrupo('IRMÃOS ATIVOS E LICENCIADOS', [37, 99, 235], ativosELicenciados, totAtivos, 'Ativos e Licenciados');
+    y = desenharGrupo('IRMÃOS INATIVOS (Ex-Ofício, Desligados, Excluídos, Irregulares, etc.)', [234, 88, 12], inativos, totInativos, 'Irmãos Inativos');
 
     // RESUMO / TOTAL GERAL
     if (y + 40 > 280) { doc.addPage(); y = 15; }
