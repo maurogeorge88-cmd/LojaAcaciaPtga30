@@ -253,7 +253,11 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
           cim: dadosIrmao.cim || null,
           situacao: (dadosIrmao.situacao || '').toLowerCase(),
           totalDespesas: 0, totalReceitas: 0,
-          despesasPendentes: 0, receitasPendentes: 0, saldo: 0
+          despesasPendentes: 0, receitasPendentes: 0, saldo: 0,
+          // Detalhamento SEMPRE calculado, independente do filtro acima —
+          // usado no relatório detalhado (Vencido / Mês Atual / Futuro).
+          despVencido: 0, despMesAtual: 0, despFuturo: 0,
+          recVencido: 0, recMesAtual: 0, recFuturo: 0,
         };
       }
       const valor = parseFloat(lanc.valor) || 0;
@@ -262,14 +266,33 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       const tipo = lanc.categorias_financeiras?.tipo || lanc.tipo;
       if (tipo === 'despesa') {
         resumoPorIrmao[id].totalDespesas += valor;
-        if (lanc.status === 'pendente' && pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].despesasPendentes += valor;
+        if (lanc.status === 'pendente') {
+          if (pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].despesasPendentes += valor;
+          const vencMes = (lanc.data_vencimento || '').substring(0, 7);
+          if ((lanc.data_vencimento || '') < hojeStr) resumoPorIrmao[id].despVencido += valor;
+          else if (vencMes === anoMesAtual) resumoPorIrmao[id].despMesAtual += valor;
+          else resumoPorIrmao[id].despFuturo += valor;
+        }
       } else if (tipo === 'receita') {
         resumoPorIrmao[id].totalReceitas += valor;
-        if (lanc.status === 'pendente' && pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].receitasPendentes += valor;
+        if (lanc.status === 'pendente') {
+          if (pendenteContaNoFiltro(lanc)) resumoPorIrmao[id].receitasPendentes += valor;
+          const vencMes = (lanc.data_vencimento || '').substring(0, 7);
+          if ((lanc.data_vencimento || '') < hojeStr) resumoPorIrmao[id].recVencido += valor;
+          else if (vencMes === anoMesAtual) resumoPorIrmao[id].recMesAtual += valor;
+          else resumoPorIrmao[id].recFuturo += valor;
+        }
       }
     });
 
-    Object.values(resumoPorIrmao).forEach(i => { i.saldo = i.despesasPendentes - i.receitasPendentes; });
+    Object.values(resumoPorIrmao).forEach(i => {
+      i.saldo = i.despesasPendentes - i.receitasPendentes;
+      // Saldo devedor (Loja recebe do irmão) por faixa de vencimento —
+      // mesma lógica do saldo geral, só que separado em 3 baldes fixos.
+      i.saldoVencido  = i.despVencido  - i.recVencido;
+      i.saldoMesAtual = i.despMesAtual - i.recMesAtual;
+      i.saldoFuturo   = i.despFuturo   - i.recFuturo;
+    });
 
     const arr = Object.values(resumoPorIrmao).filter(i => i.totalDespesas > 0 || i.totalReceitas > 0);
     const ativos   = arr.filter(i => SITUACOES_ATIVAS.includes(i.situacao)).map(i => ({ ...i, _grupo: 'ativo' }));
