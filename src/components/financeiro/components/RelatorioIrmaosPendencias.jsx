@@ -8,6 +8,20 @@ const SITUACOES_ATIVAS = ['regular', 'licenciado'];
 // Moeda brasileira: R$ 1.050,55
 const fmtR = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Nome curto: primeiro nome + segundo nome. Se o segundo "nome" for uma
+// preposição (de/da/do/dos/das), pula pra pegar o ÚLTIMO nome no lugar
+// (evita "João Da" — vira "João Silva"). Dá mais espaço nas colunas.
+const nomeCurto = (nomeCompleto) => {
+  if (!nomeCompleto) return '';
+  const partes = nomeCompleto.trim().split(/\s+/);
+  if (partes.length <= 2) return nomeCompleto;
+  const preposicoes = ['de', 'da', 'do', 'dos', 'das'];
+  if (preposicoes.includes(partes[1].toLowerCase())) {
+    return `${partes[0]} ${partes[partes.length - 1]}`;
+  }
+  return `${partes[0]} ${partes[1]}`;
+};
+
 export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }) {
   const [dadosLoja, setDadosLoja] = useState(null);
 
@@ -148,7 +162,7 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       y += 5;
 
       const tableData = grupo.map(irmao => [
-        irmao.nomeIrmao,
+        nomeCurto(irmao.nomeIrmao),
         fmtOuTraço(irmao.saldoVencido),
         fmtOuTraço(irmao.saldoMesAtual),
         fmtOuTraço(irmao.saldoFuturo),
