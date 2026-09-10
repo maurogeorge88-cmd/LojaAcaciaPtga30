@@ -404,6 +404,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                               {evento.grau_sessao_id === 2 && '🔷 Companheiro'}
                               {evento.grau_sessao_id === 3 && '🔺 Mestre'}
                               {evento.grau_sessao_id === 4 && '🏛️ Evento Loja'}
+                              {evento.grau_sessao_id === 5 && '📋 Sessão Administrativa'}
                             </span>
                           )}
                         </div>
