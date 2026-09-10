@@ -80,6 +80,7 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null)
       case 2: return 'Companheiro';
       case 3: return 'Mestre';
       case 4: return 'Evento Loja';
+      case 5: return 'Sessão Administrativa';
       default: return '';
     }
   };
@@ -322,6 +323,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       case 2: return '🔷 Companheiro';
       case 3: return '🔺 Mestre';
       case 4: return '🏛️ Evento Loja';
+      case 5: return '📋 Sessão Administrativa';
       default: return '';
     }
   };
@@ -747,6 +749,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   <option value={2}>🔷 Companheiro (Comp. e Mestres)</option>
                   <option value={3}>🔺 Mestre (Somente Mestres)</option>
                   <option value={4}>🏛️ Evento Loja (Geral)</option>
+                  <option value={5}>📋 Sessão Administrativa (Todos)</option>
                 </select>
                 <p className="text-xs mt-1">Define quem pode participar da sessão</p>
               </div>
