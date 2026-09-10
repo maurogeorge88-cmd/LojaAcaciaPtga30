@@ -189,8 +189,8 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
     doc.text(`  • Inativos: ${inativos.length}`, 20, y + 25);
 
     doc.setFont('helvetica', 'normal');
-    doc.text(`Total de Despesas: ${fmtR(totalDespesas)}`, 110, y + 14);
-    doc.text(`Total de Receitas: ${fmtR(totalReceitas)}`, 110, y + 19.5);
+    doc.text(`Total Ativos e Licenciados: ${fmtR(Math.abs(totAtivos.saldo))}`, 110, y + 14);
+    doc.text(`Total Inativos: ${fmtR(Math.abs(totInativos.saldo))}`, 110, y + 19.5);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
