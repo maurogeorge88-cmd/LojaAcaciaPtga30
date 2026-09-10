@@ -695,8 +695,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             </div>
 
             <div className="p-6" style={{background:"var(--color-surface)"}}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Título */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
@@ -868,7 +868,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <textarea
                   value={eventoForm.descricao}
                   onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
-                  rows={2}
+                  rows={6}
                   placeholder="Descrição detalhada do evento"
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
@@ -882,14 +882,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <textarea
                   value={eventoForm.observacoes}
                   onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
-                  rows={2}
+                  rows={3}
                   placeholder="Observações adicionais"
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-2">
               <button
                 type="submit"
                 className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
