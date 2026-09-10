@@ -48,6 +48,9 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       despesas: grupo.reduce((s, i) => s + i.totalDespesas, 0),
       receitas: grupo.reduce((s, i) => s + i.totalReceitas, 0),
       saldo: grupo.reduce((s, i) => s + i.saldo, 0),
+      saldoVencido: grupo.reduce((s, i) => s + (i.saldoVencido || 0), 0),
+      saldoMesAtual: grupo.reduce((s, i) => s + (i.saldoMesAtual || 0), 0),
+      saldoFuturo: grupo.reduce((s, i) => s + (i.saldoFuturo || 0), 0),
     });
     const totAtivos = somaGrupo(ativosELicenciados);
     const totInativos = somaGrupo(inativos);
@@ -109,11 +112,16 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       y = 61;
     }
 
-    const colunas = ['Nome', 'Saldo', 'Status'];
+    // Mostra "—" pra zero, evita poluir a tabela com "R$ 0,00" em toda linha
+    const fmtOuTraço = (v) => (Math.abs(v) < 0.005 ? '—' : fmtR(Math.abs(v)));
+
+    const colunas = ['Nome', 'Vencido', 'Mês Atual', 'Futuro', 'Total'];
     const colStyles = {
-      0: { cellWidth: 100 },
-      1: { halign: 'right', cellWidth: 45, textColor: [255, 87, 34] },
-      2: { halign: 'center', cellWidth: 43, fillColor: [255, 243, 224], textColor: [230, 81, 0] },
+      0: { cellWidth: 60 },
+      1: { halign: 'right', cellWidth: 30, textColor: [0, 0, 0] },
+      2: { halign: 'right', cellWidth: 30, textColor: [0, 0, 0] },
+      3: { halign: 'right', cellWidth: 30, textColor: [0, 0, 0] },
+      4: { halign: 'right', cellWidth: 30, textColor: [0, 0, 0], fontStyle: 'bold' },
     };
 
     const rodapePagina = function (data) {
@@ -139,14 +147,20 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       doc.setTextColor(0, 0, 0);
       y += 5;
 
-      const tableData = grupo.map(irmao => [irmao.nomeIrmao, fmtR(Math.abs(irmao.saldo)), 'Devedor']);
+      const tableData = grupo.map(irmao => [
+        irmao.nomeIrmao,
+        fmtOuTraço(irmao.saldoVencido),
+        fmtOuTraço(irmao.saldoMesAtual),
+        fmtOuTraço(irmao.saldoFuturo),
+        fmtR(Math.abs(irmao.saldo)),
+      ]);
 
       doc.autoTable({
         startY: y,
         head: [colunas],
         body: tableData,
         headStyles: { fillColor: corTitulo, textColor: 255, fontStyle: 'bold', halign: 'center' },
-        bodyStyles: { textColor: 50 },
+        bodyStyles: { textColor: 0 },
         columnStyles: colStyles,
         alternateRowStyles: { fillColor: [245, 245, 245] },
         margin: { top: 10 },
@@ -161,9 +175,12 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.text(`Subtotal ${titulo}:`, 18, y + 5);
-      doc.setTextColor(255, 87, 34);
-      doc.text(fmtR(Math.abs(totais.saldo)), 192, y + 5, { align: 'right' });
-      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.text(fmtOuTraço(totais.saldoVencido), 105, y + 5, { align: 'right' });
+      doc.text(fmtOuTraço(totais.saldoMesAtual), 135, y + 5, { align: 'right' });
+      doc.text(fmtOuTraço(totais.saldoFuturo), 165, y + 5, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(fmtR(Math.abs(totais.saldo)), 195, y + 5, { align: 'right' });
       y += 13;
       return y;
     };
@@ -206,8 +223,8 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos, tituloFiltro }
     doc.text('OBSERVAÇÕES:', 15, finalY + 10);
 
     doc.setFont('helvetica', 'normal');
-    doc.text('• Saldo: Valor em aberto que o irmão deve à Loja', 15, finalY + 16);
-    doc.text('• Status: Situação financeira do irmão perante a Loja', 15, finalY + 22);
+    doc.text('• Vencido / Mês Atual / Futuro: valor pendente conforme a data de vencimento', 15, finalY + 16);
+    doc.text('• Total: soma das 3 faixas — valor total que o irmão deve à Loja', 15, finalY + 22);
     doc.text('• Este relatório lista apenas irmãos com pendências financeiras', 15, finalY + 28);
 
     // Salvar PDF
