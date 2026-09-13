@@ -848,12 +848,24 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             style={{background:"var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",cursor:"pointer"}}
             title="Clique 2x para ver detalhes"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff"}}>📍 Visitas a Outras Lojas</h3>
-              <span className="text-4xl">🚶</span>
+            <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>📍 Visitas a Outras Lojas</h3>
+            <div style={{display:'grid', gridTemplateColumns: topVisitantesIrmaos.length > 0 ? '1fr 1fr' : '1fr', gap:'1rem'}}>
+              <div>
+                <p style={{fontSize:"3rem",fontWeight:"800",marginBottom:"0.25rem",lineHeight:1}}>{totalVisitasIrmaos}</p>
+                <p style={{fontSize:"0.82rem",opacity:0.85}}>Realizadas em {new Date().getFullYear()}</p>
+              </div>
+              {topVisitantesIrmaos.length > 0 && (
+                <div style={{borderLeft:'1px solid rgba(255,255,255,0.3)',paddingLeft:'1rem'}}>
+                  <p style={{fontSize:'0.72rem',fontWeight:'700',opacity:0.85,marginBottom:'0.4rem',textTransform:'uppercase',letterSpacing:'0.03em'}}>🏆 Top 5</p>
+                  {topVisitantesIrmaos.map((v, i) => (
+                    <div key={i} style={{display:'flex',justifyContent:'space-between',gap:'0.5rem',fontSize:'0.76rem',padding:'0.15rem 0',lineHeight:1.3}}>
+                      <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i+1}º {formatarNomeCurto(v.nome)}</span>
+                      <span style={{fontWeight:'800',whiteSpace:'nowrap'}}>{v.qtd}x</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <p style={{fontSize:"3rem",fontWeight:"800",marginBottom:"0.25rem"}}>{totalVisitasIrmaos}</p>
-            <p style={{fontSize:"0.82rem",opacity:0.85}}>Realizadas em {new Date().getFullYear()}</p>
           </div>
         )}
 
