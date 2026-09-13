@@ -56,6 +56,18 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     return `${partes[0]} ${partes[1]}`;
   };
 
+  // Ranking dos 5 irmãos que mais visitaram outras lojas no ano — usado
+  // no quadro de destaque no topo do modal "Visitas a Outras Lojas".
+  const topVisitantesIrmaos = useMemo(() => {
+    const contagem = {};
+    visitasIrmaos.forEach(v => {
+      const chave = v.irmao_id || v.irmaos?.nome || 'desconhecido';
+      if (!contagem[chave]) contagem[chave] = { nome: v.irmaos?.nome || 'Irmão', qtd: 0 };
+      contagem[chave].qtd += 1;
+    });
+    return Object.values(contagem).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+  }, [visitasIrmaos]);
+
   // Função para obter cargo atual do irmão (do ano atual)
   const obterCargoAtual = (irmaoId) => {
     const anoAtual = new Date().getFullYear();
@@ -1247,6 +1259,30 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
             {/* Conteúdo */}
             <div className="p-6">
+
+              {/* 🏆 Top 5 irmãos que mais visitaram outras lojas */}
+              {topVisitantesIrmaos.length > 0 && (
+                <div style={{marginBottom:'1.5rem', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', overflow:'hidden'}}>
+                  <div style={{background:'var(--color-surface-2)', padding:'0.6rem 1rem', borderBottom:'1px solid var(--color-border)'}}>
+                    <span style={{fontSize:'0.85rem', fontWeight:'700', color:'var(--color-text)'}}>🏆 Top 5 — Quem Mais Visitou</span>
+                  </div>
+                  <div>
+                    {topVisitantesIrmaos.map((v, i) => (
+                      <div key={i} style={{
+                        display:'grid', gridTemplateColumns:'2rem 1fr auto', alignItems:'center', gap:'0.75rem',
+                        padding:'0.5rem 1rem',
+                        borderBottom: i < topVisitantesIrmaos.length - 1 ? '1px solid var(--color-border)' : 'none',
+                        background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                      }}>
+                        <span style={{fontSize:'0.9rem', fontWeight:'800', color:'var(--color-text-muted)'}}>{i + 1}º</span>
+                        <span style={{fontSize:'0.85rem', fontWeight:'600', color:'var(--color-text)'}}>{formatarNomeCurto(v.nome)}</span>
+                        <span style={{fontSize:'0.85rem', fontWeight:'800', color:'var(--color-accent)', whiteSpace:'nowrap'}}>{v.qtd} visita{v.qtd !== 1 ? 's' : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3">
                 {visitasIrmaos.map(visita => (
                   <div key={visita.id} className="border rounded-lg p-3 hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
