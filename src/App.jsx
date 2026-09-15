@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useTema } from './hooks/useTema';
 import { useCarregarTema } from './hooks/useCarregarTema';
@@ -152,6 +152,58 @@ function App() {
   const [userData, setUserData] = useState(null);
   const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
+  // ========================================
+  // NOMES DAS TELAS + CONTROLE DE ACESSO ÚNICO POR SESSÃO
+  // ========================================
+  // Nome "bonito" de cada tela pro log de acesso — mesmo texto usado nos
+  // títulos de cabeçalho, pra ficar consistente em todo o sistema.
+  // 'dashboard' fica de fora de propósito (não é logado).
+  const NOMES_TELAS = {
+    'dashboard-cunhadas': '💜 Dashboard Cunhadas',
+    'meu-cadastro': '👤 Meu Cadastro',
+    'minhas-financas': '💰 Minhas Finanças',
+    'minhas-presencas': '📊 Minhas Presenças',
+    'cadastro': '➕ Cadastro de Irmãos',
+    'visualizar': '👥 Visualizar Irmãos',
+    'quadro': '📋 Quadro de Irmãos',
+    'balaustres': '📜 Balaustres',
+    'pranchas': '📄 Pranchas Expedidas',
+    'corpo-admin': '👔 Corpo Administrativo',
+    'eleicao-posse': '🗳️ Eleição e Posse',
+    'projetos': '📊 Projetos',
+    'comissoes': '📋 Comissões',
+    'biblioteca': '📚 Biblioteca',
+    'biblioteca-online': '📖 Biblioteca Online',
+    'cronograma': '📅 Cronograma Anual',
+    'financas-loja': '🏦 Finanças da Loja',
+    'creditos-debitos': '💰 Créditos e Débitos',
+    'lancamentos-lote': '📦 Lançamentos em Lote',
+    'categorias-financeiras': '🏷️ Categorias Financeiras',
+    'eventos-comemorativos': '🍽️ Ágape & Festas',
+    'email-irmaos': '📧 Central E-Mail',
+    'relatorio-financeiro': '📊 Conferir Finanças',
+    'caridade': '❤️ Caridade',
+    'eventos': '🎉 Eventos',
+    'aniversariantes': '🎉 Festividades',
+    'dashboard-presenca': '📊 Dashboard de Presença',
+    'cadastro-sessao': '📋 Cadastro de Sessão',
+    'lista-sessoes': '📊 Sessões Realizadas',
+    'registro-presenca': '✅ Registro de Presença',
+    'comodatos': '♿ Controle de Comodatos',
+    'altos-graus': '🔺 Altos Graus',
+    'gerenciar-graus': '⚙️ Gerenciar Graus',
+    'perfil-irmao': '👤 Perfil do Irmão',
+    'usuarios': '👤 Gerenciar Usuários',
+    'dados-loja': '🏛️ Dados da Loja',
+    'sobre': 'ℹ️ Sobre o Sistema',
+    'sindicancia': '🔍 Sindicância',
+    'estatisticas': '📈 Estatísticas',
+  };
+
+  // Guarda quais telas já foram registradas NESTA sessão (enquanto o app
+  // está aberto). Zera sozinho ao recarregar a página ou logar de novo.
+  const telasJaAcessadasRef = useRef(new Set());
+
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas' — definido após validação da sessão
   const [modalAcessoNegado, setModalAcessoNegado] = useState(false); // Modal de acesso negado (sobrevive ao re-render do Login)
@@ -277,6 +329,26 @@ function App() {
       console.error('❌ Erro ao registrar acesso:', error);
     }
   };
+
+  // Registra "acessou a tela X" — só uma vez por tela, por sessão. Nunca
+  // dispara pra 'dashboard' nem pra telas fora do mapa NOMES_TELAS, e não
+  // registra de novo se o usuário voltar numa tela já visitada (só quando
+  // é a primeira vez que ele entra ali desde que logou).
+  useEffect(() => {
+    if (!userData?.id) return;
+    if (!NOMES_TELAS[currentPage]) return;
+    if (telasJaAcessadasRef.current.has(currentPage)) return;
+
+    telasJaAcessadasRef.current.add(currentPage);
+    supabase.from('logs_acesso').insert({
+      usuario_id: userData.id,
+      acao: 'acessar_tela',
+      detalhes: `Acessou: ${NOMES_TELAS[currentPage]}`,
+      created_at: new Date().toISOString()
+    }).then(({ error }) => {
+      if (error) console.error('Erro ao registrar acesso à tela:', error);
+    });
+  }, [currentPage, userData?.id]);
 
   // ========================================
   // EFEITOS E CARREGAMENTOS
@@ -1003,6 +1075,7 @@ function App() {
     setPortalAtivo('irmaos'); // Resetar para portal irmãos
     setAreaEscolhida(null); // Resetar escolha Loja/Arco Real pro próximo login
     setPerfilCarregado(false); // Reexibe a tela de carregamento no próximo login
+    telasJaAcessadasRef.current.clear(); // Próximo login registra tudo de novo
   };
 
   // ========================================
