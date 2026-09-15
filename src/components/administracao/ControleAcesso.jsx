@@ -267,7 +267,8 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
       'editar': 'bg-yellow-100 text-yellow-800 border-yellow-300',
       'excluir': 'bg-red-100 text-red-800 border-red-300',
       'visualizar': 'bg-purple-100 text-purple-800 border-purple-300',
-      'exportar': 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      'exportar': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+      'acessar_tela': 'bg-cyan-100 text-cyan-800 border-cyan-300'
     };
     return cores[acao] || 'bg-gray-100 text-gray-800 border-gray-300';
   };
@@ -281,13 +282,15 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
       'editar': '✏️',
       'excluir': '🗑️',
       'visualizar': '👁️',
-      'exportar': '📥'
+      'exportar': '📥',
+      'acessar_tela': '🧭'
     };
     return icones[acao] || '📋';
   };
 
-  // Ações consideradas "acesso simples" (sem alteração de dados)
-  const ACOES_SIMPLES = ['acesso_sistema', 'login', 'logout'];
+  // Ações consideradas "acesso simples" (sem alteração de dados) — inclui
+  // "acessar_tela" (só navegação, sem criar/editar/excluir nada)
+  const ACOES_SIMPLES = ['acesso_sistema', 'login', 'logout', 'acessar_tela'];
 
   // Logs efetivamente exibidos, respeitando o toggle "ocultar acessos simples"
   const logsExibidos = ocultarAcessosSimples
@@ -306,7 +309,7 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
           nome: log.usuario?.nome || 'Usuário Desconhecido',
           email: log.usuario?.email || '-',
           entradas: [],
-          contagem: { acesso_sistema: 0, login: 0, logout: 0, criar: 0, editar: 0, excluir: 0, visualizar: 0, exportar: 0, outro: 0 },
+          contagem: { acesso_sistema: 0, login: 0, logout: 0, criar: 0, editar: 0, excluir: 0, visualizar: 0, exportar: 0, acessar_tela: 0, outro: 0 },
           ultimoAcesso: null
         };
       }
@@ -436,6 +439,7 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
               <option value="excluir">Excluir</option>
               <option value="visualizar">Visualizar</option>
               <option value="exportar">Exportar</option>
+              <option value="acessar_tela">Acessar Tela</option>
             </select>
           </div>
 
@@ -719,6 +723,11 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
                         {c.criar > 0 && (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao('criar')}`}>
                             ➕ {c.criar} criação{c.criar > 1 ? 'ões' : ''}
+                          </span>
+                        )}
+                        {c.acessar_tela > 0 && (
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao('acessar_tela')}`}>
+                            🧭 {c.acessar_tela} tela{c.acessar_tela > 1 ? 's' : ''} acessada{c.acessar_tela > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
