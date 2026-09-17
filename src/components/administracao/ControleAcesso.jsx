@@ -12,7 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function ControleAcesso({ userData, showSuccess, showError, embedded = false }) {
+export default function ControleAcesso({ userData, showSuccess, showError, embedded = false, escopo = null }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtros, setFiltros] = useState({
@@ -37,7 +37,7 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
   // Carregar logs e usuários
   useEffect(() => {
     carregarDados();
-  }, [filtros]);
+  }, [filtros, escopo]);
 
   const carregarDados = async () => {
     setLoading(true);
@@ -74,6 +74,11 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
       }
       if (filtros.busca) {
         query = query.or(`detalhes.ilike.%${filtros.busca}%,ip.ilike.%${filtros.busca}%`);
+      }
+      // Escopo fixo (ex: só logs do Arco Real) — não depende dos filtros
+      // da tela, some com tudo que não é relacionado a esse módulo.
+      if (escopo === 'arco_real') {
+        query = query.ilike('detalhes', '%Arco Real%');
       }
 
       const { data: logsData, error } = await query;
@@ -348,8 +353,12 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
       {/* Cabeçalho - só mostra se não estiver embedded */}
       {!embedded && (
         <div className="mb-6">
-          <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Controle de Acesso</h2>
-          <p style={{ color: 'var(--color-text-muted)' }}>Visualize e gerencie o histórico de acesso ao sistema</p>
+          <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+            {escopo === 'arco_real' ? '🔺 Controle de Acesso — Arco Real' : '🔐 Controle de Acesso'}
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            {escopo === 'arco_real' ? 'Histórico de acesso às telas do Arco Real' : 'Visualize e gerencie o histórico de acesso ao sistema'}
+          </p>
         </div>
       )}
 
