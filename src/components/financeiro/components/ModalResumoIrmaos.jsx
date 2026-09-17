@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
 import { gerarCertidaoFinanceiraPDF } from '../../../utils/gerarCertidaoFinanceiraPDF';
@@ -149,6 +149,41 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
   // ── Ofício de Pendência Financeira ──────────────────────────────
   const [modalOficioAberto, setModalOficioAberto] = useState(false);
   const [textoOficio, setTextoOficio] = useState('');
+  const textareaOficioRef = useRef(null);
+
+  // Aplica **negrito** ou _itálico_ na parte selecionada do texto (estilo
+  // editor simples) — se nada estiver selecionado, insere as marcações
+  // vazias no cursor pra pessoa digitar entre elas.
+  const aplicarFormatacaoOficio = (marcador) => {
+    const ta = textareaOficioRef.current;
+    if (!ta) return;
+    const inicio = ta.selectionStart;
+    const fim = ta.selectionEnd;
+    const selecionadoTexto = textoOficio.slice(inicio, fim);
+    const novoTexto = `${textoOficio.slice(0, inicio)}${marcador}${selecionadoTexto}${marcador}${textoOficio.slice(fim)}`;
+    setTextoOficio(novoTexto);
+    // Mantém o cursor logo depois do texto formatado, pra continuar digitando
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = inicio + marcador.length + selecionadoTexto.length + marcador.length;
+      ta.setSelectionRange(pos, pos);
+    });
+  };
+
+  // Insere uma quebra de parágrafo (linha em branco) na posição do cursor
+  const inserirParagrafoOficio = () => {
+    const ta = textareaOficioRef.current;
+    if (!ta) return;
+    const inicio = ta.selectionStart;
+    const fim = ta.selectionEnd;
+    const novoTexto = `${textoOficio.slice(0, inicio)}\n\n${textoOficio.slice(fim)}`;
+    setTextoOficio(novoTexto);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const pos = inicio + 2;
+      ta.setSelectionRange(pos, pos);
+    });
+  };
 
   // Texto padrão — pré-preenchido com os dados do irmão marcado, mas
   // totalmente editável antes de gerar o PDF.
@@ -572,7 +607,26 @@ Caso o Ir∴ não regularize sua situação de adimplência financeira perante a
               <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)' }}>Revise o texto antes de gerar o PDF — o padrão já vem preenchido, mas pode alterar livremente.</p>
             </div>
             <div style={{ padding: '1.2rem 1.4rem', overflowY: 'auto', flex: 1 }}>
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <button type="button" onClick={() => aplicarFormatacaoOficio('**')} title="Negrito (selecione o texto antes)"
+                  style={{ width: '2rem', height: '2rem', fontWeight: '800', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
+                  B
+                </button>
+                <button type="button" onClick={() => aplicarFormatacaoOficio('_')} title="Itálico (selecione o texto antes)"
+                  style={{ width: '2rem', height: '2rem', fontStyle: 'italic', fontWeight: '700', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
+                  I
+                </button>
+                <div style={{ width: '1px', height: '1.4rem', background: 'var(--color-border)', margin: '0 0.2rem' }} />
+                <button type="button" onClick={inserirParagrafoOficio} title="Inserir novo parágrafo (linha em branco) no cursor"
+                  style={{ padding: '0 0.7rem', height: '2rem', fontSize: '0.78rem', fontWeight: '700', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
+                  ¶ Novo Parágrafo
+                </button>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginLeft: '0.3rem' }}>
+                  Selecione um trecho e clique em B ou I pra formatar
+                </span>
+              </div>
               <textarea
+                ref={textareaOficioRef}
                 value={textoOficio}
                 onChange={e => setTextoOficio(e.target.value)}
                 rows={20}
