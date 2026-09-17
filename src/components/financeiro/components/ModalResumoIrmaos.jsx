@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../supabaseClient';
 import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
 import { gerarCertidaoFinanceiraPDF } from '../../../utils/gerarCertidaoFinanceiraPDF';
+import { gerarOficioPendenciaPDF } from '../../../utils/gerarOficioPendenciaPDF';
 
 const fmtR = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -143,6 +144,47 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       dadosLoja,
       { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
     );
+  };
+
+  // ── Ofício de Pendência Financeira ──────────────────────────────
+  const [modalOficioAberto, setModalOficioAberto] = useState(false);
+  const [textoOficio, setTextoOficio] = useState('');
+
+  // Texto padrão — pré-preenchido com os dados do irmão marcado, mas
+  // totalmente editável antes de gerar o PDF.
+  const gerarTextoPadraoOficio = (irm) => `Prezado Irmão ${irm.nomeIrmao || '—'}, CIM nº ${irm.cim || '—'},
+
+Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de ${fmtR(irm.receitasPendentes || 0)}, conforme Relatório da Tesouraria. Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.
+
+Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:
+
+"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"
+
+"DA DEMISSÃO E ELIMINAÇÃO – Art. 218 – O Maçom que, sem motivo realmente justo, a critério da Loja, faltar a mais de 6 (seis) sessões seguidas, ou a 25 (vinte e cinco) alternadas, num ano, será eliminado do Quadro, independentemente de qualquer processo ou notificação, ressalvadas as exceções constitucionais e regulamentares. § 2º - Idêntica providência deverá ser tomada pela Loja, contra todo e qualquer Obreiro, que deixar de pagar 2 (duas) chamadas de Beneficência Maçônica. A sua eliminação será publicada no Boletim. DA DEMISSÃO E ELIMINAÇÃO – Art. 219 – Todo Obreiro em atraso de suas mensalidades, por 3 (três) meses, sem causa justificada, será coberto de direito (...)."
+
+Diante disso, e em consonância com os ritos e normas maçônicas, este ofício serve como advertência formal, e último chamado à regularização.
+
+Caso o Ir∴ não regularize sua situação de adimplência financeira perante a Loja já a partir da próxima sessão, a contar da data do recebimento deste, esta Augusta e Respeitável Loja será obrigada a encaminhar o caso ao Conselho Disciplinar (Comissão de sete Mestres), podendo resultar em:
+
+1. Processo Administrativo Interno;
+2. Cobertura dos direitos maçônicos;
+3. Em última instância, expedição de "Quit Placet", "ex-ofício", conforme previsto nos artigos 223 e 224 do nosso RGO.`;
+
+  const handleAbrirOficio = () => {
+    if (!selecionado) return;
+    setTextoOficio(gerarTextoPadraoOficio(selecionado));
+    setModalOficioAberto(true);
+  };
+
+  const handleGerarOficio = async () => {
+    if (!selecionado) return;
+    await gerarOficioPendenciaPDF(
+      { nomeIrmao: selecionado.nomeIrmao, cim: selecionado.cim },
+      textoOficio,
+      dadosLoja,
+      { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
+    );
+    setModalOficioAberto(false);
   };
 
   // ── Busca inicial quando o modal abre ─────────────────────────
@@ -443,6 +485,18 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
             >
               📄 Gerar {selecionado ? (selecionado.receitasPendentes > 0 ? 'Certidão Positiva' : 'Certidão Negativa') : 'Certidão'}
             </button>
+            <button
+              onClick={handleAbrirOficio}
+              disabled={!selecionado || !(selecionado.receitasPendentes > 0)}
+              title={selecionado && !(selecionado.receitasPendentes > 0) ? 'Só disponível para irmãos com valor pendente' : ''}
+              style={{
+                padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem',
+                cursor: (selecionado?.receitasPendentes > 0) ? 'pointer' : 'not-allowed', opacity: (selecionado?.receitasPendentes > 0) ? 1 : 0.5,
+                background: '#7c3aed', color: '#fff', whiteSpace: 'nowrap'
+              }}
+            >
+              📜 Emitir Ofício de Pendência
+            </button>
           </div>
 
           {/* Cards resumo */}
@@ -508,6 +562,34 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
           <button onClick={onClose} style={{ padding: '0.5rem 1.5rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>Fechar</button>
         </div>
       </div>
+
+      {/* ── Modal de edição do texto do Ofício, antes de gerar o PDF ── */}
+      {modalOficioAberto && (
+        <div onClick={() => setModalOficioAberto(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', width: '100%', maxWidth: '700px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', background: '#7c3aed', borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: '#fff' }}>📜 Ofício de Pendência — {selecionado?.nomeIrmao}</h3>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)' }}>Revise o texto antes de gerar o PDF — o padrão já vem preenchido, mas pode alterar livremente.</p>
+            </div>
+            <div style={{ padding: '1.2rem 1.4rem', overflowY: 'auto', flex: 1 }}>
+              <textarea
+                value={textoOficio}
+                onChange={e => setTextoOficio(e.target.value)}
+                rows={20}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem', lineHeight: '1.5', resize: 'vertical', fontFamily: 'inherit' }}
+              />
+            </div>
+            <div style={{ padding: '1rem 1.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
+              <button onClick={() => setModalOficioAberto(false)} style={{ padding: '0.55rem 1.2rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={handleGerarOficio} style={{ padding: '0.55rem 1.4rem', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer' }}>
+                📄 Gerar PDF do Ofício
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
