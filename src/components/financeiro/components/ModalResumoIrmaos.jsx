@@ -148,74 +148,57 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
 
   // ── Ofício de Pendência Financeira ──────────────────────────────
   const [modalOficioAberto, setModalOficioAberto] = useState(false);
-  const [textoOficio, setTextoOficio] = useState('');
-  const textareaOficioRef = useRef(null);
+  const editorOficioRef = useRef(null);
 
-  // Aplica **negrito** ou _itálico_ na parte selecionada do texto (estilo
-  // editor simples) — se nada estiver selecionado, insere as marcações
-  // vazias no cursor pra pessoa digitar entre elas.
-  const aplicarFormatacaoOficio = (marcador) => {
-    const ta = textareaOficioRef.current;
-    if (!ta) return;
-    const inicio = ta.selectionStart;
-    const fim = ta.selectionEnd;
-    const selecionadoTexto = textoOficio.slice(inicio, fim);
-    const novoTexto = `${textoOficio.slice(0, inicio)}${marcador}${selecionadoTexto}${marcador}${textoOficio.slice(fim)}`;
-    setTextoOficio(novoTexto);
-    // Mantém o cursor logo depois do texto formatado, pra continuar digitando
-    requestAnimationFrame(() => {
-      ta.focus();
-      const pos = inicio + marcador.length + selecionadoTexto.length + marcador.length;
-      ta.setSelectionRange(pos, pos);
-    });
-  };
+  // Escapa texto simples pra virar HTML seguro dentro de <p>
+  const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  // Insere uma quebra de parágrafo (linha em branco) na posição do cursor
-  const inserirParagrafoOficio = () => {
-    const ta = textareaOficioRef.current;
-    if (!ta) return;
-    const inicio = ta.selectionStart;
-    const fim = ta.selectionEnd;
-    const novoTexto = `${textoOficio.slice(0, inicio)}\n\n${textoOficio.slice(fim)}`;
-    setTextoOficio(novoTexto);
-    requestAnimationFrame(() => {
-      ta.focus();
-      const pos = inicio + 2;
-      ta.setSelectionRange(pos, pos);
-    });
-  };
+  // Negrito/Itálico de verdade — aplica no texto selecionado no editor e o
+  // efeito aparece na hora, igual um editor de texto comum.
+  const aplicarNegritoOficio = () => { editorOficioRef.current?.focus(); document.execCommand('bold'); };
+  const aplicarItalicoOficio = () => { editorOficioRef.current?.focus(); document.execCommand('italic'); };
+  // Recuo de bloco (2,5cm) — pro parágrafo onde o cursor estiver, ou pros
+  // parágrafos selecionados. Usa <blockquote>, que o gerador de PDF
+  // reconhece e aplica o recuo de 2,5cm em todas as linhas do bloco.
+  const aplicarRecuoOficio = () => { editorOficioRef.current?.focus(); document.execCommand('indent'); };
+  const removerRecuoOficio = () => { editorOficioRef.current?.focus(); document.execCommand('outdent'); };
 
   // Texto padrão — pré-preenchido com os dados do irmão marcado, mas
-  // totalmente editável antes de gerar o PDF.
-  const gerarTextoPadraoOficio = (irm) => `Prezado Irmão ${irm.nomeIrmao || '—'}, CIM nº ${irm.cim || '—'},
-
-Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de ${fmtR(irm.receitasPendentes || 0)}, conforme Relatório da Tesouraria. Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.
-
-Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:
-
-"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"
-
-"DA DEMISSÃO E ELIMINAÇÃO – Art. 218 – O Maçom que, sem motivo realmente justo, a critério da Loja, faltar a mais de 6 (seis) sessões seguidas, ou a 25 (vinte e cinco) alternadas, num ano, será eliminado do Quadro, independentemente de qualquer processo ou notificação, ressalvadas as exceções constitucionais e regulamentares. § 2º - Idêntica providência deverá ser tomada pela Loja, contra todo e qualquer Obreiro, que deixar de pagar 2 (duas) chamadas de Beneficência Maçônica. A sua eliminação será publicada no Boletim. DA DEMISSÃO E ELIMINAÇÃO – Art. 219 – Todo Obreiro em atraso de suas mensalidades, por 3 (três) meses, sem causa justificada, será coberto de direito (...)."
-
-Diante disso, e em consonância com os ritos e normas maçônicas, este ofício serve como advertência formal, e último chamado à regularização.
-
-Caso o Ir∴ não regularize sua situação de adimplência financeira perante a Loja já a partir da próxima sessão, a contar da data do recebimento deste, esta Augusta e Respeitável Loja será obrigada a encaminhar o caso ao Conselho Disciplinar (Comissão de sete Mestres), podendo resultar em:
-
-1. Processo Administrativo Interno;
-2. Cobertura dos direitos maçônicos;
-3. Em última instância, expedição de "Quit Placet", "ex-ofício", conforme previsto nos artigos 223 e 224 do nosso RGO.`;
+  // totalmente editável (negrito/itálico/recuo) antes de gerar o PDF.
+  const gerarHtmlPadraoOficio = (irm) => {
+    const paragrafos = [
+      `Prezado Irmão ${irm.nomeIrmao || '—'}, CIM nº ${irm.cim || '—'},`,
+      `Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de ${fmtR(irm.receitasPendentes || 0)}, conforme Relatório da Tesouraria. Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.`,
+      `Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:`,
+      `"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"`,
+      `"DA DEMISSÃO E ELIMINAÇÃO – Art. 218 – O Maçom que, sem motivo realmente justo, a critério da Loja, faltar a mais de 6 (seis) sessões seguidas, ou a 25 (vinte e cinco) alternadas, num ano, será eliminado do Quadro, independentemente de qualquer processo ou notificação, ressalvadas as exceções constitucionais e regulamentares. § 2º - Idêntica providência deverá ser tomada pela Loja, contra todo e qualquer Obreiro, que deixar de pagar 2 (duas) chamadas de Beneficência Maçônica. A sua eliminação será publicada no Boletim."`,
+      `"DA DEMISSÃO E ELIMINAÇÃO – Art. 219 – Todo Obreiro em atraso de suas mensalidades, por 3 (três) meses, sem causa justificada, será coberto de direito (...)."`,
+      `Diante disso, e em consonância com os ritos e normas maçônicas, este ofício serve como advertência formal, e último chamado à regularização.`,
+      `Caso o Ir∴ não regularize sua situação de adimplência financeira perante a Loja já a partir da próxima sessão, a contar da data do recebimento deste, esta Augusta e Respeitável Loja será obrigada a encaminhar o caso ao Conselho Disciplinar (Comissão de sete Mestres), podendo resultar em:`,
+      `1. Processo Administrativo Interno;`,
+      `2. Cobertura dos direitos maçônicos;`,
+      `3. Em última instância, expedição de "Quit Placet", "ex-ofício", conforme previsto nos artigos 223 e 224 do nosso RGO.`,
+    ];
+    return paragrafos.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+  };
 
   const handleAbrirOficio = () => {
     if (!selecionado) return;
-    setTextoOficio(gerarTextoPadraoOficio(selecionado));
     setModalOficioAberto(true);
+    requestAnimationFrame(() => {
+      if (editorOficioRef.current) {
+        document.execCommand('defaultParagraphSeparator', false, 'p');
+        editorOficioRef.current.innerHTML = gerarHtmlPadraoOficio(selecionado);
+      }
+    });
   };
 
   const handleGerarOficio = async () => {
     if (!selecionado) return;
+    const htmlOficio = editorOficioRef.current?.innerHTML || '';
     await gerarOficioPendenciaPDF(
       { nomeIrmao: selecionado.nomeIrmao, cim: selecionado.cim },
-      textoOficio,
+      htmlOficio,
       dadosLoja,
       { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
     );
@@ -608,29 +591,32 @@ Caso o Ir∴ não regularize sua situação de adimplência financeira perante a
             </div>
             <div style={{ padding: '1.2rem 1.4rem', overflowY: 'auto', flex: 1 }}>
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button type="button" onClick={() => aplicarFormatacaoOficio('**')} title="Negrito (selecione o texto antes)"
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={aplicarNegritoOficio} title="Negrito (selecione o texto antes)"
                   style={{ width: '2rem', height: '2rem', fontWeight: '800', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
                   B
                 </button>
-                <button type="button" onClick={() => aplicarFormatacaoOficio('_')} title="Itálico (selecione o texto antes)"
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={aplicarItalicoOficio} title="Itálico (selecione o texto antes)"
                   style={{ width: '2rem', height: '2rem', fontStyle: 'italic', fontWeight: '700', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
                   I
                 </button>
                 <div style={{ width: '1px', height: '1.4rem', background: 'var(--color-border)', margin: '0 0.2rem' }} />
-                <button type="button" onClick={inserirParagrafoOficio} title="Inserir novo parágrafo (linha em branco) no cursor"
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={aplicarRecuoOficio} title="Recuar o parágrafo inteiro em 2,5cm (citações do RGO, listas)"
                   style={{ padding: '0 0.7rem', height: '2rem', fontSize: '0.78rem', fontWeight: '700', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
-                  ¶ Novo Parágrafo
+                  →| Recuar 2,5cm
+                </button>
+                <button type="button" onMouseDown={e => e.preventDefault()} onClick={removerRecuoOficio} title="Remover o recuo do parágrafo"
+                  style={{ padding: '0 0.7rem', height: '2rem', fontSize: '0.78rem', fontWeight: '700', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
+                  |← Remover recuo
                 </button>
                 <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginLeft: '0.3rem' }}>
-                  Selecione um trecho e clique em B ou I pra formatar
+                  Selecione um trecho pra negrito/itálico. Pra recuar, só posicione o cursor no parágrafo.
                 </span>
               </div>
-              <textarea
-                ref={textareaOficioRef}
-                value={textoOficio}
-                onChange={e => setTextoOficio(e.target.value)}
-                rows={20}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem', lineHeight: '1.5', resize: 'vertical', fontFamily: 'inherit' }}
+              <div
+                ref={editorOficioRef}
+                contentEditable
+                suppressContentEditableWarning
+                style={{ width: '100%', minHeight: '420px', padding: '0.9rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem', lineHeight: '1.6', overflowY: 'auto' }}
               />
             </div>
             <div style={{ padding: '1rem 1.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
