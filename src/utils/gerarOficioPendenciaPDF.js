@@ -23,26 +23,60 @@ const carregarImagemBase64 = async (url) => {
   });
 };
 
+// ── Lê o HTML produzido pelo editor (contentEditable) e devolve uma lista
+// de "blocos" (parágrafos), cada um como uma lista de "runs" de texto com
+// negrito/itálico reais (tags <b>/<strong>/<i>/<em>) — e se o bloco inteiro
+// está dentro de um <blockquote> (recuo manual aplicado pelo botão "→|"). ──
+const interpretarHtmlOficio = (html) => {
+  const container = document.createElement('div');
+  container.innerHTML = html;
+
+  const elementosBloco = Array.from(container.querySelectorAll(':scope > p, :scope > div'));
+  const blocosDom = elementosBloco.length > 0 ? elementosBloco : [container];
+
+  return blocosDom.map(el => {
+    const dentroDeBlockquote = !!el.closest('blockquote') || el.tagName === 'BLOCKQUOTE'
+      || Array.from(el.querySelectorAll('blockquote')).length > 0;
+
+    const runs = [];
+    const percorrer = (node, b, i) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent) runs.push({ t: node.textContent, b, i });
+      } else if (node.nodeName === 'BR') {
+        runs.push({ t: '\n', b, i });
+      } else {
+        const novoB = b || ['B', 'STRONG'].includes(node.nodeName);
+        const novoI = i || ['I', 'EM'].includes(node.nodeName);
+        node.childNodes?.forEach(child => percorrer(child, novoB, novoI));
+      }
+    };
+    el.childNodes.forEach(child => percorrer(child, false, false));
+
+    return { runs, recuoManual: dentroDeBlockquote };
+  }).filter(b => b.runs.some(r => r.t.trim().length > 0));
+};
+
 /**
  * Gera o Ofício de Pendência Financeira de um irmão — mesmo padrão de
  * cabeçalho/assinatura da Certidão Financeira, com o papel timbrado
- * (fundo) atrás do texto e o corpo já editado pelo usuário no modal.
+ * (fundo) atrás do texto e o corpo já editado pelo usuário no editor.
  *
- * @param {Object} irmao       { nomeIrmao, cim }
- * @param {string} textoOficio corpo do ofício, já revisado/editado pelo
- *                             usuário — parágrafos separados por linha em branco
- * @param {Object} dadosLoja   { cidade, estado }
- * @param {Object} assinantes  { tesoureiro, veneravelMestre }
+ * @param {Object} irmao      { nomeIrmao, cim }
+ * @param {string} htmlOficio HTML do editor (contentEditable) — negrito/
+ *                            itálico reais via <b>/<i>, recuo manual via <blockquote>
+ * @param {Object} dadosLoja  { cidade, estado }
+ * @param {Object} assinantes { tesoureiro, veneravelMestre }
  */
-export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, assinantes = {}) => {
+export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assinantes = {}) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const W = 210, H = 297, M = 25;
-  const larguraUtil = W - M * 2;
+  const W = 210, H = 297;
+  // Margens assimétricas — 3cm à esquerda (espaço de encadernação/arquivo),
+  // 2cm à direita.
+  const M_ESQ = 30, M_DIR = 20;
+  const larguraUtil = W - M_ESQ - M_DIR;
   const alturaLinha = 5.6;
   // A imagem de fundo já traz cabeçalho (topo) e rodapé (base) prontos —
   // o texto precisa ficar dentro dessa janela, sem sobrepor nenhum dos dois.
-  // Folga generosa no topo (equivalente a +2 linhas) pra nunca encostar na
-  // linha "À G∴D∴G∴A∴D∴U∴" do timbre, nem na primeira nem nas próximas páginas.
   const yTopoUtil = 58;
   const yBaseUtil = 258;
 
@@ -71,42 +105,27 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
   };
 
   const txt = (text, x, yy, opts = {}) => doc.text(String(text), x, yy, opts);
-
-  // Marcação simples estilo editor de texto — **negrito** e _itálico_ — que
-  // a pessoa aplica selecionando o texto no modal antes de gerar o PDF.
-  // Quebra o parágrafo em pedaços com o estilo de cada um.
-  const interpretarFormatacao = (paragrafo) => {
-    const partes = [];
-    const regex = /\*\*(.+?)\*\*|_(.+?)_|([^*_]+)/g;
-    let m;
-    while ((m = regex.exec(paragrafo)) !== null) {
-      if (m[1] !== undefined) partes.push({ t: m[1], b: true, i: false });
-      else if (m[2] !== undefined) partes.push({ t: m[2], b: false, i: true });
-      else if (m[3] !== undefined) partes.push({ t: m[3], b: false, i: false });
-    }
-    return partes;
-  };
-
   const estiloFonte = (b, i) => b && i ? 'bolditalic' : b ? 'bold' : i ? 'italic' : 'normal';
 
   // ── Um parágrafo por vez — quebra pela largura útil e justifica todas
   // as linhas menos a última (convenção de textos formais/jurídicos). Cada
-  // palavra carrega seu próprio estilo (negrito/itálico/normal).
+  // palavra carrega seu próprio estilo (negrito/itálico/normal), já vindo
+  // pronto do HTML do editor — sem nenhuma marcação de texto envolvida.
   // opts.indentPrimeiraLinha: recuo (mm) só na 1ª linha (parágrafo normal).
-  // opts.indentBloco: recuo (mm) em TODAS as linhas (citação/lista). ───────
-  const desenharParagrafo = (paragrafo, tamanhoFonte = 11, opts = {}) => {
+  // opts.indentBloco: recuo (mm) em TODAS as linhas (citação/lista/manual). ─
+  const desenharParagrafo = (runs, tamanhoFonte = 11, opts = {}) => {
     const { indentPrimeiraLinha = 0, indentBloco = 0 } = opts;
     doc.setFontSize(tamanhoFonte);
     const espacoLargura = doc.getTextWidth(' ');
 
     const palavras = [];
-    interpretarFormatacao(paragrafo).forEach(parte => {
-      sanitizeTexto(parte.t).split(/\s+/).filter(Boolean).forEach(p => {
-        palavras.push({ texto: p, b: parte.b, i: parte.i });
+    runs.forEach(run => {
+      sanitizeTexto(run.t).split(/\s+/).filter(Boolean).forEach(p => {
+        palavras.push({ texto: p, b: run.b, i: run.i });
       });
     });
+    if (palavras.length === 0) return;
 
-    // Largura disponível muda na 1ª linha quando há recuo de 1ª linha
     const larguraLinha = (idx) => larguraUtil - indentBloco - (idx === 0 ? indentPrimeiraLinha : 0);
 
     const linhas = [];
@@ -142,7 +161,7 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
         ? (larguraMaxLinha - larguraPalavras) / gaps
         : espacoLargura;
 
-      let x = M + recuoLinha;
+      let x = M_ESQ + recuoLinha;
       linha.forEach((w, i) => {
         doc.setFont('helvetica', estiloFonte(w.b, w.i));
         txt(w.texto, x, y);
@@ -152,39 +171,63 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
     });
   };
 
-  const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais
-  const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO e itens numerados
+  const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais (padrão)
+  const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO, listas numeradas e recuo manual (botão "→|")
 
   // ── Título ───────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', W / 2, y, { align: 'center' });
+  txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', M_ESQ + larguraUtil / 2, y, { align: 'center' });
   y += 14;
 
-  // ── Corpo — cada bloco separado por linha em branco vira 1 (ou mais)
-  // parágrafo(s). Detecta automaticamente o tipo de cada bloco:
-  //   • começa com " (aspas)  → citação do RGO, recuo de bloco (2,5cm)
-  //   • linhas "1. ", "2. "…  → lista numerada, 1 item por linha, recuo de bloco
-  //   • qualquer outro texto  → parágrafo normal, recuo só na 1ª linha (1,5cm)
-  const blocos = (textoOficio || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  blocos.forEach(bloco => {
-    const linhasDoBloco = bloco.split('\n').map(l => l.trim()).filter(Boolean);
-    const ehListaNumerada = linhasDoBloco.length > 1 && linhasDoBloco.every(l => /^\d+[.)]\s/.test(l));
+  // ── Corpo — cada <p>/<div> do editor vira 1 (ou mais) parágrafo(s).
+  // O tipo de recuo é decidido assim:
+  //   • bloco dentro de <blockquote> (botão "→| Recuar 2,5cm")  → recuo de bloco manual
+  //   • texto começa com " (aspas)                              → citação do RGO, recuo de bloco
+  //   • linha inteira "1. ", "2. "…                              → item de lista, recuo de bloco
+  //   • qualquer outro texto                                     → parágrafo normal, recuo só na 1ª linha
+  const blocos = interpretarHtmlOficio(htmlOficio);
+  blocos.forEach(({ runs, recuoManual }) => {
+    const textoPlano = runs.map(r => r.t).join('').replace(/\n+/g, ' ').trim();
+    if (!textoPlano) return;
 
-    if (ehListaNumerada) {
-      linhasDoBloco.forEach(item => {
-        novaPaginaSeNecessario(alturaLinha * 2);
-        desenharParagrafo(item, 11, { indentBloco: INDENT_BLOCO });
-        y += 1.5;
-      });
-      y += 4;
+    const ehCitacao = textoPlano.startsWith('"') || textoPlano.startsWith('“');
+    const ehItemLista = /^\d+[.)]\s/.test(textoPlano);
+    const usaRecuoDeBloco = recuoManual || ehCitacao || ehItemLista;
+    const temQuebraInterna = runs.some(r => r.t.includes('\n'));
+
+    if (!temQuebraInterna) {
+      novaPaginaSeNecessario(alturaLinha * 2);
+      desenharParagrafo(runs, 11, usaRecuoDeBloco ? { indentBloco: INDENT_BLOCO } : { indentPrimeiraLinha: INDENT_PRIMEIRA_LINHA });
+      y += usaRecuoDeBloco && ehItemLista ? 1.5 : 5;
       return;
     }
 
-    const textoUnico = linhasDoBloco.join(' ');
-    const ehCitacao = textoUnico.startsWith('"') || textoUnico.startsWith('“');
-    novaPaginaSeNecessario(alturaLinha * 2);
-    desenharParagrafo(textoUnico, 11, ehCitacao ? { indentBloco: INDENT_BLOCO } : { indentPrimeiraLinha: INDENT_PRIMEIRA_LINHA });
-    y += 5;
+    // Bloco com quebras de linha internas (<br>, Shift+Enter) — cada linha
+    // vira seu próprio parágrafo. Comum em listas numeradas digitadas assim.
+    let runsDaLinha = [];
+    const linhasRuns = [];
+    runs.forEach(r => {
+      if (r.t.includes('\n')) {
+        const partes = r.t.split('\n');
+        partes.forEach((parte, idx) => {
+          if (parte) runsDaLinha.push({ ...r, t: parte });
+          if (idx < partes.length - 1) { linhasRuns.push(runsDaLinha); runsDaLinha = []; }
+        });
+      } else {
+        runsDaLinha.push(r);
+      }
+    });
+    if (runsDaLinha.length > 0) linhasRuns.push(runsDaLinha);
+
+    linhasRuns.forEach(runsLinha => {
+      const textoLinha = runsLinha.map(r => r.t).join('').trim();
+      if (!textoLinha) return;
+      novaPaginaSeNecessario(alturaLinha * 2);
+      const ehLinhaLista = /^\d+[.)]\s/.test(textoLinha);
+      desenharParagrafo(runsLinha, 11, (recuoManual || ehLinhaLista) ? { indentBloco: INDENT_BLOCO } : { indentPrimeiraLinha: INDENT_PRIMEIRA_LINHA });
+      y += 1.5;
+    });
+    y += 4;
   });
 
   // ── Local e data ──────────────────────────────────────────────────────────
@@ -195,7 +238,7 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
   novaPaginaSeNecessario(30);
   y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
-  txt(`${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`, M, y);
+  txt(`${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`, M_ESQ, y);
   y += 26;
 
   // ── Assinaturas — Tesoureiro e Venerável Mestre, mesmo padrão da Certidão ──
@@ -203,12 +246,12 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
   const assinatura = (nome, cargo, yy) => {
     if (nome) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-      txt(sanitizeTexto(nome), M, yy - 2);
+      txt(sanitizeTexto(nome), M_ESQ, yy - 2);
     }
     doc.setDrawColor(0); doc.setLineWidth(0.3);
-    doc.line(M, yy, M + 80, yy);
+    doc.line(M_ESQ, yy, M_ESQ + 80, yy);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
-    txt(cargo, M, yy + 5);
+    txt(cargo, M_ESQ, yy + 5);
     doc.setTextColor(0);
   };
   assinatura(assinantes.tesoureiro, 'Tesoureiro', y);
