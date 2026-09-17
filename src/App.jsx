@@ -350,6 +350,27 @@ function App() {
     });
   }, [currentPage, userData?.id]);
 
+  // Registra o momento em que o usuário entra no Arco Real — cobre os dois
+  // caminhos possíveis: quem escolhe isso na tela "Qual área você quer
+  // acessar?" (areaEscolhida) e quem só tem acesso ao Arco Real (nunca vê
+  // essa tela, cai direto lá). Uma vez por sessão, igual às telas normais.
+  useEffect(() => {
+    if (!userData?.id) return;
+    const entrouNoArcoReal = areaEscolhida === 'arco_real' || userData?.nivel_acesso === 'arco_real';
+    if (!entrouNoArcoReal) return;
+    if (telasJaAcessadasRef.current.has('__arco_real_entrada__')) return;
+
+    telasJaAcessadasRef.current.add('__arco_real_entrada__');
+    supabase.from('logs_acesso').insert({
+      usuario_id: userData.id,
+      acao: 'acessar_tela',
+      detalhes: 'Acessou: 🔺 Arco Real',
+      created_at: new Date().toISOString()
+    }).then(({ error }) => {
+      if (error) console.error('Erro ao registrar acesso ao Arco Real:', error);
+    });
+  }, [areaEscolhida, userData?.id, userData?.nivel_acesso]);
+
   // ========================================
   // EFEITOS E CARREGAMENTOS
   // ========================================
