@@ -91,8 +91,11 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
 
   // ── Um parágrafo por vez — quebra pela largura útil e justifica todas
   // as linhas menos a última (convenção de textos formais/jurídicos). Cada
-  // palavra carrega seu próprio estilo (negrito/itálico/normal). ──────────
-  const desenharParagrafo = (paragrafo, tamanhoFonte = 11) => {
+  // palavra carrega seu próprio estilo (negrito/itálico/normal).
+  // opts.indentPrimeiraLinha: recuo (mm) só na 1ª linha (parágrafo normal).
+  // opts.indentBloco: recuo (mm) em TODAS as linhas (citação/lista). ───────
+  const desenharParagrafo = (paragrafo, tamanhoFonte = 11, opts = {}) => {
+    const { indentPrimeiraLinha = 0, indentBloco = 0 } = opts;
     doc.setFontSize(tamanhoFonte);
     const espacoLargura = doc.getTextWidth(' ');
 
@@ -103,6 +106,9 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
       });
     });
 
+    // Largura disponível muda na 1ª linha quando há recuo de 1ª linha
+    const larguraLinha = (idx) => larguraUtil - indentBloco - (idx === 0 ? indentPrimeiraLinha : 0);
+
     const linhas = [];
     let linhaAtual = [];
     let larguraAtual = 0;
@@ -110,7 +116,8 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
       doc.setFont('helvetica', estiloFonte(w.b, w.i));
       const larguraPalavra = doc.getTextWidth(w.texto);
       const espacoExtra = linhaAtual.length > 0 ? espacoLargura : 0;
-      if (larguraAtual + espacoExtra + larguraPalavra > larguraUtil && linhaAtual.length > 0) {
+      const maxAtual = larguraLinha(linhas.length);
+      if (larguraAtual + espacoExtra + larguraPalavra > maxAtual && linhaAtual.length > 0) {
         linhas.push(linhaAtual);
         linhaAtual = [];
         larguraAtual = 0;
@@ -124,16 +131,18 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
     linhas.forEach((linha, idxLinha) => {
       novaPaginaSeNecessario(alturaLinha);
       const ehUltima = idxLinha === linhas.length - 1;
+      const recuoLinha = indentBloco + (idxLinha === 0 ? indentPrimeiraLinha : 0);
+      const larguraMaxLinha = larguraUtil - recuoLinha;
       const larguraPalavras = linha.reduce((s, w) => {
         doc.setFont('helvetica', estiloFonte(w.b, w.i));
         return s + doc.getTextWidth(w.texto);
       }, 0);
       const gaps = linha.length - 1;
       const espacoUsado = (!ehUltima && gaps > 0)
-        ? (larguraUtil - larguraPalavras) / gaps
+        ? (larguraMaxLinha - larguraPalavras) / gaps
         : espacoLargura;
 
-      let x = M;
+      let x = M + recuoLinha;
       linha.forEach((w, i) => {
         doc.setFont('helvetica', estiloFonte(w.b, w.i));
         txt(w.texto, x, y);
@@ -143,22 +152,38 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
     });
   };
 
-  // ── Título primeiro, destinatário logo abaixo — nessa ordem pra ficar
-  // com folga segura da linha "À G∴D∴G∴A∴D∴U∴" do papel timbrado. ─────────
+  const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais
+  const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO e itens numerados
+
+  // ── Título ───────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
   txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', W / 2, y, { align: 'center' });
-  y += 12;
+  y += 14;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-  txt(`Ao Irmão ${sanitizeTexto(irmao.nomeIrmao) || '—'}`, M, y); y += 6;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-  txt(`CIM nº ${irmao.cim || '—'}`, M, y); y += 12;
+  // ── Corpo — cada bloco separado por linha em branco vira 1 (ou mais)
+  // parágrafo(s). Detecta automaticamente o tipo de cada bloco:
+  //   • começa com " (aspas)  → citação do RGO, recuo de bloco (2,5cm)
+  //   • linhas "1. ", "2. "…  → lista numerada, 1 item por linha, recuo de bloco
+  //   • qualquer outro texto  → parágrafo normal, recuo só na 1ª linha (1,5cm)
+  const blocos = (textoOficio || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  blocos.forEach(bloco => {
+    const linhasDoBloco = bloco.split('\n').map(l => l.trim()).filter(Boolean);
+    const ehListaNumerada = linhasDoBloco.length > 1 && linhasDoBloco.every(l => /^\d+[.)]\s/.test(l));
 
-  // ── Corpo — cada bloco separado por linha em branco vira 1 parágrafo ────
-  const paragrafos = (textoOficio || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  paragrafos.forEach(p => {
+    if (ehListaNumerada) {
+      linhasDoBloco.forEach(item => {
+        novaPaginaSeNecessario(alturaLinha * 2);
+        desenharParagrafo(item, 11, { indentBloco: INDENT_BLOCO });
+        y += 1.5;
+      });
+      y += 4;
+      return;
+    }
+
+    const textoUnico = linhasDoBloco.join(' ');
+    const ehCitacao = textoUnico.startsWith('"') || textoUnico.startsWith('“');
     novaPaginaSeNecessario(alturaLinha * 2);
-    desenharParagrafo(p);
+    desenharParagrafo(textoUnico, 11, ehCitacao ? { indentBloco: INDENT_BLOCO } : { indentPrimeiraLinha: INDENT_PRIMEIRA_LINHA });
     y += 5;
   });
 
