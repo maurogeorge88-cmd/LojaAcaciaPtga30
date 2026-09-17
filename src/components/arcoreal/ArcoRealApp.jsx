@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import DashboardArcoReal from './DashboardArcoReal';
@@ -19,10 +19,43 @@ const ITENS_MENU = [
   { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
 ];
 
+// Nome bonito de cada tela do Arco Real pro Controle de Acesso — mesmo
+// texto do menu lateral. 'dashboard' fica de fora de propósito (não loga).
+const NOMES_TELAS_ARCO_REAL = {
+  'membros': '👥 Arco Real / Cadastro de Membros',
+  'presenca': '📋 Arco Real / Presença',
+  'financeiro': '💰 Arco Real / Finanças',
+  'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
+  'exaltacao': '⭐ Arco Real / Processo de Exaltação',
+  'relatorios': '📄 Arco Real / Relatórios',
+};
+
 export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
   const [pagina, setPagina] = useState('dashboard');
   const [sessaoPresencaId, setSessaoPresencaId] = useState(null); // sessão aberta na tela de Registro de Presença
   const [menuAberto, setMenuAberto] = useState(true); // sidebar aberta/recolhida (desktop) ou dentro/fora (mobile)
+
+  // Guarda quais telas do Arco Real já foram registradas nesta passagem
+  // pelo módulo (zera se ele sair e entrar de novo, o que é aceitável).
+  const telasJaAcessadasRef = useRef(new Set());
+
+  // Registra "acessou a tela X" do Arco Real — só uma vez, mesma lógica
+  // já usada nas telas da Loja (App.jsx).
+  useEffect(() => {
+    if (!userData?.id) return;
+    if (!NOMES_TELAS_ARCO_REAL[pagina]) return;
+    if (telasJaAcessadasRef.current.has(pagina)) return;
+
+    telasJaAcessadasRef.current.add(pagina);
+    supabase.from('logs_acesso').insert({
+      usuario_id: userData.id,
+      acao: 'acessar_tela',
+      detalhes: `Acessou: ${NOMES_TELAS_ARCO_REAL[pagina]}`,
+      created_at: new Date().toISOString()
+    }).then(({ error }) => {
+      if (error) console.error('Erro ao registrar acesso à tela (Arco Real):', error);
+    });
+  }, [pagina, userData?.id]);
 
   // No celular o menu some da tela (off-canvas) ao navegar, pra liberar
   // espaço pro conteúdo — no desktop ele continua aberto normalmente.
