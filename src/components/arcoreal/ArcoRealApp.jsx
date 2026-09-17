@@ -5,6 +5,7 @@ import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
 import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
+import ControleAcesso from '../administracao/ControleAcesso';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
 const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
@@ -17,10 +18,12 @@ const ITENS_MENU = [
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: false },
   { id: 'exaltacao', label: 'Processo de Exaltação', icone: '⭐', pronto: false },
   { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
+  { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true },
 ];
 
 // Nome bonito de cada tela do Arco Real pro Controle de Acesso — mesmo
-// texto do menu lateral. 'dashboard' fica de fora de propósito (não loga).
+// texto do menu lateral. 'dashboard' e 'controle-acesso' ficam de fora de
+// propósito (a própria tela de controle de acesso não precisa se auto-logar).
 const NOMES_TELAS_ARCO_REAL = {
   'membros': '👥 Arco Real / Cadastro de Membros',
   'presenca': '📋 Arco Real / Presença',
@@ -196,7 +199,12 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             showError={showError}
           />
         )}
-        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && (
+        {pagina === 'controle-acesso' && (
+          <div className="p-6">
+            <ControleAcesso userData={userData} showSuccess={showSuccess} showError={showError} escopo="arco_real" />
+          </div>
+        )}
+        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
