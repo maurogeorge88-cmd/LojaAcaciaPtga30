@@ -41,7 +41,9 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
   const alturaLinha = 5.6;
   // A imagem de fundo já traz cabeçalho (topo) e rodapé (base) prontos —
   // o texto precisa ficar dentro dessa janela, sem sobrepor nenhum dos dois.
-  const yTopoUtil = 46;
+  // Folga generosa no topo (equivalente a +2 linhas) pra nunca encostar na
+  // linha "À G∴D∴G∴A∴D∴U∴" do timbre, nem na primeira nem nas próximas páginas.
+  const yTopoUtil = 58;
   const yBaseUtil = 258;
 
   let fundoBase64 = null;
@@ -70,19 +72,43 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
 
   const txt = (text, x, yy, opts = {}) => doc.text(String(text), x, yy, opts);
 
+  // Marcação simples estilo editor de texto — **negrito** e _itálico_ — que
+  // a pessoa aplica selecionando o texto no modal antes de gerar o PDF.
+  // Quebra o parágrafo em pedaços com o estilo de cada um.
+  const interpretarFormatacao = (paragrafo) => {
+    const partes = [];
+    const regex = /\*\*(.+?)\*\*|_(.+?)_|([^*_]+)/g;
+    let m;
+    while ((m = regex.exec(paragrafo)) !== null) {
+      if (m[1] !== undefined) partes.push({ t: m[1], b: true, i: false });
+      else if (m[2] !== undefined) partes.push({ t: m[2], b: false, i: true });
+      else if (m[3] !== undefined) partes.push({ t: m[3], b: false, i: false });
+    }
+    return partes;
+  };
+
+  const estiloFonte = (b, i) => b && i ? 'bolditalic' : b ? 'bold' : i ? 'italic' : 'normal';
+
   // ── Um parágrafo por vez — quebra pela largura útil e justifica todas
-  // as linhas menos a última (convenção de textos formais/jurídicos). ──────
+  // as linhas menos a última (convenção de textos formais/jurídicos). Cada
+  // palavra carrega seu próprio estilo (negrito/itálico/normal). ──────────
   const desenharParagrafo = (paragrafo, tamanhoFonte = 11) => {
     doc.setFontSize(tamanhoFonte);
-    doc.setFont('helvetica', 'normal');
     const espacoLargura = doc.getTextWidth(' ');
-    const palavras = sanitizeTexto(paragrafo).split(/\s+/).filter(Boolean);
+
+    const palavras = [];
+    interpretarFormatacao(paragrafo).forEach(parte => {
+      sanitizeTexto(parte.t).split(/\s+/).filter(Boolean).forEach(p => {
+        palavras.push({ texto: p, b: parte.b, i: parte.i });
+      });
+    });
 
     const linhas = [];
     let linhaAtual = [];
     let larguraAtual = 0;
-    palavras.forEach(p => {
-      const larguraPalavra = doc.getTextWidth(p);
+    palavras.forEach(w => {
+      doc.setFont('helvetica', estiloFonte(w.b, w.i));
+      const larguraPalavra = doc.getTextWidth(w.texto);
       const espacoExtra = linhaAtual.length > 0 ? espacoLargura : 0;
       if (larguraAtual + espacoExtra + larguraPalavra > larguraUtil && linhaAtual.length > 0) {
         linhas.push(linhaAtual);
@@ -90,7 +116,7 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
         larguraAtual = 0;
       }
       if (linhaAtual.length > 0) larguraAtual += espacoLargura;
-      linhaAtual.push(p);
+      linhaAtual.push(w);
       larguraAtual += larguraPalavra;
     });
     if (linhaAtual.length > 0) linhas.push(linhaAtual);
@@ -98,30 +124,35 @@ export const gerarOficioPendenciaPDF = async (irmao, textoOficio, dadosLoja, ass
     linhas.forEach((linha, idxLinha) => {
       novaPaginaSeNecessario(alturaLinha);
       const ehUltima = idxLinha === linhas.length - 1;
-      const larguraPalavras = linha.reduce((s, p) => s + doc.getTextWidth(p), 0);
+      const larguraPalavras = linha.reduce((s, w) => {
+        doc.setFont('helvetica', estiloFonte(w.b, w.i));
+        return s + doc.getTextWidth(w.texto);
+      }, 0);
       const gaps = linha.length - 1;
       const espacoUsado = (!ehUltima && gaps > 0)
         ? (larguraUtil - larguraPalavras) / gaps
         : espacoLargura;
 
       let x = M;
-      linha.forEach((p, i) => {
-        txt(p, x, y);
-        x += doc.getTextWidth(p) + (i < linha.length - 1 ? espacoUsado : 0);
+      linha.forEach((w, i) => {
+        doc.setFont('helvetica', estiloFonte(w.b, w.i));
+        txt(w.texto, x, y);
+        x += doc.getTextWidth(w.texto) + (i < linha.length - 1 ? espacoUsado : 0);
       });
       y += alturaLinha;
     });
   };
 
-  // ── Destinatário ────────────────────────────────────────────────────────
+  // ── Título primeiro, destinatário logo abaixo — nessa ordem pra ficar
+  // com folga segura da linha "À G∴D∴G∴A∴D∴U∴" do papel timbrado. ─────────
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', W / 2, y, { align: 'center' });
+  y += 12;
+
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
   txt(`Ao Irmão ${sanitizeTexto(irmao.nomeIrmao) || '—'}`, M, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
   txt(`CIM nº ${irmao.cim || '—'}`, M, y); y += 12;
-
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', W / 2, y, { align: 'center' });
-  y += 12;
 
   // ── Corpo — cada bloco separado por linha em branco vira 1 parágrafo ────
   const paragrafos = (textoOficio || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
