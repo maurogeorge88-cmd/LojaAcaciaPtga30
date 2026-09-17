@@ -202,7 +202,63 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       dadosLoja,
       { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
     );
-    setModalOficioAberto(false);
+    // Não fecha mais o modal — pode precisar ajustar algo e gerar de novo
+    // sem ter que reabrir e perder a edição.
+  };
+
+  // Word (.doc) — mesmo conteúdo do editor (negrito/itálico/recuo
+  // preservados), sem o papel timbrado (imagem de fundo não entra nesse
+  // formato). Usa o truque clássico de .doc como HTML, que o Word abre
+  // normalmente e mantém a formatação.
+  const handleGerarOficioWord = () => {
+    if (!selecionado) return;
+    const htmlOficio = editorOficioRef.current?.innerHTML || '';
+    const hoje = new Date();
+    const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const cidade = dadosLoja?.cidade || 'Paranatinga';
+    const estado = dadosLoja?.estado || 'MT';
+
+    const assinaturaHtml = (nome, cargo) => `
+      <p style="margin-top:40px;">
+        ${nome ? `<b>${escapeHtml(nome)}</b><br/>` : '<br/>'}
+        _______________________________<br/>
+        <span style="font-size:9pt;color:#555;">${escapeHtml(cargo)}</span>
+      </p>`;
+
+    const conteudo = `
+      <div style="text-align:center;font-family:'Times New Roman',serif;">
+        <p style="font-weight:bold;font-size:14pt;margin-bottom:0;">A∴R∴L∴S∴</p>
+        <p style="font-weight:bold;font-size:14pt;margin-top:0;">ACÁCIA DE PARANATINGA Nº 30</p>
+        <p style="font-size:10pt;margin:0;">Fundação – 20/12/1997</p>
+        <p style="font-size:10pt;margin:0;">JURISDICIONADA A GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – GLEMT</p>
+        <p style="font-size:11pt;margin-top:8px;">À G∴D∴G∴A∴D∴U∴</p>
+        <hr/>
+      </div>
+      <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:center;font-weight:bold;margin:20px 0;">
+        OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA
+      </div>
+      <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:justify;">
+        ${htmlOficio}
+      </div>
+      <div style="font-family:'Times New Roman',serif;font-size:12pt;margin-top:24px;">
+        <p>${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.</p>
+        ${assinaturaHtml(nomeTesoureiro, 'Tesoureiro')}
+        ${assinaturaHtml(nomeVeneravel, 'Venerável Mestre')}
+      </div>`;
+
+    const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>Ofício</title></head>
+      <body>${conteudo}</body></html>`;
+
+    const blob = new Blob(['\ufeff', htmlCompleto], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Oficio_Pendencia_${(selecionado.nomeIrmao || 'irmao').replace(/\s+/g, '_')}_${hoje.toISOString().split('T')[0]}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // ── Busca inicial quando o modal abre ─────────────────────────
@@ -621,10 +677,13 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
             </div>
             <div style={{ padding: '1rem 1.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
               <button onClick={() => setModalOficioAberto(false)} style={{ padding: '0.55rem 1.2rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
-                Cancelar
+                Fechar
+              </button>
+              <button onClick={handleGerarOficioWord} style={{ padding: '0.55rem 1.4rem', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer' }}>
+                📝 Gerar Word
               </button>
               <button onClick={handleGerarOficio} style={{ padding: '0.55rem 1.4rem', background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer' }}>
-                📄 Gerar PDF do Ofício
+                📄 Gerar PDF
               </button>
             </div>
           </div>
