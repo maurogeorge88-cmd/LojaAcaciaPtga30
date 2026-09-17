@@ -26,18 +26,15 @@ const carregarImagemBase64 = async (url) => {
 // ── Lê o HTML produzido pelo editor (contentEditable) e devolve uma lista
 // de "blocos" (parágrafos), cada um como uma lista de "runs" de texto com
 // negrito/itálico reais (tags <b>/<strong>/<i>/<em>) — e se o bloco inteiro
-// está dentro de um <blockquote> (recuo manual aplicado pelo botão "→|"). ──
+// está dentro de um <blockquote> (recuo manual aplicado pelo botão "→|").
+// Importante: ao recuar, o navegador ENVOLVE o parágrafo com <blockquote>
+// (ele deixa de ser um <p>/<div> direto no nível principal) — por isso
+// entra também como possível elemento de topo, senão o parágrafo some. ────
 const interpretarHtmlOficio = (html) => {
   const container = document.createElement('div');
   container.innerHTML = html;
 
-  const elementosBloco = Array.from(container.querySelectorAll(':scope > p, :scope > div'));
-  const blocosDom = elementosBloco.length > 0 ? elementosBloco : [container];
-
-  return blocosDom.map(el => {
-    const dentroDeBlockquote = !!el.closest('blockquote') || el.tagName === 'BLOCKQUOTE'
-      || Array.from(el.querySelectorAll('blockquote')).length > 0;
-
+  const extrairRuns = (el) => {
     const runs = [];
     const percorrer = (node, b, i) => {
       if (node.nodeType === Node.TEXT_NODE) {
@@ -51,9 +48,27 @@ const interpretarHtmlOficio = (html) => {
       }
     };
     el.childNodes.forEach(child => percorrer(child, false, false));
+    return runs;
+  };
 
-    return { runs, recuoManual: dentroDeBlockquote };
-  }).filter(b => b.runs.some(r => r.t.trim().length > 0));
+  const blocosFinal = [];
+  const processarElementoTopo = (el, forcarRecuo) => {
+    if (el.tagName === 'BLOCKQUOTE') {
+      // Pode ter 1 parágrafo dentro, ou vários (se o recuo foi aplicado a
+      // uma seleção cobrindo mais de um parágrafo) — cada um vira 1 bloco.
+      const filhos = Array.from(el.querySelectorAll(':scope > p, :scope > div'));
+      if (filhos.length > 0) filhos.forEach(f => processarElementoTopo(f, true));
+      else blocosFinal.push({ runs: extrairRuns(el), recuoManual: true });
+      return;
+    }
+    blocosFinal.push({ runs: extrairRuns(el), recuoManual: forcarRecuo });
+  };
+
+  const elementosTopo = Array.from(container.querySelectorAll(':scope > p, :scope > div, :scope > blockquote'));
+  const listaTopo = elementosTopo.length > 0 ? elementosTopo : [container];
+  listaTopo.forEach(el => processarElementoTopo(el, false));
+
+  return blocosFinal.filter(b => b.runs.some(r => r.t.trim().length > 0));
 };
 
 /**
