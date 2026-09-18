@@ -511,7 +511,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           evento_comemorativo_id, eh_transferencia_interna, eh_pagamento_parcial,
           lancamento_principal_id, comprovante_url,
           categorias_financeiras(nome, tipo),
-          irmaos(nome)
+          irmaos(nome, eh_profano)
         `);
 
       // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
@@ -3068,6 +3068,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       acc[irmaoId] = {
                         irmaoId,
                         irmaoNome,
+                        ehProfano: !!lanc.irmaos?.eh_profano,
                         lancamentos: []
                       };
                     }
@@ -3095,7 +3096,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   const corCabecalho = saldoLiquido > 0 ? '' : saldoLiquido < 0 ? '' : 'bg-gray-500';
 
                   return (
-                    <div key={irmaoData.irmaoId} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',background:'var(--color-surface)',marginBottom:'0.5rem'}}>
+                    <div key={irmaoData.irmaoId} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border: irmaoData.ehProfano ? '2px solid #f59e0b' : '1px solid var(--color-border)',background:'var(--color-surface)',marginBottom:'0.5rem'}}>
                       
                       {/* CABEÇALHO DO IRMÃO */}
                       <div style={{
@@ -3106,6 +3107,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <div style={{flex:1}}>
                           <h4 style={{fontSize:'1.1rem',fontWeight:'700',color:'#fff',margin:0,display:'flex',alignItems:'center',gap:'0.5rem'}}>
                             👤 {irmaoData.irmaoNome}
+                            {irmaoData.ehProfano && (
+                              <span style={{fontSize:'0.68rem',fontWeight:'800',background:'#f59e0b',color:'#000',padding:'0.1rem 0.5rem',borderRadius:'999px'}}>
+                                🟠 PROFANO
+                              </span>
+                            )}
                           </h4>
                           <p style={{color:'rgba(255,255,255,0.85)',fontSize:'0.8rem',margin:'0.2rem 0 0'}}>
                             {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
@@ -3274,10 +3280,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           return (
                             <div key={lanc.id} style={{
                               borderRadius:'var(--radius-lg)',
-                              borderLeft:`4px solid ${corBorda}`,
+                              borderLeft:`4px solid ${irmaoData.ehProfano ? '#f59e0b' : corBorda}`,
                               background: bgCard,
-                              border:`1px solid var(--color-border)`,
-                              borderLeftColor: corBorda,
+                              border: irmaoData.ehProfano ? '1px solid #f59e0b' : `1px solid var(--color-border)`,
+                              borderLeftColor: irmaoData.ehProfano ? '#f59e0b' : corBorda,
                               padding:'0.75rem 1rem',
                               display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem'
                             }}>
