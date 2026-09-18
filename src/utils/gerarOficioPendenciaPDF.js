@@ -82,7 +82,7 @@ const interpretarHtmlOficio = (html) => {
  * @param {Object} dadosLoja  { cidade, estado }
  * @param {Object} assinantes { tesoureiro, veneravelMestre }
  */
-export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assinantes = {}) => {
+export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assinantes = {}, cabecalho = {}) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, H = 297;
   // Margens assimétricas — 3cm à esquerda (espaço de encadernação/arquivo),
@@ -189,10 +189,19 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
   const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais (padrão)
   const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO, listas numeradas e recuo manual (botão "→|")
 
-  // ── Título ───────────────────────────────────────────────────────────────
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  txt('OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA', M_ESQ + larguraUtil / 2, y, { align: 'center' });
-  y += 14;
+  // ── Cabeçalho fixo — Prancha nº / data / destinatário / assunto ─────────
+  // Flush à esquerda (sem recuo de parágrafo), diferente do corpo — é um
+  // bloco de identificação do documento, não texto corrido.
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  txt(sanitizeTexto(cabecalho.prancha) || '', M_ESQ, y); y += alturaLinha;
+  txt(sanitizeTexto(cabecalho.dataLinha) || '', M_ESQ, y); y += alturaLinha + 5;
+
+  txt(sanitizeTexto(cabecalho.destinatario1) || '', M_ESQ, y); y += alturaLinha;
+  txt(sanitizeTexto(cabecalho.destinatario2) || '', M_ESQ, y); y += alturaLinha;
+  txt(sanitizeTexto(cabecalho.destinatario3) || '', M_ESQ, y); y += alturaLinha + 5;
+
+  doc.setFont('helvetica', 'bold');
+  txt(sanitizeTexto(cabecalho.assunto) || '', M_ESQ, y); y += alturaLinha + 8;
 
   // ── Corpo — cada <p>/<div> do editor vira 1 (ou mais) parágrafo(s).
   // O tipo de recuo é decidido assim:
