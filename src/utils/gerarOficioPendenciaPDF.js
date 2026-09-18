@@ -189,19 +189,21 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
   const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais (padrão)
   const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO, listas numeradas e recuo manual (botão "→|")
 
-  // ── Cabeçalho fixo — Prancha nº / data / destinatário / assunto ─────────
+  // ── Cabeçalho fixo — Prancha nº / data / destinatário / assunto / saudação
   // Flush à esquerda (sem recuo de parágrafo), diferente do corpo — é um
-  // bloco de identificação do documento, não texto corrido.
+  // bloco de identificação do documento, não texto corrido. Segue exatamente
+  // o espaçamento pedido: linha em branco só depois da data e depois do
+  // assunto — as demais linhas ficam coladas, sem espaço extra entre elas.
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
   txt(sanitizeTexto(cabecalho.prancha) || '', M_ESQ, y); y += alturaLinha;
   txt(sanitizeTexto(cabecalho.dataLinha) || '', M_ESQ, y); y += alturaLinha + 5;
 
   txt(sanitizeTexto(cabecalho.destinatario1) || '', M_ESQ, y); y += alturaLinha;
   txt(sanitizeTexto(cabecalho.destinatario2) || '', M_ESQ, y); y += alturaLinha;
-  txt(sanitizeTexto(cabecalho.destinatario3) || '', M_ESQ, y); y += alturaLinha + 5;
+  txt(sanitizeTexto(cabecalho.destinatario3) || '', M_ESQ, y); y += alturaLinha;
+  txt(sanitizeTexto(cabecalho.assunto) || '', M_ESQ, y); y += alturaLinha + 5;
 
-  doc.setFont('helvetica', 'bold');
-  txt(sanitizeTexto(cabecalho.assunto) || '', M_ESQ, y); y += alturaLinha + 8;
+  txt('Respeitável Irmão,', M_ESQ, y); y += alturaLinha + 5;
 
   // ── Corpo — cada <p>/<div> do editor vira 1 (ou mais) parágrafo(s).
   // O tipo de recuo é decidido assim:
