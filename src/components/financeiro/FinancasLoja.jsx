@@ -413,7 +413,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       const { data: todosIrmaos, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('id, nome, situacao, periodicidade_pagamento')
+        .select('id, nome, situacao, periodicidade_pagamento, eh_profano')
         .order('nome');
 
       if (irmaoError) {
@@ -2652,7 +2652,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   irmaos
                     .sort((a,b)=>a.nome.localeCompare(b.nome))
                     .map(irmao => (
-                      <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      <option key={irmao.id} value={irmao.id}>{irmao.nome}{irmao.eh_profano ? ' (Profano)' : ''}</option>
                     ))
                 ) : (
                   <>
@@ -2672,7 +2672,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       {irmaos
                         .sort((a,b)=>a.nome.localeCompare(b.nome))
                         .map(irmao => (
-                          <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                          <option key={irmao.id} value={irmao.id}>{irmao.nome}{irmao.eh_profano ? ' (Profano)' : ''}</option>
                         ))}
                     </optgroup>
                   </>
@@ -4275,7 +4275,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     irmaos
                       .sort((a,b)=>a.nome.localeCompare(b.nome))
                       .map(i => (
-                        <option key={i.id} value={i.id}>{i.nome}</option>
+                        <option key={i.id} value={i.id}>{i.nome}{i.eh_profano ? ' (Profano)' : ''}</option>
                       ))
                   ) : (
                     <>
@@ -4298,7 +4298,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {irmaos
                           .sort((a,b)=>a.nome.localeCompare(b.nome))
                           .map(i => (
-                            <option key={i.id} value={i.id}>{i.nome}</option>
+                            <option key={i.id} value={i.id}>{i.nome}{i.eh_profano ? ' (Profano)' : ''}</option>
                           ))}
                       </optgroup>
                     </>
