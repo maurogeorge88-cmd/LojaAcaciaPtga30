@@ -269,18 +269,19 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     const irmaoInfo = irmaosMap[selecionado?.irmaoId] || {};
     const grau = obterGrauMaconico(irmaoInfo);
     const hoje = new Date();
-    const dataCurta = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-    const cidade = dadosLoja?.cidade || 'Paranatinga';
     const estado = dadosLoja?.estado || 'MT';
-    const nomeLoja = dadosLoja?.nome_loja || 'Acácia de Paranatinga';
+    const oriente = dadosLoja?.oriente || dadosLoja?.cidade || 'Paranatinga';
     const numeroLoja = dadosLoja?.numero_loja || '30';
-    const oriente = dadosLoja?.oriente || cidade;
+    // "nome_loja" no cadastro já vem com "ARLS ..." incluso — tira esse
+    // prefixo antes de recolocar "A∴R∴L∴S∴" na frente, senão duplica
+    // ("ARLS ARLS Acácia..."), que era exatamente o bug.
+    const nomeLojaBruto = dadosLoja?.nome_loja || 'Acácia de Paranatinga';
+    const nomeLojaSemPrefixo = nomeLojaBruto.replace(/^\s*(A[∴.]?\s*R[∴.]?\s*L[∴.]?\s*S[∴.]?\s*|ARLS\s*)/i, '').trim();
 
     return {
-      prancha: `Prancha nº ${numeroPrancha || `___/${hoje.getFullYear()}`}/A∴R∴L∴S∴ ${nomeLoja.toUpperCase()} Nº ${numeroLoja}`,
-      dataLinha: `${cidade}-${estado}, ${dataCurta}`,
+      prancha: `Prancha nº ${numeroPrancha || `___/${hoje.getFullYear()}`} - A∴R∴L∴S∴ ${nomeLojaSemPrefixo.toUpperCase()} Nº ${numeroLoja}`,
       destinatario1: `Ir∴ ${selecionado?.nomeIrmao || '—'} | ${grau} | CIM ${selecionado?.cim || '—'}`,
-      destinatario2: `Obreiro da A∴R∴L∴S∴ ${nomeLoja} nº ${numeroLoja}`,
+      destinatario2: `Obreiro da A∴R∴L∴S∴ ${nomeLojaSemPrefixo} nº ${numeroLoja}`,
       destinatario3: `Oriente de ${oriente}/${estado}`,
       assunto: `Assunto: Advertência Formal por Pendências junto à Tesouraria`,
     };
@@ -330,8 +331,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
         <hr/>
       </div>
       <div style="font-family:'Times New Roman',serif;font-size:11pt;margin:16px 0;">
-        <p style="margin:0;">${escapeHtml(cab.prancha)}</p>
-        <p style="margin:0 0 12px 0;">${escapeHtml(cab.dataLinha)}</p>
+        <p style="margin:0 0 12px 0;">${escapeHtml(cab.prancha)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario1)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario2)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario3)}</p>
@@ -759,7 +759,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
                   style={{ width: '220px', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem' }}
                 />
                 <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginLeft: '0.6rem' }}>
-                  Aparece como "Prancha nº {numeroPrancha || '___/' + new Date().getFullYear()}/A∴R∴L∴S∴ ..." no topo do ofício
+                  Aparece como "Prancha nº {numeroPrancha || '___/' + new Date().getFullYear()} - A∴R∴L∴S∴ ..." no topo do ofício
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
