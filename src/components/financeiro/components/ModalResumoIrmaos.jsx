@@ -237,7 +237,6 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     const itemLista = (texto, ultimo) => `<blockquote style="margin:0 0 ${ultimo ? '10px' : '2px'} 40px;"><p style="margin:0;"><i>${escapeHtml(texto)}</i></p></blockquote>`;
 
     return [
-      p(`Respeitável Irmão,`),
       p(`Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de <b>${valor}</b> (${valorExtenso}), conforme Relatório da Tesouraria.`),
       p(`Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.`),
       p(`Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:`),
@@ -335,8 +334,9 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
         <p style="margin:0 0 12px 0;">${escapeHtml(cab.dataLinha)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario1)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario2)}</p>
-        <p style="margin:0 0 12px 0;">${escapeHtml(cab.destinatario3)}</p>
+        <p style="margin:0;">${escapeHtml(cab.destinatario3)}</p>
         <p style="margin:0 0 12px 0;">${escapeHtml(cab.assunto)}</p>
+        <p style="margin:0 0 12px 0;">Respeitável Irmão,</p>
       </div>
       <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:justify;">
         ${htmlOficio}
