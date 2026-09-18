@@ -399,12 +399,14 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         {irmaosFiltrados.map(irmao => {
           const grau = obterGrau(irmao);
           const situacao = (irmao.situacao || 'regular').toLowerCase();
-          
+
           return (
             <div
               key={irmao.id}
               className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden"
-              style={situacao === 'licenciado'
+              style={irmao.eh_profano
+                ? {borderTop:"2px solid #000",borderRight:"2px solid #000",borderBottom:"2px solid #000",borderLeft:"8px solid #000",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(0,0,0,0.35)"}
+                : situacao === 'licenciado'
                 ? {borderTop:"2px solid #c9a84c",borderRight:"2px solid #c9a84c",borderBottom:"2px solid #c9a84c",borderLeft:"8px solid #c9a84c",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(201,168,76,0.35)"}
                 : {borderLeft:"4px solid var(--color-accent)",borderTop:"1px solid var(--color-border)",borderRight:"1px solid var(--color-border)",borderBottom:"1px solid var(--color-border)",background:"var(--color-surface)"}}>
               {/* Foto e Grau */}
@@ -425,6 +427,13 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 <div style={{position:"absolute",top:"0.35rem",right:"0.35rem",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800",...obterStyleGrau(grau)}}>
                   {grau}
                 </div>
+
+                {/* Badge de Profano */}
+                {irmao.eh_profano && (
+                  <div style={{position:"absolute",top:"0.35rem",left:"0.35rem",background:"#000",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800"}}>
+                    ⬛ PROFANO
+                  </div>
+                )}
               </div>
 
               {/* Informações */}
