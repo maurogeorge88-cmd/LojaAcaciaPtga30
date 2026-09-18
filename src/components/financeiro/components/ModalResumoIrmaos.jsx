@@ -166,20 +166,31 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
   // Texto padrão — pré-preenchido com os dados do irmão marcado, mas
   // totalmente editável (negrito/itálico/recuo) antes de gerar o PDF.
   const gerarHtmlPadraoOficio = (irm) => {
-    const paragrafos = [
-      `Prezado Irmão ${irm.nomeIrmao || '—'}, CIM nº ${irm.cim || '—'},`,
-      `Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de ${fmtR(irm.receitasPendentes || 0)}, conforme Relatório da Tesouraria. Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.`,
-      `Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:`,
-      `"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"`,
-      `"DA DEMISSÃO E ELIMINAÇÃO – Art. 218 – O Maçom que, sem motivo realmente justo, a critério da Loja, faltar a mais de 6 (seis) sessões seguidas, ou a 25 (vinte e cinco) alternadas, num ano, será eliminado do Quadro, independentemente de qualquer processo ou notificação, ressalvadas as exceções constitucionais e regulamentares. § 2º - Idêntica providência deverá ser tomada pela Loja, contra todo e qualquer Obreiro, que deixar de pagar 2 (duas) chamadas de Beneficência Maçônica. A sua eliminação será publicada no Boletim."`,
-      `"DA DEMISSÃO E ELIMINAÇÃO – Art. 219 – Todo Obreiro em atraso de suas mensalidades, por 3 (três) meses, sem causa justificada, será coberto de direito (...)."`,
-      `Diante disso, e em consonância com os ritos e normas maçônicas, este ofício serve como advertência formal, e último chamado à regularização.`,
-      `Caso o Ir∴ não regularize sua situação de adimplência financeira perante a Loja já a partir da próxima sessão, a contar da data do recebimento deste, esta Augusta e Respeitável Loja será obrigada a encaminhar o caso ao Conselho Disciplinar (Comissão de sete Mestres), podendo resultar em:`,
-      `1. Processo Administrativo Interno;`,
-      `2. Cobertura dos direitos maçônicos;`,
-      `3. Em última instância, expedição de "Quit Placet", "ex-ofício", conforme previsto nos artigos 223 e 224 do nosso RGO.`,
-    ];
-    return paragrafos.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+    const nome = escapeHtml(irm.nomeIrmao || '—');
+    const cim = escapeHtml(String(irm.cim || '—'));
+    const valor = fmtR(irm.receitasPendentes || 0);
+    const p = (html) => `<p style="margin:0 0 10px 0;">${html}</p>`;
+    // Citação do RGO — itálico + recuo de bloco (2,5cm), já pronto igual
+    // sairá no ofício, sem precisar marcar manualmente toda vez.
+    const citacao = (texto) => `<blockquote style="margin:0 0 10px 40px;"><p style="margin:0;"><i>${escapeHtml(texto)}</i></p></blockquote>`;
+    // Item de lista numerada — só recuo de bloco, sem itálico
+    const itemLista = (texto, ultimo) => `<blockquote style="margin:0 0 ${ultimo ? '10px' : '2px'} 40px;"><p style="margin:0;">${escapeHtml(texto)}</p></blockquote>`;
+
+    return [
+      p(`Prezado Irmão <b>${nome}</b>`),
+      p(`<b>CIM nº ${cim}</b>`),
+      p(`Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de <b>${valor}</b>, conforme Relatório da Tesouraria.`),
+      p(`Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.`),
+      p(`Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:`),
+      citacao(`"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"`),
+      citacao(`"DA DEMISSÃO E ELIMINAÇÃO – Art. 218 – O Maçom que, sem motivo realmente justo, a critério da Loja, faltar a mais de 6 (seis) sessões seguidas, ou a 25 (vinte e cinco) alternadas, num ano, será eliminado do Quadro, independentemente de qualquer processo ou notificação, ressalvadas as exceções constitucionais e regulamentares. § 2º - Idêntica providência deverá ser tomada pela Loja, contra todo e qualquer Obreiro, que deixar de pagar 2 (duas) chamadas de Beneficência Maçônica. A sua eliminação será publicada no Boletim."`),
+      citacao(`"DA DEMISSÃO E ELIMINAÇÃO – Art. 219 – Todo Obreiro em atraso de suas mensalidades, por 3 (três) meses, sem causa justificada, será coberto de direito (...)."`),
+      p(`Diante disso, e em consonância com os ritos e normas maçônicas, este ofício serve como advertência formal, e último chamado à regularização.`),
+      p(`Caso o Ir∴ não regularize sua situação de adimplência financeira perante a Loja já a partir da próxima sessão, a contar da data do recebimento deste, esta Augusta e Respeitável Loja será obrigada a encaminhar o caso ao Conselho Disciplinar (Comissão de sete Mestres), podendo resultar em:`),
+      itemLista(`1. Processo Administrativo Interno;`, false),
+      itemLista(`2. Cobertura dos direitos maçônicos;`, false),
+      itemLista(`3. Em última instância, expedição de "Quit Placet", "ex-ofício", conforme previsto nos artigos 223 e 224 do nosso RGO.`, true),
+    ].join('');
   };
 
   const handleAbrirOficio = () => {
