@@ -280,7 +280,10 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
 
     return {
       prancha: `Prancha nº ${numeroPrancha || `___/${hoje.getFullYear()}`} - A∴R∴L∴S∴ ${nomeLojaSemPrefixo.toUpperCase()} Nº ${numeroLoja}`,
-      destinatario1: `Ir∴ ${selecionado?.nomeIrmao || '—'} | ${grau} | CIM ${selecionado?.cim || '—'}`,
+      // Nome separado do resto — só ele fica em negrito na hora de desenhar
+      irmaoPrefixo: `Ir∴ `,
+      irmaoNome: selecionado?.nomeIrmao || '—',
+      irmaoResto: ` | ${grau} | CIM ${selecionado?.cim || '—'}`,
       destinatario2: `Obreiro da A∴R∴L∴S∴ ${nomeLojaSemPrefixo} nº ${numeroLoja}`,
       destinatario3: `Oriente de ${oriente}/${estado}`,
       assunto: `Assunto: Advertência Formal por Pendências junto à Tesouraria`,
@@ -332,7 +335,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       </div>
       <div style="font-family:'Times New Roman',serif;font-size:11pt;margin:16px 0;">
         <p style="margin:0 0 12px 0;">${escapeHtml(cab.prancha)}</p>
-        <p style="margin:0;">${escapeHtml(cab.destinatario1)}</p>
+        <p style="margin:0;">${escapeHtml(cab.irmaoPrefixo)}<b>${escapeHtml(cab.irmaoNome)}</b>${escapeHtml(cab.irmaoResto)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario2)}</p>
         <p style="margin:0;">${escapeHtml(cab.destinatario3)}</p>
         <p style="margin:0 0 12px 0;">${escapeHtml(cab.assunto)}</p>
