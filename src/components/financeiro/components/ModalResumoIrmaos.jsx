@@ -3,6 +3,7 @@ import { supabase } from '../../../supabaseClient';
 import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
 import { gerarCertidaoFinanceiraPDF } from '../../../utils/gerarCertidaoFinanceiraPDF';
 import { gerarOficioPendenciaPDF } from '../../../utils/gerarOficioPendenciaPDF';
+import { gerarOficioPendenciaDocx } from '../../../utils/gerarOficioPendenciaDocx';
 
 const fmtR = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -304,65 +305,21 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     // sem ter que reabrir e perder a edição.
   };
 
-  // Word (.doc) — mesmo conteúdo do editor (negrito/itálico/recuo
-  // preservados), sem o papel timbrado (imagem de fundo não entra nesse
-  // formato). Usa o truque clássico de .doc como HTML, que o Word abre
-  // normalmente e mantém a formatação.
-  const handleGerarOficioWord = () => {
+  // Word (.docx de verdade) — mesmo conteúdo do editor (negrito/itálico/
+  // recuo preservados) E o timbre atrás do texto, igual o PDF. O timbre
+  // fica no cabeçalho do Word (imagem flutuante "atrás do texto"), que
+  // imprime sempre, em qualquer configuração — ao contrário de fundo de
+  // página, que o Word só imprime se a pessoa mexer numa opção específica.
+  const handleGerarOficioWord = async () => {
     if (!selecionado) return;
     const htmlOficio = editorOficioRef.current?.innerHTML || '';
-    const hoje = new Date();
-    const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-    const cidade = dadosLoja?.cidade || 'Paranatinga';
-    const estado = dadosLoja?.estado || 'MT';
-    const cab = montarCabecalhoOficio();
-
-    const assinaturaHtml = (nome, cargo) => `
-      <p style="margin-top:40px;">
-        ${nome ? `<b>${escapeHtml(nome)}</b><br/>` : '<br/>'}
-        _______________________________<br/>
-        <span style="font-size:9pt;color:#555;">${escapeHtml(cargo)}</span>
-      </p>`;
-
-    const conteudo = `
-      <div style="text-align:center;font-family:'Times New Roman',serif;">
-        <p style="font-weight:bold;font-size:14pt;margin-bottom:0;">A∴R∴L∴S∴</p>
-        <p style="font-weight:bold;font-size:14pt;margin-top:0;">ACÁCIA DE PARANATINGA Nº 30</p>
-        <p style="font-size:10pt;margin:0;">Fundação – 20/12/1997</p>
-        <p style="font-size:10pt;margin:0;">JURISDICIONADA A GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – GLEMT</p>
-        <p style="font-size:11pt;margin-top:8px;">À G∴D∴G∴A∴D∴U∴</p>
-        <hr/>
-      </div>
-      <div style="font-family:'Times New Roman',serif;font-size:11pt;margin:16px 0;">
-        <p style="margin:0 0 12px 0;">${escapeHtml(cab.prancha)}</p>
-        <p style="margin:0;">${escapeHtml(cab.irmaoPrefixo)}<b>${escapeHtml(cab.irmaoNome)}</b>${escapeHtml(cab.irmaoResto)}</p>
-        <p style="margin:0;">${escapeHtml(cab.destinatario2)}</p>
-        <p style="margin:0;">${escapeHtml(cab.destinatario3)}</p>
-        <p style="margin:0 0 12px 0;">${escapeHtml(cab.assunto)}</p>
-        <p style="margin:0 0 12px 0;">Respeitável Irmão,</p>
-      </div>
-      <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:justify;">
-        ${htmlOficio}
-      </div>
-      <div style="font-family:'Times New Roman',serif;font-size:12pt;margin-top:24px;">
-        <p>${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.</p>
-        ${assinaturaHtml(nomeTesoureiro, 'Tesoureiro')}
-        ${assinaturaHtml(nomeVeneravel, 'Venerável Mestre')}
-      </div>`;
-
-    const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Ofício</title></head>
-      <body>${conteudo}</body></html>`;
-
-    const blob = new Blob(['\ufeff', htmlCompleto], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Oficio_Pendencia_${(selecionado.nomeIrmao || 'irmao').replace(/\s+/g, '_')}_${hoje.toISOString().split('T')[0]}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    await gerarOficioPendenciaDocx(
+      { nomeIrmao: selecionado.nomeIrmao },
+      htmlOficio,
+      dadosLoja,
+      { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel },
+      montarCabecalhoOficio()
+    );
   };
 
   // ── Busca inicial quando o modal abre ─────────────────────────
