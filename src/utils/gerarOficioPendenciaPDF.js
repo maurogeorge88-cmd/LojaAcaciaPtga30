@@ -199,12 +199,24 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
   txt(sanitizeTexto(cabecalho.prancha) || '', M_ESQ, y); y += alturaLinha + 5;
 
-  txt(sanitizeTexto(cabecalho.destinatario1) || '', M_ESQ, y); y += alturaLinha;
+  // Linha "Ir∴ Nome | Grau | CIM ..." — só o nome sai em negrito, o resto
+  // normal, tudo na mesma linha (desenhado em 3 pedaços sequenciais).
+  const prefixo = sanitizeTexto(cabecalho.irmaoPrefixo) || '';
+  const nomeIrmaoDest = sanitizeTexto(cabecalho.irmaoNome) || '';
+  const resto = sanitizeTexto(cabecalho.irmaoResto) || '';
+  let xDest = M_ESQ;
+  doc.setFont('helvetica', 'normal'); txt(prefixo, xDest, y); xDest += doc.getTextWidth(prefixo);
+  doc.setFont('helvetica', 'bold');   txt(nomeIrmaoDest, xDest, y); xDest += doc.getTextWidth(nomeIrmaoDest);
+  doc.setFont('helvetica', 'normal'); txt(resto, xDest, y);
+  y += alturaLinha;
+
   txt(sanitizeTexto(cabecalho.destinatario2) || '', M_ESQ, y); y += alturaLinha;
   txt(sanitizeTexto(cabecalho.destinatario3) || '', M_ESQ, y); y += alturaLinha;
   txt(sanitizeTexto(cabecalho.assunto) || '', M_ESQ, y); y += alturaLinha + 5;
 
-  txt('Respeitável Irmão,', M_ESQ, y); y += alturaLinha + 5;
+  // "Respeitável Irmão," com o mesmo recuo de 1,5cm da 1ª linha dos
+  // parágrafos normais — pra ficar alinhada com o resto do texto.
+  txt('Respeitável Irmão,', M_ESQ + INDENT_PRIMEIRA_LINHA, y); y += alturaLinha + 5;
 
   // ── Corpo — cada <p>/<div> do editor vira 1 (ou mais) parágrafo(s).
   // O tipo de recuo é decidido assim:
