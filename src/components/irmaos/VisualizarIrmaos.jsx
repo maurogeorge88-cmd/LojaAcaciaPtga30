@@ -394,9 +394,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         </div>
       </div>
 
-      {/* Cards de Irmãos */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3" style={{padding:"0.25rem"}}>
-        {irmaosFiltrados.map(irmao => {
+      {/* Quadro separado — Profanos cadastrados (aguardando iniciação) */}
+      {(() => {
+        const profanos = irmaosFiltrados.filter(i => i.eh_profano);
+        const iniciados = irmaosFiltrados.filter(i => !i.eh_profano);
+
+        const renderCard = (irmao) => {
           const grau = obterGrau(irmao);
           const situacao = (irmao.situacao || 'regular').toLowerCase();
 
@@ -405,7 +408,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               key={irmao.id}
               className="rounded-lg transition-opacity hover:opacity-95 overflow-hidden"
               style={irmao.eh_profano
-                ? {borderTop:"2px solid #000",borderRight:"2px solid #000",borderBottom:"2px solid #000",borderLeft:"8px solid #000",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(0,0,0,0.35)"}
+                ? {borderTop:"2px solid #dc2626",borderRight:"2px solid #dc2626",borderBottom:"2px solid #dc2626",borderLeft:"8px solid #dc2626",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(220,38,38,0.35)"}
                 : situacao === 'licenciado'
                 ? {borderTop:"2px solid #c9a84c",borderRight:"2px solid #c9a84c",borderBottom:"2px solid #c9a84c",borderLeft:"8px solid #c9a84c",background:"var(--color-surface)",boxShadow:"0 0 0 1px rgba(201,168,76,0.35)"}
                 : {borderLeft:"4px solid var(--color-accent)",borderTop:"1px solid var(--color-border)",borderRight:"1px solid var(--color-border)",borderBottom:"1px solid var(--color-border)",background:"var(--color-surface)"}}>
@@ -430,8 +433,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
                 {/* Badge de Profano */}
                 {irmao.eh_profano && (
-                  <div style={{position:"absolute",top:"0.35rem",left:"0.35rem",background:"#000",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800"}}>
-                    ⬛ PROFANO
+                  <div style={{position:"absolute",top:"0.35rem",left:"0.35rem",background:"#dc2626",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800"}}>
+                    🔴 PROFANO
                   </div>
                 )}
               </div>
@@ -532,8 +535,28 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               </div>
             </div>
           );
-        })}
-      </div>
+        };
+
+        return (
+          <>
+            {profanos.length > 0 && (
+              <div style={{marginBottom:"1.5rem",border:"2px solid #dc2626",borderRadius:"var(--radius-lg)",padding:"1rem",background:"rgba(220,38,38,0.05)"}}>
+                <h3 style={{color:"#dc2626",fontWeight:"800",fontSize:"0.95rem",marginBottom:"0.75rem",display:"flex",alignItems:"center",gap:"0.4rem"}}>
+                  🔴 Profanos Cadastrados — Aguardando Iniciação ({profanos.length})
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                  {profanos.map(renderCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Cards de Irmãos Iniciados */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3" style={{padding:"0.25rem"}}>
+              {iniciados.map(renderCard)}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Mensagem quando não há resultados */}
       {irmaosFiltrados.length === 0 && (
