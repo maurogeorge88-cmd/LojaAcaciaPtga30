@@ -92,7 +92,10 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
   const alturaLinha = 5.6;
   // A imagem de fundo já traz cabeçalho (topo) e rodapé (base) prontos —
   // o texto precisa ficar dentro dessa janela, sem sobrepor nenhum dos dois.
-  const yTopoUtil = 58;
+  // yTopoUtil um pouco mais baixo que o começo do timbre: o capitel
+  // decorativo da coluna (o desenho enrolado no topo) avança até ~31,4mm
+  // bem no início — abaixo disso a coluna afina pra ~17mm, sobrando espaço.
+  const yTopoUtil = 66;
   const yBaseUtil = 258;
 
   let fundoBase64 = null;
@@ -189,14 +192,12 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
   const INDENT_PRIMEIRA_LINHA = 15; // 1,5cm — parágrafos normais (padrão)
   const INDENT_BLOCO = 25;          // 2,5cm — citações do RGO, listas numeradas e recuo manual (botão "→|")
 
-  // ── Cabeçalho fixo — Prancha nº / data / destinatário / assunto / saudação
+  // ── Cabeçalho fixo — Prancha nº / destinatário / assunto / saudação ─────
   // Flush à esquerda (sem recuo de parágrafo), diferente do corpo — é um
-  // bloco de identificação do documento, não texto corrido. Segue exatamente
-  // o espaçamento pedido: linha em branco só depois da data e depois do
-  // assunto — as demais linhas ficam coladas, sem espaço extra entre elas.
+  // bloco de identificação do documento, não texto corrido. Sem a linha de
+  // data aqui (fica só no fecho, perto da assinatura — evita repetir).
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
-  txt(sanitizeTexto(cabecalho.prancha) || '', M_ESQ, y); y += alturaLinha;
-  txt(sanitizeTexto(cabecalho.dataLinha) || '', M_ESQ, y); y += alturaLinha + 5;
+  txt(sanitizeTexto(cabecalho.prancha) || '', M_ESQ, y); y += alturaLinha + 5;
 
   txt(sanitizeTexto(cabecalho.destinatario1) || '', M_ESQ, y); y += alturaLinha;
   txt(sanitizeTexto(cabecalho.destinatario2) || '', M_ESQ, y); y += alturaLinha;
@@ -256,19 +257,22 @@ export const gerarOficioPendenciaPDF = async (irmao, htmlOficio, dadosLoja, assi
     y += 4;
   });
 
-  // ── Local e data ──────────────────────────────────────────────────────────
+  // ── Local/data + Assinaturas — um bloco só, verificado de uma vez só.
+  // Antes eram 2 checagens separadas (uma pra data, outra pras assinaturas)
+  // e a segunda podia forçar quebra de página mesmo sobrando espaço real,
+  // porque a primeira só garantia espaço pra data, não pro bloco inteiro.
   const hoje = new Date();
   const cidade = dadosLoja?.cidade || 'Paranatinga';
   const estado = dadosLoja?.estado || 'MT';
   const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  novaPaginaSeNecessario(30);
+  novaPaginaSeNecessario(6 + alturaLinha + 26 + 12 + 26 + 12);
+
   y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
   txt(`${cidade}/${estado}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`, M_ESQ, y);
   y += 26;
 
   // ── Assinaturas — Tesoureiro e Venerável Mestre, mesmo padrão da Certidão ──
-  novaPaginaSeNecessario(60);
   const assinatura = (nome, cargo, yy) => {
     if (nome) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
