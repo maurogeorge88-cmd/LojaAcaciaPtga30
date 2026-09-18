@@ -53,6 +53,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     oriente: '',
     grande_oriente: '',
     situacao: 'regular',
+    eh_profano: false, // ainda não é maçom — aguardando iniciação, mas já cadastrado (ex: pra lançar despesas dele)
     periodicidade_pagamento: 'Mensal',  // ← NOVO CAMPO ADICIONADO
     data_licenca: '',                    // Data início da licença
     data_desligamento: '',               // Data do desligamento (usado para Desligado e Ex-Ofício)
@@ -300,6 +301,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       oriente: irmao.oriente || '',
       grande_oriente: irmao.grande_oriente || '',
       situacao: irmao.situacao || 'regular',
+      eh_profano: irmao.eh_profano || false,
       periodicidade_pagamento: irmao.periodicidade_pagamento || 'Mensal',
       data_licenca: irmao.data_licenca || '',
       data_desligamento: irmao.data_desligamento || '',
@@ -522,6 +524,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         oriente: irmaoForm.oriente || null,
         grande_oriente: irmaoForm.grande_oriente || null,
         situacao: irmaoForm.situacao || 'regular',
+        eh_profano: irmaoForm.eh_profano || false,
         periodicidade_pagamento: irmaoForm.periodicidade_pagamento || 'Mensal',
         data_licenca: irmaoForm.data_licenca || null,
         data_desligamento: irmaoForm.data_desligamento || null,
@@ -804,6 +807,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       oriente: '',
       grande_oriente: '',
       situacao: 'regular',
+      eh_profano: false,
       periodicidade_pagamento: 'Mensal',  // ← ADICIONAR AO LIMPAR
       observacoes: '',
       status: 'ativo'
@@ -1218,6 +1222,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   ))}
                 </select>
               </div>
+
+              <div className="md:col-span-2" style={{display:"flex",alignItems:"center",paddingTop:"0.25rem"}}>
+                <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)",border:"2px solid #000",background:irmaoForm.eh_profano?"rgba(0,0,0,0.06)":"transparent",width:"100%"}}>
+                  <input
+                    type="checkbox"
+                    checked={!!irmaoForm.eh_profano}
+                    onChange={(e) => setIrmaoForm({ ...irmaoForm, eh_profano: e.target.checked })}
+                    style={{width:"1.1rem",height:"1.1rem",accentColor:"#000"}}
+                  />
+                  <span style={{fontSize:"0.85rem",fontWeight:"700",color:"var(--color-text)"}}>
+                    ⬛ Ainda é Profano (aguardando iniciação)
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO */}
@@ -1339,9 +1357,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <input
                   type="date"
                   value={irmaoForm.data_iniciacao}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value, eh_profano: e.target.value ? false : irmaoForm.eh_profano })}
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
+                {irmaoForm.eh_profano && (
+                  <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
+                    Preencher aqui desmarca "Profano" automaticamente
+                  </p>
+                )}
               </div>
 
               <div>
