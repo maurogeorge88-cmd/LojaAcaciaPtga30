@@ -148,10 +148,69 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
 
   // ── Ofício de Pendência Financeira ──────────────────────────────
   const [modalOficioAberto, setModalOficioAberto] = useState(false);
+  const [numeroPrancha, setNumeroPrancha] = useState('');
   const editorOficioRef = useRef(null);
 
   // Escapa texto simples pra virar HTML seguro dentro de <p>
   const escapeHtml = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Grau maçônico atual do irmão, a partir das datas de iniciação/elevação/
+  // exaltação já cadastradas — mesma lógica usada no resto do sistema.
+  const obterGrauMaconico = (irmaoInfo) => {
+    if (irmaoInfo?.data_exaltacao) return 'Mestre Maçom';
+    if (irmaoInfo?.data_elevacao) return 'Companheiro Maçom';
+    if (irmaoInfo?.data_iniciacao) return 'Aprendiz Maçom';
+    return 'Maçom';
+  };
+
+  // Valor por extenso (R$ 2.146,50 → "dois mil, cento e quarenta e seis
+  // reais e cinquenta centavos") — pro texto do ofício.
+  const numeroPorExtenso = (valor) => {
+    const unidades = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+    const dez19 = ['dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+    const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+    const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+    const centenaPorExtenso = (n) => {
+      if (n === 0) return '';
+      if (n === 100) return 'cem';
+      const partes = [];
+      const c = Math.floor(n / 100);
+      const resto = n % 100;
+      if (c > 0) partes.push(centenas[c]);
+      if (resto > 0) {
+        if (resto < 10) partes.push(unidades[resto]);
+        else if (resto < 20) partes.push(dez19[resto - 10]);
+        else {
+          const d = Math.floor(resto / 10);
+          const u = resto % 10;
+          partes.push(u > 0 ? `${dezenas[d]} e ${unidades[u]}` : dezenas[d]);
+        }
+      }
+      return partes.join(' e ');
+    };
+
+    const grupoPorExtenso = (n, singular, plural) => n === 0 ? '' : `${centenaPorExtenso(n)} ${n === 1 ? singular : plural}`;
+
+    const inteiroPorExtenso = (n) => {
+      if (n === 0) return 'zero';
+      const milhoes = Math.floor(n / 1000000);
+      const milhares = Math.floor((n % 1000000) / 1000);
+      const resto = n % 1000;
+      const partes = [];
+      if (milhoes > 0) partes.push(grupoPorExtenso(milhoes, 'milhão', 'milhões'));
+      if (milhares > 0) partes.push(grupoPorExtenso(milhares, 'mil', 'mil'));
+      if (resto > 0) partes.push(centenaPorExtenso(resto));
+      return partes.join(' e ');
+    };
+
+    const reais = Math.floor(valor);
+    const centavos = Math.round((valor - reais) * 100);
+    let resultado = '';
+    if (reais > 0) resultado += `${inteiroPorExtenso(reais)} ${reais === 1 ? 'real' : 'reais'}`;
+    if (centavos > 0) resultado += `${resultado ? ' e ' : ''}${inteiroPorExtenso(centavos)} ${centavos === 1 ? 'centavo' : 'centavos'}`;
+    return resultado || 'zero reais';
+  };
 
   // Negrito/Itálico de verdade — aplica no texto selecionado no editor e o
   // efeito aparece na hora, igual um editor de texto comum.
@@ -165,21 +224,21 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
 
   // Texto padrão — pré-preenchido com os dados do irmão marcado, mas
   // totalmente editável (negrito/itálico/recuo) antes de gerar o PDF.
+  // O cabeçalho (Prancha/data/destinatário/assunto) é fixo e desenhado à
+  // parte pelo gerador de PDF — só o corpo abaixo é o texto livre.
   const gerarHtmlPadraoOficio = (irm) => {
-    const nome = escapeHtml(irm.nomeIrmao || '—');
-    const cim = escapeHtml(String(irm.cim || '—'));
     const valor = fmtR(irm.receitasPendentes || 0);
+    const valorExtenso = numeroPorExtenso(irm.receitasPendentes || 0);
     const p = (html) => `<p style="margin:0 0 10px 0;">${html}</p>`;
     // Citação do RGO — itálico + recuo de bloco (2,5cm), já pronto igual
     // sairá no ofício, sem precisar marcar manualmente toda vez.
     const citacao = (texto) => `<blockquote style="margin:0 0 10px 40px;"><p style="margin:0;"><i>${escapeHtml(texto)}</i></p></blockquote>`;
-    // Item de lista numerada — só recuo de bloco, sem itálico
-    const itemLista = (texto, ultimo) => `<blockquote style="margin:0 0 ${ultimo ? '10px' : '2px'} 40px;"><p style="margin:0;">${escapeHtml(texto)}</p></blockquote>`;
+    // Item de lista numerada — recuo de bloco + itálico, igual à citação
+    const itemLista = (texto, ultimo) => `<blockquote style="margin:0 0 ${ultimo ? '10px' : '2px'} 40px;"><p style="margin:0;"><i>${escapeHtml(texto)}</i></p></blockquote>`;
 
     return [
-      p(`Prezado Irmão <b>${nome}</b>`),
-      p(`<b>CIM nº ${cim}</b>`),
-      p(`Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de <b>${valor}</b>, conforme Relatório da Tesouraria.`),
+      p(`Respeitável Irmão,`),
+      p(`Conforme levantamento da Tesouraria desta Augusta Loja, foi constatado que existem pendências financeiras junto à Tesouraria, referentes a mensalidades e pecúlios em atraso, no valor total de <b>${valor}</b> (${valorExtenso}), conforme Relatório da Tesouraria.`),
       p(`Ratificamos que a pontualidade nas contribuições é essencial para a manutenção das atividades e administração da Loja e, principalmente, para o cumprimento de nossos compromissos perante a Grande Loja Maçônica do Estado de Mato Grosso – GLEMT.`),
       p(`Ambas as situações, Inassiduidade e Inadimplência com a Tesouraria, configuram violações do disposto nos incisos IV e VII do Art. 216 do nosso RGO (Regulamento Geral da Ordem – GLEMT), que dispõe sobre os Deveres dos Maçons, com o agravante do descumprimento do que versa o caput e o § 2º do Art. 218, e o Art. 219 do mesmo RGO, que trata da Demissão e Eliminação do Maçom, senão vejamos:`),
       citacao(`"DOS DEVERES – Art. 216 – São deveres dos maçons: Inciso IV – ser membro ativo de uma Loja e ser assíduo aos seus trabalhos; Inciso VII – estar quite com a Tesouraria e com os demais encargos assumidos;"`),
@@ -204,6 +263,30 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     });
   };
 
+  // Monta as linhas fixas do cabeçalho (Prancha/data/destinatário/assunto)
+  // a partir dos dados reais do irmão e da Loja — usado tanto no PDF
+  // quanto no Word, pra nunca ficar desatualizado ou com erro de digitação.
+  const montarCabecalhoOficio = () => {
+    const irmaoInfo = irmaosMap[selecionado?.irmaoId] || {};
+    const grau = obterGrauMaconico(irmaoInfo);
+    const hoje = new Date();
+    const dataCurta = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+    const cidade = dadosLoja?.cidade || 'Paranatinga';
+    const estado = dadosLoja?.estado || 'MT';
+    const nomeLoja = dadosLoja?.nome_loja || 'Acácia de Paranatinga';
+    const numeroLoja = dadosLoja?.numero_loja || '30';
+    const oriente = dadosLoja?.oriente || cidade;
+
+    return {
+      prancha: `Prancha nº ${numeroPrancha || `___/${hoje.getFullYear()}`}/A∴R∴L∴S∴ ${nomeLoja.toUpperCase()} Nº ${numeroLoja}`,
+      dataLinha: `${cidade}-${estado}, ${dataCurta}`,
+      destinatario1: `Ir∴ ${selecionado?.nomeIrmao || '—'} | ${grau} | CIM ${selecionado?.cim || '—'}`,
+      destinatario2: `Obreiro da A∴R∴L∴S∴ ${nomeLoja} nº ${numeroLoja}`,
+      destinatario3: `Oriente de ${oriente}/${estado}`,
+      assunto: `Assunto: Advertência Formal por Pendências junto à Tesouraria`,
+    };
+  };
+
   const handleGerarOficio = async () => {
     if (!selecionado) return;
     const htmlOficio = editorOficioRef.current?.innerHTML || '';
@@ -211,7 +294,8 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       { nomeIrmao: selecionado.nomeIrmao, cim: selecionado.cim },
       htmlOficio,
       dadosLoja,
-      { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
+      { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel },
+      montarCabecalhoOficio()
     );
     // Não fecha mais o modal — pode precisar ajustar algo e gerar de novo
     // sem ter que reabrir e perder a edição.
@@ -228,6 +312,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
     const cidade = dadosLoja?.cidade || 'Paranatinga';
     const estado = dadosLoja?.estado || 'MT';
+    const cab = montarCabecalhoOficio();
 
     const assinaturaHtml = (nome, cargo) => `
       <p style="margin-top:40px;">
@@ -245,8 +330,13 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
         <p style="font-size:11pt;margin-top:8px;">À G∴D∴G∴A∴D∴U∴</p>
         <hr/>
       </div>
-      <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:center;font-weight:bold;margin:20px 0;">
-        OFÍCIO DE ADVERTÊNCIA — PENDÊNCIA FINANCEIRA
+      <div style="font-family:'Times New Roman',serif;font-size:11pt;margin:16px 0;">
+        <p style="margin:0;">${escapeHtml(cab.prancha)}</p>
+        <p style="margin:0 0 12px 0;">${escapeHtml(cab.dataLinha)}</p>
+        <p style="margin:0;">${escapeHtml(cab.destinatario1)}</p>
+        <p style="margin:0;">${escapeHtml(cab.destinatario2)}</p>
+        <p style="margin:0 0 12px 0;">${escapeHtml(cab.destinatario3)}</p>
+        <p style="margin:0 0 12px 0;">${escapeHtml(cab.assunto)}</p>
       </div>
       <div style="font-family:'Times New Roman',serif;font-size:12pt;text-align:justify;">
         ${htmlOficio}
@@ -657,6 +747,21 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
               <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)' }}>Revise o texto antes de gerar o PDF — o padrão já vem preenchido, mas pode alterar livremente.</p>
             </div>
             <div style={{ padding: '1.2rem 1.4rem', overflowY: 'auto', flex: 1 }}>
+              <div style={{ marginBottom: '0.9rem' }}>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.3rem' }}>
+                  Número da Prancha
+                </label>
+                <input
+                  type="text"
+                  value={numeroPrancha}
+                  onChange={e => setNumeroPrancha(e.target.value)}
+                  placeholder={`Ex: 004/${new Date().getFullYear()}`}
+                  style={{ width: '220px', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem' }}
+                />
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginLeft: '0.6rem' }}>
+                  Aparece como "Prancha nº {numeroPrancha || '___/' + new Date().getFullYear()}/A∴R∴L∴S∴ ..." no topo do ofício
+                </span>
+              </div>
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button type="button" onMouseDown={e => e.preventDefault()} onClick={aplicarNegritoOficio} title="Negrito (selecione o texto antes)"
                   style={{ width: '2rem', height: '2rem', fontWeight: '800', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', cursor: 'pointer' }}>
