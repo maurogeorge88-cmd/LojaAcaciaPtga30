@@ -1224,15 +1224,15 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
 
               <div className="md:col-span-2" style={{display:"flex",alignItems:"center",paddingTop:"0.25rem"}}>
-                <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)",border:"2px solid #000",background:irmaoForm.eh_profano?"rgba(0,0,0,0.06)":"transparent",width:"100%"}}>
+                <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)",border:"2px solid #dc2626",background:irmaoForm.eh_profano?"rgba(220,38,38,0.1)":"transparent",width:"100%"}}>
                   <input
                     type="checkbox"
                     checked={!!irmaoForm.eh_profano}
                     onChange={(e) => setIrmaoForm({ ...irmaoForm, eh_profano: e.target.checked })}
-                    style={{width:"1.1rem",height:"1.1rem",accentColor:"#000"}}
+                    style={{width:"1.1rem",height:"1.1rem",accentColor:"#dc2626"}}
                   />
                   <span style={{fontSize:"0.85rem",fontWeight:"700",color:"var(--color-text)"}}>
-                    ⬛ Ainda é Profano (aguardando iniciação)
+                    🔴 Ainda é Profano (aguardando iniciação)
                   </span>
                 </label>
               </div>
