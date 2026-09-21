@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioPresencaArcoRealPDF } from '../../utils/gerarRelatorioPresencaArcoRealPDF';
+import { gerarRelatorioIndividualArcoRealPDF } from '../../utils/gerarRelatorioIndividualArcoRealPDF';
 
 export default function ModalGradePresencaArcoReal({ onFechar }) {
   const [loading, setLoading] = useState(true);
@@ -9,9 +11,17 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
   const [busca, setBusca] = useState('');
   const [anosDisponiveis, setAnosDisponiveis] = useState([new Date().getFullYear()]);
   const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear());
+  const [mesSelecionado, setMesSelecionado] = useState(0);
+  const [dadosLoja, setDadosLoja] = useState(null);
 
-  useEffect(() => { buscarAnos(); }, []);
-  useEffect(() => { if (anosDisponiveis.length > 0) carregar(); }, [anoSelecionado, anosDisponiveis]);
+  const [modalIndividual, setModalIndividual] = useState(false);
+  const [membroIndividual, setMembroIndividual] = useState(null);
+  const [periodoInicio, setPeriodoInicio] = useState(`${new Date().getFullYear()}-01-01`);
+  const [periodoFim, setPeriodoFim] = useState(new Date().toISOString().split('T')[0]);
+  const [gerandoIndividual, setGerandoIndividual] = useState(false);
+
+  useEffect(() => { buscarAnos(); buscarDadosLoja(); }, []);
+  useEffect(() => { if (anosDisponiveis.length > 0) carregar(); }, [anoSelecionado, mesSelecionado, anosDisponiveis]);
 
   const buscarAnos = async () => {
     const { data } = await supabase.from('arco_real_sessoes').select('data_sessao');
@@ -21,14 +31,101 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
     if (!anosFinal.includes(anoSelecionado)) setAnoSelecionado(anosFinal[0]);
   };
 
+  const buscarDadosLoja = async () => {
+    const { data } = await supabase.from('dados_loja').select('*').single();
+    if (data) setDadosLoja(data);
+  };
+
+  // Busca sessões + presenças do PERÍODO EXATO escolhido no modal individual
+  // (não usa o filtro ano/mês da tela da grade — senão o relatório fica
+  // restrito ao mesmo recorte, mesmo que o usuário peça um intervalo maior).
+  const handleGerarRelatorioIndividual = async () => {
+    if (!membroIndividual) { alert('Selecione um membro.'); return; }
+    if (!periodoInicio || !periodoFim) { alert('Selecione o período.'); return; }
+    if (periodoInicio > periodoFim) { alert('Data início deve ser anterior ao fim.'); return; }
+
+    setGerandoIndividual(true);
+    try {
+      const { data: sessoesPeriodo } = await supabase
+        .from('arco_real_sessoes')
+        .select('id, data_sessao, classificacao')
+        .gte('data_sessao', periodoInicio)
+        .lte('data_sessao', periodoFim)
+        .order('data_sessao');
+
+      const sessaoIds = (sessoesPeriodo || []).map(s => s.id);
+
+      let todosRegistros = [];
+      if (sessaoIds.length > 0) {
+        let inicio = 0;
+        const tamanhoPagina = 1000;
+        let continuar = true;
+        while (continuar) {
+          const { data: lote } = await supabase
+            .from('arco_real_registros_presenca')
+            .select('membro_id, sessao_id, presente, justificativa')
+            .in('sessao_id', sessaoIds)
+            .range(inicio, inicio + tamanhoPagina - 1);
+          if (lote && lote.length > 0) {
+            todosRegistros = [...todosRegistros, ...lote];
+            inicio += tamanhoPagina;
+            if (lote.length < tamanhoPagina) continuar = false;
+          } else {
+            continuar = false;
+          }
+        }
+      }
+
+      const gradePeriodo = {};
+      todosRegistros.forEach(reg => {
+        if (!gradePeriodo[reg.membro_id]) gradePeriodo[reg.membro_id] = {};
+        gradePeriodo[reg.membro_id][reg.sessao_id] = {
+          presente: reg.presente,
+          justificativa: reg.justificativa
+        };
+      });
+
+      gerarRelatorioIndividualArcoRealPDF(
+        membroIndividual, sessoesPeriodo || [], gradePeriodo, dadosLoja, periodoInicio, periodoFim
+      );
+      setModalIndividual(false);
+    } catch (error) {
+      console.error('Erro ao gerar relatório individual:', error);
+      alert('Erro ao gerar relatório. Tente novamente.');
+    } finally {
+      setGerandoIndividual(false);
+    }
+  };
+
   const carregar = async () => {
     setLoading(true);
     try {
+      // Calcular período baseado em ano e mês
+      let dataInicio, dataFim;
+      if (mesSelecionado === 0) {
+        dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-12-31`;
+      } else if (mesSelecionado === -1) {
+        dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-06-30`;
+      } else if (mesSelecionado === -2) {
+        dataInicio = `${anoSelecionado}-07-01`;
+        dataFim = `${anoSelecionado}-12-31`;
+      } else {
+        const ultimoDia = new Date(anoSelecionado, mesSelecionado, 0).getDate();
+        dataInicio = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-01`;
+        dataFim = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-${ultimoDia}`;
+      }
+
+      // Não incluir sessões futuras
+      const hoje = new Date().toISOString().split('T')[0];
+      if (dataFim > hoje) dataFim = hoje;
+
       const { data: sessoesData } = await supabase
         .from('arco_real_sessoes')
         .select('id, data_sessao, classificacao')
-        .gte('data_sessao', `${anoSelecionado}-01-01`)
-        .lte('data_sessao', `${anoSelecionado}-12-31`)
+        .gte('data_sessao', dataInicio)
+        .lte('data_sessao', dataFim)
         .order('data_sessao');
 
       const { data: membrosData } = await supabase
@@ -76,7 +173,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
   const renderizarCelula = (membroId, sessaoId) => {
     const reg = grade[membroId]?.[sessaoId];
     if (!reg) {
-      return <td key={sessaoId} style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', color: 'var(--color-text-muted)' }}>—</td>;
+      return <td key={sessaoId} style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: '800' }}>✗</td>;
     }
     if (reg.presente) {
       return <td key={sessaoId} style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>✓</td>;
@@ -104,6 +201,23 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
           <select value={anoSelecionado} onChange={e => setAnoSelecionado(Number(e.target.value))} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}>
             {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
+          <select value={mesSelecionado} onChange={e => setMesSelecionado(Number(e.target.value))} style={{ padding: '0.35rem 0.65rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', outline: 'none' }}>
+            <option value={0}>Ano todo</option>
+            <option value={-1}>1º Semestre</option>
+            <option value={-2}>2º Semestre</option>
+            <option value={1}>Janeiro</option>
+            <option value={2}>Fevereiro</option>
+            <option value={3}>Março</option>
+            <option value={4}>Abril</option>
+            <option value={5}>Maio</option>
+            <option value={6}>Junho</option>
+            <option value={7}>Julho</option>
+            <option value={8}>Agosto</option>
+            <option value={9}>Setembro</option>
+            <option value={10}>Outubro</option>
+            <option value={11}>Novembro</option>
+            <option value={12}>Dezembro</option>
+          </select>
           <input
             type="text"
             placeholder="🔍 Buscar membro..."
@@ -111,7 +225,35 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
             onChange={e => setBusca(e.target.value)}
             style={{ flex: 1, minWidth: '180px', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.4rem 0.75rem', outline: 'none', fontSize: '0.82rem' }}
           />
-          <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
+
+          {/* Botão Gerar PDF Geral */}
+          <button
+            onClick={() => {
+              if (sessoes.length === 0) { alert('Não há sessões para gerar o relatório'); return; }
+              gerarRelatorioPresencaArcoRealPDF(sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja);
+            }}
+            style={{ padding: '0.4rem 0.85rem', background: '#dc2626', color: '#fff', borderRadius: 'var(--radius-md)', fontWeight: '700', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+            title="Gerar relatório geral em PDF"
+          >
+            📄 Gerar PDF
+          </button>
+
+          {/* Botão Relatório Individual */}
+          <button
+            onClick={() => {
+              const membroBusca = busca.trim()
+                ? membros.find(m => m.nome.toLowerCase().includes(busca.toLowerCase()))
+                : null;
+              setMembroIndividual(membroBusca || null);
+              setModalIndividual(true);
+            }}
+            style={{ padding: '0.4rem 0.85rem', background: '#6366f1', color: '#fff', borderRadius: 'var(--radius-md)', fontWeight: '700', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
+            title="Gerar relatório individual de um membro"
+          >
+            📄 Individual
+          </button>
+
+          <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.68rem', color: 'var(--color-text-muted)', width: '100%' }}>
             <span><span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> Presente</span>
             <span><span style={{ color: '#b45309', fontWeight: '800' }}>J</span> Justificado</span>
             <span><span style={{ color: '#ef4444', fontWeight: '800' }}>✗</span> Ausente</span>
@@ -126,7 +268,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
               <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', margin: 0 }}>Carregando grade...</p>
             </div>
           ) : sessoes.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '3rem' }}>Nenhuma sessão cadastrada em {anoSelecionado}.</p>
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '3rem' }}>Nenhuma sessão cadastrada no período selecionado.</p>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
               <thead style={{ background: 'var(--color-surface-2)', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -176,6 +318,65 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
           </button>
         </div>
       </div>
+
+      {/* Modal Relatório Individual */}
+      {modalIndividual && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '460px', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+            <div style={{ background: '#6366f1', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ color: '#fff', fontWeight: '800', margin: 0, fontSize: '1.05rem' }}>📄 Relatório Individual</h3>
+                <p style={{ color: 'rgba(255,255,255,0.8)', margin: '0.2rem 0 0', fontSize: '0.78rem' }}>Selecione o membro e o período</p>
+              </div>
+              <button onClick={() => setModalIndividual(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontWeight: '700', fontSize: '1.1rem' }}>×</button>
+            </div>
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Membro *</label>
+                <select
+                  value={membroIndividual?.id || ''}
+                  onChange={e => setMembroIndividual(membros.find(m => String(m.id) === e.target.value) || null)}
+                  style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', width: '100%' }}
+                >
+                  <option value="">-- Selecionar membro --</option>
+                  {[...membros].sort((a, b) => a.nome.localeCompare(b.nome)).map(m => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Data Início *</label>
+                  <input type="date" value={periodoInicio} onChange={e => setPeriodoInicio(e.target.value)}
+                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', width: '100%' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Data Fim *</label>
+                  <input type="date" value={periodoFim} onChange={e => setPeriodoFim(e.target.value)}
+                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', width: '100%' }} />
+                </div>
+              </div>
+              {membroIndividual && (
+                <div style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 'var(--radius-md)', padding: '0.6rem 0.75rem', fontSize: '0.8rem', color: '#6366f1', fontWeight: '600' }}>
+                  {membroIndividual.nome}{membroIndividual.situacao === 'licenciado' ? ' — Licença' : ''}
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalIndividual(false)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={handleGerarRelatorioIndividual}
+                disabled={gerandoIndividual}
+                style={{ flex: 2, padding: '0.6rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: gerandoIndividual ? 'wait' : 'pointer', opacity: gerandoIndividual ? 0.7 : 1 }}>
+                {gerandoIndividual ? '⏳ Gerando...' : '📄 Gerar Relatório'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
