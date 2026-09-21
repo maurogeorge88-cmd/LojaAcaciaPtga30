@@ -46,11 +46,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const [editandoId, setEditandoId]         = useState(null);
   const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [categorias, setCategorias] = useState([]);
+  const [membros, setMembros] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([agora.getFullYear()]);
   const [totaisGerais, setTotaisGerais] = useState({ saldoAnterior: 0, recebidoGeral: 0, despesaGeral: 0, saldoGeral: 0, pendReceitaGeral: 0, pendDespesaGeral: 0 });
+  const [viewAgrupado, setViewAgrupado] = useState(() => {
+    try { return localStorage.getItem('arco_real_view_agrupado') !== 'false'; } catch { return true; }
+  });
+  const [expandedOrigens, setExpandedOrigens] = useState(new Set());
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
-    data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: '', tipo_pagamento: 'pix'
+    data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: '', tipo_pagamento: 'pix', origem_membro_id: ''
   });
 
   // Filtros — mesmo padrão da tela do Finanças da Loja
@@ -63,8 +68,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
     origem: '',                 // '' | 'manual' | 'loja'
   });
 
-  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); } }, [isOpen, filtros.mes, filtros.ano, filtros.tipo, filtros.categoria, filtros.status, filtros.origem]);
+  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); carregarMembros(); } }, [isOpen, filtros.mes, filtros.ano, filtros.tipo, filtros.categoria, filtros.status, filtros.origem]);
   useEffect(() => { if (isOpen) carregarAnosDisponiveis(); }, [isOpen]);
+
+  const carregarMembros = async () => {
+    try {
+      const { data } = await supabase.from('arco_real_membros').select('id, nome').order('nome');
+      setMembros(data || []);
+    } catch (e) { setMembros([]); }
+  };
+
 
   const carregarAnosDisponiveis = async () => {
     try {
@@ -115,7 +128,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           .select(`
             *,
             categoria_manual:categoria_id(nome),
-            lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
+            lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome)),
+            membro_manual:origem_membro_id(nome)
           `)
           .order('data_pagamento', { ascending: false });
 
@@ -234,10 +248,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         lancamento_loja_id: null,
         categoria_id:    form.categoria_id || null,
         tipo_pagamento:  form.tipo_pagamento || null,
+        origem_membro_id: form.origem_membro_id || null,
       }]);
       if (error) throw error;
       showSuccess('✅ Lançamento registrado!');
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix', origem_membro_id:'' });
       setShowForm(false);
       carregar();
     } catch(e) {
@@ -272,6 +287,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       observacoes:     l.observacoes || '',
       categoria_id:    l.categoria_id || '',
       tipo_pagamento:  l.tipo_pagamento || 'pix',
+      origem_membro_id: l.origem_membro_id || '',
     });
     setShowForm(true);
     // Scroll para o form
@@ -295,12 +311,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         observacoes:     form.observacoes.trim() || null,
         categoria_id:    form.categoria_id || null,
         tipo_pagamento:  form.tipo_pagamento || null,
+        origem_membro_id: form.origem_membro_id || null,
       }).eq('id', editandoId);
       if (error) throw error;
       showSuccess('✅ Lançamento atualizado!');
       setEditandoId(null);
       setShowForm(false);
-      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' });
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix', origem_membro_id:'' });
       carregar();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
@@ -335,6 +352,41 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   const todasSubcategorias = [...new Set(lancs.map(l => subcategoria(l) || 'Sem subcategoria'))].sort();
   const lancsFiltrados = lancs; // filtragem já acontece toda em carregar()
+
+  // ── Linha de lançamento — reutilizada no modo Agrupado e Detalhado ─────────
+  const renderLinhaLancamento = (l, i) => (
+    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+      <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
+      <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.descricao}>{l.descricao}</span>
+      <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
+        {subcategoria(l) || '—'}
+      </span>
+      <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
+        background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
+        color:l.origem==='manual'?'#6366f1':'#64748b' }}
+        title={l.origem==='manual' && l.lancamento_loja_id ? 'Pago e sincronizado com o Finanças da Loja' : undefined}>
+        {l.origem==='manual'?'Manual':'Loja'}{l.origem==='manual' && l.lancamento_loja_id ? ' 🔗' : ''}
+      </span>
+      <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
+        {l.tipo==='receita'?'Receita':'Despesa'}
+      </span>
+      <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right',whiteSpace:'nowrap' }}>{fmtR(l.valor)}</span>
+      <div style={{ display:'flex',gap:'0.35rem',justifyContent:'flex-end',alignItems:'center',flexWrap:'nowrap' }}>
+        <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600',whiteSpace:'nowrap' }}>
+          {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
+        </span>
+        <button onClick={() => abrirEditar(l)} title="Editar"
+          style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
+          ✏️
+        </button>
+        <button onClick={() => setConfirmExcluir(l)} title="Excluir"
+          style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
+          🗑️
+        </button>
+      </div>
+    </div>
+  );
+
 
   const receitasPorSub = agruparPorSubcategoria(receitas.filter(l => lancsFiltrados.includes(l)));
   const despesasPorSub = agruparPorSubcategoria(despesas.filter(l => lancsFiltrados.includes(l)));
@@ -600,6 +652,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     ))}
                   </select>
                 </div>
+                <div style={{ gridColumn:'1 / -1' }}>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Membro (opcional)</label>
+                  <select value={form.origem_membro_id} onChange={e=>setForm(f=>({...f,origem_membro_id:e.target.value}))} style={sInp}>
+                    <option value="">— Arco Real (institucional, sem membro) —</option>
+                    {membros.map(m => (
+                      <option key={m.id} value={m.id}>{m.nome}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Valor *</label>
                   <input type="number" step="0.01" value={form.valor} onChange={e=>setForm(f=>({...f,valor:e.target.value}))}
@@ -641,7 +702,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   style={{ flex:1,padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
                   {salvando ? 'Salvando...' : editandoId ? '💾 Salvar Alterações' : '💾 Salvar Lançamento'}
                 </button>
-                <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix' }); }}
+                <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix', origem_membro_id:'' }); }}
                   style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
                   Cancelar
                 </button>
@@ -824,51 +885,100 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                 </div>
               )}
 
-              {/* Lançamentos — tabela única, mesmo padrão da Loja */}
+              {/* Lançamentos — agrupado por origem (Arco Real / cada membro) ou detalhado, mesmo padrão da Loja */}
               {lancsFiltrados.length > 0 && (
                 <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
-                  <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)' }}>
+                  <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--color-surface-2)',flexWrap:'wrap',gap:'0.5rem' }}>
                     <span style={{ fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>📋 Lançamentos ({lancsFiltrados.length})</span>
+                    <div style={{ display:'flex',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',overflow:'hidden',flexShrink:0 }}>
+                      <button
+                        onClick={() => { setViewAgrupado(true); try { localStorage.setItem('arco_real_view_agrupado','true'); } catch {} }}
+                        style={{ padding:'0.3rem 0.7rem',fontSize:'0.72rem',fontWeight:'700',cursor:'pointer',border:'none',
+                          background: viewAgrupado ? 'var(--color-accent)' : 'var(--color-surface)',
+                          color: viewAgrupado ? '#fff' : 'var(--color-text-muted)' }}>
+                        👤 Agrupado
+                      </button>
+                      <button
+                        onClick={() => { setViewAgrupado(false); try { localStorage.setItem('arco_real_view_agrupado','false'); } catch {} }}
+                        style={{ padding:'0.3rem 0.7rem',fontSize:'0.72rem',fontWeight:'700',cursor:'pointer',border:'none',borderLeft:'1px solid var(--color-border)',
+                          background: !viewAgrupado ? 'var(--color-accent)' : 'var(--color-surface)',
+                          color: !viewAgrupado ? '#fff' : 'var(--color-text-muted)' }}>
+                        ☰ Detalhado
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
-                  <div style={{ minWidth: '760px' }}>
-                  <div style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
-                    <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
-                  </div>
-                  {lancsFiltrados.map((l,i) => (
-                    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
-                      <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
-                      <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.descricao}>{l.descricao}</span>
-                      <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
-                        {subcategoria(l) || '—'}
-                      </span>
-                      <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
-                        background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
-                        color:l.origem==='manual'?'#6366f1':'#64748b' }}
-                        title={l.origem==='manual' && l.lancamento_loja_id ? 'Pago e sincronizado com o Finanças da Loja' : undefined}>
-                        {l.origem==='manual'?'Manual':'Loja'}{l.origem==='manual' && l.lancamento_loja_id ? ' 🔗' : ''}
-                      </span>
-                      <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
-                        {l.tipo==='receita'?'Receita':'Despesa'}
-                      </span>
-                      <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right',whiteSpace:'nowrap' }}>{fmtR(l.valor)}</span>
-                      <div style={{ display:'flex',gap:'0.35rem',justifyContent:'flex-end',alignItems:'center',flexWrap:'nowrap' }}>
-                        <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600',whiteSpace:'nowrap' }}>
-                          {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
-                        </span>
-                        <button onClick={() => abrirEditar(l)} title="Editar"
-                          style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
-                          ✏️
-                        </button>
-                        <button onClick={() => setConfirmExcluir(l)} title="Excluir"
-                          style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
-                          🗑️
-                        </button>
+
+                  {viewAgrupado ? (() => {
+                    // Nível 1: agrupar por origem — "Arco Real" (institucional, sem membro) ou cada membro
+                    const origemMap = lancsFiltrados.reduce((acc, l) => {
+                      const key = l.origem_membro_id || '__sem_membro__';
+                      const label = l.origem_membro_id
+                        ? (l.membro_manual?.nome || 'Membro não identificado')
+                        : '🔲 Arco Real';
+                      if (!acc[key]) acc[key] = { key, label, isInstitucional: !l.origem_membro_id, lancamentos: [] };
+                      acc[key].lancamentos.push(l);
+                      return acc;
+                    }, {});
+
+                    const origens = Object.values(origemMap).sort((a, b) => {
+                      if (a.isInstitucional) return -1;
+                      if (b.isInstitucional) return 1;
+                      return a.label.localeCompare(b.label);
+                    });
+
+                    return origens.map(origem => {
+                      const aberta = expandedOrigens.has(origem.key);
+                      const toggle = () => setExpandedOrigens(prev => {
+                        const novo = new Set(prev);
+                        if (aberta) novo.delete(origem.key); else novo.add(origem.key);
+                        return novo;
+                      });
+                      const totRecOrigem  = origem.lancamentos.filter(l => l.tipo === 'receita').reduce((s,l) => s + Number(l.valor||0), 0);
+                      const totDespOrigem = origem.lancamentos.filter(l => l.tipo === 'despesa').reduce((s,l) => s + Number(l.valor||0), 0);
+                      const pendOrigem    = origem.lancamentos.filter(l => l.status === 'pendente').length;
+                      const ordenados = [...origem.lancamentos].sort((a,b) => {
+                        const da = a.data_pagamento || a.data_vencimento || '';
+                        const db = b.data_pagamento || b.data_vencimento || '';
+                        return db.localeCompare(da);
+                      });
+
+                      return (
+                        <div key={origem.key} style={{ borderTop:'1px solid var(--color-border)' }}>
+                          <div onClick={toggle} style={{
+                            display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.6rem 1rem',cursor:'pointer',userSelect:'none',flexWrap:'wrap',
+                            background: origem.isInstitucional ? 'rgba(99,102,241,0.12)' : 'rgba(139,92,246,0.1)',
+                            borderLeft:`4px solid ${origem.isInstitucional ? '#6366f1' : '#8b5cf6'}` }}>
+                            <span style={{ fontSize:'0.88rem',fontWeight:'800',color: origem.isInstitucional ? '#6366f1' : '#8b5cf6',flex:1 }}>
+                              {origem.label}
+                            </span>
+                            <div style={{ display:'flex',gap:'0.85rem',alignItems:'center',flexWrap:'wrap' }}>
+                              <span style={{ fontSize:'0.74rem',fontWeight:'700',color:'#10b981',whiteSpace:'nowrap' }}>TR {fmtR(totRecOrigem)}</span>
+                              <span style={{ color:'var(--color-border)' }}>|</span>
+                              <span style={{ fontSize:'0.74rem',fontWeight:'700',color:'#ef4444',whiteSpace:'nowrap' }}>TD {fmtR(totDespOrigem)}</span>
+                              <span style={{ fontSize:'0.66rem',color:'var(--color-text-muted)',transform: aberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s' }}>▾</span>
+                              <span title={pendOrigem === 0 ? 'Quite' : `${pendOrigem} pendente(s)`} style={{ width:'9px',height:'9px',borderRadius:'50%',flexShrink:0,background: pendOrigem === 0 ? '#3b82f6' : '#ef4444' }} />
+                            </div>
+                          </div>
+                          {aberta && (
+                            <div style={{ overflowX:'auto' }}>
+                              <div style={{ minWidth:'760px' }}>
+                                {ordenados.map((l,i) => renderLinhaLancamento(l, i))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })() : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <div style={{ minWidth: '760px' }}>
+                        <div style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
+                          <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
+                        </div>
+                        {lancsFiltrados.map((l,i) => renderLinhaLancamento(l, i))}
                       </div>
                     </div>
-                  ))}
-                  </div>
-                  </div>
+                  )}
                 </div>
               )}
 
