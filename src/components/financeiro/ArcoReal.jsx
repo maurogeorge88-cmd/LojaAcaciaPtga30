@@ -844,8 +844,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       </span>
                       <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
                         background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
-                        color:l.origem==='manual'?'#6366f1':'#64748b' }}>
-                        {l.origem==='manual'?'Manual':'Loja'}
+                        color:l.origem==='manual'?'#6366f1':'#64748b' }}
+                        title={l.origem==='manual' && l.lancamento_loja_id ? 'Pago e sincronizado com o Finanças da Loja' : undefined}>
+                        {l.origem==='manual'?'Manual':'Loja'}{l.origem==='manual' && l.lancamento_loja_id ? ' 🔗' : ''}
                       </span>
                       <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
                         {l.tipo==='receita'?'Receita':'Despesa'}
@@ -891,6 +892,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                 {confirmExcluir.origem === 'loja' && (
                   <span style={{ display:'block',marginTop:'0.5rem',color:'#f59e0b',fontWeight:600 }}>
                     ⚠️ Este registro veio da Loja. Excluir aqui não afeta o lançamento original.
+                  </span>
+                )}
+                {confirmExcluir.origem === 'manual' && confirmExcluir.lancamento_loja_id && (
+                  <span style={{ display:'block',marginTop:'0.5rem',color:'#f59e0b',fontWeight:600 }}>
+                    🔗 Este lançamento já foi pago e sincronizado com o Finanças da Loja. Excluir aqui também remove o lançamento espelho na Loja.
                   </span>
                 )}
               </p>
