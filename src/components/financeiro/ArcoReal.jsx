@@ -53,6 +53,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
     try { return localStorage.getItem('arco_real_view_agrupado') !== 'false'; } catch { return true; }
   });
   const [expandedOrigens, setExpandedOrigens] = useState(new Set());
+  const [quitando, setQuitando] = useState(null); // lançamento sendo quitado
+  const [quitacaoForm, setQuitacaoForm] = useState({ data_pagamento: hojeISO(), tipo_pagamento: 'pix' });
+  const [salvandoQuitacao, setSalvandoQuitacao] = useState(false);
   const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
     data_vencimento: hojeISO(), status: 'pago', observacoes: '', categoria_id: '', tipo_pagamento: 'pix', origem_membro_id: ''
@@ -276,6 +279,34 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   };
 
   // ── Abrir edição ───────────────────────────────────────────────────────────
+  // ── Quitação (marcar como pago) ─────────────────────────────────────────────
+  const abrirQuitacao = (l) => {
+    setQuitando(l);
+    setQuitacaoForm({ data_pagamento: hojeISO(), tipo_pagamento: l.tipo_pagamento || 'pix' });
+  };
+
+  const confirmarQuitacao = async () => {
+    if (!quitando) return;
+    if (!quitacaoForm.data_pagamento) { showError('Informe a data de pagamento.'); return; }
+    setSalvandoQuitacao(true);
+    try {
+      const { error } = await supabase.from('arco_real_lancamentos').update({
+        status: 'pago',
+        data_pagamento: quitacaoForm.data_pagamento,
+        tipo_pagamento: quitacaoForm.tipo_pagamento,
+      }).eq('id', quitando.id);
+      if (error) throw error;
+      showSuccess('✅ Lançamento quitado!');
+      setQuitando(null);
+      carregar();
+      carregarTotaisGerais();
+    } catch (e) {
+      showError('Erro ao quitar: ' + e.message);
+    } finally {
+      setSalvandoQuitacao(false);
+    }
+  };
+
   const abrirEditar = (l) => {
     setEditandoId(l.id);
     setForm({
@@ -379,6 +410,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
           ✏️
         </button>
+        {l.status === 'pendente' && (
+          <button onClick={() => abrirQuitacao(l)} title="Quitar"
+            style={{ padding:'0.15rem 0.35rem',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.35)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
+            ✅
+          </button>
+        )}
         <button onClick={() => setConfirmExcluir(l)} title="Excluir"
           style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
           🗑️
@@ -852,11 +889,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                 </div>
               </div>
 
-              {/* Resumo por Subcategoria */}
+              {/* Resumo por Subcategoria — oculto por enquanto, a pedido do Mauro (2026-09).
+                  Reativar: remover este comentário e o bloco abaixo volta a aparecer.
               {todasSubcategorias.length > 0 && (
                 <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Receitas por subcategoria */}
                     <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
                       <div style={{ padding:'0.5rem 0.85rem',background:'rgba(22,163,74,0.12)',borderBottom:'1px solid var(--color-border)' }}>
                         <span style={{ fontWeight:'700',color:'#16a34a',fontSize:'0.82rem' }}>Receitas por Subcategoria</span>
@@ -869,7 +906,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       )) : <p style={{ padding:'0.75rem',color:'var(--color-text-muted)',fontSize:'0.8rem',margin:0 }}>Nenhuma receita.</p>}
                     </div>
 
-                    {/* Despesas por subcategoria */}
                     <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',overflow:'hidden' }}>
                       <div style={{ padding:'0.5rem 0.85rem',background:'rgba(220,38,38,0.12)',borderBottom:'1px solid var(--color-border)' }}>
                         <span style={{ fontWeight:'700',color:'#dc2626',fontSize:'0.82rem' }}>Despesas por Subcategoria</span>
@@ -884,6 +920,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   </div>
                 </div>
               )}
+              */}
 
               {/* Lançamentos — agrupado por origem (Arco Real / cada membro) ou detalhado, mesmo padrão da Loja */}
               {lancsFiltrados.length > 0 && (
@@ -988,6 +1025,45 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
             </>
           )}
         </div>
+
+        {/* Quitar lançamento */}
+        {quitando && (
+          <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10000,padding:'1rem' }}>
+            <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'400px',width:'100%' }}>
+              <h3 style={{ fontSize:'1rem',fontWeight:700,color:'var(--color-text)',marginBottom:'0.5rem' }}>✅ Quitar lançamento</h3>
+              <p style={{ fontSize:'0.875rem',color:'var(--color-text-muted)',marginBottom:'1rem' }}>
+                <strong style={{ color:'var(--color-text)' }}>{quitando.descricao}</strong> — {fmtR(quitando.valor)}
+              </p>
+              <div style={{ display:'flex',flexDirection:'column',gap:'0.65rem',marginBottom:'1.25rem' }}>
+                <div>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Data de Pagamento *</label>
+                  <input type="date" value={quitacaoForm.data_pagamento} onChange={e=>setQuitacaoForm(f=>({...f,data_pagamento:e.target.value}))} style={sInp} />
+                </div>
+                <div>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Tipo de Pagamento</label>
+                  <select value={quitacaoForm.tipo_pagamento} onChange={e=>setQuitacaoForm(f=>({...f,tipo_pagamento:e.target.value}))} style={sInp}>
+                    {TIPOS_PAGAMENTO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                {quitando.origem === 'manual' && (
+                  <p style={{ fontSize:'0.75rem',color:'#6366f1',margin:0,background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.3)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.65rem' }}>
+                    🔗 Ao quitar, este lançamento é sincronizado automaticamente com o Finanças da Loja.
+                  </p>
+                )}
+              </div>
+              <div style={{ display:'flex',gap:'0.75rem',justifyContent:'flex-end' }}>
+                <button onClick={() => setQuitando(null)}
+                  style={{ padding:'0.55rem 1.1rem',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',background:'transparent',color:'var(--color-text-muted)',cursor:'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={confirmarQuitacao} disabled={salvandoQuitacao}
+                  style={{ padding:'0.55rem 1.25rem',borderRadius:'var(--radius-md)',background:'#16a34a',border:'none',color:'#fff',fontWeight:700,cursor:salvandoQuitacao?'not-allowed':'pointer',opacity:salvandoQuitacao?0.7:1 }}>
+                  {salvandoQuitacao ? 'Quitando...' : 'Confirmar Quitação'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmar exclusão */}
         {confirmExcluir && (
