@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioMembrosArcoRealPDF } from '../../utils/gerarRelatorioMembrosArcoRealPDF';
+
+const LOGO_ARCO_REAL_URL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
 
 const VAZIO = {
   irmao_vinculado_id: null,
@@ -315,6 +318,19 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{membros.length} membro(s) cadastrado(s)</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => {
+                if (membrosFiltrados.length === 0) { showError('Nenhum membro para gerar relatório.'); return; }
+                gerarRelatorioMembrosArcoRealPDF(
+                  [...membrosFiltrados].sort((a, b) => a.nome.localeCompare(b.nome)),
+                  LOGO_ARCO_REAL_URL
+                );
+              }}
+              title="Gerar relatório de nomes e cargos para envio"
+              style={{ padding: '0.55rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer' }}
+            >
+              📄 Relatório
+            </button>
             <button onClick={abrirImportar} style={{ padding: '0.55rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer' }}>
               📥 Importar Irmão Existente
             </button>
