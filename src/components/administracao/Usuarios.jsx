@@ -479,23 +479,7 @@ IMPORTANTE: Copie estas informações agora!
     }
   };
 
-  return (
-    <>
-      {!embedded && (
-        <div style={{ 
-          background: 'var(--color-bg)',
-          minHeight: '100vh',
-          padding: '2rem'
-        }}>
-          <ConteudoUsuarios />
-        </div>
-      )}
-      {embedded && <ConteudoUsuarios />}
-    </>
-  );
-
-  function ConteudoUsuarios() {
-    return (
+    const conteudoUsuarios = (
       <div className="space-y-6">
       {/* FORMULÁRIO */}
       <div className="card">
@@ -1234,5 +1218,19 @@ IMPORTANTE: Copie estas informações agora!
       </div>
       </div>
     );
-  }
+
+  return (
+    <>
+      {!embedded && (
+        <div style={{ 
+          background: 'var(--color-bg)',
+          minHeight: '100vh',
+          padding: '2rem'
+        }}>
+          {conteudoUsuarios}
+        </div>
+      )}
+      {embedded && conteudoUsuarios}
+    </>
+  );
 }
