@@ -105,6 +105,7 @@ export default function LancamentoLoteArcoReal({ isOpen, onClose, showSuccess, s
           status: 'pendente',
           origem: 'manual',
           lancamento_loja_id: null,
+          origem_membro_id: membroId,
         };
       });
 
