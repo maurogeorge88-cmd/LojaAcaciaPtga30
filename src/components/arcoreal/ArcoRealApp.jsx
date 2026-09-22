@@ -6,19 +6,21 @@ import ArcoReal from '../financeiro/ArcoReal';
 import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
 import ControleAcesso from '../administracao/ControleAcesso';
+import PerfilPessoalArcoReal from './PerfilPessoalArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
 const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
 
 const ITENS_MENU = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', pronto: true },
+  { id: 'meus-dados', label: 'Meus Dados', icone: '👤', pronto: true },
   { id: 'membros', label: 'Cadastro de Membros', icone: '👥', pronto: true },
-  { id: 'presenca', label: 'Presença', icone: '📋', pronto: true },
-  { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true },
+  { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
+  { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: false },
   { id: 'exaltacao', label: 'Processo de Exaltação', icone: '⭐', pronto: false },
   { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
-  { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true },
+  { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
 ];
 
 // Nome bonito de cada tela do Arco Real pro Controle de Acesso — mesmo
@@ -33,10 +35,26 @@ const NOMES_TELAS_ARCO_REAL = {
   'relatorios': '📄 Arco Real / Relatórios',
 };
 
-export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
+export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
   const [pagina, setPagina] = useState('dashboard');
   const [sessaoPresencaId, setSessaoPresencaId] = useState(null); // sessão aberta na tela de Registro de Presença
   const [menuAberto, setMenuAberto] = useState(true); // sidebar aberta/recolhida (desktop) ou dentro/fora (mobile)
+
+  // Acesso simples = nenhuma permissão de gestão marcada. Cargo oficial =
+  // pelo menos uma. "Membros" e "Meus Dados" ficam sempre visíveis (ver o
+  // cadastro dos outros é permitido; editar continua travado dentro da
+  // própria tela por permissoes.canEditMembers).
+  const podeVerFinanceiro    = !!permissoes?.canViewFinancial;
+  const podeVerPresencaGeral = !!(permissoes?.pode_editar_presenca || permissoes?.canEditMembers);
+  const podeGerenciarUsuarios = !!permissoes?.canManageUsers;
+
+  const acessoTela = {
+    presenca: podeVerPresencaGeral,
+    financeiro: podeVerFinanceiro,
+    usuarios: podeGerenciarUsuarios,
+  };
+
+  const itensMenuVisiveis = ITENS_MENU.filter(item => !item.requer || acessoTela[item.requer]);
 
   // Guarda quais telas do Arco Real já foram registradas nesta passagem
   // pelo módulo (zera se ele sair e entrar de novo, o que é aceitável).
@@ -128,7 +146,7 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
-          {ITENS_MENU.map(item => (
+          {itensMenuVisiveis.map(item => (
             <button
               key={item.id}
               disabled={!item.pronto}
@@ -173,10 +191,13 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
         className={`flex-1 transition-all duration-300 pt-14 md:pt-0 ${menuAberto ? 'md:ml-64' : 'md:ml-0'}`}
       >
         {pagina === 'dashboard' && <DashboardArcoReal />}
-        {pagina === 'membros' && (
-          <CadastroArcoRealMembros showSuccess={showSuccess} showError={showError} />
+        {pagina === 'meus-dados' && (
+          <PerfilPessoalArcoReal meuMembroId={meuMembroId} showError={showError} />
         )}
-        {pagina === 'financeiro' && (
+        {pagina === 'membros' && (
+          <CadastroArcoRealMembros showSuccess={showSuccess} showError={showError} permissoes={permissoes} />
+        )}
+        {pagina === 'financeiro' && podeVerFinanceiro && (
           <ArcoReal
             isOpen={true}
             modoPagina={true}
@@ -184,14 +205,14 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             showError={showError}
           />
         )}
-        {pagina === 'presenca' && sessaoPresencaId === null && (
+        {pagina === 'presenca' && podeVerPresencaGeral && sessaoPresencaId === null && (
           <DashboardPresencaArcoReal
             onAbrirPresenca={(id) => setSessaoPresencaId(id)}
             showSuccess={showSuccess}
             showError={showError}
           />
         )}
-        {pagina === 'presenca' && sessaoPresencaId !== null && (
+        {pagina === 'presenca' && podeVerPresencaGeral && sessaoPresencaId !== null && (
           <RegistroPresencaArcoReal
             sessaoId={sessaoPresencaId}
             onVoltar={() => setSessaoPresencaId(null)}
@@ -199,12 +220,20 @@ export default function ArcoRealApp({ userData, podeVoltarLoja, onTrocarSistema,
             showError={showError}
           />
         )}
-        {pagina === 'controle-acesso' && (
+        {pagina === 'controle-acesso' && podeGerenciarUsuarios && (
           <div className="p-6">
             <ControleAcesso userData={userData} showSuccess={showSuccess} showError={showError} escopo="arco_real" />
           </div>
         )}
-        {pagina !== 'dashboard' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && (
+        {(pagina === 'financeiro' && !podeVerFinanceiro) ||
+         (pagina === 'presenca' && !podeVerPresencaGeral) ||
+         (pagina === 'controle-acesso' && !podeGerenciarUsuarios) ? (
+          <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
+            <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</p>
+            <p>Você não tem permissão para acessar esta tela.</p>
+          </div>
+        ) : null}
+        {pagina !== 'dashboard' && pagina !== 'meus-dados' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
