@@ -814,6 +814,27 @@ IMPORTANTE: Copie estas informações agora!
                     ))}
                   </select>
                   <p className="form-hint">Se essa pessoa também tem cadastro no Arco Real (foi importada como irmão), vincule aqui pra ela ver "Meus Dados" lá.</p>
+
+                  {usuarioForm.pode_visualizar_arco_real && (
+                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--color-border)' }}>
+                      <label className="form-label">Nível de acesso no Arco Real</label>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button type="button" onClick={() => setUsuarioForm(f => ({ ...f, pode_editar_cadastros: false, pode_visualizar_financeiro: false, pode_editar_financeiro: false, pode_editar_presenca: false }))}
+                          style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                            background: !usuarioForm.pode_editar_cadastros && !usuarioForm.pode_visualizar_financeiro ? 'var(--color-accent)' : 'var(--color-surface)',
+                            color: !usuarioForm.pode_editar_cadastros && !usuarioForm.pode_visualizar_financeiro ? '#fff' : 'var(--color-text)' }}>
+                          👤 Acesso simples (só o próprio)
+                        </button>
+                        <button type="button" onClick={() => setUsuarioForm(f => ({ ...f, pode_editar_cadastros: true, pode_visualizar_financeiro: true, pode_editar_financeiro: true, pode_editar_presenca: true }))}
+                          style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                            background: (usuarioForm.pode_editar_cadastros || usuarioForm.pode_visualizar_financeiro) ? 'var(--color-accent)' : 'var(--color-surface)',
+                            color: (usuarioForm.pode_editar_cadastros || usuarioForm.pode_visualizar_financeiro) ? '#fff' : 'var(--color-text)' }}>
+                          🔺 Acesso completo (gestão)
+                        </button>
+                      </div>
+                      <p className="form-hint">Aplica de uma vez as permissões de cadastro/financeiro/presença do Arco Real, sem mexer nas permissões da Loja. Continua ajustável nos checkboxes abaixo.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
