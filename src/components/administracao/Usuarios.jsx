@@ -18,6 +18,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     senha: '',
     cargo: 'irmao',
     ativo: true,
+    arco_real_membro_id: '',
     // Permissões customizáveis
     pode_editar_cadastros: false,
     pode_visualizar_financeiro: false,
@@ -25,6 +26,13 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     pode_visualizar_arco_real: false,
     pode_gerenciar_usuarios: false
   });
+
+  const [membrosArcoReal, setMembrosArcoReal] = useState([]);
+
+  React.useEffect(() => {
+    supabase.from('arco_real_membros').select('id, nome').order('nome')
+      .then(({ data }) => setMembrosArcoReal(data || []));
+  }, []);
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
@@ -203,6 +211,25 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false,
       pode_editar_projetos: false
+    },
+    // Mesmo cargo (arco_real_externo) — usado só pelo botão "Cargo oficial"
+    // pra pré-marcar as permissões de gestão. O cargo salvo continua sendo
+    // 'arco_real_externo'; só as permissões mudam.
+    'arco_real_oficial': {
+      pode_editar_cadastros: true,
+      pode_visualizar_financeiro: true,
+      pode_editar_financeiro: true,
+      pode_visualizar_arco_real: true,
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: true,
+      pode_editar_projetos: false
     }
   };
 
@@ -221,6 +248,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       senha: '',
       cargo: 'irmao',
       ativo: true,
+      arco_real_membro_id: '',
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
@@ -299,7 +327,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
-          pode_editar_presenca: usuarioForm.pode_editar_presenca
+          pode_editar_presenca: usuarioForm.pode_editar_presenca,
+          arco_real_membro_id: usuarioForm.cargo === 'arco_real_externo' ? (usuarioForm.arco_real_membro_id || null) : null
         }]);
 
       if (dbError) throw dbError;
@@ -362,7 +391,8 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
-          pode_editar_presenca: usuarioForm.pode_editar_presenca
+          pode_editar_presenca: usuarioForm.pode_editar_presenca,
+          arco_real_membro_id: usuarioForm.cargo === 'arco_real_externo' ? (usuarioForm.arco_real_membro_id || null) : null
         })
         .eq('id', usuarioEditando.id)
         .select();
@@ -439,6 +469,7 @@ IMPORTANTE: Copie estas informações agora!
       senha: '',
       cargo: usuario.cargo,
       ativo: usuario.ativo,
+      arco_real_membro_id: usuario.arco_real_membro_id || '',
       pode_editar_cadastros: usuario.pode_editar_cadastros || false,
       pode_visualizar_financeiro: usuario.pode_visualizar_financeiro || false,
       pode_visualizar_arco_real: usuario.pode_visualizar_arco_real || false,
@@ -622,6 +653,44 @@ IMPORTANTE: Copie estas informações agora!
                 </p>
               )}
             </div>
+
+            {usuarioForm.cargo === 'arco_real_externo' && (
+              <div style={{ gridColumn: '1 / -1', background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div>
+                  <label className="form-label">Vincular ao membro do Arco Real *</label>
+                  <select
+                    value={usuarioForm.arco_real_membro_id}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, arco_real_membro_id: e.target.value })}
+                    className="form-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="">— Selecione o membro —</option>
+                    {membrosArcoReal.map(m => (
+                      <option key={m.id} value={m.id}>{m.nome}</option>
+                    ))}
+                  </select>
+                  <p className="form-hint">Necessário pra essa pessoa ver seus próprios dados/financeiro/presença.</p>
+                </div>
+                <div>
+                  <label className="form-label">Tipo de acesso</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button type="button" onClick={() => aplicarSugestaoPermissoes('arco_real_externo')}
+                      style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                        background: !usuarioForm.pode_editar_cadastros && !usuarioForm.pode_visualizar_financeiro ? 'var(--color-accent)' : 'var(--color-surface)',
+                        color: !usuarioForm.pode_editar_cadastros && !usuarioForm.pode_visualizar_financeiro ? '#fff' : 'var(--color-text)' }}>
+                      👤 Acesso simples (só meus dados)
+                    </button>
+                    <button type="button" onClick={() => aplicarSugestaoPermissoes('arco_real_oficial')}
+                      style={{ flex: 1, padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
+                        background: (usuarioForm.pode_editar_cadastros || usuarioForm.pode_visualizar_financeiro) ? 'var(--color-accent)' : 'var(--color-surface)',
+                        color: (usuarioForm.pode_editar_cadastros || usuarioForm.pode_visualizar_financeiro) ? '#fff' : 'var(--color-text)' }}>
+                      🔺 Cargo oficial (acesso de gestão)
+                    </button>
+                  </div>
+                  <p className="form-hint">Os checkboxes de permissão abaixo continuam ajustáveis manualmente depois de escolher.</p>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="form-label">
