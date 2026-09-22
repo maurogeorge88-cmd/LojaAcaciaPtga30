@@ -192,7 +192,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
       >
         {pagina === 'dashboard' && <DashboardArcoReal />}
         {pagina === 'meus-dados' && (
-          <PerfilPessoalArcoReal meuMembroId={meuMembroId} showError={showError} />
+          <PerfilPessoalArcoReal meuMembroId={meuMembroId} permissoes={permissoes} showError={showError} />
         )}
         {pagina === 'membros' && (
           <CadastroArcoRealMembros showSuccess={showSuccess} showError={showError} permissoes={permissoes} />
