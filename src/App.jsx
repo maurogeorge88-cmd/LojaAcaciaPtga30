@@ -562,6 +562,24 @@ function App() {
           pode_editar_projetos: data.pode_editar_projetos || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
+      } else if (data.nivel_acesso === 'arco_real') {
+        // Arco Real (externo — não é irmão da Loja): mesmas permissões
+        // individuais por checkbox, mas nunca com acesso à Loja em si
+        // (canViewArcoReal não faz sentido aqui — ele SEMPRE está no Arco
+        // Real). "Acesso simples" = todos os checkboxes false (só vê os
+        // próprios dados). "Cargo oficial" = os checkboxes que o admin
+        // marcar na tela de Usuários.
+        setPermissoes({
+          canEdit: data.pode_editar_cadastros || false,
+          canEditMembers: data.pode_editar_cadastros || false,
+          canDelete: data.pode_editar_cadastros || false,
+          canManageUsers: data.pode_gerenciar_usuarios || false,
+          canViewFinancial: data.pode_visualizar_financeiro || false,
+          canEditFinancial: data.pode_editar_financeiro || false,
+          canViewArcoReal: false,
+          pode_editar_presenca: data.pode_editar_presenca || false,
+          pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
+        });
       } else {
         // NULL ou não reconhecido: trata como irmão com permissões do banco
         setPermissoes({
@@ -1549,6 +1567,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
     return (
       <ArcoRealApp
         userData={userData}
+        permissoes={permissoes}
+        meuMembroId={userData?.arco_real_membro_id || null}
         podeVoltarLoja={false}
         onSair={handleLogout}
         showSuccess={showSuccess}
@@ -1573,6 +1593,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       return (
         <ArcoRealApp
           userData={userData}
+          permissoes={permissoes}
+          meuMembroId={userData?.arco_real_membro_id || null}
           podeVoltarLoja={true}
           onTrocarSistema={() => setAreaEscolhida(null)}
           onSair={handleLogout}
