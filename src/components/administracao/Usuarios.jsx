@@ -328,7 +328,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: (usuarioForm.cargo === 'arco_real_externo' || usuarioForm.pode_visualizar_arco_real) ? (usuarioForm.arco_real_membro_id || null) : null
+          arco_real_membro_id: usuarioForm.arco_real_membro_id || null
         }]);
 
       if (dbError) throw dbError;
@@ -392,7 +392,7 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: (usuarioForm.cargo === 'arco_real_externo' || usuarioForm.pode_visualizar_arco_real) ? (usuarioForm.arco_real_membro_id || null) : null
+          arco_real_membro_id: usuarioForm.arco_real_membro_id || null
         })
         .eq('id', usuarioEditando.id)
         .select();
@@ -799,7 +799,7 @@ IMPORTANTE: Copie estas informações agora!
                 </div>
               </label>
 
-              {usuarioForm.pode_visualizar_arco_real && usuarioForm.cargo !== 'arco_real_externo' && (
+              {usuarioForm.cargo !== 'arco_real_externo' && (
                 <div style={{ gridColumn: '1 / -1', background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.85rem' }}>
                   <label className="form-label">Vincular ao cadastro no Arco Real (opcional)</label>
                   <select
