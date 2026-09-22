@@ -57,7 +57,13 @@ const Secao = ({ icone, titulo, children }) => (
   </div>
 );
 
-export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
+export default function PerfilPessoalArcoReal({ meuMembroId, permissoes = {}, showError }) {
+  const podeVerTodos = !!(permissoes?.canEditMembers || permissoes?.canViewFinancial || permissoes?.pode_editar_presenca || permissoes?.canManageUsers);
+
+  const [membroSelecionadoId, setMembroSelecionadoId] = useState(meuMembroId || '');
+  const [todosMembros, setTodosMembros] = useState([]);
+  const idAlvo = podeVerTodos ? (membroSelecionadoId || null) : meuMembroId;
+
   const [aba, setAba] = useState('dados');
   const [loading, setLoading] = useState(true);
   const [membro, setMembro] = useState(null);
@@ -76,15 +82,22 @@ export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
   const [dataInicio, setDataInicio] = useState(`${anoAtual}-01-01`);
   const [dataFim, setDataFim] = useState(`${anoAtual}-12-31`);
 
-  useEffect(() => { if (meuMembroId) carregar(); else setLoading(false); }, [meuMembroId]);
-  useEffect(() => { if (meuMembroId && periodo !== 'personalizado') carregarPresencas(); }, [periodo, meuMembroId]);
+  useEffect(() => {
+    if (podeVerTodos) {
+      supabase.from('arco_real_membros').select('id, nome').order('nome')
+        .then(({ data }) => setTodosMembros(data || []));
+    }
+  }, [podeVerTodos]);
+
+  useEffect(() => { if (idAlvo) carregar(); else setLoading(false); }, [idAlvo]);
+  useEffect(() => { if (idAlvo && periodo !== 'personalizado') carregarPresencas(); }, [periodo, idAlvo]);
 
   const carregar = async () => {
     setLoading(true);
     try {
       const [{ data: m }, { data: lancs }] = await Promise.all([
-        supabase.from('arco_real_membros').select('*').eq('id', meuMembroId).single(),
-        supabase.from('arco_real_lancamentos').select('*, categoria_manual:categoria_id(nome)').eq('origem_membro_id', meuMembroId).order('data_vencimento', { ascending: false }),
+        supabase.from('arco_real_membros').select('*').eq('id', idAlvo).single(),
+        supabase.from('arco_real_lancamentos').select('*, categoria_manual:categoria_id(nome)').eq('origem_membro_id', idAlvo).order('data_vencimento', { ascending: false }),
       ]);
       setMembro(m || null);
       setLancamentos(lancs || []);
@@ -129,7 +142,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
   };
 
   const carregarPresencas = async () => {
-    if (!meuMembroId) return;
+    if (!idAlvo) return;
     const p = calcularPeriodo();
     if (!p) return;
     const hoje = new Date().toISOString().split('T')[0];
@@ -143,7 +156,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
     if (sessaoIds.length > 0) {
       const { data } = await supabase.from('arco_real_registros_presenca')
         .select('sessao_id, presente, justificativa')
-        .eq('membro_id', meuMembroId)
+        .eq('membro_id', idAlvo)
         .in('sessao_id', sessaoIds);
       registros = data || [];
     }
@@ -154,12 +167,38 @@ export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
     setPresencas(mapaPresencas);
   };
 
-  if (!meuMembroId) {
+  if (!idAlvo && !podeVerTodos) {
     return (
       <div className="p-6" style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
         <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</p>
         <p style={{ color: 'var(--color-text)', fontWeight: '700' }}>Seu acesso ainda não está vinculado a um cadastro de membro.</p>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>Peça para o administrador do sistema vincular seu login ao seu cadastro no Arco Real.</p>
+      </div>
+    );
+  }
+
+  // Quem tem permissão de gestão mas ainda não escolheu um membro pra ver
+  // (típico de conta de administração, sem vínculo pessoal) — mostra o
+  // seletor em vez da tela de dados.
+  const seletorMembro = podeVerTodos && (
+    <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Visualizando:</span>
+      <select
+        value={membroSelecionadoId}
+        onChange={e => setMembroSelecionadoId(e.target.value)}
+        style={{ padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}
+      >
+        <option value="">— Selecione um membro —</option>
+        {todosMembros.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+      </select>
+    </div>
+  );
+
+  if (!idAlvo && podeVerTodos) {
+    return (
+      <div className="p-6" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        {seletorMembro}
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>Selecione um membro acima pra ver os dados, financeiro e presença dele.</p>
       </div>
     );
   }
@@ -228,6 +267,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, showError }) {
 
   return (
     <div className="p-6" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+      {seletorMembro}
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {membro.foto_url && <img src={membro.foto_url} alt={membro.nome} style={{ width: '4rem', height: '4rem', borderRadius: '50%', objectFit: 'cover' }} />}
