@@ -43,7 +43,9 @@ const calcularIdade = (dataNasc) => {
 
 const fmtData = (d) => d ? d.split('-').reverse().join('/') : '—';
 
-export default function CadastroArcoRealMembros({ showSuccess, showError }) {
+export default function CadastroArcoRealMembros({ showSuccess, showError, permissoes = {} }) {
+  const podeEditar = !!permissoes?.canEditMembers;
+
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
@@ -331,12 +333,16 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             >
               📄 Relatório
             </button>
-            <button onClick={abrirImportar} style={{ padding: '0.55rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer' }}>
-              📥 Importar Irmão Existente
-            </button>
-            <button onClick={abrirNovo} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
-              ➕ Novo Membro
-            </button>
+            {podeEditar && (
+              <>
+                <button onClick={abrirImportar} style={{ padding: '0.55rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer' }}>
+                  📥 Importar Irmão Existente
+                </button>
+                <button onClick={abrirNovo} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
+                  ➕ Novo Membro
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -398,8 +404,12 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
 
                     <div className="mt-2.5 flex gap-1.5" onClick={e => e.stopPropagation()}>
                       <button onClick={() => abrirVisualizar(m)} style={{ padding: '0.3rem 0.4rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Visualizar">👁️</button>
-                      <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid #4ade80', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Editar">✏️</button>
-                      <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Excluir">🗑️</button>
+                      {podeEditar && (
+                        <>
+                          <button onClick={() => abrirEditar(m)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid #4ade80', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Editar">✏️</button>
+                          <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.3rem 0.4rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }} title="Excluir">🗑️</button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -427,8 +437,12 @@ export default function CadastroArcoRealMembros({ showSuccess, showError }) {
             ← Voltar
           </button>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={() => abrirEditar(m)} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>✏️ Editar</button>
-            <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.55rem 1rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>🗑️ Excluir</button>
+            {podeEditar && (
+              <>
+                <button onClick={() => abrirEditar(m)} style={{ padding: '0.55rem 1rem', background: '#4ade80', color: '#111827', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>✏️ Editar</button>
+                <button onClick={() => setConfirmExcluir(m.id)} style={{ padding: '0.55rem 1rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>🗑️ Excluir</button>
+              </>
+            )}
           </div>
         </div>
 
