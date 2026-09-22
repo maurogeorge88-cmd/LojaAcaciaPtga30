@@ -595,10 +595,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text('Quadro Resumo', 15, y); y += 6;
       [
+        { label:'Saldo Anterior', val: totaisGerais.saldoAnterior, cor: totaisGerais.saldoAnterior>=0?[37,99,235]:[220,38,38] },
         { label:'Receitas Arco Real - Pg', val: totRec,  cor:[16,120,60] },
         { label:'Receitas Arco Real - Pend.', val: totPend, cor:[200,130,0] },
         { label:'Despesas Arco Real - Pg', val: totDesp, cor:[200,0,0] },
-        { label: 'Saldo', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
+        { label: 'Saldo do Período', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
+        { label: 'Saldo Total (Acumulado)', val: totaisGerais.saldoAnterior + saldo, cor: (totaisGerais.saldoAnterior + saldo)>0?[37,99,235]:(totaisGerais.saldoAnterior + saldo)<0?[220,38,38]:[16,120,60] },
       ].forEach((lr, i) => {
         const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
         doc.rect(15, y, 180, 7, 'F');
