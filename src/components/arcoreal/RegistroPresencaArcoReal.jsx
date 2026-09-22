@@ -16,6 +16,10 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [busca, setBusca] = useState('');
 
+  const [visitantes, setVisitantes] = useState([]);
+  const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+  const [visitanteEditandoId, setVisitanteEditandoId] = useState(null);
+
   useEffect(() => { if (sessaoId) carregarDados(); }, [sessaoId]);
 
   const carregarDados = async () => {
@@ -53,6 +57,14 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
       });
       setPresencas(presencasObj);
       setJustificativas(justificativasObj);
+
+      const { data: visitantesData, error: visitantesError } = await supabase
+        .from('arco_real_visitantes_sessao')
+        .select('*')
+        .eq('sessao_id', sessaoId)
+        .order('created_at', { ascending: false });
+      if (visitantesError) throw visitantesError;
+      setVisitantes(visitantesData || []);
     } catch (err) {
       console.error('Erro ao carregar dados da sessão:', err);
       setMensagem({ tipo: 'erro', texto: 'Erro ao carregar dados da sessão.' });
@@ -111,6 +123,95 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
       showError?.('Erro ao salvar presenças.');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const adicionarVisitante = async () => {
+    if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
+
+    const payloadVisitante = {
+      nome_visitante: visitanteForm.nome_visitante,
+      nome_loja: visitanteForm.nome_loja,
+      cidade: visitanteForm.cidade,
+      eh_autoridade: visitanteForm.eh_autoridade,
+      cargo_autoridade: visitanteForm.eh_autoridade ? (visitanteForm.cargo_autoridade || '').trim() : null,
+    };
+
+    if (visitanteEditandoId) {
+      const { data, error } = await supabase
+        .from('arco_real_visitantes_sessao')
+        .update(payloadVisitante)
+        .eq('id', visitanteEditandoId)
+        .select();
+
+      if (error) {
+        console.error('Erro ao atualizar visitante:', error);
+        setMensagem({ tipo: 'erro', texto: `❌ Erro ao atualizar visitante: ${error.message || error.details || 'erro desconhecido'}` });
+        return;
+      }
+      if (!data || data.length === 0) {
+        setMensagem({ tipo: 'erro', texto: '❌ A edição não foi salva: nenhuma linha foi alterada no banco (provável falta de permissão/RLS na tabela arco_real_visitantes_sessao para UPDATE). Fale com o administrador do sistema.' });
+        return;
+      }
+
+      carregarDados();
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+      setVisitanteEditandoId(null);
+      setMensagem({ tipo: 'sucesso', texto: '✅ Visitante atualizado com sucesso!' });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('arco_real_visitantes_sessao')
+      .insert([{ sessao_id: sessaoId, ...payloadVisitante }]);
+
+    if (error) {
+      console.error('Erro ao adicionar visitante:', error);
+      setMensagem({ tipo: 'erro', texto: `❌ Erro ao adicionar visitante: ${error.message || error.details || 'erro desconhecido'}` });
+      return;
+    }
+
+    carregarDados();
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+  };
+
+  const editarVisitante = (v) => {
+    setVisitanteForm({
+      nome_visitante: v.nome_visitante,
+      nome_loja: v.nome_loja,
+      cidade: v.cidade,
+      eh_autoridade: v.eh_autoridade || false,
+      cargo_autoridade: v.cargo_autoridade || '',
+    });
+    setVisitanteEditandoId(v.id);
+  };
+
+  const cancelarEdicaoVisitante = () => {
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+    setVisitanteEditandoId(null);
+  };
+
+  const excluirVisitante = async (id) => {
+    const { data, error } = await supabase
+      .from('arco_real_visitantes_sessao')
+      .delete()
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error('Erro ao excluir visitante:', error);
+      setMensagem({ tipo: 'erro', texto: `❌ Erro ao excluir visitante: ${error.message || error.details || 'erro desconhecido'}` });
+      return;
+    }
+    if (!data || data.length === 0) {
+      setMensagem({ tipo: 'erro', texto: '❌ A exclusão não foi aplicada: nenhuma linha foi removida (provável falta de permissão/RLS).' });
+      return;
+    }
+
+    carregarDados();
+    if (visitanteEditandoId === id) {
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+      setVisitanteEditandoId(null);
     }
   };
 
@@ -271,6 +372,117 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
               {busca ? 'Nenhum membro encontrado com esse nome.' : 'Nenhum membro elegível para esta sessão.'}
             </span>
           </div>
+        )}
+      </div>
+
+      {/* Seção de Visitantes */}
+      <div className="rounded-lg p-6 mt-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--color-text)' }}>👥 Visitantes</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Nome do Visitante"
+            value={visitanteForm.nome_visitante}
+            onChange={(e) => setVisitanteForm({ ...visitanteForm, nome_visitante: e.target.value })}
+            style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', outline: 'none', width: '100%' }}
+          />
+          <input
+            type="text"
+            placeholder="Loja / Capítulo"
+            value={visitanteForm.nome_loja}
+            onChange={(e) => setVisitanteForm({ ...visitanteForm, nome_loja: e.target.value })}
+            style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', outline: 'none', width: '100%' }}
+          />
+          <input
+            type="text"
+            placeholder="Cidade"
+            value={visitanteForm.cidade}
+            onChange={(e) => setVisitanteForm({ ...visitanteForm, cidade: e.target.value })}
+            style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', outline: 'none', width: '100%' }}
+          />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={adicionarVisitante}
+              style={{ flex: 1, padding: '0.5rem 1rem', background: visitanteEditandoId ? '#10b981' : 'linear-gradient(135deg,#1e3a5f,#2d6a9f)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '600' }}
+            >
+              {visitanteEditandoId ? '💾 Salvar' : '➕ Adicionar'}
+            </button>
+            {visitanteEditandoId && (
+              <button
+                onClick={cancelarEdicaoVisitante}
+                style={{ padding: '0.5rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '600' }}
+              >
+                ✖️
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-4" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-text)' }}>
+            <input
+              type="checkbox"
+              checked={visitanteForm.eh_autoridade}
+              onChange={(e) => setVisitanteForm({ ...visitanteForm, eh_autoridade: e.target.checked, cargo_autoridade: e.target.checked ? visitanteForm.cargo_autoridade : '' })}
+              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+            />
+            🎖️ É autoridade (Grão-Mestre, corpo administrativo, etc.)
+          </label>
+          {visitanteForm.eh_autoridade && (
+            <input
+              type="text"
+              placeholder="Cargo (ex: Sereníssimo Grão-Mestre)"
+              value={visitanteForm.cargo_autoridade}
+              onChange={(e) => setVisitanteForm({ ...visitanteForm, cargo_autoridade: e.target.value })}
+              style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid #c9a84c', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', outline: 'none', width: '100%', maxWidth: '420px' }}
+            />
+          )}
+        </div>
+
+        {visitantes.length > 0 ? (
+          <table className="w-full text-sm">
+            <thead style={{ background: 'var(--color-surface-2)' }}>
+              <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                <th style={{ color: 'var(--color-text-muted)', background: 'var(--color-surface-2)' }}>Nome</th>
+                <th style={{ color: 'var(--color-text-muted)', background: 'var(--color-surface-2)' }}>Loja/Capítulo</th>
+                <th style={{ color: 'var(--color-text-muted)', background: 'var(--color-surface-2)' }}>Cidade</th>
+                <th style={{ color: 'var(--color-text-muted)', background: 'var(--color-surface-2)' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visitantes.map((v) => (
+                <tr key={v.id} style={{ borderBottom: '1px solid var(--color-border)', transition: 'background 0.1s', background: visitanteEditandoId === v.id ? 'var(--color-accent-bg)' : 'transparent' }}>
+                  <td style={{ color: 'var(--color-text)' }}>
+                    {v.eh_autoridade && (
+                      <span title={v.cargo_autoridade || 'Autoridade'} style={{ marginRight: '0.35rem' }}>🎖️</span>
+                    )}
+                    {v.nome_visitante}
+                  </td>
+                  <td style={{ color: 'var(--color-text)' }}>{v.nome_loja}</td>
+                  <td style={{ color: 'var(--color-text)' }}>{v.cidade}</td>
+                  <td style={{ color: 'var(--color-text)' }}>
+                    <button
+                      onClick={() => editarVisitante(v)}
+                      style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', marginRight: '0.5rem' }}
+                      title="Editar visitante"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => excluirVisitante(v.id)}
+                      style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                      title="Excluir visitante"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ fontSize: '0.875rem', textAlign: 'center', padding: '0.75rem', color: 'var(--color-text-muted)' }}>Nenhum visitante registrado</p>
         )}
       </div>
 
