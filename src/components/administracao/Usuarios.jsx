@@ -328,7 +328,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: usuarioForm.cargo === 'arco_real_externo' ? (usuarioForm.arco_real_membro_id || null) : null
+          arco_real_membro_id: (usuarioForm.cargo === 'arco_real_externo' || usuarioForm.pode_visualizar_arco_real) ? (usuarioForm.arco_real_membro_id || null) : null
         }]);
 
       if (dbError) throw dbError;
@@ -392,7 +392,7 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: usuarioForm.cargo === 'arco_real_externo' ? (usuarioForm.arco_real_membro_id || null) : null
+          arco_real_membro_id: (usuarioForm.cargo === 'arco_real_externo' || usuarioForm.pode_visualizar_arco_real) ? (usuarioForm.arco_real_membro_id || null) : null
         })
         .eq('id', usuarioEditando.id)
         .select();
@@ -798,6 +798,24 @@ IMPORTANTE: Copie estas informações agora!
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Acesso à tela de Finanças do Arco Real</p>
                 </div>
               </label>
+
+              {usuarioForm.pode_visualizar_arco_real && usuarioForm.cargo !== 'arco_real_externo' && (
+                <div style={{ gridColumn: '1 / -1', background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.85rem' }}>
+                  <label className="form-label">Vincular ao cadastro no Arco Real (opcional)</label>
+                  <select
+                    value={usuarioForm.arco_real_membro_id}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, arco_real_membro_id: e.target.value })}
+                    className="form-input"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <option value="">— Nenhum vínculo —</option>
+                    {membrosArcoReal.map(m => (
+                      <option key={m.id} value={m.id}>{m.nome}</option>
+                    ))}
+                  </select>
+                  <p className="form-hint">Se essa pessoa também tem cadastro no Arco Real (foi importada como irmão), vincule aqui pra ela ver "Meus Dados" lá.</p>
+                </div>
+              )}
 
               <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
                 background: 'var(--color-surface-2)',
