@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 import ModalAbatimentoArcoReal from '../arcoreal/ModalAbatimentoArcoReal';
+import { gerarExtratoFinanceiroArcoRealPDF } from '../../utils/gerarExtratoFinanceiroArcoRealPDF';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -77,6 +78,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   });
   const [expandedOrigens, setExpandedOrigens] = useState(new Set());
   const [quitando, setQuitando] = useState(null); // lançamento sendo quitado
+  const [seletorExtratoAberto, setSeletorExtratoAberto] = useState(false);
+  const [seletorExtratoLoteAberto, setSeletorExtratoLoteAberto] = useState(false);
+  const [membrosExtratoLote, setMembrosExtratoLote] = useState([]);
+  const [gerandoExtratoLote, setGerandoExtratoLote] = useState(false);
   const [modalAbatimentoAberto, setModalAbatimentoAberto] = useState(false);
   const [membroAbatimento, setMembroAbatimento] = useState(null);
   const [debitosAbatimento, setDebitosAbatimento] = useState([]);
@@ -309,6 +314,55 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   // ── Abrir edição ───────────────────────────────────────────────────────────
   // ── Quitação (marcar como pago) ─────────────────────────────────────────────
   // ── Abatimento (compensação entre membro e Arco Real) ───────────────────────
+  // ── Extrato financeiro individual / em lote ─────────────────────────────────
+  const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
+
+  const buscarLancamentosDoMembro = async (membroId) => {
+    const { data, error } = await supabase
+      .from('arco_real_lancamentos')
+      .select('tipo, descricao, valor, data_vencimento, data_pagamento, status, tipo_pagamento, categoria_manual:categoria_id(nome)')
+      .eq('origem_membro_id', membroId)
+      .order('data_vencimento', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(l => ({ ...l, categoria_nome: l.categoria_manual?.nome || null }));
+  };
+
+  const gerarExtratoIndividual = async (membro) => {
+    setSeletorExtratoAberto(false);
+    try {
+      const lancamentosMembro = await buscarLancamentosDoMembro(membro.id);
+      gerarExtratoFinanceiroArcoRealPDF(membro, lancamentosMembro, LOGO_ARCO_REAL);
+    } catch (e) {
+      showError('Erro ao gerar extrato: ' + e.message);
+    }
+  };
+
+  const gerarExtratosEmLote = async () => {
+    if (membrosExtratoLote.length === 0) {
+      showError('Selecione pelo menos um membro.');
+      return;
+    }
+    setGerandoExtratoLote(true);
+    try {
+      for (const membroId of membrosExtratoLote) {
+        const membro = membros.find(m => m.id === membroId);
+        if (!membro) continue;
+        const lancamentosMembro = await buscarLancamentosDoMembro(membroId);
+        gerarExtratoFinanceiroArcoRealPDF(membro, lancamentosMembro, LOGO_ARCO_REAL);
+        // Pequena pausa entre downloads — evita o navegador bloquear
+        // múltiplos arquivos baixando ao mesmo tempo.
+        await new Promise(r => setTimeout(r, 400));
+      }
+      showSuccess(`✅ ${membrosExtratoLote.length} extrato(s) gerado(s)!`);
+      setSeletorExtratoLoteAberto(false);
+      setMembrosExtratoLote([]);
+    } catch (e) {
+      showError('Erro ao gerar extratos em lote: ' + e.message);
+    } finally {
+      setGerandoExtratoLote(false);
+    }
+  };
+
   const abrirSeletorAbatimento = () => {
     setSeletorMembroAbatimentoAberto(true);
   };
@@ -963,6 +1017,14 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(139,92,246,0.4)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'rgba(139,92,246,0.12)',color:'#8b5cf6' }}>
                       ⚖️ Abatimento
                     </button>
+                    <button onClick={() => setSeletorExtratoAberto(true)}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
+                      📄 Extrato Individual
+                    </button>
+                    <button onClick={() => setSeletorExtratoLoteAberto(true)}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
+                      📄 Extrato em Lote
+                    </button>
                     <button onClick={gerarPDF}
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
                       📄 PDF
@@ -1197,6 +1259,83 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           if (atualizar) { carregar(); carregarTotaisGerais(); }
         }}
       />
+
+      {/* Seletor de membro pro extrato individual */}
+      {seletorExtratoAberto && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
+          <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%' }}>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Extrato Individual</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'0.75rem' }}>Escolha o membro pra gerar o extrato financeiro dele.</p>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const m = membros.find(x => String(x.id) === e.target.value);
+                if (m) gerarExtratoIndividual(m);
+              }}
+              style={{ background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.55rem 0.75rem', fontSize:'0.875rem', width:'100%' }}
+            >
+              <option value="">— Selecione o membro —</option>
+              {[...membros].sort((a, b) => a.nome.localeCompare(b.nome)).map(m => (
+                <option key={m.id} value={m.id}>{m.nome}</option>
+              ))}
+            </select>
+            <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'1.25rem' }}>
+              <button onClick={() => setSeletorExtratoAberto(false)}
+                style={{ padding:'0.55rem 1.1rem', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', background:'transparent', color:'var(--color-text-muted)', cursor:'pointer' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Seletor de membros pro extrato em lote */}
+      {seletorExtratoLoteAberto && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
+          <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%', maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Extrato em Lote</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'0.75rem' }}>Selecione os membros — um PDF é baixado pra cada um.</p>
+            <div style={{ display:'flex', gap:'0.5rem', marginBottom:'0.5rem' }}>
+              <button onClick={() => setMembrosExtratoLote(membros.map(m => m.id))}
+                style={{ fontSize:'0.75rem', padding:'0.3rem 0.6rem', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', background:'var(--color-surface-2)', color:'var(--color-text)', cursor:'pointer' }}>
+                Selecionar todos
+              </button>
+              <button onClick={() => setMembrosExtratoLote([])}
+                style={{ fontSize:'0.75rem', padding:'0.3rem 0.6rem', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', background:'var(--color-surface-2)', color:'var(--color-text)', cursor:'pointer' }}>
+                Limpar
+              </button>
+            </div>
+            <div style={{ flex:1, overflowY:'auto', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.5rem' }}>
+              {[...membros].sort((a, b) => a.nome.localeCompare(b.nome)).map(m => (
+                <label key={m.id} style={{ display:'flex', alignItems:'center', gap:'0.5rem', padding:'0.35rem 0.25rem', cursor:'pointer', fontSize:'0.85rem', color:'var(--color-text)' }}>
+                  <input
+                    type="checkbox"
+                    checked={membrosExtratoLote.includes(m.id)}
+                    onChange={(e) => {
+                      setMembrosExtratoLote(prev => e.target.checked ? [...prev, m.id] : prev.filter(id => id !== m.id));
+                    }}
+                    style={{ width:'15px', height:'15px', cursor:'pointer' }}
+                  />
+                  {m.nome}
+                </label>
+              ))}
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'1rem' }}>
+              <span style={{ fontSize:'0.78rem', color:'var(--color-text-muted)' }}>{membrosExtratoLote.length} selecionado(s)</span>
+              <div style={{ display:'flex', gap:'0.5rem' }}>
+                <button onClick={() => { setSeletorExtratoLoteAberto(false); setMembrosExtratoLote([]); }}
+                  style={{ padding:'0.55rem 1.1rem', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', background:'transparent', color:'var(--color-text-muted)', cursor:'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={gerarExtratosEmLote} disabled={gerandoExtratoLote || membrosExtratoLote.length === 0}
+                  style={{ padding:'0.55rem 1.1rem', border:'none', borderRadius:'var(--radius-md)', background:'#1e3a5f', color:'#fff', fontWeight:700, cursor: (gerandoExtratoLote || membrosExtratoLote.length === 0) ? 'not-allowed' : 'pointer', opacity: (gerandoExtratoLote || membrosExtratoLote.length === 0) ? 0.6 : 1 }}>
+                  {gerandoExtratoLote ? '⏳ Gerando...' : '📄 Gerar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Seletor de membro pro abatimento */}
       {seletorMembroAbatimentoAberto && (
