@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
+import ModalAbatimentoArcoReal from '../arcoreal/ModalAbatimentoArcoReal';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -76,6 +77,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   });
   const [expandedOrigens, setExpandedOrigens] = useState(new Set());
   const [quitando, setQuitando] = useState(null); // lançamento sendo quitado
+  const [modalAbatimentoAberto, setModalAbatimentoAberto] = useState(false);
+  const [membroAbatimento, setMembroAbatimento] = useState(null);
+  const [debitosAbatimento, setDebitosAbatimento] = useState([]);
+  const [creditosAbatimento, setCreditosAbatimento] = useState([]);
+  const [seletorMembroAbatimentoAberto, setSeletorMembroAbatimentoAberto] = useState(false);
   const [quitacaoForm, setQuitacaoForm] = useState({ data_pagamento: hojeISO(), tipo_pagamento: 'pix' });
   const [salvandoQuitacao, setSalvandoQuitacao] = useState(false);
   const [form, setForm]                     = useState({
@@ -197,12 +203,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         supabase
           .from('arco_real_lancamentos')
           .select(`
-            tipo, valor, status, data_pagamento, data_vencimento, origem,
+            tipo, valor, status, data_pagamento, data_vencimento, origem, tipo_pagamento,
             categoria_manual:categoria_id(nome),
             lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome))
           `)
       );
-      let todos = data || [];
+      let todos = (data || []).filter(l => l.tipo_pagamento !== 'compensacao');
 
       if (filtros.tipo)   todos = todos.filter(l => l.tipo === filtros.tipo);
       if (filtros.origem) todos = todos.filter(l => l.origem === filtros.origem);
@@ -302,6 +308,39 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Abrir edição ───────────────────────────────────────────────────────────
   // ── Quitação (marcar como pago) ─────────────────────────────────────────────
+  // ── Abatimento (compensação entre membro e Arco Real) ───────────────────────
+  const abrirSeletorAbatimento = () => {
+    setSeletorMembroAbatimentoAberto(true);
+  };
+
+  const selecionarMembroAbatimento = async (membro) => {
+    setSeletorMembroAbatimentoAberto(false);
+    try {
+      const { data, error } = await supabase
+        .from('arco_real_lancamentos')
+        .select('id, tipo, descricao, valor, data_vencimento, categoria_id, origem_membro_id, observacoes')
+        .eq('origem_membro_id', membro.id)
+        .eq('status', 'pendente')
+        .order('data_vencimento');
+      if (error) throw error;
+
+      const debitos  = (data || []).filter(l => l.tipo === 'receita');
+      const creditos = (data || []).filter(l => l.tipo === 'despesa');
+
+      if (debitos.length === 0 || creditos.length === 0) {
+        showError(`${membro.nome} não tem débitos e créditos pendentes ao mesmo tempo — nada pra abater.`);
+        return;
+      }
+
+      setMembroAbatimento(membro);
+      setDebitosAbatimento(debitos);
+      setCreditosAbatimento(creditos);
+      setModalAbatimentoAberto(true);
+    } catch (e) {
+      showError('Erro ao carregar pendências do membro: ' + e.message);
+    }
+  };
+
   const abrirQuitacao = (l) => {
     setQuitando(l);
     setQuitacaoForm({ data_pagamento: hojeISO(), tipo_pagamento: l.tipo_pagamento || 'pix' });
@@ -380,9 +419,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   };
 
   // ── Cálculos ───────────────────────────────────────────────────────────────
+  // Compensação (abatimento entre irmão e Arco Real) nunca entra nos totais:
+  // não é dinheiro de verdade entrando/saindo, é só um acerto de contas interno.
   const receitas = lancs.filter(l => l.tipo === 'receita');
-  const despesas = lancs.filter(l => l.tipo === 'despesa');
-  const recPagas = receitas.filter(l => l.status === 'pago');
+  const despesas = lancs.filter(l => l.tipo === 'despesa' && l.tipo_pagamento !== 'compensacao');
+  const recPagas = receitas.filter(l => l.status === 'pago' && l.tipo_pagamento !== 'compensacao');
   const recPend  = receitas.filter(l => l.status === 'pendente');
   const totRec   = recPagas.reduce((s, l) => s + Number(l.valor || 0), 0);
   const totPend  = recPend.reduce((s, l) => s + Number(l.valor || 0), 0);
@@ -910,6 +951,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
                       👥 Lançamento em Lote
                     </button>
+                    <button onClick={abrirSeletorAbatimento}
+                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(139,92,246,0.4)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'rgba(139,92,246,0.12)',color:'#8b5cf6' }}>
+                      ⚖️ Abatimento
+                    </button>
                     <button onClick={gerarPDF}
                       style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
                       📄 PDF
@@ -1144,6 +1189,47 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           if (atualizar) { carregar(); carregarTotaisGerais(); }
         }}
       />
+
+      {/* Seletor de membro pro abatimento */}
+      {seletorMembroAbatimentoAberto && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
+          <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%' }}>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>⚖️ Abatimento — Escolher Membro</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'0.75rem' }}>Só aparecem membros com débito e crédito pendentes ao mesmo tempo.</p>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const m = membros.find(x => String(x.id) === e.target.value);
+                if (m) selecionarMembroAbatimento(m);
+              }}
+              style={{ background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.55rem 0.75rem', fontSize:'0.875rem', width:'100%' }}
+            >
+              <option value="">— Selecione o membro —</option>
+              {[...membros].sort((a, b) => a.nome.localeCompare(b.nome)).map(m => (
+                <option key={m.id} value={m.id}>{m.nome}</option>
+              ))}
+            </select>
+            <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'1.25rem' }}>
+              <button onClick={() => setSeletorMembroAbatimentoAberto(false)}
+                style={{ padding:'0.55rem 1.1rem', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', background:'transparent', color:'var(--color-text-muted)', cursor:'pointer' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalAbatimentoAberto && (
+        <ModalAbatimentoArcoReal
+          membro={membroAbatimento}
+          debitos={debitosAbatimento}
+          creditos={creditosAbatimento}
+          showSuccess={showSuccess}
+          showError={showError}
+          onClose={() => setModalAbatimentoAberto(false)}
+          onSuccess={() => { carregar(); carregarTotaisGerais(); }}
+        />
+      )}
     </div>
   );
 }
