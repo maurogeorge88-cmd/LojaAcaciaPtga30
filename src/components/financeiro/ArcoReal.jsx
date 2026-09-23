@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 import ModalAbatimentoArcoReal from '../arcoreal/ModalAbatimentoArcoReal';
 import ModalSituacaoMembrosArcoReal from '../arcoreal/ModalSituacaoMembrosArcoReal';
-import { gerarExtratoFinanceiroArcoRealPDF } from '../../utils/gerarExtratoFinanceiroArcoRealPDF';
+import { gerarRelatorioPendenciasArcoRealPDF } from '../../utils/gerarRelatorioPendenciasArcoRealPDF';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -116,7 +116,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   const carregarMembros = async () => {
     try {
-      const { data } = await supabase.from('arco_real_membros').select('id, nome').order('nome');
+      const { data } = await supabase.from('arco_real_membros').select('id, nome, cpf').order('nome');
       setMembros(data || []);
     } catch (e) { setMembros([]); }
   };
@@ -324,23 +324,26 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   // ── Extrato financeiro individual / em lote ─────────────────────────────────
   const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
 
-  const buscarLancamentosDoMembro = async (membroId) => {
+  const buscarPendenciasDoMembro = async (membroId) => {
     const { data, error } = await supabase
       .from('arco_real_lancamentos')
-      .select('tipo, descricao, valor, data_vencimento, data_pagamento, status, tipo_pagamento, categoria_manual:categoria_id(nome)')
+      .select('tipo, descricao, valor, data_vencimento')
       .eq('origem_membro_id', membroId)
-      .order('data_vencimento', { ascending: false });
+      .eq('status', 'pendente')
+      .order('data_vencimento');
     if (error) throw error;
-    return (data || []).map(l => ({ ...l, categoria_nome: l.categoria_manual?.nome || null }));
+    return data || [];
   };
 
   const gerarExtratoIndividual = async (membro) => {
     setSeletorExtratoAberto(false);
     try {
-      const lancamentosMembro = await buscarLancamentosDoMembro(membro.id);
-      gerarExtratoFinanceiroArcoRealPDF(membro, lancamentosMembro, LOGO_ARCO_REAL);
+      const pendencias = await buscarPendenciasDoMembro(membro.id);
+      gerarRelatorioPendenciasArcoRealPDF(membro, pendencias, LOGO_ARCO_REAL);
     } catch (e) {
-      showError('Erro ao gerar extrato: ' + e.message);
+      showError(e.message.includes('não possui lançamentos pendentes')
+        ? `${membro.nome} não possui pendências financeiras.`
+        : 'Erro ao gerar relatório: ' + e.message);
     }
   };
 
@@ -350,21 +353,28 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       return;
     }
     setGerandoExtratoLote(true);
+    let gerados = 0, semPendencia = 0;
     try {
       for (const membroId of membrosExtratoLote) {
         const membro = membros.find(m => m.id === membroId);
         if (!membro) continue;
-        const lancamentosMembro = await buscarLancamentosDoMembro(membroId);
-        gerarExtratoFinanceiroArcoRealPDF(membro, lancamentosMembro, LOGO_ARCO_REAL);
-        // Pequena pausa entre downloads — evita o navegador bloquear
-        // múltiplos arquivos baixando ao mesmo tempo.
-        await new Promise(r => setTimeout(r, 400));
+        try {
+          const pendencias = await buscarPendenciasDoMembro(membroId);
+          gerarRelatorioPendenciasArcoRealPDF(membro, pendencias, LOGO_ARCO_REAL);
+          gerados++;
+          // Pequena pausa entre downloads — evita o navegador bloquear
+          // múltiplos arquivos baixando ao mesmo tempo.
+          await new Promise(r => setTimeout(r, 400));
+        } catch (e) {
+          if (e.message.includes('não possui lançamentos pendentes')) semPendencia++;
+          else throw e;
+        }
       }
-      showSuccess(`✅ ${membrosExtratoLote.length} extrato(s) gerado(s)!`);
+      showSuccess(`✅ ${gerados} relatório(s) gerado(s)${semPendencia > 0 ? ` — ${semPendencia} membro(s) sem pendência, pulado(s)` : ''}!`);
       setSeletorExtratoLoteAberto(false);
       setMembrosExtratoLote([]);
     } catch (e) {
-      showError('Erro ao gerar extratos em lote: ' + e.message);
+      showError('Erro ao gerar relatórios em lote: ' + e.message);
     } finally {
       setGerandoExtratoLote(false);
     }
@@ -1131,11 +1141,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                           </button>
                           <button onClick={() => { setSeletorExtratoAberto(true); setMenuRelatoriosAberto(false); }}
                             style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
-                            📄 Extrato Individual
+                            📄 Relatório de Pendências (Individual)
                           </button>
                           <button onClick={() => { setSeletorExtratoLoteAberto(true); setMenuRelatoriosAberto(false); }}
                             style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
-                            📄 Extrato em Lote
+                            📄 Relatório de Pendências (Lote)
                           </button>
                           <button onClick={() => { gerarPDF(); setMenuRelatoriosAberto(false); }}
                             style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
@@ -1451,7 +1461,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       {seletorExtratoAberto && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
           <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%' }}>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Extrato Individual</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Relatório de Pendências (Individual)</h3>
             <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'0.75rem' }}>Escolha o membro pra gerar o extrato financeiro dele.</p>
             <select
               defaultValue=""
@@ -1480,7 +1490,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       {seletorExtratoLoteAberto && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
           <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%', maxHeight:'85vh', display:'flex', flexDirection:'column' }}>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Extrato em Lote</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>📄 Relatório de Pendências (Lote)</h3>
             <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'0.75rem' }}>Selecione os membros — um PDF é baixado pra cada um.</p>
             <div style={{ display:'flex', gap:'0.5rem', marginBottom:'0.5rem' }}>
               <button onClick={() => setMembrosExtratoLote(membros.map(m => m.id))}
