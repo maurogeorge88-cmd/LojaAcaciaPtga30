@@ -327,8 +327,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       const debitos  = (data || []).filter(l => l.tipo === 'receita');
       const creditos = (data || []).filter(l => l.tipo === 'despesa');
 
-      if (debitos.length === 0 || creditos.length === 0) {
-        showError(`${membro.nome} não tem débitos e créditos pendentes ao mesmo tempo — nada pra abater.`);
+      if (debitos.length === 0 && creditos.length === 0) {
+        showError(`${membro.nome} não tem valores a serem abatidos — nenhuma pendência em nome dele.`);
+        return;
+      }
+      if (debitos.length === 0) {
+        showError(`${membro.nome} não tem valores a serem abatidos — ele não deve nada pendente (só tem reembolso a receber).`);
+        return;
+      }
+      if (creditos.length === 0) {
+        showError(`${membro.nome} não tem valores a serem abatidos — não há reembolso/crédito pendente em nome dele (a despesa precisa estar vinculada a ele).`);
         return;
       }
 
