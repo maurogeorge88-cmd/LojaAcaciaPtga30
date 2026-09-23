@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 import ModalAbatimentoArcoReal from '../arcoreal/ModalAbatimentoArcoReal';
+import ModalSituacaoMembrosArcoReal from '../arcoreal/ModalSituacaoMembrosArcoReal';
 import { gerarExtratoFinanceiroArcoRealPDF } from '../../utils/gerarExtratoFinanceiroArcoRealPDF';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -78,6 +79,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   });
   const [expandedOrigens, setExpandedOrigens] = useState(new Set());
   const [quitando, setQuitando] = useState(null); // lançamento sendo quitado
+  const [menuRegistrosAberto, setMenuRegistrosAberto] = useState(false);
+  const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
+  const [modalFechamentoAberto, setModalFechamentoAberto] = useState(false);
+  const [modalSituacaoAberto, setModalSituacaoAberto] = useState(false);
+  const [fechamentoForm, setFechamentoForm] = useState({ tipo: 'mensal', ano: agora.getFullYear(), mes: agora.getMonth() + 1, semestre: 1 });
+  const [gerandoFechamento, setGerandoFechamento] = useState(false);
   const [seletorExtratoAberto, setSeletorExtratoAberto] = useState(false);
   const [seletorExtratoLoteAberto, setSeletorExtratoLoteAberto] = useState(false);
   const [membrosExtratoLote, setMembrosExtratoLote] = useState([]);
@@ -560,13 +567,32 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const despesasPorSub = agruparPorSubcategoria(despesas.filter(l => lancsFiltrados.includes(l)));
 
   // ── PDF ────────────────────────────────────────────────────────────────────
-  const gerarPDF = async () => {
+  const gerarPDF = async (opcoes = {}) => {
     try {
-      showSuccess('Gerando PDF...');
+      showSuccess(opcoes.mensagemInicial || 'Gerando PDF...');
       const logoArcoReal = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
       const { default: jsPDF }  = await import('jspdf');
       const doc = new jsPDF();
       let y = 10;
+
+      // Dados: por padrão usa o que já está carregado na tela (comportamento
+      // de sempre); o Fechamento passa seu próprio conjunto independente do
+      // filtro visível na tela.
+      const dadosItens  = opcoes.lancamentos || lancsFiltrados;
+      const dadosTotais = opcoes.lancamentos || lancs;
+      const labelFiltro = opcoes.label || ((filtros.mes && filtros.mes !== 0 ? MESES[filtros.mes-1] + '/' : 'Ano ') + filtros.ano);
+      const saldoAnteriorUsado = opcoes.saldoAnterior !== undefined ? opcoes.saldoAnterior : totaisGerais.saldoAnterior;
+
+      // Recalcula os totais do "Quadro Resumo" a partir de dadosTotais —
+      // no caso padrão isso reproduz exatamente totRec/totPend/totDesp/saldo
+      // já existentes; no Fechamento, reflete o período escolhido.
+      const recPagasCalc  = dadosTotais.filter(l => l.tipo === 'receita' && l.status === 'pago' && l.tipo_pagamento !== 'compensacao');
+      const recPendCalc   = dadosTotais.filter(l => l.tipo === 'receita' && l.status === 'pendente');
+      const despesasCalc  = dadosTotais.filter(l => l.tipo === 'despesa' && l.tipo_pagamento !== 'compensacao');
+      const totRecCalc    = recPagasCalc.reduce((s, l) => s + Number(l.valor || 0), 0);
+      const totPendCalc   = recPendCalc.reduce((s, l) => s + Number(l.valor || 0), 0);
+      const totDespCalc   = despesasCalc.reduce((s, l) => s + Number(l.valor || 0), 0);
+      const saldoCalc     = totRecCalc - totDespCalc;
 
       const rodape = () => {
         const tot = doc.getNumberOfPages();
@@ -588,9 +614,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       doc.text('Capítulo Guardiões da Aliança Nº 04', 105, y, { align:'center' }); y += 6;
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(80);
       doc.text('Arco Real - Controle Financeiro', 105, y, { align:'center' }); y += 5;
-      const labelFiltro = (filtros.mes && filtros.mes !== 0 ? MESES[filtros.mes-1] + '/' : 'Ano ') + filtros.ano;
       doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-      doc.text('Extrato de Movimentação — ' + labelFiltro, 105, y, { align:'center' }); y += 10;
+      doc.text((opcoes.tituloRelatorio || 'Extrato de Movimentação') + ' — ' + labelFiltro, 105, y, { align:'center' }); y += 10;
 
       const renderBanner = (titulo, corBanner) => {
         if (y > 260) { doc.addPage(); y = 15; }
@@ -656,8 +681,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         });
       };
 
-      const receitasParaPDF = lancsFiltrados.filter(l => l.tipo === 'receita');
-      const despesasParaPDF = lancsFiltrados.filter(l => l.tipo === 'despesa');
+      const receitasParaPDF = dadosItens.filter(l => l.tipo === 'receita');
+      const despesasParaPDF = dadosItens.filter(l => l.tipo === 'despesa');
 
       renderTipo('receita', receitasParaPDF, [33,150,243], [16,120,60]);
       renderTipo('despesa', despesasParaPDF, [154,205,50], [220,38,38]);
@@ -725,12 +750,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text('Quadro Resumo', 15, y); y += 6;
       [
-        { label:'Saldo Anterior', val: totaisGerais.saldoAnterior, cor: totaisGerais.saldoAnterior>=0?[37,99,235]:[220,38,38] },
-        { label:'Receitas Arco Real - Pg', val: totRec,  cor:[16,120,60] },
-        { label:'Receitas Arco Real - Pend.', val: totPend, cor:[200,130,0] },
-        { label:'Despesas Arco Real - Pg', val: totDesp, cor:[200,0,0] },
-        { label: 'Saldo do Período', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
-        { label: 'Saldo Total (Acumulado)', val: totaisGerais.saldoAnterior + saldo, cor: (totaisGerais.saldoAnterior + saldo)>0?[37,99,235]:(totaisGerais.saldoAnterior + saldo)<0?[220,38,38]:[16,120,60] },
+        { label:'Saldo Anterior', val: saldoAnteriorUsado, cor: saldoAnteriorUsado>=0?[37,99,235]:[220,38,38] },
+        { label:'Receitas Arco Real - Pg', val: totRecCalc,  cor:[16,120,60] },
+        { label:'Receitas Arco Real - Pend.', val: totPendCalc, cor:[200,130,0] },
+        { label:'Despesas Arco Real - Pg', val: totDespCalc, cor:[200,0,0] },
+        { label: 'Saldo do Período', val: saldoCalc, cor: saldoCalc>0?[37,99,235]:saldoCalc<0?[220,38,38]:[16,120,60] },
+        { label: 'Saldo Total (Acumulado)', val: saldoAnteriorUsado + saldoCalc, cor: (saldoAnteriorUsado + saldoCalc)>0?[37,99,235]:(saldoAnteriorUsado + saldoCalc)<0?[220,38,38]:[16,120,60] },
       ].forEach((lr, i) => {
         const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
         doc.rect(15, y, 180, 7, 'F');
@@ -742,10 +767,69 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       });
 
       rodape();
-      doc.save('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf');
-      showSuccess('PDF gerado!');
+      doc.save(opcoes.nomeArquivo || ('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf'));
+      showSuccess(opcoes.mensagemFinal || 'PDF gerado!');
     } catch(e) {
       showError('Erro ao gerar PDF: ' + e.message);
+    }
+  };
+
+  // ── Fechamento (mensal/semestral/anual) — busca seu próprio período,
+  // independente do que está filtrado na tela, e reaproveita gerarPDF. ──────
+  const gerarFechamento = async (tipoPeriodo, ano, valorPeriodo) => {
+    let mesFiltro, label;
+    if (tipoPeriodo === 'mensal') {
+      mesFiltro = valorPeriodo;
+      label = `${MESES[valorPeriodo - 1]}/${ano}`;
+    } else if (tipoPeriodo === 'semestral') {
+      mesFiltro = valorPeriodo === 1 ? -1 : -2;
+      label = `${valorPeriodo === 1 ? '1º' : '2º'} Semestre/${ano}`;
+    } else {
+      mesFiltro = 0;
+      label = `Ano ${ano}`;
+    }
+
+    let dataInicio, dataFim;
+    if (mesFiltro === 0) { dataInicio = `${ano}-01-01`; dataFim = `${ano}-12-31`; }
+    else if (mesFiltro === -1) { dataInicio = `${ano}-01-01`; dataFim = `${ano}-06-30`; }
+    else if (mesFiltro === -2) { dataInicio = `${ano}-07-01`; dataFim = `${ano}-12-31`; }
+    else {
+      dataInicio = `${ano}-${String(mesFiltro).padStart(2, '0')}-01`;
+      dataFim = `${ano}-${String(mesFiltro).padStart(2, '0')}-${new Date(ano, mesFiltro, 0).getDate()}`;
+    }
+
+    try {
+      showSuccess('Buscando dados do fechamento...');
+
+      const dadosPeriodo = await buscarPaginado(() =>
+        supabase
+          .from('arco_real_lancamentos')
+          .select(`*, categoria_manual:categoria_id(nome), lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome)), membro_manual:origem_membro_id(nome)`)
+          .or(`and(data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),and(data_pagamento.is.null,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`)
+      );
+
+      const dadosAnteriores = await buscarPaginado(() =>
+        supabase
+          .from('arco_real_lancamentos')
+          .select('tipo, valor, tipo_pagamento, status')
+          .eq('status', 'pago')
+          .lt('data_pagamento', dataInicio)
+      );
+      const saldoAnteriorCalc = (dadosAnteriores || [])
+        .filter(l => l.tipo_pagamento !== 'compensacao')
+        .reduce((s, l) => s + (l.tipo === 'receita' ? 1 : -1) * Number(l.valor || 0), 0);
+
+      await gerarPDF({
+        lancamentos: dadosPeriodo || [],
+        label,
+        saldoAnterior: saldoAnteriorCalc,
+        tituloRelatorio: 'Fechamento',
+        nomeArquivo: `Fechamento_ArcoReal_${label.replace(/\//g, '_').replace(/ /g, '_')}.pdf`,
+        mensagemInicial: 'Gerando fechamento...',
+        mensagemFinal: 'Fechamento gerado!',
+      });
+    } catch (e) {
+      showError('Erro ao gerar fechamento: ' + e.message);
     }
   };
 
@@ -1004,34 +1088,137 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                       <option value="loja">Loja</option>
                     </select>
                   </div>
-                  <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
-                    <button onClick={() => setShowForm(v=>!v)}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface)',color:showForm?'#fff':'var(--color-text)' }}>
-                      {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
-                    </button>
-                    <button onClick={() => setModalLoteAberto(true)}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
-                      👥 Lançamento em Lote
-                    </button>
-                    <button onClick={abrirSeletorAbatimento}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(139,92,246,0.4)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'rgba(139,92,246,0.12)',color:'#8b5cf6' }}>
-                      ⚖️ Abatimento
-                    </button>
-                    <button onClick={() => setSeletorExtratoAberto(true)}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
-                      📄 Extrato Individual
-                    </button>
-                    <button onClick={() => setSeletorExtratoLoteAberto(true)}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:'var(--color-surface)',color:'var(--color-text)' }}>
-                      📄 Extrato em Lote
-                    </button>
-                    <button onClick={gerarPDF}
-                      style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
-                      📄 PDF
-                    </button>
+                  <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem',position:'relative' }}>
+                    {/* Menu Registros */}
+                    <div style={{ position:'relative' }}>
+                      <button onClick={() => { setMenuRegistrosAberto(v=>!v); setMenuRelatoriosAberto(false); }}
+                        style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background: menuRegistrosAberto ? '#16a34a' : 'var(--color-surface)',color: menuRegistrosAberto ? '#fff' : 'var(--color-text)',display:'flex',alignItems:'center',gap:'0.35rem' }}>
+                        📋 Registros <span style={{ fontSize:'0.65rem' }}>{menuRegistrosAberto ? '▲' : '▼'}</span>
+                      </button>
+                      {menuRegistrosAberto && (
+                        <div style={{ position:'absolute', top:'110%', right:0, zIndex:50, background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', boxShadow:'0 10px 30px rgba(0,0,0,0.35)', minWidth:'220px', overflow:'hidden' }}>
+                          <button onClick={() => { setShowForm(v=>!v); setMenuRegistrosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            {showForm ? '✕ Cancelar Novo Lançamento' : '➕ Novo Lançamento'}
+                          </button>
+                          <button onClick={() => { setModalLoteAberto(true); setMenuRegistrosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            👥 Lançamento em Lote
+                          </button>
+                          <button onClick={() => { abrirSeletorAbatimento(); setMenuRegistrosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'#8b5cf6', fontSize:'0.85rem', cursor:'pointer', fontWeight:600 }}>
+                            ⚖️ Abatimento
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Menu Relatórios */}
+                    <div style={{ position:'relative' }}>
+                      <button onClick={() => { setMenuRelatoriosAberto(v=>!v); setMenuRegistrosAberto(false); }}
+                        style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff',display:'flex',alignItems:'center',gap:'0.35rem' }}>
+                        📄 Relatórios <span style={{ fontSize:'0.65rem' }}>{menuRelatoriosAberto ? '▲' : '▼'}</span>
+                      </button>
+                      {menuRelatoriosAberto && (
+                        <div style={{ position:'absolute', top:'110%', right:0, zIndex:50, background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', boxShadow:'0 10px 30px rgba(0,0,0,0.35)', minWidth:'240px', overflow:'hidden' }}>
+                          <button onClick={() => { setModalFechamentoAberto(true); setMenuRelatoriosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            📑 Fechamento (Mensal/Sem./Anual)
+                          </button>
+                          <button onClick={() => { setModalSituacaoAberto(true); setMenuRelatoriosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            📊 Situação dos Membros
+                          </button>
+                          <button onClick={() => { setSeletorExtratoAberto(true); setMenuRelatoriosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            📄 Extrato Individual
+                          </button>
+                          <button onClick={() => { setSeletorExtratoLoteAberto(true); setMenuRelatoriosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            📄 Extrato em Lote
+                          </button>
+                          <button onClick={() => { gerarPDF(); setMenuRelatoriosAberto(false); }}
+                            style={{ display:'block', width:'100%', textAlign:'left', padding:'0.6rem 0.9rem', border:'none', borderTop:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text)', fontSize:'0.85rem', cursor:'pointer' }}>
+                            📄 PDF (Período Atual)
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Modal de Fechamento — escolhe o tipo de período e gera o PDF */}
+              {modalFechamentoAberto && (
+                <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'420px', width:'100%' }}>
+                    <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'1rem' }}>📑 Fechamento</h3>
+
+                    <div style={{ marginBottom:'0.85rem' }}>
+                      <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.3rem' }}>Tipo de Período</label>
+                      <div style={{ display:'flex', gap:'0.4rem' }}>
+                        {[['mensal','Mensal'],['semestral','Semestral'],['anual','Anual']].map(([id,label]) => (
+                          <button key={id} onClick={() => setFechamentoForm(f => ({ ...f, tipo: id }))}
+                            style={{ flex:1, padding:'0.45rem', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', fontWeight:700, fontSize:'0.78rem', cursor:'pointer',
+                              background: fechamentoForm.tipo === id ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                              color: fechamentoForm.tipo === id ? '#fff' : 'var(--color-text)' }}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ display:'grid', gridTemplateColumns: fechamentoForm.tipo === 'anual' ? '1fr' : '1fr 1fr', gap:'0.75rem' }}>
+                      {fechamentoForm.tipo === 'mensal' && (
+                        <div>
+                          <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.3rem' }}>Mês</label>
+                          <select value={fechamentoForm.mes} onChange={e => setFechamentoForm(f => ({ ...f, mes: Number(e.target.value) }))} style={sInp}>
+                            {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      {fechamentoForm.tipo === 'semestral' && (
+                        <div>
+                          <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.3rem' }}>Semestre</label>
+                          <select value={fechamentoForm.semestre} onChange={e => setFechamentoForm(f => ({ ...f, semestre: Number(e.target.value) }))} style={sInp}>
+                            <option value={1}>1º Semestre</option>
+                            <option value={2}>2º Semestre</option>
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.3rem' }}>Ano</label>
+                        <select value={fechamentoForm.ano} onChange={e => setFechamentoForm(f => ({ ...f, ano: Number(e.target.value) }))} style={sInp}>
+                          {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display:'flex', gap:'0.5rem', marginTop:'1.5rem' }}>
+                      <button onClick={() => setModalFechamentoAberto(false)}
+                        style={{ flex:1, padding:'0.6rem', background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', fontWeight:600, cursor:'pointer' }}>
+                        Cancelar
+                      </button>
+                      <button
+                        disabled={gerandoFechamento}
+                        onClick={async () => {
+                          setGerandoFechamento(true);
+                          const valorPeriodo = fechamentoForm.tipo === 'mensal' ? fechamentoForm.mes : fechamentoForm.tipo === 'semestral' ? fechamentoForm.semestre : null;
+                          await gerarFechamento(fechamentoForm.tipo, fechamentoForm.ano, valorPeriodo);
+                          setGerandoFechamento(false);
+                          setModalFechamentoAberto(false);
+                        }}
+                        style={{ flex:2, padding:'0.6rem', background:'#1e3a5f', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', fontWeight:700, cursor: gerandoFechamento ? 'not-allowed' : 'pointer', opacity: gerandoFechamento ? 0.7 : 1 }}>
+                        {gerandoFechamento ? '⏳ Gerando...' : '📑 Gerar Fechamento'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {modalSituacaoAberto && (
+                <ModalSituacaoMembrosArcoReal onClose={() => setModalSituacaoAberto(false)} />
+              )}
 
               {/* Resumo por Subcategoria — oculto por enquanto, a pedido do Mauro (2026-09).
                   Reativar: remover este comentário e o bloco abaixo volta a aparecer.
