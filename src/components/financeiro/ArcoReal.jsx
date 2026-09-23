@@ -386,7 +386,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Linha de lançamento — reutilizada no modo Agrupado e Detalhado ─────────
   const renderLinhaLancamento = (l, i) => (
-    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(160px,1fr) 130px 75px 75px 130px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
       <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
       <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.descricao}>{l.descricao}</span>
       <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
@@ -400,6 +400,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       </span>
       <span style={{ fontSize:'0.68rem',fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626' }}>
         {l.tipo==='receita'?'Receita':'Despesa'}
+      </span>
+      <span style={{ fontSize:'0.75rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.membro_manual?.nome || ''}>
+        {l.membro_manual?.nome || '—'}
       </span>
       <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right',whiteSpace:'nowrap' }}>{fmtR(l.valor)}</span>
       <div style={{ display:'flex',gap:'0.35rem',justifyContent:'flex-end',alignItems:'center',flexWrap:'nowrap' }}>
@@ -999,7 +1002,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                           </div>
                           {aberta && (
                             <div style={{ overflowX:'auto' }}>
-                              <div style={{ minWidth:'760px' }}>
+                              <div style={{ minWidth:'860px' }}>
                                 {ordenados.map((l,i) => renderLinhaLancamento(l, i))}
                               </div>
                             </div>
@@ -1009,9 +1012,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     });
                   })() : (
                     <div style={{ overflowX: 'auto' }}>
-                      <div style={{ minWidth: '760px' }}>
-                        <div style={{ display:'grid',gridTemplateColumns:'85px minmax(180px,1.4fr) 140px 75px 75px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
-                          <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
+                      <div style={{ minWidth: '860px' }}>
+                        <div style={{ display:'grid',gridTemplateColumns:'85px minmax(160px,1fr) 130px 75px 75px 130px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
+                          <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span>Membro</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
                         </div>
                         {lancsFiltrados.map((l,i) => renderLinhaLancamento(l, i))}
                       </div>
