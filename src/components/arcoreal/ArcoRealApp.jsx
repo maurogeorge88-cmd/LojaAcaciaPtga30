@@ -31,7 +31,7 @@ const NOMES_TELAS_ARCO_REAL = {
   'relatorios': '📄 Arco Real / Relatórios',
 };
 
-export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError }) {
+export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError, successMessage, errorMessage }) {
   const [pagina, setPagina] = useState('dashboard');
   const [sessaoPresencaId, setSessaoPresencaId] = useState(null); // sessão aberta na tela de Registro de Presença
   const [menuAberto, setMenuAberto] = useState(true); // sidebar aberta/recolhida (desktop) ou dentro/fora (mobile)
@@ -186,6 +186,24 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
       <main
         className={`flex-1 transition-all duration-300 pt-14 md:pt-0 ${menuAberto ? 'md:ml-64' : 'md:ml-0'}`}
       >
+        {/* Mensagens de sucesso/erro — o App.jsx já dispara showSuccess/showError,
+            mas o banner que ele mesmo desenha só existe na árvore da Loja; sem
+            este bloco aqui, nada aparece enquanto o usuário está no Arco Real.
+            Fixo e com z-index alto pra aparecer mesmo com um modal aberto por cima. */}
+        {errorMessage && (
+          <div style={{ position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20000, maxWidth: '90vw', width: '32rem' }}>
+            <div style={{ background: '#1f1315', border: '1px solid #ef4444', borderLeft: '4px solid #ef4444', color: '#fca5a5', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.85rem', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              {errorMessage}
+            </div>
+          </div>
+        )}
+        {successMessage && (
+          <div style={{ position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)', zIndex: 20000, maxWidth: '90vw', width: '32rem' }}>
+            <div style={{ background: '#0f1f19', border: '1px solid #10b981', borderLeft: '4px solid #10b981', color: '#6ee7b7', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.85rem', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+              {successMessage}
+            </div>
+          </div>
+        )}
         {pagina === 'dashboard' && <DashboardArcoReal />}
         {pagina === 'meus-dados' && (
           <PerfilPessoalArcoReal meuMembroId={meuMembroId} permissoes={permissoes} showError={showError} />
