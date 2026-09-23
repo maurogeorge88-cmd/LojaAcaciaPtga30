@@ -14,24 +14,21 @@ export const gerarExtratoFinanceiroArcoRealPDF = (membro, lancamentos, logoUrl) 
   const H = doc.internal.pageSize.getHeight();
 
   const gerarConteudo = () => {
-    // CABEÇALHO
-    doc.setFillColor(30, 58, 95);
-    doc.rect(0, 0, W, 32, 'F');
+    // CABEÇALHO — mesmo padrão do relatório geral: fundo branco, brasão
+    // grande centralizado, "Capítulo Guardiões da Aliança Nº 04" em negrito.
+    let y = 10;
 
-    doc.setFontSize(15);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text('Arco Real — Guardiões da Aliança nº 04', W / 2, 12, { align: 'center' });
+    if (logoUrl) {
+      try { doc.addImage(logoUrl, 'PNG', W / 2 - 14, y, 28, 28); y += 33; } catch (e) { /* segue sem logo */ }
+    }
 
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Paranatinga/MT', W / 2, 18, { align: 'center' });
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+    doc.text('Capítulo Guardiões da Aliança Nº 04', W / 2, y, { align: 'center' }); y += 6;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+    doc.text('Arco Real - Controle Financeiro', W / 2, y, { align: 'center' }); y += 5;
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+    doc.text('EXTRATO FINANCEIRO INDIVIDUAL', W / 2, y, { align: 'center' }); y += 10;
 
-    doc.setFontSize(12.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text('EXTRATO FINANCEIRO INDIVIDUAL', W / 2, 26, { align: 'center' });
-
-    let y = 40;
     doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
     doc.text(membro.nome, 15, y);
     y += 6;
@@ -120,16 +117,5 @@ export const gerarExtratoFinanceiroArcoRealPDF = (membro, lancamentos, logoUrl) 
     doc.save(`Extrato_ArcoReal_${membro.nome.replace(/\s+/g, '_')}.pdf`);
   };
 
-  if (logoUrl) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try { doc.addImage(img, 'PNG', W / 2 - 9, 1, 9, 9); } catch (e) { /* segue sem logo */ }
-      gerarConteudo();
-    };
-    img.onerror = () => gerarConteudo();
-    img.src = logoUrl;
-  } else {
-    gerarConteudo();
-  }
+  gerarConteudo();
 };
