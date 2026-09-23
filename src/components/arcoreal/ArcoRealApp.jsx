@@ -17,8 +17,6 @@ const ITENS_MENU = [
   { id: 'membros', label: 'Cadastro de Membros', icone: '👥', pronto: true },
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
-  { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: false },
-  { id: 'exaltacao', label: 'Processo de Exaltação', icone: '⭐', pronto: false },
   { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
 ];
@@ -30,8 +28,6 @@ const NOMES_TELAS_ARCO_REAL = {
   'membros': '👥 Arco Real / Cadastro de Membros',
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
-  'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
-  'exaltacao': '⭐ Arco Real / Processo de Exaltação',
   'relatorios': '📄 Arco Real / Relatórios',
 };
 
