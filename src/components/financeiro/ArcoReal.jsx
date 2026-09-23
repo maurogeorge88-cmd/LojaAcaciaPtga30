@@ -4,6 +4,28 @@ import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+// Primeiro + segundo nome; se o segundo for preposição (de/da/do/das/dos),
+// usa o último nome no lugar — mesma lógica do relatório em PDF.
+const formatarNomeMembro = (nomeCompleto) => {
+  if (!nomeCompleto) return '';
+  const partes = nomeCompleto.trim().split(' ').filter(p => p.length > 0);
+  if (partes.length <= 2) return nomeCompleto;
+  const preposicoes = ['de', 'da', 'do', 'das', 'dos'];
+  if (preposicoes.includes(partes[1].toLowerCase())) {
+    return `${partes[0]} ${partes[partes.length - 1]}`;
+  }
+  return partes.slice(0, 2).join(' ');
+};
+
+const TIPO_PAGAMENTO_ABREV = {
+  pix: 'Pix', dinheiro: 'Din', cartao: 'Cart', transferencia: 'Transf',
+  boleto: 'Bol', compensacao: 'Comp', deposito: 'Dep',
+};
+const abreviarTipoPagamento = (tp) => {
+  if (!tp) return '—';
+  return TIPO_PAGAMENTO_ABREV[tp.toLowerCase()] || (tp.charAt(0).toUpperCase() + tp.slice(1, 4));
+};
 const hojeISO = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
 const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const TIPOS_PAGAMENTO = [
@@ -386,7 +408,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Linha de lançamento — reutilizada no modo Agrupado e Detalhado ─────────
   const renderLinhaLancamento = (l, i) => (
-    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(160px,1fr) 130px 75px 75px 130px 100px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+    <div key={l.id} style={{ display:'grid',gridTemplateColumns:'85px minmax(150px,1fr) 110px 75px 75px 170px 100px 65px 140px',gap:'0.6rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
       <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
       <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.descricao}>{l.descricao}</span>
       <span style={{ fontSize:'0.72rem',color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={subcategoria(l) || 'Sem subcategoria'}>
@@ -402,9 +424,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         {l.tipo==='receita'?'Receita':'Despesa'}
       </span>
       <span style={{ fontSize:'0.75rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }} title={l.membro_manual?.nome || ''}>
-        {l.membro_manual?.nome || '—'}
+        {l.membro_manual?.nome ? formatarNomeMembro(l.membro_manual.nome) : '—'}
       </span>
       <span style={{ fontWeight:'700',color:l.tipo==='receita'?'#16a34a':'#dc2626',textAlign:'right',whiteSpace:'nowrap' }}>{fmtR(l.valor)}</span>
+      <span style={{ fontSize:'0.7rem',color:'var(--color-text-muted)',fontWeight:'600',textAlign:'center' }} title={l.tipo_pagamento || ''}>
+        {abreviarTipoPagamento(l.tipo_pagamento)}
+      </span>
       <div style={{ display:'flex',gap:'0.35rem',justifyContent:'flex-end',alignItems:'center',flexWrap:'nowrap' }}>
         <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600',whiteSpace:'nowrap' }}>
           {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
@@ -1002,7 +1027,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                           </div>
                           {aberta && (
                             <div style={{ overflowX:'auto' }}>
-                              <div style={{ minWidth:'860px' }}>
+                              <div style={{ minWidth:'900px' }}>
                                 {ordenados.map((l,i) => renderLinhaLancamento(l, i))}
                               </div>
                             </div>
@@ -1012,9 +1037,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     });
                   })() : (
                     <div style={{ overflowX: 'auto' }}>
-                      <div style={{ minWidth: '860px' }}>
-                        <div style={{ display:'grid',gridTemplateColumns:'85px minmax(160px,1fr) 130px 75px 75px 130px 100px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
-                          <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span>Membro</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Status / Ações</span>
+                      <div style={{ minWidth: '900px' }}>
+                        <div style={{ display:'grid',gridTemplateColumns:'85px minmax(150px,1fr) 110px 75px 75px 170px 100px 65px 140px',gap:'0.6rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)',fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>
+                          <span>Data</span><span>Descrição</span><span>Categoria</span><span>Origem</span><span>Tipo</span><span>Membro</span><span style={{textAlign:'right'}}>Valor</span><span style={{textAlign:'center'}}>Pagto</span><span style={{textAlign:'center'}}>Status / Ações</span>
                         </div>
                         {lancsFiltrados.map((l,i) => renderLinhaLancamento(l, i))}
                       </div>
