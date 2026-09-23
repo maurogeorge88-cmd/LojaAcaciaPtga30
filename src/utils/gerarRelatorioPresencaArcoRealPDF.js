@@ -1,282 +1,274 @@
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
-const fmtDt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-const MESES_NOME = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+// Relatório geral de presença do Arco Real — mesma estrutura visual do
+// relatório da Loja (gerarRelatorioPresencaPDF.js), mas sem coluna de grau
+// (Arco Real tem grau único) e sem quadros de cruzamento por grau. Membros
+// "licenciado" contam normalmente na presença/ausência (mesma regra atual
+// da Loja: licença não exclui elegibilidade, só recebe marcação
+// informativa "Lic." e rótulo abaixo do nome).
+export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja) => {
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
 
-// Tenta achar "(n/m)" na descrição pra preencher a coluna Parcela nas
-// Parcelas Futuras — Arco Real não tem campo próprio de parcela, o número
-// vem embutido no texto (ex.: "Exaltação Arco Real (2/3)").
-const extrairParcela = (descricao) => {
-  const m = (descricao || '').match(/\((\d+)\s*\/\s*(\d+)\)/);
-  return m ? `${m[1]}/${m[2]}` : '—';
-};
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-/**
- * Relatório de Despesas Pendentes — versão Arco Real do gerarRelatorioIndividual
- * da Loja. Mesma estrutura de informação: Saldo Anterior (pendências de
- * meses antigos) / Despesa do último mês pendente / Parcelas Futuras
- * (informativo) / Receita (o que o Arco Real deve ao membro) / Dados
- * Bancários / Resumo Geral — só troca o cabeçalho pro do Capítulo e usa
- * arco_real_lancamentos em vez de lancamentos_loja.
- *
- * @param {Object} membro        { nome, cpf }
- * @param {Array}  lancamentosPendentes  lançamentos com status='pendente' do membro (já filtrados)
- * @param {string} logoUrl
- */
-export const gerarRelatorioPendenciasArcoRealPDF = (membro, lancamentosPendentes, logoUrl) => {
-  if (!lancamentosPendentes || lancamentosPendentes.length === 0) {
-    throw new Error('Este membro não possui lançamentos pendentes!');
-  }
+  const formatarData = (data) => {
+    const d = new Date(data + 'T00:00:00');
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  };
 
-  const doc = new jsPDF();
-  let y = 10;
-
-  const rodape = () => {
-    const tot = doc.getNumberOfPages();
-    for (let p = 1; p <= tot; p++) {
-      doc.setPage(p);
-      doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(150);
-      doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', 15, 290);
-      doc.text('Página ' + p + ' de ' + tot, 105, 290, { align: 'center' });
-      doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR'), 195, 290, { align: 'right' });
-      doc.setTextColor(0);
+  const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(' ').filter(p => p.length > 0);
+    if (partes.length <= 2) return nomeCompleto;
+    const preposicoes = ['de', 'da', 'do', 'das', 'dos'];
+    if (preposicoes.includes(partes[1].toLowerCase())) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
     }
+    return partes.slice(0, 2).join(' ');
   };
 
-  // ── CABEÇALHO ──────────────────────────────────────────────────────────
-  if (logoUrl) {
-    try { doc.addImage(logoUrl, 'PNG', 90, y, 30, 30); y += 38; } catch (e) { /* segue sem logo */ }
-  }
+  // CABEÇALHO
+  doc.setFillColor(30, 58, 95);
+  doc.rect(0, 0, pageWidth, 30, 'F');
 
-  doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-  doc.text('Capítulo Guardiões da Aliança Nº 04', 105, y, { align: 'center' }); y += 6;
-  doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-  doc.text('Relatório de Despesas Pendentes', 105, y, { align: 'center' }); y += 10;
+  const nomeLoja = dadosLoja?.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga';
+  const numeroLoja = dadosLoja?.numero_loja || '30';
+  const grandeLoja = dadosLoja?.grande_loja || 'Grande Oriente do Brasil';
+  const cidadeLoja = dadosLoja?.cidade || 'Paranatinga';
+  const estadoLoja = dadosLoja?.estado || 'MT';
 
-  // Dados do membro — nome + CPF
-  doc.setFillColor(240, 240, 240);
-  doc.rect(15, y, 180, 12, 'F');
-  y += 7;
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
-  doc.text('Nome:', 18, y);
-  doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-  doc.text(membro.nome, 31, y);
-  const xCpf = 31 + doc.getTextWidth(membro.nome) + 8;
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
-  doc.text('CPF: ' + (membro.cpf || '—'), xCpf, y);
-  doc.setTextColor(0);
-  y += 8;
-
-  // ── Separar dados ──────────────────────────────────────────────────────
-  const hojeDt = new Date();
-  const primeiroMesSeguinte = new Date(hojeDt.getFullYear(), hojeDt.getMonth() + 1, 1);
-  const corteStr = primeiroMesSeguinte.toISOString().split('T')[0];
-
-  const parcelasFuturas = lancamentosPendentes.filter(l => l.tipo === 'receita' && l.data_vencimento >= corteStr);
-  const pendentesAteCorte = lancamentosPendentes.filter(l => l.data_vencimento < corteStr);
-
-  const todasDesp = pendentesAteCorte.filter(l => l.tipo === 'receita');
-  const ultimoMes = todasDesp.length > 0 ? todasDesp.map(l => l.data_vencimento.substring(0, 7)).sort().pop() : null;
-
-  const lancsAnteriores = ultimoMes ? todasDesp.filter(l => l.data_vencimento.substring(0, 7) < ultimoMes) : [];
-  const lancsUltimoMes  = ultimoMes ? todasDesp.filter(l => l.data_vencimento.substring(0, 7) === ultimoMes) : todasDesp;
-  const lancsReceita    = pendentesAteCorte.filter(l => l.tipo === 'despesa'); // Arco Real deve ao membro
-
-  const somaAnterior = lancsAnteriores.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
-  const saldoAnterior = somaAnterior; // só débitos entram no "anterior" (mesma regra da Loja)
-
-  const labelUltimoMes = ultimoMes
-    ? `${MESES_NOME[parseInt(ultimoMes.substring(5, 7)) - 1]}/${ultimoMes.substring(0, 4)}`
-    : 'Mês Atual';
-
-  // ── Bloco genérico de lançamentos (usado pra Despesa e Receita) ─────────
-  const renderBloco = (titulo, lancamentos, corTitulo, corValor) => {
-    if (lancamentos.length === 0) return 0;
-    if (y > 220) { doc.addPage(); y = 20; }
-
-    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
-    doc.text(titulo, 15, y); y += 2;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
-
-    doc.setFillColor(230, 230, 230); doc.rect(15, y, 180, 6, 'F');
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-    doc.text('DtVenc', 17, y + 4);
-    doc.text('Descrição', 45, y + 4);
-    doc.text('Valor', 190, y + 4, { align: 'right' });
-    y += 11;
-
-    let subtotal = 0;
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
-    lancamentos.forEach(l => {
-      if (y > 275) { doc.addPage(); y = 20; }
-      const valor = parseFloat(l.valor || 0);
-      subtotal += valor;
-      doc.setTextColor(0);
-      doc.text(fmtDt(l.data_vencimento), 17, y);
-      doc.text((l.descricao || '').substring(0, 55), 45, y);
-      doc.setTextColor(...corValor);
-      doc.text('R$ ' + valor.toFixed(2), 190, y, { align: 'right' });
-      doc.setTextColor(0);
-      y += 5;
-    });
-
-    y += 1;
-    doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-    doc.text('Sub Total ' + titulo + ':', 130, y, { align: 'right' });
-    doc.setTextColor(...corValor);
-    doc.text('R$ ' + subtotal.toFixed(2), 190, y, { align: 'right' });
-    doc.setTextColor(0);
-    y += 2;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
-    y += 14;
-    return subtotal;
-  };
-
-  // ── Saldo Anterior ────────────────────────────────────────────────────
-  if (lancsAnteriores.length > 0) {
-    if (y > 240) { doc.addPage(); y = 20; }
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 40, 150);
-    doc.text('Saldo Anterior - Pendências de meses anteriores', 15, y); y += 3;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
-
-    doc.setFillColor(230, 225, 245); doc.rect(15, y, 180, 6, 'F');
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-    doc.text('DtVenc', 17, y + 4);
-    doc.text('Descrição', 50, y + 4);
-    doc.text('Tipo', 155, y + 4);
-    doc.text('Valor', 192, y + 4, { align: 'right' });
-    y += 11;
-
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
-    lancsAnteriores.forEach(l => {
-      if (y > 275) { doc.addPage(); y = 20; }
-      doc.setTextColor(0);
-      doc.text(fmtDt(l.data_vencimento), 17, y);
-      doc.text((l.descricao || '').substring(0, 50), 50, y);
-      doc.setTextColor(200, 0, 0); doc.text('Deve', 155, y);
-      doc.text('R$ ' + parseFloat(l.valor || 0).toFixed(2), 192, y, { align: 'right' });
-      doc.setTextColor(0);
-      y += 5;
-    });
-
-    y += 1;
-    doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-    doc.text('Saldo Anterior:', 140, y, { align: 'right' });
-    doc.setTextColor(200, 0, 0);
-    doc.text('Deve R$ ' + saldoAnterior.toFixed(2), 192, y, { align: 'right' });
-    y += 2;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
-    y += 12; doc.setTextColor(0);
-  }
-
-  // ── Despesa do último mês pendente ──────────────────────────────────────
-  let totalGeralDespesa = renderBloco('Despesa - ' + labelUltimoMes, lancsUltimoMes, [180, 0, 0], [200, 0, 0]);
-
-  // ── Parcelas Futuras (informativo) ──────────────────────────────────────
-  if (parcelasFuturas.length > 0) {
-    if (y > 240) { doc.addPage(); y = 20; }
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-    doc.text('Parcelas Futuras - Membro com o Arco Real  ', 15, y);
-    const largTitulo = doc.getTextWidth('Parcelas Futuras - Membro com o Arco Real  ');
-    doc.setTextColor(200, 100, 0);
-    doc.text('[ INFORMATIVO ]', 15 + largTitulo, y);
-    y += 3;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
-
-    doc.setFillColor(245, 240, 225); doc.rect(15, y, 180, 6, 'F');
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-    doc.text('DtVenc', 17, y + 4);
-    doc.text('Descrição', 50, y + 4);
-    doc.text('Parcela', 155, y + 4);
-    doc.text('Valor', 192, y + 4, { align: 'right' });
-    y += 11;
-
-    let totFuturas = 0;
-    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
-    parcelasFuturas.forEach(l => {
-      if (y > 275) { doc.addPage(); y = 20; }
-      const valor = parseFloat(l.valor || 0);
-      totFuturas += valor;
-      doc.setTextColor(0);
-      doc.text(fmtDt(l.data_vencimento), 17, y);
-      doc.text((l.descricao || '').substring(0, 52), 50, y);
-      doc.setTextColor(100, 100, 100); doc.text(extrairParcela(l.descricao), 155, y);
-      doc.setTextColor(150, 80, 0); doc.text('R$ ' + valor.toFixed(2), 192, y, { align: 'right' });
-      doc.setTextColor(0);
-      y += 5;
-    });
-
-    y += 1;
-    doc.setDrawColor(120); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 5;
-    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-    doc.text('Total Parcelas Futuras', 140, y, { align: 'right' });
-    doc.setTextColor(200, 100, 0);
-    doc.text('[ INFORMATIVO ]', 141, y);
-    doc.text('R$ ' + totFuturas.toFixed(2), 192, y, { align: 'right' });
-    y += 2;
-    doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
-    y += 12; doc.setTextColor(0);
-  }
-
-  // ── Receita — o que o Arco Real deve ao membro ──────────────────────────
-  let totalGeralCredito = renderBloco('Receita', lancsReceita, [0, 80, 180], [0, 80, 180]);
-
-  // ── Dados Bancários + Resumo Geral ──────────────────────────────────────
-  if (y > 230) { doc.addPage(); y = 20; }
-
-  totalGeralDespesa += somaAnterior;
-  const saldoFinal = totalGeralDespesa - totalGeralCredito;
-
-  const yBanco = y;
-  doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-  doc.text('Dados Bancários', 45, y, { align: 'center' }); y += 5;
-  doc.setFontSize(9); doc.setTextColor(0, 100, 180); doc.setFont('helvetica', 'bold');
-  doc.text('Cooperativa de Crédito Sicredi', 45, y, { align: 'center' }); y += 4;
-  doc.setTextColor(0); doc.setFont('helvetica', 'normal');
-  doc.text('Ag.: 0802 - C.C.: 86.913-9', 45, y, { align: 'center' }); y += 4;
-  doc.text('PIX.: 03.250.704/0001-00', 45, y, { align: 'center' }); y += 4;
-  doc.setFontSize(8);
-  doc.text('CNPJ: 03.250.704/0001-00', 45, y, { align: 'center' }); y += 4;
-  doc.text('Fav.: ARLS ACÁCIA PARANATINGA 30', 45, y, { align: 'center' });
-
-  let yr = yBanco;
-  doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-  doc.text('Resumo Geral:', 190, yr, { align: 'right' }); yr += 6;
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(255, 255, 255);
+  doc.text(`${nomeLoja} nº ${numeroLoja}`, pageWidth / 2, 10, { align: 'center' });
 
   doc.setFontSize(10);
-  doc.text('Despesa Total:', 155, yr, { align: 'right' });
-  doc.setTextColor(200, 0, 0);
-  doc.text('R$ ' + totalGeralDespesa.toFixed(2), 190, yr, { align: 'right' }); yr += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${grandeLoja} - ${cidadeLoja}/${estadoLoja}`, pageWidth / 2, 16, { align: 'center' });
 
-  doc.setTextColor(0);
-  doc.text('Receita Total:', 155, yr, { align: 'right' });
-  doc.setTextColor(0, 80, 180);
-  doc.text('R$ ' + totalGeralCredito.toFixed(2), 190, yr, { align: 'right' }); yr += 2;
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('GRADE DE PRESENÇA — ARCO REAL', pageWidth / 2, 24, { align: 'center' });
 
-  doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, yr, 195, yr); yr += 5;
-
-  doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-  if (saldoFinal > 0) {
-    doc.setTextColor(200, 0, 0);
-    doc.text('Valor a Pagar:', 155, yr, { align: 'right' });
-    doc.text('R$ ' + saldoFinal.toFixed(2), 190, yr, { align: 'right' });
-  } else if (saldoFinal < 0) {
-    doc.setTextColor(0, 80, 180);
-    doc.text('Valor a Receber:', 155, yr, { align: 'right' });
-    doc.text('R$ ' + Math.abs(saldoFinal).toFixed(2), 190, yr, { align: 'right' });
+  // Período
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  let periodo;
+  if (mesSelecionado === 0) {
+    periodo = `Ano ${anoSelecionado}`;
+  } else if (mesSelecionado === -1) {
+    periodo = `1º Semestre/${anoSelecionado}`;
+  } else if (mesSelecionado === -2) {
+    periodo = `2º Semestre/${anoSelecionado}`;
   } else {
-    doc.setTextColor(0, 150, 80);
-    doc.text('Situação: Em Dia', 155, yr, { align: 'right' });
+    periodo = `${meses[mesSelecionado]}/${anoSelecionado}`;
   }
-  doc.setTextColor(0);
-  y = Math.max(y, yr) + 15;
+  doc.text(`Período: ${periodo}`, 10, 36);
 
-  rodape();
-  const primeirosNomes = membro.nome.trim().split(' ').slice(0, 2).join('_');
-  const mesAtual = new Date().getMonth() + 1;
-  const anoAtual = new Date().getFullYear();
-  doc.save(`Rel_Financas_ArcoReal_${primeirosNomes}_${mesAtual}_${anoAtual}.pdf`);
+  const dataGeracao = new Date().toLocaleDateString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, 36, { align: 'right' });
+
+  // PREPARAR DADOS DA TABELA
+  const headers = [{ title: 'Membro', dataKey: 'nome' }];
+  sessoes.forEach((sessao, index) => {
+    headers.push({ title: formatarData(sessao.data_sessao), dataKey: `sessao_${index}` });
+  });
+  headers.push({ title: 'Total', dataKey: 'total' });
+  headers.push({ title: '%', dataKey: 'percentual' });
+
+  const rowMembroIds = [];
+  const taxasIndividuais = [];
+
+  const rows = membros.map(membro => {
+    const licenciado = membro.situacao?.toLowerCase() === 'licenciado';
+    const row = {
+      nome: licenciado
+        ? (formatarNome(membro.nome) + String.fromCharCode(10) + 'Licença')
+        : formatarNome(membro.nome)
+    };
+
+    let presencas = 0;
+    let sessoesElegiveis = 0;
+
+    sessoes.forEach((sessao, index) => {
+      const reg = grade[membro.id]?.[sessao.id];
+      sessoesElegiveis++;
+
+      if (reg?.presente) {
+        presencas++;
+        row[`sessao_${index}`] = 'P';
+      } else if (reg?.justificativa) {
+        row[`sessao_${index}`] = 'J';
+      } else {
+        row[`sessao_${index}`] = 'F';
+      }
+    });
+
+    rowMembroIds.push(membro.id);
+    row.total = `${presencas}/${sessoesElegiveis}`;
+    row.percentual = sessoesElegiveis > 0 ? `${Math.round((presencas / sessoesElegiveis) * 100)}%` : '0%';
+
+    if (sessoesElegiveis > 0) {
+      taxasIndividuais.push(Math.round((presencas / sessoesElegiveis) * 100));
+    }
+
+    return row;
+  });
+
+  const totalRow = { nome: 'TOTAL DE PRESENÇAS' };
+  sessoes.forEach((sessao, index) => {
+    const totalPresencas = rows.filter(r => r[`sessao_${index}`] === 'P').length;
+    totalRow[`sessao_${index}`] = totalPresencas.toString();
+  });
+  totalRow.total = '';
+  totalRow.percentual = '';
+  rows.push(totalRow);
+
+  doc.autoTable({
+    startY: 42,
+    head: [headers.map(h => h.title)],
+    body: rows.map(row => headers.map(h => row[h.dataKey])),
+    theme: 'grid',
+    styles: {
+      fontSize: 7,
+      cellPadding: 1.5,
+      overflow: 'linebreak',
+      halign: 'center',
+      valign: 'middle',
+      lineColor: [200, 200, 200],
+      lineWidth: 0.1
+    },
+    headStyles: {
+      fillColor: [30, 58, 95],
+      textColor: 255,
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 6
+    },
+    columnStyles: {
+      0: { halign: 'left', cellWidth: 34 }
+    },
+    bodyStyles: { minCellHeight: 5 },
+    didParseCell: function(data) {
+      if (data.row.index === rows.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [230, 230, 230];
+      }
+      if (data.column.index === 0 && data.section === 'body' && data.row.index < rows.length - 1) {
+        const raw = String(data.cell.raw || '');
+        if (raw.includes('Licen')) {
+          data.cell.styles.textColor = [10, 36, 99];
+        }
+      }
+      if (data.column.index >= headers.length - 2) {
+        data.cell.styles.fillColor = [220, 240, 255];
+        data.cell.styles.fontStyle = 'bold';
+        if (data.section === 'head') {
+          data.cell.styles.textColor = [0, 0, 0];
+          data.cell.styles.fillColor = [180, 215, 255];
+        }
+      }
+      if (data.cell.raw === 'P') {
+        data.cell.styles.textColor = [0, 150, 0];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.cell.raw === 'F') {
+        data.cell.styles.textColor = [200, 0, 0];
+      }
+      if (data.cell.raw === 'J') {
+        data.cell.styles.textColor = [200, 100, 0];
+      }
+    },
+    didDrawCell: function(data) {
+      if (data.section !== 'body') return;
+      const rowIdx = data.row.index;
+      if (rowIdx >= rowMembroIds.length) return;
+      const membroId = rowMembroIds[rowIdx];
+      const membro = membros.find(m => m.id === membroId);
+      if (!membro || membro.situacao?.toLowerCase() !== 'licenciado') return;
+
+      const sessaoIdx = data.column.index - 1; // offset: col 0 = nome
+      if (sessaoIdx < 0 || sessaoIdx >= sessoes.length) return;
+
+      doc.setFontSize(4.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(10, 36, 99);
+      const x = data.cell.x + 0.8;
+      const y = data.cell.y + data.cell.height - 1.2;
+      doc.text('Lic.', x, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(0);
+    },
+    didDrawPage: function() {
+      const pageCount = doc.internal.getNumberOfPages();
+      const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Página ${currentPage} de ${pageCount}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+      doc.setDrawColor(200);
+      doc.line(10, pageHeight - 8, pageWidth - 10, pageHeight - 8);
+    }
+  });
+
+  // Resumo geral
+  let ySum = doc.lastAutoTable.finalY + 10;
+  if (ySum > pageHeight - 30) { doc.addPage(); ySum = 18; }
+
+  const totalSessoesGeral = sessoes.length;
+  const pctPresGeral = taxasIndividuais.length > 0
+    ? Math.round(taxasIndividuais.reduce((s, t) => s + t, 0) / taxasIndividuais.length)
+    : 0;
+  const pctAusGeral = taxasIndividuais.length > 0 ? 100 - pctPresGeral : 0;
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 58, 95);
+  doc.text('Situação Geral do Arco Real', pageWidth / 2, ySum, { align: 'center' });
+  ySum += 6;
+
+  doc.autoTable({
+    startY: ySum,
+    head: [['Qtd. Sessões', '% Presença Geral', '% Ausência Geral']],
+    body: [[String(totalSessoesGeral), `${pctPresGeral}%`, `${pctAusGeral}%`]],
+    theme: 'grid',
+    styles: { fontSize: 10, halign: 'center', fontStyle: 'bold', cellPadding: 4 },
+    headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+  });
+
+  const totalPaginasFinal = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPaginasFinal; p++) {
+    doc.setPage(p);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(pageWidth / 2 - 25, pageHeight - 9.5, 50, 6, 'F');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100);
+    doc.text(`Página ${p} de ${totalPaginasFinal}`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+    doc.setDrawColor(200);
+    doc.line(10, pageHeight - 8, pageWidth - 10, pageHeight - 8);
+  }
+
+  let nomeArquivo;
+  if (mesSelecionado === 0) {
+    nomeArquivo = `Grade_Presenca_ArcoReal_${anoSelecionado}.pdf`;
+  } else if (mesSelecionado === -1) {
+    nomeArquivo = `Grade_Presenca_ArcoReal_1Sem_${anoSelecionado}.pdf`;
+  } else if (mesSelecionado === -2) {
+    nomeArquivo = `Grade_Presenca_ArcoReal_2Sem_${anoSelecionado}.pdf`;
+  } else {
+    nomeArquivo = `Grade_Presenca_ArcoReal_${meses[mesSelecionado]}_${anoSelecionado}.pdf`;
+  }
+
+  doc.save(nomeArquivo);
 };
