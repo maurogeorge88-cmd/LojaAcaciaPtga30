@@ -4,6 +4,7 @@ import LancamentoLoteArcoReal from '../arcoreal/LancamentoLoteArcoReal';
 import ModalAbatimentoArcoReal from '../arcoreal/ModalAbatimentoArcoReal';
 import ModalSituacaoMembrosArcoReal from '../arcoreal/ModalSituacaoMembrosArcoReal';
 import { gerarRelatorioPendenciasArcoRealPDF } from '../../utils/gerarRelatorioPendenciasArcoRealPDF';
+import { gerarPDFFechamentoArcoReal } from '../../utils/pdfFechamentoArcoReal';
 
 const fmtR   = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtD   = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
@@ -787,60 +788,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   // ── Fechamento (mensal/semestral/anual) — busca seu próprio período,
   // independente do que está filtrado na tela, e reaproveita gerarPDF. ──────
   const gerarFechamento = async (tipoPeriodo, ano, valorPeriodo) => {
-    let mesFiltro, label;
-    if (tipoPeriodo === 'mensal') {
-      mesFiltro = valorPeriodo;
-      label = `${MESES[valorPeriodo - 1]}/${ano}`;
-    } else if (tipoPeriodo === 'semestral') {
-      mesFiltro = valorPeriodo === 1 ? -1 : -2;
-      label = `${valorPeriodo === 1 ? '1º' : '2º'} Semestre/${ano}`;
-    } else {
-      mesFiltro = 0;
-      label = `Ano ${ano}`;
-    }
-
-    let dataInicio, dataFim;
-    if (mesFiltro === 0) { dataInicio = `${ano}-01-01`; dataFim = `${ano}-12-31`; }
-    else if (mesFiltro === -1) { dataInicio = `${ano}-01-01`; dataFim = `${ano}-06-30`; }
-    else if (mesFiltro === -2) { dataInicio = `${ano}-07-01`; dataFim = `${ano}-12-31`; }
-    else {
-      dataInicio = `${ano}-${String(mesFiltro).padStart(2, '0')}-01`;
-      dataFim = `${ano}-${String(mesFiltro).padStart(2, '0')}-${new Date(ano, mesFiltro, 0).getDate()}`;
-    }
-
-    try {
-      showSuccess('Buscando dados do fechamento...');
-
-      const dadosPeriodo = await buscarPaginado(() =>
-        supabase
-          .from('arco_real_lancamentos')
-          .select(`*, categoria_manual:categoria_id(nome), lancamento_origem:lancamento_loja_id(categoria_id, categorias_financeiras(nome)), membro_manual:origem_membro_id(nome)`)
-          .or(`and(data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),and(data_pagamento.is.null,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`)
-      );
-
-      const dadosAnteriores = await buscarPaginado(() =>
-        supabase
-          .from('arco_real_lancamentos')
-          .select('tipo, valor, tipo_pagamento, status')
-          .eq('status', 'pago')
-          .lt('data_pagamento', dataInicio)
-      );
-      const saldoAnteriorCalc = (dadosAnteriores || [])
-        .filter(l => l.tipo_pagamento !== 'compensacao')
-        .reduce((s, l) => s + (l.tipo === 'receita' ? 1 : -1) * Number(l.valor || 0), 0);
-
-      await gerarPDF({
-        lancamentos: dadosPeriodo || [],
-        label,
-        saldoAnterior: saldoAnteriorCalc,
-        tituloRelatorio: 'Fechamento',
-        nomeArquivo: `Fechamento_ArcoReal_${label.replace(/\//g, '_').replace(/ /g, '_')}.pdf`,
-        mensagemInicial: 'Gerando fechamento...',
-        mensagemFinal: 'Fechamento gerado!',
-      });
-    } catch (e) {
-      showError('Erro ao gerar fechamento: ' + e.message);
-    }
+    await gerarPDFFechamentoArcoReal({
+      tipoPeriodo,
+      ano,
+      mes: tipoPeriodo === 'mensal' ? valorPeriodo : undefined,
+      semestre: tipoPeriodo === 'semestral' ? valorPeriodo : undefined,
+      logoUrl: LOGO_ARCO_REAL,
+      showSuccess,
+      showError,
+    });
   };
 
   if (!isOpen) return null;
