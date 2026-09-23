@@ -1573,6 +1573,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         onSair={handleLogout}
         showSuccess={showSuccess}
         showError={showError}
+        successMessage={successMessage}
+        errorMessage={error}
       />
     );
   }
@@ -1600,6 +1602,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           onSair={handleLogout}
           showSuccess={showSuccess}
           showError={showError}
+          successMessage={successMessage}
+          errorMessage={error}
         />
       );
     }
