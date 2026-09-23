@@ -432,7 +432,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   const gerarPDF = async () => {
     try {
       showSuccess('Gerando PDF...');
-      const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
+      const logoArcoReal = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
       const { default: jsPDF }  = await import('jspdf');
       const doc = new jsPDF();
       let y = 10;
@@ -449,13 +449,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         }
       };
 
-      if (dadosLoja?.logo_url) {
-        try { doc.addImage(dadosLoja.logo_url, 'PNG', 88, y, 28, 28); y += 33; } catch {}
+      if (logoArcoReal) {
+        try { doc.addImage(logoArcoReal, 'PNG', 88, y, 28, 28); y += 33; } catch {}
       }
 
-      const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
       doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-      doc.text(nomeLoja, 105, y, { align:'center' }); y += 6;
+      doc.text('Capítulo Guardiões da Aliança Nº 04', 105, y, { align:'center' }); y += 6;
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(80);
       doc.text('Arco Real - Controle Financeiro', 105, y, { align:'center' }); y += 5;
       const labelFiltro = (filtros.mes && filtros.mes !== 0 ? MESES[filtros.mes-1] + '/' : 'Ano ') + filtros.ano;
