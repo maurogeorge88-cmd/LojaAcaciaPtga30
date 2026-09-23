@@ -3605,19 +3605,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 {/* Cabeçalho das colunas */}
                 <div style={{
                   display:'grid',
-                  gridTemplateColumns:'90px 90px 80px 0.4fr 0.7fr 0.5fr 90px 80px 100px',
+                  gridTemplateColumns:'90px 90px 80px 0.4fr 0.7fr 0.5fr 90px 65px 80px 100px',
                   gap:'0.5rem',
                   padding:'0.3rem 0.9rem 0.3rem 1.3rem',
                   borderBottom:'2px solid var(--color-border)',
                   marginBottom:'0.25rem',
                 }}>
-                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Competência</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Vencimento</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Lançamento</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Tipo</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Categoria</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Descrição</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Irmão</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'right'}}>Valor</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'center'}}>Pagto</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'center'}}>Status</div>
                   <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'right'}}>Ações</div>
                 </div>
@@ -3637,21 +3638,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     background: idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
                     border:'1px solid var(--color-border)',
                     borderLeftColor: corBorda,
-                    padding:'0.6rem 0.9rem',
+                    padding:'0.35rem 0.9rem',
                     display:'grid',
-                    gridTemplateColumns:'90px 90px 80px 0.4fr 0.7fr 0.5fr 90px 80px 100px',
+                    gridTemplateColumns:'90px 90px 80px 0.4fr 0.7fr 0.5fr 90px 65px 80px 100px',
                     alignItems:'center',
                     gap:'0.5rem',
                     minWidth:0,
                   }}>
-                    {/* Competência */}
-                    <div style={{minWidth:0}}>
-                      <div style={{fontSize:'0.8rem',fontWeight:'600',color:lanc.status==='pago'?'#10b981':'var(--color-text)',whiteSpace:'nowrap'}}>
-                        {formatarDataBR(lanc.status==='pago'?lanc.data_pagamento:lanc.data_vencimento)}
-                      </div>
-                      <div style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>
-                        {lanc.status==='pago'?'💰 Pgto':'📅 Venc'}
-                      </div>
+                    {/* Vencimento/Pagamento — sem o rótulo Venc/Pgto embaixo, só a data */}
+                    <div style={{fontSize:'0.8rem',fontWeight:'600',color:lanc.status==='pago'?'#10b981':'var(--color-text)',whiteSpace:'nowrap'}}>
+                      {formatarDataBR(lanc.status==='pago'?lanc.data_pagamento:lanc.data_vencimento)}
                     </div>
                     {/* Lançamento */}
                     <div style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
@@ -3690,10 +3686,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       <div style={{fontSize:'0.9rem',fontWeight:'700',color:ehReceita?'#10b981':'#ef4444',whiteSpace:'nowrap'}}>
                         {formatarMoeda(parseFloat(lanc.valor))}
                       </div>
-                      {lanc.tipo_pagamento && <div style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>{lanc.tipo_pagamento}</div>}
                       {lanc.tem_pagamento_parcial && (
                         <div style={{fontSize:'0.68rem',color:'#10b981'}}>Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
                       )}
+                    </div>
+                    {/* Pagto — tipo de pagamento, agora na própria coluna em vez de embaixo do valor */}
+                    <div style={{fontSize:'0.7rem',color:'var(--color-text-muted)',fontWeight:'600',textAlign:'center',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}} title={lanc.tipo_pagamento || ''}>
+                      {lanc.tipo_pagamento || '—'}
                     </div>
                     {/* Status + Parcela empilhados */}
                     <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem'}}>
