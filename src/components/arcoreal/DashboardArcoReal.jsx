@@ -14,8 +14,34 @@ const CARDS_SITUACAO = [
 export default function DashboardArcoReal() {
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [principais, setPrincipais] = useState({ p1: null, p2: null, p3: null });
+  const anoAtual = new Date().getFullYear();
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar(); carregarPrincipais(); }, []);
+
+  const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(' ').filter(Boolean);
+    if (partes.length <= 2) return nomeCompleto;
+    const preposicoes = ['de', 'da', 'do', 'das', 'dos'];
+    if (preposicoes.includes(partes[1].toLowerCase())) return `${partes[0]} ${partes[partes.length - 1]}`;
+    return partes.slice(0, 2).join(' ');
+  };
+
+  const carregarPrincipais = async () => {
+    try {
+      const { data } = await supabase
+        .from('arco_real_corpo_administrativo')
+        .select('cargo, arco_real_membros(nome, foto_url)')
+        .eq('ano_exercicio', String(anoAtual))
+        .in('cargo', ['1º Principal', '2º Principal', '3º Principal']);
+      const mapa = {};
+      (data || []).forEach(l => { mapa[l.cargo] = l.arco_real_membros; });
+      setPrincipais({ p1: mapa['1º Principal'] || null, p2: mapa['2º Principal'] || null, p3: mapa['3º Principal'] || null });
+    } catch (e) {
+      console.error('Erro ao carregar 3 Principais:', e.message);
+    }
+  };
 
   const carregar = async () => {
     setLoading(true);
@@ -42,6 +68,38 @@ export default function DashboardArcoReal() {
         <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-text)' }}>📊 Dashboard — Arco Real</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Visão geral dos membros do Capítulo</p>
       </div>
+
+      {/* Os 3 Principais — mesmo padrão da "Direção da Loja" */}
+      {(principais.p1 || principais.p2 || principais.p3) && (
+        <div style={{ position: 'relative', border: '2px solid #f59e0b', borderRadius: 'var(--radius-xl)', padding: '1.75rem 1.25rem 1.25rem', marginBottom: '1.5rem' }}>
+          <span style={{ position: 'absolute', top: '-0.7rem', left: '50%', transform: 'translateX(-50%)', background: 'var(--color-bg)', padding: '0.1rem 1rem', fontSize: '0.78rem', fontWeight: '700', letterSpacing: '0.05em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+            Exercício - {anoAtual}
+          </span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ alignItems: 'stretch' }}>
+            {[
+              { cargo: '1º Principal', irmao: principais.p1, gradiente: 'linear-gradient(135deg, #c9a84c 0%, #a3792f 100%)' },
+              { cargo: '2º Principal', irmao: principais.p2, gradiente: 'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)' },
+              { cargo: '3º Principal', irmao: principais.p3, gradiente: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)' },
+            ].map(d => (
+              <div key={d.cargo} style={{ background: d.gradiente, borderRadius: 'var(--radius-xl)', padding: '0.9rem 1.25rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
+                {d.irmao?.foto_url ? (
+                  <img src={d.irmao.foto_url} alt={d.irmao.nome} style={{ width: '90px', height: '90px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.6)', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', flexShrink: 0 }}>
+                    {d.irmao ? '👤' : '❔'}
+                  </div>
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: '0.62rem', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.75)', margin: '0 0 0.3rem' }}>{d.cargo}</p>
+                  <p style={{ fontSize: '1.02rem', fontWeight: '800', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {d.irmao ? formatarNome(d.irmao.nome) : 'Vago'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Total geral */}
       <div className="mb-4">
