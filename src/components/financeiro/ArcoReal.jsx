@@ -1121,6 +1121,56 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               </div>
               </div>{/* fim linha 2 */}
 
+              </div>
+
+              {/* COLUNA DIREITA: Tronco de Solidariedade do Arco Real */}
+              <div style={{ background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',display:'flex',flexDirection:'column' }}>
+                <div style={{ display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem' }}>
+                  <div style={{ width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px' }} />
+                  <span style={{ fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em' }}>Tronco Arco Real</span>
+                </div>
+                <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.75rem',display:'flex',flexDirection:'column',gap:'0.5rem',flex:1 }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem',paddingBottom:'0.5rem',borderBottom:'1px solid var(--color-border)' }}>
+                    <span style={{ fontSize:'1.3rem' }}>💰</span>
+                    <div style={{ flex:1,textAlign:'center' }}>
+                      <p style={{ fontSize:'0.74rem',fontWeight:'700',margin:0,color:'var(--color-text)' }}>Tronco Arco Real</p>
+                      <p style={{ fontSize:'0.6rem',margin:'0.1rem 0 0',color:'var(--color-text-muted)' }}>Saldo acumulado</p>
+                      <p style={{ fontSize:'0.95rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.total>=0?'var(--color-text)':'#ef4444' }}>{fmtR(troncoArcoReal.total)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
+                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem' }}>
+                      <span style={{ fontSize:'1rem' }}>🏦</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Banco</p>
+                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>PIX, Transf., Cartão</p>
+                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.banco>=0?'var(--color-accent)':'#ef4444' }}>{fmtR(troncoArcoReal.banco)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
+                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem',marginBottom:'0.4rem' }}>
+                      <span style={{ fontSize:'1rem' }}>💵</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Espécie</p>
+                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>Dinheiro físico</p>
+                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
+                      </div>
+                    </div>
+                    {troncoArcoReal.especie > 0 && (
+                      <button onClick={() => setModalSangriaTroncoAberto(true)}
+                        style={{ width:'100%',padding:'0.35rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.68rem',cursor:'pointer' }}>
+                        🔥 Fazer Sangria
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              </div>
+
+
               {/* Filtros — mesmo padrão do Finanças da Loja (abaixo dos quadros) */}
               <div style={{ background:'var(--color-surface-2)',padding:'0.85rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
                 <div style={{ display:'flex',gap:'1rem',alignItems:'flex-end',flexWrap:'wrap' }}>
@@ -1333,55 +1383,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                 </div>
               )}
               */}
-
-              </div>
-
-              {/* COLUNA DIREITA: Tronco de Solidariedade do Arco Real */}
-              <div style={{ background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',display:'flex',flexDirection:'column' }}>
-                <div style={{ display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem' }}>
-                  <div style={{ width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px' }} />
-                  <span style={{ fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em' }}>Tronco Arco Real</span>
-                </div>
-                <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.75rem',display:'flex',flexDirection:'column',gap:'0.5rem',flex:1 }}>
-                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem',paddingBottom:'0.5rem',borderBottom:'1px solid var(--color-border)' }}>
-                    <span style={{ fontSize:'1.3rem' }}>💰</span>
-                    <div style={{ flex:1,textAlign:'center' }}>
-                      <p style={{ fontSize:'0.74rem',fontWeight:'700',margin:0,color:'var(--color-text)' }}>Tronco Arco Real</p>
-                      <p style={{ fontSize:'0.6rem',margin:'0.1rem 0 0',color:'var(--color-text-muted)' }}>Saldo acumulado</p>
-                      <p style={{ fontSize:'0.95rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.total>=0?'var(--color-text)':'#ef4444' }}>{fmtR(troncoArcoReal.total)}</p>
-                    </div>
-                  </div>
-
-                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
-                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem' }}>
-                      <span style={{ fontSize:'1rem' }}>🏦</span>
-                      <div style={{ flex:1,minWidth:0 }}>
-                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Banco</p>
-                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>PIX, Transf., Cartão</p>
-                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.banco>=0?'var(--color-accent)':'#ef4444' }}>{fmtR(troncoArcoReal.banco)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
-                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem',marginBottom:'0.4rem' }}>
-                      <span style={{ fontSize:'1rem' }}>💵</span>
-                      <div style={{ flex:1,minWidth:0 }}>
-                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Espécie</p>
-                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>Dinheiro físico</p>
-                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
-                      </div>
-                    </div>
-                    {troncoArcoReal.especie > 0 && (
-                      <button onClick={() => setModalSangriaTroncoAberto(true)}
-                        style={{ width:'100%',padding:'0.35rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.68rem',cursor:'pointer' }}>
-                        🔥 Fazer Sangria
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              </div>
 
               {/* Lançamentos — agrupado por origem (Arco Real / cada membro) ou detalhado, mesmo padrão da Loja */}
               {lancsFiltrados.length > 0 && (
