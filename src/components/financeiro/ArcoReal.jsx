@@ -80,6 +80,11 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   });
   const [expandedOrigens, setExpandedOrigens] = useState(new Set());
   const [quitando, setQuitando] = useState(null); // lançamento sendo quitado
+  const [troncoArcoReal, setTroncoArcoReal] = useState({ banco: 0, especie: 0, total: 0 });
+  const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
+  const [valorSangriaTronco, setValorSangriaTronco] = useState('');
+  const [obsSangriaTronco, setObsSangriaTronco] = useState('');
+  const [salvandoSangria, setSalvandoSangria] = useState(false);
   const [menuRegistrosAberto, setMenuRegistrosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalFechamentoAberto, setModalFechamentoAberto] = useState(false);
@@ -112,8 +117,116 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
     origem: '',                 // '' | 'manual' | 'loja'
   });
 
-  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); carregarMembros(); } }, [isOpen, filtros.mes, filtros.ano, filtros.tipo, filtros.categoria, filtros.status, filtros.origem]);
+  useEffect(() => { if (isOpen) { carregar(); carregarCategorias(); carregarTotaisGerais(); carregarMembros(); calcularTroncoArcoReal(); } }, [isOpen, filtros.mes, filtros.ano, filtros.tipo, filtros.categoria, filtros.status, filtros.origem]);
   useEffect(() => { if (isOpen) carregarAnosDisponiveis(); }, [isOpen]);
+
+  // ── Tronco de Solidariedade do Arco Real — mesma lógica da Loja, filtrando
+  // pela categoria exata pra nunca misturar com o Tronco da própria Loja. ──
+  const calcularTroncoArcoReal = async () => {
+    try {
+      const { data: catReceita } = await supabase
+        .from('categorias_financeiras')
+        .select('id')
+        .ilike('nome', 'Tronco Arco Real')
+        .maybeSingle();
+
+      const { data: catDespesaPai } = await supabase
+        .from('categorias_financeiras')
+        .select('id')
+        .ilike('nome', 'Tronco Saida Arco Real')
+        .maybeSingle();
+
+      const idsCatTronco = [];
+      if (catReceita?.id) idsCatTronco.push(catReceita.id);
+      if (catDespesaPai?.id) {
+        idsCatTronco.push(catDespesaPai.id);
+        const { data: filhas } = await supabase
+          .from('categorias_financeiras')
+          .select('id')
+          .eq('categoria_pai_id', catDespesaPai.id);
+        (filhas || []).forEach(f => idsCatTronco.push(f.id));
+      }
+
+      if (idsCatTronco.length === 0) {
+        setTroncoArcoReal({ banco: 0, especie: 0, total: 0 });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('arco_real_lancamentos')
+        .select('tipo, valor, tipo_pagamento')
+        .in('categoria_id', idsCatTronco)
+        .eq('status', 'pago');
+      if (error) throw error;
+
+      const lista = data || [];
+      const receitasBanco = lista.filter(l => l.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro').reduce((s, l) => s + parseFloat(l.valor), 0);
+      const despesasBanco = lista.filter(l => l.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro').reduce((s, l) => s + parseFloat(l.valor), 0);
+      const receitasEspecie = lista.filter(l => l.tipo === 'receita' && l.tipo_pagamento === 'dinheiro').reduce((s, l) => s + parseFloat(l.valor), 0);
+      const despesasEspecie = lista.filter(l => l.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro').reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      const banco = receitasBanco - despesasBanco;
+      const especie = receitasEspecie - despesasEspecie;
+      setTroncoArcoReal({ banco, especie, total: banco + especie });
+    } catch (e) {
+      console.error('Erro ao calcular Tronco do Arco Real:', e);
+      setTroncoArcoReal({ banco: 0, especie: 0, total: 0 });
+    }
+  };
+
+  // Sangria: move dinheiro (espécie) do Tronco pro banco — cria um par
+  // despesa (saída espécie) + receita (entrada banco), igual à Loja.
+  const fazerSangriaTroncoArcoReal = async () => {
+    const valor = parseFloat(valorSangriaTronco);
+    if (!valor || valor <= 0) { showError('Informe um valor válido.'); return; }
+    if (valor > troncoArcoReal.especie) {
+      showError(`Valor maior que o disponível no Tronco (Espécie): ${fmtR(troncoArcoReal.especie)}`);
+      return;
+    }
+
+    setSalvandoSangria(true);
+    try {
+      const { data: catDespesa } = await supabase
+        .from('categorias_financeiras').select('id').ilike('nome', 'Tronco Saida Arco Real').maybeSingle();
+      const { data: catReceita } = await supabase
+        .from('categorias_financeiras').select('id').ilike('nome', 'Tronco Arco Real').maybeSingle();
+
+      if (!catDespesa?.id || !catReceita?.id) {
+        showError('Categorias "Tronco Saida Arco Real" e/ou "Tronco Arco Real" não encontradas!');
+        return;
+      }
+
+      const hoje = new Date().toISOString().split('T')[0];
+
+      const { error: errDesp } = await supabase.from('arco_real_lancamentos').insert({
+        tipo: 'despesa', categoria_id: catDespesa.id,
+        descricao: `🔻 Sangria Tronco Arco Real${obsSangriaTronco ? ` - ${obsSangriaTronco}` : ''}`,
+        valor, data_vencimento: hoje, data_pagamento: hoje, tipo_pagamento: 'dinheiro', status: 'pago',
+        origem: 'manual', lancamento_loja_id: null,
+        observacoes: `Sangria Tronco Arco Real - Espécie → Banco. ${obsSangriaTronco || ''}`.trim(),
+      });
+      if (errDesp) throw errDesp;
+
+      const { error: errRec } = await supabase.from('arco_real_lancamentos').insert({
+        tipo: 'receita', categoria_id: catReceita.id,
+        descricao: `🔺 Depósito Tronco Arco Real${obsSangriaTronco ? ` - ${obsSangriaTronco}` : ''}`,
+        valor, data_vencimento: hoje, data_pagamento: hoje, tipo_pagamento: 'pix', status: 'pago',
+        origem: 'manual', lancamento_loja_id: null,
+        observacoes: `Depósito Tronco Arco Real - Espécie → Banco. ${obsSangriaTronco || ''}`.trim(),
+      });
+      if (errRec) throw errRec;
+
+      showSuccess(`✅ Sangria de ${fmtR(valor)} realizada!`);
+      setModalSangriaTroncoAberto(false);
+      setValorSangriaTronco(''); setObsSangriaTronco('');
+      calcularTroncoArcoReal();
+      carregar();
+    } catch (e) {
+      showError('Erro ao fazer sangria: ' + e.message);
+    } finally {
+      setSalvandoSangria(false);
+    }
+  };
 
   const carregarMembros = async () => {
     try {
@@ -931,6 +1044,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
             </div>
           )}
 
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3" style={{ alignItems:'start' }}>
+          <div style={{ minWidth:0 }}>
           {loading ? (
             <div style={{ textAlign:'center',padding:'2rem',color:'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
@@ -1321,6 +1436,54 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               )}
             </>
           )}
+          </div>
+
+          {/* COLUNA DIREITA: Tronco de Solidariedade do Arco Real */}
+          <div style={{ background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',display:'flex',flexDirection:'column' }}>
+            <div style={{ display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem' }}>
+              <div style={{ width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px' }} />
+              <span style={{ fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em' }}>Tronco Arco Real</span>
+            </div>
+            <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
+              <div style={{ display:'flex',alignItems:'center',gap:'0.6rem',paddingBottom:'0.65rem',borderBottom:'1px solid var(--color-border)' }}>
+                <span style={{ fontSize:'1.6rem' }}>💰</span>
+                <div style={{ flex:1,textAlign:'center' }}>
+                  <p style={{ fontSize:'0.8rem',fontWeight:'700',margin:0,color:'var(--color-text)' }}>Tronco Arco Real</p>
+                  <p style={{ fontSize:'0.68rem',margin:'0.15rem 0 0',color:'var(--color-text-muted)' }}>Saldo acumulado</p>
+                  <p style={{ fontSize:'1.05rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.total>=0?'var(--color-text)':'#ef4444' }}>{fmtR(troncoArcoReal.total)}</p>
+                </div>
+              </div>
+
+              <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.65rem' }}>
+                <div style={{ display:'flex',alignItems:'flex-start',gap:'0.5rem' }}>
+                  <span style={{ fontSize:'1.1rem' }}>🏦</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <p style={{ fontSize:'0.8rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Banco</p>
+                    <p style={{ fontSize:'0.62rem',margin:0,color:'var(--color-text-muted)' }}>PIX, Transf., Cartão</p>
+                    <p style={{ fontSize:'0.9rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.banco>=0?'var(--color-accent)':'#ef4444' }}>{fmtR(troncoArcoReal.banco)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.65rem' }}>
+                <div style={{ display:'flex',alignItems:'flex-start',gap:'0.5rem',marginBottom:'0.5rem' }}>
+                  <span style={{ fontSize:'1.1rem' }}>💵</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <p style={{ fontSize:'0.8rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Espécie</p>
+                    <p style={{ fontSize:'0.62rem',margin:0,color:'var(--color-text-muted)' }}>Dinheiro físico</p>
+                    <p style={{ fontSize:'0.9rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
+                  </div>
+                </div>
+                {troncoArcoReal.especie > 0 && (
+                  <button onClick={() => setModalSangriaTroncoAberto(true)}
+                    style={{ width:'100%',padding:'0.4rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.72rem',cursor:'pointer' }}>
+                    🔥 Fazer Sangria
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          </div>
         </div>
 
         {/* Quitar lançamento */}
@@ -1402,6 +1565,48 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           <button onClick={onClose} style={{ padding:'0.5rem 1.5rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>Fechar</button>
         </div>
       </div>
+
+      {/* Sangria do Tronco Arco Real — Espécie → Banco */}
+      {modalSangriaTroncoAberto && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10000, padding:'1rem' }}>
+          <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.5rem', maxWidth:'400px', width:'100%' }}>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, color:'var(--color-text)', marginBottom:'0.25rem' }}>🔥 Sangria do Tronco</h3>
+            <p style={{ fontSize:'0.8rem', color:'var(--color-text-muted)', marginBottom:'1rem' }}>Move dinheiro em espécie do Tronco para o banco.</p>
+
+            <div style={{ background:'var(--color-surface-2)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem 0.75rem', marginBottom:'1rem' }}>
+              <p style={{ fontSize:'0.72rem', color:'var(--color-text-muted)', margin:0 }}>Disponível em espécie</p>
+              <p style={{ fontSize:'1.3rem', fontWeight:800, color:'#f59e0b', margin:0 }}>{fmtR(troncoArcoReal.especie)}</p>
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'0.65rem', marginBottom:'1.25rem' }}>
+              <div>
+                <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', marginBottom:'0.25rem' }}>Valor da Sangria *</label>
+                <input type="number" step="0.01" max={troncoArcoReal.especie} value={valorSangriaTronco}
+                  onChange={e => setValorSangriaTronco(e.target.value)} placeholder="0,00" style={sInp} />
+              </div>
+              <div>
+                <label style={{ display:'block', fontSize:'0.72rem', fontWeight:700, color:'var(--color-text-muted)', marginBottom:'0.25rem' }}>Observação (opcional)</label>
+                <input type="text" value={obsSangriaTronco} onChange={e => setObsSangriaTronco(e.target.value)} style={sInp} />
+              </div>
+            </div>
+
+            <div style={{ display:'flex', gap:'0.5rem' }}>
+              <button onClick={() => { setModalSangriaTroncoAberto(false); setValorSangriaTronco(''); setObsSangriaTronco(''); }}
+                style={{ flex:1, padding:'0.6rem', background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', fontWeight:600, cursor:'pointer' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={fazerSangriaTroncoArcoReal}
+                disabled={salvandoSangria || !valorSangriaTronco || parseFloat(valorSangriaTronco) <= 0 || parseFloat(valorSangriaTronco) > troncoArcoReal.especie}
+                style={{ flex:2, padding:'0.6rem', background:'#f59e0b', color:'#111827', border:'none', borderRadius:'var(--radius-lg)', fontWeight:700,
+                  cursor: (salvandoSangria || !valorSangriaTronco) ? 'not-allowed' : 'pointer',
+                  opacity: (salvandoSangria || !valorSangriaTronco || parseFloat(valorSangriaTronco) <= 0 || parseFloat(valorSangriaTronco) > troncoArcoReal.especie) ? 0.5 : 1 }}>
+                {salvandoSangria ? '⏳ Processando...' : '🔥 Confirmar Sangria'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LancamentoLoteArcoReal
         isOpen={modalLoteAberto}
