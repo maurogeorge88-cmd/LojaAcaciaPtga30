@@ -1044,12 +1044,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3" style={{ alignItems:'start' }}>
-          <div style={{ minWidth:0 }}>
           {loading ? (
             <div style={{ textAlign:'center',padding:'2rem',color:'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
             <>
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3" style={{ alignItems:'stretch' }}>
+              <div style={{ minWidth:0, display:'flex', flexDirection:'column', gap:'0.75rem' }}>
               {/* LINHA 1: Saldo Anterior | Receitas · Despesas · Saldo */}
               <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-2">
 
@@ -1059,9 +1059,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     <div style={{ width:'3px', height:'10px', background:'#1e3a5f', borderRadius:'2px' }} />
                     <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldo Anterior</span>
                   </div>
-                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Saldo Anterior</p>
-                    <p style={{ margin:0, fontSize:'1.5rem', fontWeight:'800', color: totaisGerais.saldoAnterior >= 0 ? '#3b82f6' : '#dc2626' }}>{fmtR(totaisGerais.saldoAnterior)}</p>
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem' }}>
+                    <p style={{ margin:'0 0 0.2rem', fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Saldo Anterior</p>
+                    <p style={{ margin:0, fontSize:'1.25rem', fontWeight:'800', color: totaisGerais.saldoAnterior >= 0 ? '#3b82f6' : '#dc2626' }}>{fmtR(totaisGerais.saldoAnterior)}</p>
                   </div>
               </div>
 
@@ -1077,10 +1077,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                     { label:'Despesas Arco Real', val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626' },
                     { label: 'Saldo do Período', val:saldo, sub: saldo>0?'Positivo':saldo<0?'Negativo':'Zerado', cor: saldo>0?'#2563eb':saldo<0?'#dc2626':'#16a34a' },
                   ].map((c,i) => (
-                    <div key={i} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                      <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>{c.label}</p>
-                      <p style={{ margin:'0 0 0.25rem', fontSize:'1.3rem', fontWeight:'800', color:c.cor }}>{fmtR(c.val)}</p>
-                      <p style={{ margin:0, fontSize:'0.68rem', color:'var(--color-text-muted)' }}>{c.sub}</p>
+                    <div key={i} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem' }}>
+                      <p style={{ margin:'0 0 0.2rem', fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>{c.label}</p>
+                      <p style={{ margin:'0 0 0.2rem', fontSize:'1.1rem', fontWeight:'800', color:c.cor }}>{fmtR(c.val)}</p>
+                      <p style={{ margin:0, fontSize:'0.64rem', color:'var(--color-text-muted)' }}>{c.sub}</p>
                     </div>
                   ))}
                 </div>
@@ -1096,9 +1096,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <div style={{ width:'3px', height:'10px', background:'#3b82f6', borderRadius:'2px' }} />
                   <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#3b82f6', textTransform:'uppercase', letterSpacing:'0.07em' }}>Saldos Atuais</span>
                 </div>
-                <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                  <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Valor Atual</p>
-                  <p style={{ margin:0, fontSize:'1.5rem', fontWeight:'800', color: totaisGerais.saldoGeral>0?'#3b82f6':totaisGerais.saldoGeral<0?'#dc2626':'#16a34a' }}>{fmtR(totaisGerais.saldoGeral)}</p>
+                <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem' }}>
+                  <p style={{ margin:'0 0 0.2rem', fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>Valor Atual</p>
+                  <p style={{ margin:0, fontSize:'1.25rem', fontWeight:'800', color: totaisGerais.saldoGeral>0?'#3b82f6':totaisGerais.saldoGeral<0?'#dc2626':'#16a34a' }}>{fmtR(totaisGerais.saldoGeral)}</p>
                 </div>
               </div>
 
@@ -1109,13 +1109,13 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   <span style={{ fontSize:'0.62rem', fontWeight:'700', color:'#0ea5e9', textTransform:'uppercase', letterSpacing:'0.07em' }}>Pendências</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Receber</p>
-                    <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendReceitaGeral)}</p>
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem' }}>
+                    <p style={{ margin:'0 0 0.2rem', fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Receber</p>
+                    <p style={{ margin:0, fontSize:'1.1rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendReceitaGeral)}</p>
                   </div>
-                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.85rem' }}>
-                    <p style={{ margin:'0 0 0.25rem', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Pagar</p>
-                    <p style={{ margin:0, fontSize:'1.3rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendDespesaGeral)}</p>
+                  <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem' }}>
+                    <p style={{ margin:'0 0 0.2rem', fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase' }}>A Pagar</p>
+                    <p style={{ margin:0, fontSize:'1.1rem', fontWeight:'800', color:'#d97706' }}>{fmtR(totaisGerais.pendDespesaGeral)}</p>
                   </div>
                 </div>
               </div>
@@ -1334,6 +1334,55 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               )}
               */}
 
+              </div>
+
+              {/* COLUNA DIREITA: Tronco de Solidariedade do Arco Real */}
+              <div style={{ background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',display:'flex',flexDirection:'column' }}>
+                <div style={{ display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem' }}>
+                  <div style={{ width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px' }} />
+                  <span style={{ fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em' }}>Tronco Arco Real</span>
+                </div>
+                <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.75rem',display:'flex',flexDirection:'column',gap:'0.5rem',flex:1 }}>
+                  <div style={{ display:'flex',alignItems:'center',gap:'0.5rem',paddingBottom:'0.5rem',borderBottom:'1px solid var(--color-border)' }}>
+                    <span style={{ fontSize:'1.3rem' }}>💰</span>
+                    <div style={{ flex:1,textAlign:'center' }}>
+                      <p style={{ fontSize:'0.74rem',fontWeight:'700',margin:0,color:'var(--color-text)' }}>Tronco Arco Real</p>
+                      <p style={{ fontSize:'0.6rem',margin:'0.1rem 0 0',color:'var(--color-text-muted)' }}>Saldo acumulado</p>
+                      <p style={{ fontSize:'0.95rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.total>=0?'var(--color-text)':'#ef4444' }}>{fmtR(troncoArcoReal.total)}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
+                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem' }}>
+                      <span style={{ fontSize:'1rem' }}>🏦</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Banco</p>
+                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>PIX, Transf., Cartão</p>
+                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.banco>=0?'var(--color-accent)':'#ef4444' }}>{fmtR(troncoArcoReal.banco)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem' }}>
+                    <div style={{ display:'flex',alignItems:'flex-start',gap:'0.4rem',marginBottom:'0.4rem' }}>
+                      <span style={{ fontSize:'1rem' }}>💵</span>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <p style={{ fontSize:'0.75rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Espécie</p>
+                        <p style={{ fontSize:'0.58rem',margin:0,color:'var(--color-text-muted)' }}>Dinheiro físico</p>
+                        <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
+                      </div>
+                    </div>
+                    {troncoArcoReal.especie > 0 && (
+                      <button onClick={() => setModalSangriaTroncoAberto(true)}
+                        style={{ width:'100%',padding:'0.35rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.68rem',cursor:'pointer' }}>
+                        🔥 Fazer Sangria
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              </div>
+
               {/* Lançamentos — agrupado por origem (Arco Real / cada membro) ou detalhado, mesmo padrão da Loja */}
               {lancsFiltrados.length > 0 && (
                 <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
@@ -1436,54 +1485,6 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               )}
             </>
           )}
-          </div>
-
-          {/* COLUNA DIREITA: Tronco de Solidariedade do Arco Real */}
-          <div style={{ background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',display:'flex',flexDirection:'column' }}>
-            <div style={{ display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem' }}>
-              <div style={{ width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px' }} />
-              <span style={{ fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em' }}>Tronco Arco Real</span>
-            </div>
-            <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-              <div style={{ display:'flex',alignItems:'center',gap:'0.6rem',paddingBottom:'0.65rem',borderBottom:'1px solid var(--color-border)' }}>
-                <span style={{ fontSize:'1.6rem' }}>💰</span>
-                <div style={{ flex:1,textAlign:'center' }}>
-                  <p style={{ fontSize:'0.8rem',fontWeight:'700',margin:0,color:'var(--color-text)' }}>Tronco Arco Real</p>
-                  <p style={{ fontSize:'0.68rem',margin:'0.15rem 0 0',color:'var(--color-text-muted)' }}>Saldo acumulado</p>
-                  <p style={{ fontSize:'1.05rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.total>=0?'var(--color-text)':'#ef4444' }}>{fmtR(troncoArcoReal.total)}</p>
-                </div>
-              </div>
-
-              <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.65rem' }}>
-                <div style={{ display:'flex',alignItems:'flex-start',gap:'0.5rem' }}>
-                  <span style={{ fontSize:'1.1rem' }}>🏦</span>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    <p style={{ fontSize:'0.8rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Banco</p>
-                    <p style={{ fontSize:'0.62rem',margin:0,color:'var(--color-text-muted)' }}>PIX, Transf., Cartão</p>
-                    <p style={{ fontSize:'0.9rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.banco>=0?'var(--color-accent)':'#ef4444' }}>{fmtR(troncoArcoReal.banco)}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.65rem' }}>
-                <div style={{ display:'flex',alignItems:'flex-start',gap:'0.5rem',marginBottom:'0.5rem' }}>
-                  <span style={{ fontSize:'1.1rem' }}>💵</span>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    <p style={{ fontSize:'0.8rem',fontWeight:'600',margin:0,color:'var(--color-text)' }}>Espécie</p>
-                    <p style={{ fontSize:'0.62rem',margin:0,color:'var(--color-text-muted)' }}>Dinheiro físico</p>
-                    <p style={{ fontSize:'0.9rem',fontWeight:'800',marginTop:'0.25rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
-                  </div>
-                </div>
-                {troncoArcoReal.especie > 0 && (
-                  <button onClick={() => setModalSangriaTroncoAberto(true)}
-                    style={{ width:'100%',padding:'0.4rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.72rem',cursor:'pointer' }}>
-                    🔥 Fazer Sangria
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-          </div>
         </div>
 
         {/* Quitar lançamento */}
