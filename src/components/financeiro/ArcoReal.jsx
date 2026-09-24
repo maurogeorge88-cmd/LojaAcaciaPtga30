@@ -1049,9 +1049,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           ) : (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-3" style={{ alignItems:'stretch' }}>
-              <div style={{ minWidth:0, display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+              <div style={{ minWidth:0, display:'flex', flexDirection:'column', gap:'0.75rem', height:'100%' }}>
               {/* LINHA 1: Saldo Anterior | Receitas · Despesas · Saldo */}
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-2" style={{ flex:1, alignItems:'stretch' }}>
 
               {/* Saldo Anterior */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(30,58,95,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #1e3a5f' }}>
@@ -1088,7 +1088,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
               </div>{/* fim linha 1 */}
 
               {/* LINHA 2: Saldos Atuais | Pendências */}
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-2" style={{ flex:1, alignItems:'stretch' }}>
 
               {/* Saldos Atuais (sempre o total corrente, não filtrado por período) */}
               <div style={{ background:'var(--color-surface-2)', border:'1px solid rgba(59,130,246,0.4)', borderRadius:'var(--radius-lg)', padding:'0.6rem 0.75rem', borderTop:'3px solid #3b82f6' }}>
