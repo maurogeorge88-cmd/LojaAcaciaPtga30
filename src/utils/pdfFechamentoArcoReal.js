@@ -122,14 +122,14 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
     // Lançamentos PAGOS do período selecionado
     const lancsPagos = await buscarPaginado(() =>
       supabase.from('arco_real_lancamentos').select(selectComCategoria)
-        .eq('status', 'pago').neq('tipo_pagamento', 'compensacao')
+        .eq('status', 'pago').or('tipo_pagamento.is.null,tipo_pagamento.neq.compensacao')
         .gte('data_pagamento', inicio).lte('data_pagamento', fim)
     );
 
     // Saldo anterior (tudo pago antes do início do período)
     const lancsAnteriores = await buscarPaginado(() =>
       supabase.from('arco_real_lancamentos').select('tipo, valor, tipo_pagamento')
-        .eq('status', 'pago').neq('tipo_pagamento', 'compensacao')
+        .eq('status', 'pago').or('tipo_pagamento.is.null,tipo_pagamento.neq.compensacao')
         .lt('data_pagamento', inicio)
     );
     const saldoAntBancario = lancsAnteriores.filter(l => l.tipo_pagamento !== 'dinheiro')
@@ -152,7 +152,7 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
     // Resultado por mês (ano inteiro, sempre — mesmo padrão da Loja)
     const lancsAnoTodo = await buscarPaginado(() =>
       supabase.from('arco_real_lancamentos').select('tipo, valor, data_pagamento')
-        .eq('status', 'pago').neq('tipo_pagamento', 'compensacao')
+        .eq('status', 'pago').or('tipo_pagamento.is.null,tipo_pagamento.neq.compensacao')
         .gte('data_pagamento', `${ano}-01-01`).lte('data_pagamento', `${ano}-12-31`)
     );
 
