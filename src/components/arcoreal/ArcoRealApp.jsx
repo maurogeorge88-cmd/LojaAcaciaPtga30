@@ -21,9 +21,8 @@ const ITENS_MENU = [
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
-  { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
   { id: 'estatisticas', label: 'Estatísticas', icone: '📈', pronto: true },
-  { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
+  { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
 ];
 
@@ -35,9 +34,8 @@ const NOMES_TELAS_ARCO_REAL = {
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
   'inadimplentes': '⚠️ Arco Real / Inadimplentes',
-  'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
   'estatisticas': '📈 Arco Real / Estatísticas',
-  'relatorios': '📄 Arco Real / Relatórios',
+  'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
 };
 
 export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError, successMessage, errorMessage }) {
