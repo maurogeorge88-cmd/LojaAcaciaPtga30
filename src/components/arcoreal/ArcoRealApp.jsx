@@ -7,6 +7,9 @@ import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
 import ControleAcesso from '../administracao/ControleAcesso';
 import PerfilPessoalArcoReal from './PerfilPessoalArcoReal';
+import CorpoAdministrativoArcoReal from './CorpoAdministrativoArcoReal';
+import InadimplentesArcoReal from './InadimplentesArcoReal';
+import EstatisticasArcoReal from './EstatisticasArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
 const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
@@ -17,6 +20,9 @@ const ITENS_MENU = [
   { id: 'membros', label: 'Cadastro de Membros', icone: '👥', pronto: true },
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
+  { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
+  { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
+  { id: 'estatisticas', label: 'Estatísticas', icone: '📈', pronto: true },
   { id: 'relatorios', label: 'Relatórios', icone: '📄', pronto: false },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
 ];
@@ -28,6 +34,9 @@ const NOMES_TELAS_ARCO_REAL = {
   'membros': '👥 Arco Real / Cadastro de Membros',
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
+  'inadimplentes': '⚠️ Arco Real / Inadimplentes',
+  'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
+  'estatisticas': '📈 Arco Real / Estatísticas',
   'relatorios': '📄 Arco Real / Relatórios',
 };
 
@@ -239,6 +248,15 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             <ControleAcesso userData={userData} showSuccess={showSuccess} showError={showError} escopo="arco_real" />
           </div>
         )}
+        {pagina === 'inadimplentes' && (
+          <InadimplentesArcoReal podeGerenciar={podeVerFinanceiro} showSuccess={showSuccess} showError={showError} />
+        )}
+        {pagina === 'corpo-admin' && (
+          <CorpoAdministrativoArcoReal permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
+        )}
+        {pagina === 'estatisticas' && (
+          <EstatisticasArcoReal />
+        )}
         {(pagina === 'financeiro' && !podeVerFinanceiro) ||
          (pagina === 'presenca' && !podeVerPresencaGeral) ||
          (pagina === 'controle-acesso' && !podeGerenciarUsuarios) ? (
@@ -247,7 +265,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             <p>Você não tem permissão para acessar esta tela.</p>
           </div>
         ) : null}
-        {pagina !== 'dashboard' && pagina !== 'meus-dados' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && (
+        {pagina !== 'dashboard' && pagina !== 'meus-dados' && pagina !== 'membros' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
