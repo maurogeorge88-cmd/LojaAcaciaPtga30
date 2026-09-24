@@ -1,17 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-
-// Ordem oficial dos cargos — mesma da "Primeira Nominata do Capítulo
-// Guardiões da Aliança do Sagrado Arco Real". Cadastro simples: cargo +
-// membro + ano de exercício, sem fluxo de eleição/chapas/posse.
-const CARGOS_ARCO_REAL = [
-  '1º Principal', '2º Principal', '3º Principal',
-  'Tesoureiro',
-  'Escriba Esdras', 'Assistente do Escriba Esdras', 'Escriba Neemias',
-  '1º Forasteiro', '1º Assistente do Forasteiro', '2º Assistente do Forasteiro',
-  'Diretor de Cerimônias', 'Assistente do Diretor de Cerimônias',
-  'Esmoler', 'Guardião', 'Organista', 'Mestre de Caridade', 'Intendente',
-];
+import { CARGOS_ARCO_REAL } from '../../utils/cargosArcoReal';
 
 export default function CorpoAdministrativoArcoReal({ permissoes = {}, showSuccess, showError }) {
   const podeEditar = !!permissoes?.canEditMembers;
