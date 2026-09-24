@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { gerarRelatorioMembrosArcoRealPDF } from '../../utils/gerarRelatorioMembrosArcoRealPDF';
+import { CARGOS_ARCO_REAL } from '../../utils/cargosArcoReal';
 
 const LOGO_ARCO_REAL_URL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
 
@@ -55,6 +56,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
   const [pagina, setPagina] = useState('lista');
   const [membroAtual, setMembroAtual] = useState(null); // registro completo (modo ver/editar)
   const [form, setForm] = useState(VAZIO);
+  const [cargoModoOutro, setCargoModoOutro] = useState(false);
   const [abaVer, setAbaVer] = useState('pessoal'); // 'pessoal' | 'maconico'
   const [dadosMaconicos, setDadosMaconicos] = useState(null);
   const [carregandoMaconico, setCarregandoMaconico] = useState(false);
@@ -104,6 +106,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
   const abrirNovo = () => {
     setMembroAtual(null);
     setForm(VAZIO);
+    setCargoModoOutro(false);
     setPagina('form');
   };
 
@@ -121,6 +124,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
   const abrirEditar = (m) => {
     setMembroAtual(m);
     setForm(preencherFormComMembro(m));
+    setCargoModoOutro(!!m.cargo && !CARGOS_ARCO_REAL.includes(m.cargo));
     setPagina('form');
   };
 
@@ -204,6 +208,19 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
     setPagina('form');
   };
 
+  // Se o cargo escolhido é um dos oficiais, reflete automaticamente no
+  // Corpo Administrativo do ano atual — sem precisar ir lá selecionar de novo.
+  const sincronizarCorpoAdministrativo = async (membroId, cargo) => {
+    if (!cargo || !CARGOS_ARCO_REAL.includes(cargo)) return;
+    try {
+      const anoAtual = String(new Date().getFullYear());
+      await supabase.from('arco_real_corpo_administrativo')
+        .upsert({ cargo, ano_exercicio: anoAtual, membro_id: membroId }, { onConflict: 'cargo,ano_exercicio' });
+    } catch (e) {
+      console.error('Erro ao sincronizar Corpo Administrativo:', e);
+    }
+  };
+
   const salvar = async () => {
     if (!form.nome.trim()) { showError('Nome é obrigatório.'); return; }
     try {
@@ -222,10 +239,12 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
         if (error) throw error;
         if (!data || data.length === 0) { showError('❌ Nada foi alterado — provável falta de permissão (RLS).'); return; }
         showSuccess('✅ Membro atualizado!');
+        await sincronizarCorpoAdministrativo(membroAtual.id, form.cargo);
       } else {
-        const { error } = await supabase.from('arco_real_membros').insert([payload]);
+        const { data, error } = await supabase.from('arco_real_membros').insert([payload]).select();
         if (error) throw error;
         showSuccess('✅ Membro cadastrado!');
+        if (data?.[0]?.id) await sincronizarCorpoAdministrativo(data[0].id, form.cargo);
       }
       voltarLista();
       carregar();
@@ -675,7 +694,29 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label style={labelStyle}>Cargo</label>
-              <input value={form.cargo} onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))} placeholder="Ex: Excelentíssimo..." style={inputStyle} />
+              <select
+                value={cargoModoOutro ? 'outro' : (CARGOS_ARCO_REAL.includes(form.cargo) ? form.cargo : '')}
+                onChange={e => {
+                  if (e.target.value === 'outro') { setCargoModoOutro(true); setForm(f => ({ ...f, cargo: '' })); }
+                  else { setCargoModoOutro(false); setForm(f => ({ ...f, cargo: e.target.value })); }
+                }}
+                style={inputStyle}
+              >
+                <option value="">— Sem cargo —</option>
+                {CARGOS_ARCO_REAL.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="outro">Outro (digitar)...</option>
+              </select>
+              {(cargoModoOutro || (form.cargo !== '' && !CARGOS_ARCO_REAL.includes(form.cargo))) && (
+                <input
+                  value={form.cargo}
+                  onChange={e => setForm(f => ({ ...f, cargo: e.target.value }))}
+                  placeholder="Digite o cargo..."
+                  style={{ ...inputStyle, marginTop: '0.4rem' }}
+                />
+              )}
+              <p style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', margin: '0.3rem 0 0' }}>
+                Cargos da lista aparecem automaticamente no Corpo Administrativo do ano atual.
+              </p>
             </div>
             <div>
               <label style={labelStyle}>Situação</label>
