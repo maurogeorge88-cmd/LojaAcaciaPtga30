@@ -149,6 +149,29 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
         .gte('data_pagamento', inicio).lte('data_pagamento', fim)
     );
 
+    // Tronco Arco Real — só informativo, histórico completo (já calculado
+    // separadamente na tela; aqui é só pra exibir no relatório).
+    let troncoArcoRealTotal = 0;
+    try {
+      const { data: catTroncoReceita } = await supabase
+        .from('categorias_financeiras').select('id').ilike('nome', 'Tronco Arco Real').maybeSingle();
+      const { data: catTroncoDespesaPai } = await supabase
+        .from('categorias_financeiras').select('id').ilike('nome', 'Tronco Saida Arco Real').maybeSingle();
+      const idsCatTronco = [];
+      if (catTroncoReceita?.id) idsCatTronco.push(catTroncoReceita.id);
+      if (catTroncoDespesaPai?.id) {
+        idsCatTronco.push(catTroncoDespesaPai.id);
+        const { data: filhas } = await supabase.from('categorias_financeiras').select('id').eq('categoria_pai_id', catTroncoDespesaPai.id);
+        (filhas || []).forEach(f => idsCatTronco.push(f.id));
+      }
+      if (idsCatTronco.length > 0) {
+        const lancsTronco = await buscarPaginado(() =>
+          supabase.from('arco_real_lancamentos').select('tipo, valor').in('categoria_id', idsCatTronco).eq('status', 'pago')
+        );
+        troncoArcoRealTotal = lancsTronco.reduce((s, l) => s + (l.tipo === 'receita' ? 1 : -1) * Number(l.valor || 0), 0);
+      }
+    } catch (e) { console.error('Erro ao calcular Tronco Arco Real pro relatorio:', e); }
+
     // Resultado por mês (ano inteiro, sempre — mesmo padrão da Loja)
     const lancsAnoTodo = await buscarPaginado(() =>
       supabase.from('arco_real_lancamentos').select('tipo, valor, data_pagamento')
@@ -245,13 +268,13 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
     yLinha += boxH + gapBox;
 
     // Linha 2 — Saldo Anterior (o "quadrinho" que faltava) | Resultado do
-    // Período (Rec.-Desp. só deste período) | Saldo Atual repetido pra contexto
+    // Período (Rec.-Desp. só deste período) | Tronco Arco Real (informativo)
     const saldoAnteriorTotal = saldoAntBancario + saldoAntFisico;
     const resultadoDoPeriodo = (recBanco + recCaixa) - (despBanco + despCaixa);
     const linha2 = [
       { label: 'SALDO ANTERIOR', valor: saldoAnteriorTotal, cor: saldoAnteriorTotal >= 0 ? [110, 110, 110] : COR_VERM },
       { label: 'RESULTADO DO PERIODO', valor: resultadoDoPeriodo, cor: resultadoDoPeriodo >= 0 ? COR_VERDE : COR_VERM, prefixo: resultadoDoPeriodo >= 0 ? '+' : '' },
-      { label: 'SALDO ATUAL', valor: saldoAtual, cor: saldoAtual >= 0 ? COR_VERDE : COR_VERM },
+      { label: 'TRONCO ARCO REAL', valor: troncoArcoRealTotal, cor: [217, 119, 6] },
     ];
     linha2.forEach((b, i) => {
       const bx = xInterno + i * (boxW1 + gapBox);
