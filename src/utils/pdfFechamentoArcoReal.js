@@ -222,11 +222,12 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
 
     const padFrame = 3, gapBox = 3, boxH = 24;
     const larguraInterna = (colRight - margin) - padFrame * 2;
-    novaPageSeNecessario(boxH + padFrame * 2 + 8);
-    rect(margin, y, colRight - margin, boxH + padFrame * 2, COR_FUNDO, 2);
+    const alturaFrame1 = boxH * 2 + padFrame * 2 + gapBox;
+    novaPageSeNecessario(alturaFrame1 + 8);
+    rect(margin, y, colRight - margin, alturaFrame1, COR_FUNDO, 2);
     doc.setDrawColor(...COR_ACCENT); doc.setLineWidth(0.5);
-    doc.rect(margin, y, colRight - margin, boxH + padFrame * 2, 'S');
-    const yLinha = y + padFrame;
+    doc.rect(margin, y, colRight - margin, alturaFrame1, 'S');
+    let yLinha = y + padFrame;
     const xInterno = margin + padFrame;
     const linha1 = [
       { label: 'SALDO BANCARIO', valor: saldoBancario, cor: COR_AZUL },
@@ -241,7 +242,25 @@ export const gerarPDFFechamentoArcoReal = async ({ tipoPeriodo, ano, mes, semest
       txt(b.label, bx + boxW1 / 2, yLinha + 8, { size: 7.5, color: COR_CINZA, align: 'center' });
       txt(fmt(b.valor), bx + boxW1 / 2, yLinha + 17, { bold: true, size: 11, color: b.cor, align: 'center' });
     });
-    y += boxH + padFrame * 2 + 5;
+    yLinha += boxH + gapBox;
+
+    // Linha 2 — Saldo Anterior (o "quadrinho" que faltava) | Resultado do
+    // Período (Rec.-Desp. só deste período) | Saldo Atual repetido pra contexto
+    const saldoAnteriorTotal = saldoAntBancario + saldoAntFisico;
+    const resultadoDoPeriodo = (recBanco + recCaixa) - (despBanco + despCaixa);
+    const linha2 = [
+      { label: 'SALDO ANTERIOR', valor: saldoAnteriorTotal, cor: saldoAnteriorTotal >= 0 ? [110, 110, 110] : COR_VERM },
+      { label: 'RESULTADO DO PERIODO', valor: resultadoDoPeriodo, cor: resultadoDoPeriodo >= 0 ? COR_VERDE : COR_VERM, prefixo: resultadoDoPeriodo >= 0 ? '+' : '' },
+      { label: 'SALDO ATUAL', valor: saldoAtual, cor: saldoAtual >= 0 ? COR_VERDE : COR_VERM },
+    ];
+    linha2.forEach((b, i) => {
+      const bx = xInterno + i * (boxW1 + gapBox);
+      rect(bx, yLinha, boxW1, boxH, COR_FUNDO2, 2);
+      doc.setDrawColor(...COR_ACCENT); doc.setLineWidth(0.4); doc.rect(bx, yLinha, boxW1, boxH, 'S');
+      txt(b.label, bx + boxW1 / 2, yLinha + 8, { size: 7, color: COR_CINZA, align: 'center' });
+      txt((b.prefixo || '') + fmt(b.valor), bx + boxW1 / 2, yLinha + 17, { bold: true, size: 10.5, color: b.cor, align: 'center' });
+    });
+    y += alturaFrame1 + 5;
 
     // ── 2. EXTRATO DO PERÍODO ─────────────────────────────────────────────
     novaPageSeNecessario(60);
