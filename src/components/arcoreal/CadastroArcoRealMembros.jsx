@@ -12,8 +12,9 @@ const VAZIO = {
   cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true, foto_url: '',
 };
 
-const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
+const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
 const labelStyle = { display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.03em' };
+const valorStyle = { color: 'var(--color-text)', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.65rem', margin: 0 };
 const boxCard = { background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', overflow: 'hidden' };
 const boxTitle = { fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.85rem' };
 
@@ -532,11 +533,11 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
               <div style={boxCard}>
                 <Faixa>Identificação</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div><label style={labelStyle}>CPF</label><p style={{ color: 'var(--color-text)' }}>{m.cpf || 'Não informado'}</p></div>
-                  <div><label style={labelStyle}>RG</label><p style={{ color: 'var(--color-text)' }}>{m.rg || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>CPF</label><p style={valorStyle}>{m.cpf || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>RG</label><p style={valorStyle}>{m.rg || 'Não informado'}</p></div>
                   <div>
                     <label style={labelStyle}>Data de Nascimento</label>
-                    <p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_nascimento)}</p>
+                    <p style={valorStyle}>{fmtData(m.data_nascimento)}</p>
                     {m.data_nascimento && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{calcularIdade(m.data_nascimento)}</p>}
                   </div>
                 </div>
@@ -546,8 +547,8 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
               <div style={boxCard}>
                 <Faixa>Contato</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label style={labelStyle}>Email</label><p style={{ color: 'var(--color-text)' }}>{m.email || 'Não informado'}</p></div>
-                  <div><label style={labelStyle}>Telefone</label><p style={{ color: 'var(--color-text)' }}>{m.telefone || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Email</label><p style={valorStyle}>{m.email || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Telefone</label><p style={valorStyle}>{m.telefone || 'Não informado'}</p></div>
                 </div>
               </div>
 
@@ -555,12 +556,12 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
               <div style={boxCard}>
                 <Faixa>Endereço</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div><label style={labelStyle}>CEP</label><p style={{ color: 'var(--color-text)' }}>{m.cep || 'Não informado'}</p></div>
-                  <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><p style={{ color: 'var(--color-text)' }}>{m.endereco || 'Não informado'}{m.numero ? `, ${m.numero}` : ''}</p></div>
-                  <div><label style={labelStyle}>Complemento</label><p style={{ color: 'var(--color-text)' }}>{m.complemento || '-'}</p></div>
-                  <div><label style={labelStyle}>Bairro</label><p style={{ color: 'var(--color-text)' }}>{m.bairro || 'Não informado'}</p></div>
-                  <div><label style={labelStyle}>Cidade</label><p style={{ color: 'var(--color-text)' }}>{m.cidade || 'Não informado'}</p></div>
-                  <div><label style={labelStyle}>Estado</label><p style={{ color: 'var(--color-text)' }}>{m.estado || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>CEP</label><p style={valorStyle}>{m.cep || 'Não informado'}</p></div>
+                  <div className="md:col-span-2"><label style={labelStyle}>Logradouro</label><p style={valorStyle}>{m.endereco || 'Não informado'}{m.numero ? `, ${m.numero}` : ''}</p></div>
+                  <div><label style={labelStyle}>Complemento</label><p style={valorStyle}>{m.complemento || '-'}</p></div>
+                  <div><label style={labelStyle}>Bairro</label><p style={valorStyle}>{m.bairro || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Cidade</label><p style={valorStyle}>{m.cidade || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Estado</label><p style={valorStyle}>{m.estado || 'Não informado'}</p></div>
                 </div>
               </div>
 
@@ -568,9 +569,9 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
               <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
                 <Faixa>🔺 Dados do Arco Real</Faixa>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div><label style={labelStyle}>Cargo</label><p style={{ color: 'var(--color-text)' }}>{m.cargo || 'Não informado'}</p></div>
-                  <div><label style={labelStyle}>Situação</label><p className="capitalize" style={{ color: 'var(--color-text)' }}>{m.situacao}</p></div>
-                  <div><label style={labelStyle}>Data de Exaltação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(m.data_exaltacao)}</p></div>
+                  <div><label style={labelStyle}>Cargo</label><p style={valorStyle}>{m.cargo || 'Não informado'}</p></div>
+                  <div><label style={labelStyle}>Situação</label><p className="capitalize" style={valorStyle}>{m.situacao}</p></div>
+                  <div><label style={labelStyle}>Data de Exaltação</label><p style={valorStyle}>{fmtData(m.data_exaltacao)}</p></div>
                 </div>
               </div>
 
@@ -598,12 +599,12 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
                 <div style={boxCard}>
                   <Faixa>🏛️ Datas Maçônicas (Loja Simbólica — {m.irmaos?.nome || 'Acácia'})</Faixa>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div><label style={labelStyle}>🔨 Iniciação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_iniciacao)}</p></div>
-                    <div><label style={labelStyle}>📐 Elevação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_elevacao)}</p></div>
-                    <div><label style={labelStyle}>🏛️ Exaltação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_exaltacao)}</p></div>
-                    <div><label style={labelStyle}>⭐ Mestre Instalado?</label><p style={{ color: 'var(--color-text)' }}>{dadosMaconicos?.mestre_instalado ? 'Sim' : 'Não'}</p></div>
+                    <div><label style={labelStyle}>🔨 Iniciação</label><p style={valorStyle}>{fmtData(dadosMaconicos?.data_iniciacao)}</p></div>
+                    <div><label style={labelStyle}>📐 Elevação</label><p style={valorStyle}>{fmtData(dadosMaconicos?.data_elevacao)}</p></div>
+                    <div><label style={labelStyle}>🏛️ Exaltação</label><p style={valorStyle}>{fmtData(dadosMaconicos?.data_exaltacao)}</p></div>
+                    <div><label style={labelStyle}>⭐ Mestre Instalado?</label><p style={valorStyle}>{dadosMaconicos?.mestre_instalado ? 'Sim' : 'Não'}</p></div>
                     {dadosMaconicos?.mestre_instalado && (
-                      <div><label style={labelStyle}>📅 Instalação</label><p style={{ color: 'var(--color-text)' }}>{fmtData(dadosMaconicos?.data_instalacao)}</p></div>
+                      <div><label style={labelStyle}>📅 Instalação</label><p style={valorStyle}>{fmtData(dadosMaconicos?.data_instalacao)}</p></div>
                     )}
                   </div>
                 </div>
