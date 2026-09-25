@@ -116,22 +116,43 @@ export default function CorpoAdministrativoArcoReal({ permissoes = {}, showSucce
       <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 1.25rem' }}>🏛️ Corpo Administrativo</h2>
 
       {/* Gestão mais recente em destaque */}
-      {anoMaisRecente && (
-        <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
-          <div style={{ padding: '0.85rem 1.25rem', background: 'var(--color-accent)' }}>
-            <span style={{ fontWeight: '700', fontSize: '1rem', color: '#fff' }}>🏛️ Gestão {anoMaisRecente}</span>
-            <span style={{ marginLeft: '1rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>{registrosGestaoAtual.length} cargo(s) preenchido(s)</span>
+      {anoMaisRecente && (() => {
+        const principais = ['1º Principal', '2º Principal', '3º Principal']
+          .map(c => registrosGestaoAtual.find(r => r.cargo === c))
+          .filter(Boolean);
+        const demais = registrosGestaoAtual.filter(r => !['1º Principal', '2º Principal', '3º Principal'].includes(r.cargo));
+
+        return (
+          <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+            <div style={{ padding: '0.85rem 1.25rem', background: 'var(--color-accent)' }}>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: '#fff' }}>🏛️ Gestão {anoMaisRecente}</span>
+              <span style={{ marginLeft: '1rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.8)' }}>{registrosGestaoAtual.length} cargo(s) preenchido(s)</span>
+            </div>
+            <div style={{ padding: '1rem', background: 'var(--color-surface)' }}>
+              {principais.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginBottom: demais.length > 0 ? '0.75rem' : 0 }}>
+                  {principais.map(r => (
+                    <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.85rem 1rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-lg)', border: '3px solid #f59e0b' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>{r.cargo}</span>
+                      <span style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--color-text)' }}>{r.arco_real_membros?.nome || '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {demais.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.6rem' }}>
+                  {demais.map(r => (
+                    <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0.85rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-accent)' }}>{r.cargo}</span>
+                      <span style={{ fontSize: '0.88rem', color: 'var(--color-text)' }}>{r.arco_real_membros?.nome || '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.6rem', background: 'var(--color-surface)' }}>
-            {registrosGestaoAtual.map(r => (
-              <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', padding: '0.6rem 0.85rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-accent)' }}>{r.cargo}</span>
-                <span style={{ fontSize: '0.88rem', color: 'var(--color-text)' }}>{r.arco_real_membros?.nome || '—'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Formulário de registro/edição */}
       {podeEditar && (
