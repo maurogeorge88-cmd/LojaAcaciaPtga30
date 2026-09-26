@@ -183,6 +183,40 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
     }
   };
 
+  // Upload direto do dispositivo — mesma lógica do cadastro de irmãos da
+  // Loja: sobe pro Storage, pega a URL pública e já salva no cadastro.
+  // Só funciona com o membro já salvo (precisa do ID pro nome do arquivo).
+  const handleUploadFoto = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) { showError('❌ Apenas imagens são permitidas'); return; }
+    if (file.size > 5 * 1024 * 1024) { showError('❌ Imagem muito grande. Máximo 5MB'); return; }
+
+    const membroId = membroAtual?.id;
+    if (!membroId) { showError('❌ Salve o cadastro antes de enviar a foto'); return; }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${membroId}_${Date.now()}.${fileExt}`;
+      const filePath = `fotos_membros/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('arcoreal').upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('arcoreal').getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase.from('arco_real_membros').update({ foto_url: publicUrl }).eq('id', membroId);
+      if (updateError) throw updateError;
+
+      setForm(f => ({ ...f, foto_url: publicUrl }));
+      showSuccess('✅ Foto atualizada com sucesso!');
+      carregar();
+    } catch (e) {
+      showError('❌ Erro ao fazer upload: ' + e.message);
+    }
+  };
+
   const voltarLista = () => {
     setPagina('lista');
     setMembroAtual(null);
@@ -655,8 +689,24 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
               <input value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} style={inputStyle} />
             </div>
             <div className="md:col-span-2">
-              <label style={labelStyle}>URL da Foto</label>
-              <input value={form.foto_url} onChange={e => setForm(f => ({ ...f, foto_url: e.target.value }))} placeholder="https://..." style={inputStyle} />
+              <label style={labelStyle}>Foto do Membro</label>
+              <div className="flex items-center gap-4">
+                {form.foto_url ? (
+                  <img src={form.foto_url} alt="Foto" className="w-20 h-20 rounded-full object-cover border-2" style={{ borderColor: 'var(--color-border)' }} />
+                ) : (
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'var(--color-surface-2)' }}>
+                    <span className="text-3xl">👤</span>
+                  </div>
+                )}
+                {membroAtual?.id ? (
+                  <label style={{ cursor: 'pointer', background: 'var(--color-accent)', color: '#fff', padding: '0.5rem 1rem', borderRadius: 'var(--radius-lg)', fontWeight: '600', fontSize: '0.875rem', display: 'inline-block' }}>
+                    📷 {form.foto_url ? 'Alterar Foto' : 'Enviar Foto'}
+                    <input type="file" accept="image/*" onChange={handleUploadFoto} className="hidden" />
+                  </label>
+                ) : (
+                  <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Salve o cadastro primeiro para enviar a foto</p>
+                )}
+              </div>
             </div>
             <div><label style={labelStyle}>CPF</label><input value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: e.target.value }))} style={inputStyle} /></div>
             <div><label style={labelStyle}>RG</label><input value={form.rg} onChange={e => setForm(f => ({ ...f, rg: e.target.value }))} style={inputStyle} /></div>
