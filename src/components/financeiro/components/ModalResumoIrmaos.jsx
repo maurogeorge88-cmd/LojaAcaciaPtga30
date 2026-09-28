@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../supabaseClient';
 import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
 import { gerarCertidaoFinanceiraPDF } from '../../../utils/gerarCertidaoFinanceiraPDF';
+import { gerarDeclaracaoCreditoPDF } from '../../../utils/gerarDeclaracaoCreditoPDF';
 import { gerarOficioPendenciaPDF } from '../../../utils/gerarOficioPendenciaPDF';
 import { gerarOficioPendenciaDocx } from '../../../utils/gerarOficioPendenciaDocx';
 
@@ -113,6 +114,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
   const [dadosLoja, setDadosLoja]       = useState(null);
   const [nomeTesoureiro, setNomeTesoureiro] = useState('');
   const [nomeVeneravel, setNomeVeneravel]   = useState('');
+  const [avisoCredito, setAvisoCredito]     = useState(''); // mensagem inline da Declaração de Crédito
 
   // Cabeçalho da Loja + tenta pré-preencher Tesoureiro/Venerável Mestre da
   // gestão mais recente já empossada (sempre editável, é só uma conveniência)
@@ -145,6 +147,42 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       dadosLoja,
       { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
     );
+  };
+
+  // ── Declaração de Crédito ───────────────────────────────────────
+  // A Loja reconhece o que deve ao irmão (despesas pendentes vinculadas a ele).
+  // Busca os lançamentos na hora — independe dos filtros de ano/mês do resumo —
+  // e serve tanto pra irmão com CIM quanto pra quem ainda não foi iniciado.
+  const handleGerarDeclaracaoCredito = async () => {
+    if (!selecionado) return;
+    const avisar = (msg) => { setAvisoCredito(msg); setTimeout(() => setAvisoCredito(''), 6000); };
+    setAvisoCredito('');
+    try {
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('descricao, valor, data_vencimento, tipo, categorias_financeiras(tipo)')
+        .eq('origem_tipo', 'Irmao')
+        .eq('origem_irmao_id', selecionado.irmaoId)
+        .eq('status', 'pendente')
+        .order('data_vencimento');
+      if (error) throw error;
+
+      const creditos = (data || []).filter(l => (l.categorias_financeiras?.tipo || l.tipo) === 'despesa');
+      if (creditos.length === 0) {
+        avisar(`${selecionado.nomeIrmao} não possui crédito pendente com a Loja.`);
+        return;
+      }
+
+      const irmaoInfo = irmaosMap[selecionado.irmaoId] || {};
+      gerarDeclaracaoCreditoPDF(
+        { nomeIrmao: selecionado.nomeIrmao, cpf: irmaoInfo.cpf, cim: selecionado.cim, grau: irmaoInfo },
+        creditos,
+        dadosLoja,
+        { tesoureiro: nomeTesoureiro, veneravelMestre: nomeVeneravel }
+      );
+    } catch (e) {
+      avisar('Erro ao gerar a declaração: ' + e.message);
+    }
   };
 
   // ── Ofício de Pendência Financeira ──────────────────────────────
@@ -334,7 +372,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       // 1. Todos os irmãos (para saber situação)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, cim, situacao, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
+        .select('id, nome, cpf, cim, situacao, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
         .order('nome');
       const mapa = {};
       (irmaosData || []).forEach(i => { mapa[i.id] = i; });
@@ -632,7 +670,24 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
             >
               📜 Emitir Ofício de Pendência
             </button>
+            <button
+              onClick={handleGerarDeclaracaoCredito}
+              disabled={!selecionado}
+              title={selecionado ? 'Declaração de que a Loja tem crédito com este irmão (serve também para quem ainda não foi iniciado)' : 'Marque um irmão na tabela primeiro'}
+              style={{
+                padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: '700', fontSize: '0.82rem',
+                cursor: selecionado ? 'pointer' : 'not-allowed', opacity: selecionado ? 1 : 0.5,
+                background: '#0891b2', color: '#fff', whiteSpace: 'nowrap'
+              }}
+            >
+              🧾 Declaração de Crédito
+            </button>
           </div>
+          {avisoCredito && (
+            <p style={{ margin: '-0.5rem 0 1rem', padding: '0.5rem 0.85rem', fontSize: '0.8rem', fontWeight: '600', color: '#b45309', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 'var(--radius-md)' }}>
+              ⚠️ {avisoCredito}
+            </p>
+          )}
 
           {/* Cards resumo */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.25rem' }}>
