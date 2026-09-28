@@ -1454,6 +1454,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                               <span style={{ fontSize:'0.74rem',fontWeight:'700',color:'#10b981',whiteSpace:'nowrap' }}>TR {fmtR(totRecOrigem)}</span>
                               <span style={{ color:'var(--color-border)' }}>|</span>
                               <span style={{ fontSize:'0.74rem',fontWeight:'700',color:'#ef4444',whiteSpace:'nowrap' }}>TD {fmtR(totDespOrigem)}</span>
+                              <span style={{ color:'var(--color-border)' }}>|</span>
+                              <span style={{ fontSize:'0.74rem',fontWeight:'700',color:'#f59e0b',whiteSpace:'nowrap' }}>
+                                TP {fmtR(origem.lancamentos.filter(l => l.status === 'pendente').reduce((s,l) => s + Number(l.valor||0), 0))}
+                              </span>
                               <span style={{ fontSize:'0.66rem',color:'var(--color-text-muted)',transform: aberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s' }}>▾</span>
                               <span title={pendOrigem === 0 ? 'Quite' : `${pendOrigem} pendente(s)`} style={{ width:'9px',height:'9px',borderRadius:'50%',flexShrink:0,background: pendOrigem === 0 ? '#3b82f6' : '#ef4444' }} />
                             </div>
