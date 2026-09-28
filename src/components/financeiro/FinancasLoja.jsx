@@ -24,6 +24,7 @@ import ModalPagamentoParcial from './ModalPagamentoParcial';
 import ModalCompensacao from './ModalCompensacao';
 import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
+import { gerarReciboPagamentoPDF } from '../../utils/gerarReciboPagamentoPDF';
 import ModalEdicaoLote from './components/ModalEdicaoLote';
 
 // 💰 COMPONENTE: Finanças da Loja
@@ -971,6 +972,47 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   // NOVA FUNÇÃO: Quitação individual rápida
+  // ── Recibo de pagamento de irmão ────────────────────────────────────────
+  // Vale pra qualquer RECEITA PAGA vinculada a um irmão (mensalidade, pecúlio,
+  // pagamento avulso...). Fica de fora: pendente, lançamento sem irmão,
+  // compensação (não entrou dinheiro) e transferência interna.
+  const podeEmitirRecibo = (lanc) =>
+    lanc.status === 'pago' &&
+    lanc.origem_tipo === 'Irmao' && !!lanc.origem_irmao_id &&
+    (lanc.categorias_financeiras?.tipo || lanc.tipo) === 'receita' &&
+    lanc.tipo_pagamento !== 'compensacao' &&
+    !lanc.eh_transferencia_interna;
+
+  const emitirRecibo = async (lanc) => {
+    try {
+      const [{ data: irmao, error: errIrmao }, { data: loja }, { data: corpo }] = await Promise.all([
+        supabase.from('irmaos').select('nome, cpf, cim, eh_profano').eq('id', lanc.origem_irmao_id).maybeSingle(),
+        supabase.from('dados_loja').select('*').limit(1).maybeSingle(),
+        supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmaos(nome)').order('ano_exercicio', { ascending: false }),
+      ]);
+      if (errIrmao) throw errIrmao;
+      if (!irmao) { showError('Não encontrei o cadastro do irmão deste lançamento.'); return; }
+
+      // Tesoureiro da gestão mais recente; se não achar, o recibo sai com a linha em branco pra assinar
+      const tes = (corpo || []).find(c => (c.cargo || '').toLowerCase().includes('tesoureiro'));
+
+      gerarReciboPagamentoPDF({
+        numero: lanc.id,
+        irmao: { nome: irmao.nome, cpf: irmao.cpf, cim: irmao.cim, ehProfano: !!irmao.eh_profano },
+        pagamento: {
+          valor: lanc.valor,
+          descricao: lanc.descricao || lanc.categorias_financeiras?.nome,
+          dataPagamento: lanc.data_pagamento,
+          tipoPagamento: lanc.tipo_pagamento,
+        },
+        dadosLoja: loja,
+        tesoureiro: tes?.irmaos?.nome || '',
+      });
+    } catch (e) {
+      showError('Erro ao emitir recibo: ' + e.message);
+    }
+  };
+
   const abrirModalQuitacao = async (lancamento) => {
     if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     try {
@@ -3582,6 +3624,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                     style={{padding:'0.18rem 0.4rem',background:'none',border:'none',cursor:'pointer',fontSize:'0.75rem'}}
                                     title="Pagamento parcial">💰</button>
                                 )}
+                                {podeEmitirRecibo(lanc) && (
+                                  <button onClick={() => emitirRecibo(lanc)} title="Emitir recibo"
+                                    style={{padding:'0.18rem 0.4rem',background:'rgba(8,145,178,0.12)',color:'#0891b2',border:'1px solid rgba(8,145,178,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
+                                    🧾
+                                  </button>
+                                )}
                                 <button onClick={() => editarLancamento(lanc)}
                                   style={{padding:'0.18rem 0.4rem',background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
                                   ✏️
@@ -3762,6 +3810,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           </button>
                         )}
                         
+                        {podeEmitirRecibo(lanc) && (
+                          <button
+                            onClick={() => emitirRecibo(lanc)}
+                            style={{fontSize:'0.85rem',background:'none',border:'none',cursor:'pointer'}}
+                            title="Emitir recibo"
+                          >
+                            🧾
+                          </button>
+                        )}
                         <button
                           onClick={() => editarLancamento(lanc)}
                           disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
