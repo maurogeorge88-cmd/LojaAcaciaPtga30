@@ -6,6 +6,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [todosOsCustos, setTodosOsCustos] = useState([]);
   const [todasAsReceitas, setTodasAsReceitas] = useState([]);
   const [custosDoModal, setCustosDoModal] = useState([]);
+  const [arquivosDoModal, setArquivosDoModal] = useState([]);
+  const [enviandoArquivo, setEnviandoArquivo] = useState(false);
   const [receitasDoModal, setReceitasDoModal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -114,11 +116,84 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     if (!error) setReceitasDoModal(data || []);
   };
 
+  const carregarArquivos = async (projetoId) => {
+    const { data, error } = await supabase
+      .from('projeto_arquivos')
+      .select('*')
+      .eq('projeto_id', projetoId)
+      .order('created_at', { ascending: false });
+    if (!error) setArquivosDoModal(data || []);
+  };
+
+  // Extensão -> ícone, só pra dar uma pista visual do tipo antes de abrir
+  const iconeArquivo = (nomeOuMime) => {
+    const s = (nomeOuMime || '').toLowerCase();
+    if (s.includes('pdf')) return '📕';
+    if (s.includes('image') || /\.(png|jpe?g|gif|webp|svg)$/.test(s)) return '🖼️';
+    if (s.includes('text') || /\.(txt|csv)$/.test(s)) return '📄';
+    if (/\.(docx?|odt)$/.test(s)) return '📝';
+    if (/\.(xlsx?|ods)$/.test(s)) return '📊';
+    if (/\.(zip|rar|7z)$/.test(s)) return '🗜️';
+    return '📎';
+  };
+
+  const formatarTamanho = (bytes) => {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Um input multi-arquivo dispara isto; sobe cada arquivo em sequência
+  // (upload paralelo dá mais chance de erro de rede em conexão de lodge/interior).
+  const handleUploadArquivos = async (event) => {
+    const arquivos = Array.from(event.target.files || []);
+    if (arquivos.length === 0 || !projetoSelecionado) return;
+    setEnviandoArquivo(true);
+    try {
+      for (const file of arquivos) {
+        const path = `${projetoSelecionado.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const { error: uploadError } = await supabase.storage.from('projeto-arquivos').upload(path, file);
+        if (uploadError) throw uploadError;
+        const url = supabase.storage.from('projeto-arquivos').getPublicUrl(path).data.publicUrl;
+        const { error: dbError } = await supabase.from('projeto_arquivos').insert({
+          projeto_id: projetoSelecionado.id,
+          nome_arquivo: file.name,
+          tipo_mime: file.type || null,
+          path, url,
+          tamanho_bytes: file.size,
+        });
+        if (dbError) throw dbError;
+      }
+      showSuccess(arquivos.length > 1 ? `✅ ${arquivos.length} arquivos enviados!` : '✅ Arquivo enviado!');
+      carregarArquivos(projetoSelecionado.id);
+    } catch (e) {
+      showError('Erro ao enviar arquivo: ' + e.message);
+    } finally {
+      setEnviandoArquivo(false);
+      event.target.value = '';
+    }
+  };
+
+  const excluirArquivoProjeto = async (arquivo) => {
+    if (!window.confirm(`Excluir "${arquivo.nome_arquivo}"?`)) return;
+    try {
+      await supabase.storage.from('projeto-arquivos').remove([arquivo.path]);
+      const { error } = await supabase.from('projeto_arquivos').delete().eq('id', arquivo.id);
+      if (error) throw error;
+      showSuccess('✅ Arquivo excluído!');
+      carregarArquivos(projetoSelecionado.id);
+    } catch (e) {
+      showError('Erro ao excluir arquivo: ' + e.message);
+    }
+  };
+
   const abrirFinanceiro = (projeto, aba = 'receitas') => {
     setProjetoSelecionado(projeto);
     setAbaAtiva(aba);
     carregarReceitas(projeto.id);
     carregarCustos(projeto.id);
+    carregarArquivos(projeto.id);
     setMostrarFinanceiro(true);
   };
 
@@ -127,6 +202,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     setProjetoSelecionado(null);
     setReceitasDoModal([]);
     setCustosDoModal([]);
+    setArquivosDoModal([]);
     setReceitaForm({});
     setCustoForm({});
     setMostrarFormReceita(false);
@@ -644,6 +720,25 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </button>
+                <button
+                  onClick={() => setAbaAtiva('arquivos')}
+                  style={{
+                    padding:"0.4rem 1.2rem",
+                    borderRadius:"var(--radius-lg)",
+                    border:"none",
+                    cursor:"pointer",
+                    fontWeight:"700",
+                    fontSize:"0.88rem",
+                    background: abaAtiva === 'arquivos' ? '#fff' : 'rgba(255,255,255,0.2)',
+                    color: abaAtiva === 'arquivos' ? 'var(--color-accent)' : '#fff',
+                    transition:"all 0.15s"
+                  }}
+                >
+                  📎 Arquivos
+                  <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
+                    {arquivosDoModal.length}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -860,6 +955,56 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </div>
                   )}
                 </>
+              )}
+
+              {/* ABA ARQUIVOS */}
+              {abaAtiva === 'arquivos' && (
+                <div>
+                  {permissoes?.canEdit && (
+                    <div className="mb-4 flex justify-end">
+                      <label style={{
+                        padding:"0.45rem 1.2rem",background:"var(--color-accent)",color:"#fff",
+                        border:"none",borderRadius:"var(--radius-lg)",cursor: enviandoArquivo ? "wait" : "pointer",
+                        fontWeight:"700",fontSize:"0.88rem",opacity: enviandoArquivo ? 0.7 : 1, display:"inline-block"
+                      }}>
+                        {enviandoArquivo ? '⏳ Enviando...' : '📎 Enviar Arquivo(s)'}
+                        <input type="file" multiple onChange={handleUploadArquivos} disabled={enviandoArquivo} className="hidden" />
+                      </label>
+                    </div>
+                  )}
+
+                  {arquivosDoModal.length === 0 ? (
+                    <p className="text-center py-10" style={{color:"var(--color-text-muted)"}}>Nenhum arquivo anexado a este projeto ainda.</p>
+                  ) : (
+                    <div style={{display:"flex",flexDirection:"column",gap:"0.5rem"}}>
+                      {arquivosDoModal.map(arq => (
+                        <div key={arq.id} style={{
+                          display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.65rem 0.9rem",
+                          borderRadius:"var(--radius-md)",background:"var(--color-surface-2)",border:"1px solid var(--color-border)"
+                        }}>
+                          <span style={{fontSize:"1.4rem",flexShrink:0}}>{iconeArquivo(arq.tipo_mime || arq.nome_arquivo)}</span>
+                          <a href={arq.url} target="_blank" rel="noopener noreferrer" title="Visualizar"
+                            style={{flex:1,minWidth:0,color:"var(--color-text)",textDecoration:"none",fontWeight:600,fontSize:"0.88rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                            {arq.nome_arquivo}
+                          </a>
+                          <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",flexShrink:0,whiteSpace:"nowrap"}}>
+                            {formatarTamanho(arq.tamanho_bytes)}
+                          </span>
+                          <a href={`${arq.url}?download=${encodeURIComponent(arq.nome_arquivo)}`} title="Baixar"
+                            style={{padding:"0.3rem 0.6rem",borderRadius:"var(--radius-sm)",fontSize:"0.78rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",textDecoration:"none",flexShrink:0}}>
+                            ⬇️
+                          </a>
+                          {permissoes?.canEdit && (
+                            <button onClick={() => excluirArquivoProjeto(arq)} title="Excluir"
+                              style={{padding:"0.3rem 0.6rem",borderRadius:"var(--radius-sm)",fontSize:"0.78rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer",flexShrink:0}}>
+                              🗑️
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
