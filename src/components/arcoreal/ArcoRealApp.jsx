@@ -9,6 +9,7 @@ import ControleAcesso from '../administracao/ControleAcesso';
 import PerfilPessoalArcoReal from './PerfilPessoalArcoReal';
 import CorpoAdministrativoArcoReal from './CorpoAdministrativoArcoReal';
 import InadimplentesArcoReal from './InadimplentesArcoReal';
+import EmailArcoReal from './EmailArcoReal';
 import EstatisticasArcoReal from './EstatisticasArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
@@ -21,6 +22,7 @@ const ITENS_MENU = [
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
+  { id: 'email-financeiro', label: 'Lembrete por E-mail', icone: '✉️', pronto: true, requer: 'financeiro' },
   { id: 'estatisticas', label: 'Estatísticas', icone: '📈', pronto: true },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
@@ -34,6 +36,7 @@ const NOMES_TELAS_ARCO_REAL = {
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
   'inadimplentes': '⚠️ Arco Real / Inadimplentes',
+  'email-financeiro': '✉️ Arco Real / Lembrete por E-mail',
   'estatisticas': '📈 Arco Real / Estatísticas',
   'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
 };
@@ -248,6 +251,9 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
         )}
         {pagina === 'inadimplentes' && (
           <InadimplentesArcoReal podeGerenciar={podeVerFinanceiro} showSuccess={showSuccess} showError={showError} />
+        )}
+        {pagina === 'email-financeiro' && (
+          <EmailArcoReal permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'corpo-admin' && (
           <CorpoAdministrativoArcoReal permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
