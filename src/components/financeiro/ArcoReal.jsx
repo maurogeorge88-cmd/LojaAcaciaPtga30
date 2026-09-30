@@ -221,6 +221,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       setValorSangriaTronco(''); setObsSangriaTronco('');
       calcularTroncoArcoReal();
       carregar();
+      carregarTotaisGerais();
     } catch (e) {
       showError('Erro ao fazer sangria: ' + e.message);
     } finally {
@@ -412,6 +413,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix', origem_membro_id:'' });
       setShowForm(false);
       carregar();
+      carregarTotaisGerais();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
     } finally {
@@ -427,6 +429,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       setConfirmExcluir(null);
       showSuccess('🗑️ Lançamento excluído!');
       carregar();
+      carregarTotaisGerais();
     } catch(e) {
       showError('Erro ao excluir: ' + e.message);
     }
@@ -604,6 +607,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
       setShowForm(false);
       setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'', categoria_id:'', tipo_pagamento:'pix', origem_membro_id:'' });
       carregar();
+      carregarTotaisGerais();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
     } finally {
