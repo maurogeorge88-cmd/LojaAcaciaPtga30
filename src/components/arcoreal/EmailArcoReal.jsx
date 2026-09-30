@@ -12,6 +12,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
   const [enviando, setEnviando] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [statusPorMembro, setStatusPorMembro] = useState({}); // id -> 'vencido' | 'ok'
 
   useEffect(() => { carregarMembros(); carregarLogs(); }, []);
 
@@ -24,6 +25,34 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
       .eq('ativo', true)
       .order('nome');
     setMembros(data || []);
+    if (data && data.length > 0) carregarStatusFinanceiro(data.map(m => m.id));
+  };
+
+  // Mesma regra da Edge Function: só o que já venceu conta como débito de
+  // verdade (crédito do membro abate o vencido primeiro). "A vencer" não
+  // deixa a bolinha vermelha — é só aviso, não é dívida ainda.
+  const carregarStatusFinanceiro = async (idsMembros) => {
+    const { data } = await supabase
+      .from('arco_real_lancamentos')
+      .select('origem_membro_id, valor, tipo, data_vencimento')
+      .in('origem_membro_id', idsMembros)
+      .eq('status', 'pendente');
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const porMembro = {};
+    (data || []).forEach(l => {
+      const id = l.origem_membro_id;
+      if (!porMembro[id]) porMembro[id] = { vencido: 0, credito: 0 };
+      if (l.tipo === 'receita' && l.data_vencimento < hoje) porMembro[id].vencido += Number(l.valor || 0);
+      if (l.tipo === 'despesa') porMembro[id].credito += Number(l.valor || 0);
+    });
+
+    const status = {};
+    idsMembros.forEach(id => {
+      const v = porMembro[id];
+      status[id] = (v && (v.vencido - v.credito) > 0) ? 'vencido' : 'ok';
+    });
+    setStatusPorMembro(status);
   };
 
   const carregarLogs = async () => {
@@ -84,6 +113,11 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
       <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 0.3rem' }}>✉️ Lembrete Financeiro — Arco Real</h2>
       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>
         Envia e-mail só para quem está com pendência — quem estiver em dia é pulado automaticamente.
+        <br />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.3rem' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} /> débito vencido
+          <span style={{ marginLeft: '0.6rem', width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6', display: 'inline-block' }} /> em dia (sem vencido)
+        </span>
       </p>
 
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', marginBottom: '1.25rem' }}>
@@ -104,9 +138,13 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
           ) : filtrados.map((m, idx) => (
             <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 0.85rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: idx < filtrados.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
               <input type="checkbox" checked={membrosSelec.includes(m.id)} onChange={() => toggleMembro(m.id)} style={{ width: '15px', height: '15px', cursor: 'pointer', flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)', fontSize: '0.86rem' }}>{m.nome}</p>
-                <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{m.email}</p>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span title={statusPorMembro[m.id] === 'vencido' ? 'Tem débito vencido' : 'Sem débito vencido'}
+                  style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: statusPorMembro[m.id] === 'vencido' ? '#ef4444' : '#3b82f6' }} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)', fontSize: '0.86rem' }}>{m.nome}</p>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{m.email}</p>
+                </div>
               </div>
             </label>
           ))}
