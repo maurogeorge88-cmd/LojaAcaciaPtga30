@@ -13,8 +13,25 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
   const [resultados, setResultados] = useState([]);
   const [logs, setLogs] = useState([]);
   const [statusPorMembro, setStatusPorMembro] = useState({}); // id -> 'vencido' | 'ok'
+  const [aba, setAba] = useState('individual'); // 'individual' | 'resumo'
+  const [destinatariosResumo, setDestinatariosResumo] = useState([]);
+  const [filtroBuscaResumo, setFiltroBuscaResumo] = useState('');
+  const [enviandoResumo, setEnviandoResumo] = useState(false);
+  const [resultadosResumo, setResultadosResumo] = useState([]);
 
-  useEffect(() => { carregarMembros(); carregarLogs(); }, []);
+  useEffect(() => { carregarMembros(); carregarLogs(); carregarDirigentesPadrao(); }, []);
+
+  // Pré-marca quem hoje ocupa Tesoureiro e 1º Principal — só um ponto de
+  // partida, dá pra marcar/desmarcar qualquer um livremente depois.
+  const carregarDirigentesPadrao = async () => {
+    const anoAtual = String(new Date().getFullYear());
+    const { data } = await supabase
+      .from('arco_real_corpo_administrativo')
+      .select('membro_id, cargo')
+      .eq('ano_exercicio', anoAtual)
+      .in('cargo', ['Tesoureiro', '1º Principal']);
+    setDestinatariosResumo((data || []).map(d => d.membro_id));
+  };
 
   const carregarMembros = async () => {
     const { data } = await supabase
@@ -99,6 +116,33 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
     }
   };
 
+  const toggleDestinatarioResumo = (id) => {
+    setDestinatariosResumo(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const enviarResumo = async () => {
+    if (!podeEnviarEmail) { showError('Você não tem permissão para enviar e-mails.'); return; }
+    if (destinatariosResumo.length === 0) { showError('Selecione ao menos um destinatário.'); return; }
+
+    setEnviandoResumo(true);
+    setResultadosResumo([]);
+    try {
+      const { data: json, error } = await supabase.functions.invoke('enviar-email-arcoreal', {
+        body: { acao: 'resumo_pendencias_arcoreal', destinatarios_ids: destinatariosResumo },
+      });
+      if (error) throw error;
+      if (!json?.ok) throw new Error(json?.erro || 'Erro desconhecido');
+      setResultadosResumo(json.resultados || []);
+      const enviados = (json.resultados || []).filter(r => r.status === 'enviado').length;
+      showSuccess(`✅ Resumo enviado para ${enviados} dirigente(s)!`);
+      carregarLogs();
+    } catch (e) {
+      showError('Erro ao enviar: ' + e.message);
+    } finally {
+      setEnviandoResumo(false);
+    }
+  };
+
   if (!podeEnviarEmail) {
     return (
       <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
@@ -110,7 +154,21 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
 
   return (
     <div className="p-6" style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 0.3rem' }}>✉️ Lembrete Financeiro — Arco Real</h2>
+      <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 0.75rem' }}>✉️ E-mails Financeiros — Arco Real</h2>
+
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem' }}>
+        <button onClick={() => setAba('individual')}
+          style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === 'individual' ? '#7c5e1e' : 'var(--color-surface-2)', color: aba === 'individual' ? '#fff' : 'var(--color-text)' }}>
+          ✉️ Lembrete Individual
+        </button>
+        <button onClick={() => setAba('resumo')}
+          style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === 'resumo' ? '#7c5e1e' : 'var(--color-surface-2)', color: aba === 'resumo' ? '#fff' : 'var(--color-text)' }}>
+          📋 Resumo aos Dirigentes
+        </button>
+      </div>
+
+      {aba === 'individual' && (
+      <>
       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>
         Envia e-mail só para quem está com pendência — quem estiver em dia é pulado automaticamente.
         <br />
@@ -170,6 +228,53 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
               </span>
             </div>
           ))}
+        </div>
+      )}
+      </>
+      )}
+
+      {aba === 'resumo' && (
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', marginBottom: '1.25rem' }}>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+            Um único e-mail com a tabela de todo mundo pendente (vencido e a vencer), enviado pra quem você escolher —
+            já vem com <strong>Tesoureiro</strong> e <strong>1º Principal</strong> do ano marcados, mas dá pra ajustar livremente.
+          </p>
+
+          <input
+            type="text" placeholder="🔍 Buscar membro..." value={filtroBuscaResumo} onChange={e => setFiltroBuscaResumo(e.target.value)}
+            style={{ width: '100%', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', outline: 'none', fontSize: '0.85rem', marginBottom: '0.75rem' }}
+          />
+
+          <div style={{ maxHeight: '280px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+            {membros.filter(m => m.nome.toLowerCase().includes(filtroBuscaResumo.toLowerCase())).map((m, idx, arr) => (
+              <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.55rem 0.85rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: idx < arr.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                <input type="checkbox" checked={destinatariosResumo.includes(m.id)} onChange={() => toggleDestinatarioResumo(m.id)} style={{ width: '15px', height: '15px', cursor: 'pointer', flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--color-text)', fontSize: '0.86rem' }}>{m.nome}</p>
+                  <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{m.email}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{destinatariosResumo.length} destinatário(s)</span>
+            <button onClick={enviarResumo} disabled={enviandoResumo || destinatariosResumo.length === 0}
+              style={{ padding: '0.6rem 1.4rem', background: (enviandoResumo || destinatariosResumo.length === 0) ? 'var(--color-surface-2)' : '#7c5e1e', color: (enviandoResumo || destinatariosResumo.length === 0) ? 'var(--color-text-muted)' : '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: (enviandoResumo || destinatariosResumo.length === 0) ? 'not-allowed' : 'pointer' }}>
+              {enviandoResumo ? '⏳ Enviando...' : '📋 Enviar Resumo'}
+            </button>
+          </div>
+
+          {resultadosResumo.length > 0 && (
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+              {resultadosResumo.map((r, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--color-text)' }}>{r.nome}</span>
+                  <span style={{ fontWeight: 700, color: r.status === 'enviado' ? '#10b981' : '#ef4444' }}>{r.status === 'enviado' ? '✓ Enviado' : '✗ Erro'}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
