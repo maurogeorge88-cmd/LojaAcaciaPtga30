@@ -217,7 +217,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     irmaos_selecionados: [],
     eh_mensalidade: false,
     evento_comemorativo_id: '',
-    projeto_id: ''
+    projeto_id: '',
+    ja_pago: false,
+    data_pagamento: new Date().toISOString().split('T')[0]
   });
 
   // Para quitação individual
@@ -901,7 +903,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
-          status: 'pendente',
+          status: lancamentoIrmaos.ja_pago ? 'pago' : 'pendente',
+          data_pagamento: lancamentoIrmaos.ja_pago ? lancamentoIrmaos.data_pagamento : null,
           origem_tipo: 'Irmao',
           origem_irmao_id: irmaoId,
           evento_comemorativo_id: lancamentoIrmaos.evento_comemorativo_id ? parseInt(lancamentoIrmaos.evento_comemorativo_id) : null,
@@ -1316,7 +1319,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       irmaos_selecionados: [],
       eh_mensalidade: false,
       evento_comemorativo_id: '',
-      projeto_id: ''
+      projeto_id: '',
+      ja_pago: false,
+      data_pagamento: new Date().toISOString().split('T')[0]
     });
   };
 
@@ -2855,6 +2860,39 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={lancamentoIrmaos.ja_pago}
+                        onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, ja_pago: e.target.checked })}
+                        style={{width:"1.1rem",height:"1.1rem",accentColor:"var(--color-accent)"}}
+                      />
+                      <span className="ml-3" style={{fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>
+                        ✅ Já registrar como pago (quitado)
+                      </span>
+                    </label>
+                    {lancamentoIrmaos.ja_pago && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                          Data do Pagamento *
+                        </label>
+                        <input
+                          type="date"
+                          value={lancamentoIrmaos.data_pagamento}
+                          onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, data_pagamento: e.target.value })}
+                          className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                          required
+                        />
+                        <p className="text-xs mt-1" style={{color:"var(--color-text-muted)"}}>
+                          Usa a Forma de Pagamento selecionada abaixo.
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
