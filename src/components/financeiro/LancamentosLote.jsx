@@ -28,7 +28,10 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
       parcelas: 1,
       observacoes: '',
       evento_comemorativo_id: '',
-      projeto_id: ''
+      projeto_id: '',
+      ja_pago: false,
+      data_pagamento: new Date().toISOString().split('T')[0],
+      tipo_pagamento: 'dinheiro'
     }
   ]);
 
@@ -97,7 +100,10 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
       parcelas: 1,
       observacoes: '',
       evento_comemorativo_id: '',
-      projeto_id: ''
+      projeto_id: '',
+      ja_pago: false,
+      data_pagamento: new Date().toISOString().split('T')[0],
+      tipo_pagamento: 'dinheiro'
     }]);
   };
 
@@ -153,6 +159,10 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
       }
       if (parseFloat(item.valor) <= 0) {
         showError('Valor deve ser maior que zero');
+        return false;
+      }
+      if (item.ja_pago && (!item.data_pagamento || !item.tipo_pagamento)) {
+        showError('Informe a data e a forma de pagamento dos itens marcados como já pagos');
         return false;
       }
     }
@@ -233,7 +243,9 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
                 valor: valorParcela,
                 data_lancamento: new Date().toISOString().split('T')[0],
                 data_vencimento: dataVencimento.toISOString().split('T')[0],
-                status: 'pendente',
+                status: item.ja_pago ? 'pago' : 'pendente',
+                data_pagamento: item.ja_pago ? item.data_pagamento : null,
+                tipo_pagamento: item.ja_pago ? item.tipo_pagamento : null,
                 origem_tipo: 'Irmao',
                 origem_irmao_id: irmaoId,
                 observacoes: item.observacoes || null,
@@ -250,7 +262,9 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
               valor: valorItem,
               data_lancamento: new Date().toISOString().split('T')[0],
               data_vencimento: item.data_vencimento,
-              status: 'pendente',
+              status: item.ja_pago ? 'pago' : 'pendente',
+              data_pagamento: item.ja_pago ? item.data_pagamento : null,
+              tipo_pagamento: item.ja_pago ? item.tipo_pagamento : null,
               origem_tipo: 'Irmao',
               origem_irmao_id: irmaoId,
               observacoes: item.observacoes || null,
@@ -480,7 +494,53 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
                     </div>
                   </div>
 
-                  {/* LINHA 3: Observações */}
+                  {/* LINHA 2.5: Já está pago? */}
+                  <div className="p-3 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                    <label className="flex items-center gap-2 cursor-pointer" style={{color:"var(--color-text)"}}>
+                      <input
+                        type="checkbox"
+                        checked={item.ja_pago}
+                        onChange={(e) => atualizarItem(item.id, 'ja_pago', e.target.checked)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-sm font-medium">✅ Já registrar como pago (quitado)</span>
+                    </label>
+                    {item.ja_pago && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data do Pagamento *</label>
+                          <input
+                            type="date"
+                            value={item.data_pagamento}
+                            onChange={(e) => atualizarItem(item.id, 'data_pagamento', e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Forma de Pagamento *</label>
+                          <select
+                            value={item.tipo_pagamento}
+                            onChange={(e) => atualizarItem(item.id, 'tipo_pagamento', e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                          >
+                            <option value="dinheiro">💵 Dinheiro</option>
+                            <option value="pix">📱 PIX</option>
+                            <option value="transferencia">🏦 Transferência</option>
+                            <option value="deposito">🏧 Depósito</option>
+                            <option value="debito">💳 Débito</option>
+                            <option value="credito">💳 Crédito</option>
+                            <option value="cheque">📝 Cheque</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                    {item.ja_pago && item.parcelas > 1 && (
+                      <p className="text-xs mt-2" style={{color:"var(--color-text-muted)"}}>
+                        ⚠️ Com parcelamento, todas as {item.parcelas} parcelas serão criadas já como pagas, nessa mesma data e forma de pagamento.
+                      </p>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
                     <textarea
@@ -687,6 +747,13 @@ export default function LancamentosLote({ showSuccess, showError, permissoes }) 
                         <span className="font-medium text-primary-600">
                           🔢 {item.parcelas}x de {formatarMoeda(parseFloat(item.valor) / item.parcelas)}
                         </span>
+                      )}
+                      {item.ja_pago ? (
+                        <span className="font-medium" style={{color:"#10b981"}}>
+                          ✅ Pago em {new Date(item.data_pagamento).toLocaleDateString('pt-BR')}
+                        </span>
+                      ) : (
+                        <span style={{color:"#f59e0b"}}>⏳ Pendente</span>
                       )}
                     </div>
                   </div>
