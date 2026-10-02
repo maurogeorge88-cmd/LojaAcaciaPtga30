@@ -16,6 +16,7 @@ import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
+import Comendas from './components/irmaos/Comendas';
 import PerfilIrmao from './components/irmaos/PerfilIrmao';
 import PerfilCompletoIrmao from './components/irmaos/PerfilCompletoIrmao';
 import EmailIrmaos from './components/irmaos/EmailIrmaos';
@@ -166,6 +167,7 @@ function App() {
     'cadastro': '➕ Cadastro de Irmãos',
     'visualizar': '👥 Visualizar Irmãos',
     'quadro': '📋 Quadro de Irmãos',
+    'comendas': '🎖️ Comendas',
     'balaustres': '📜 Balaustres',
     'pranchas': '📄 Pranchas Expedidas',
     'corpo-admin': '👔 Corpo Administrativo',
@@ -2315,6 +2317,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     </button>
 
                     <button
+                      onClick={() => setCurrentPage('comendas')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'comendas'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
+                      }`}
+                    >
+                      <span>🎖️</span>
+                      <span>Comendas</span>
+                    </button>
+
+                    <button
                       onClick={() => setCurrentPage('altos-graus')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'altos-graus'
@@ -2985,6 +2999,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'cadastro' && '➕ Cadastro de Irmãos'}
                   {currentPage === 'visualizar' && '👥 Visualizar Irmãos'}
                   {currentPage === 'quadro' && '📋 Quadro de Irmãos'}
+                  {currentPage === 'comendas' && '🎖️ Comendas'}
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
@@ -3132,6 +3147,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* QUADRO DE IRMÃOS */}
         {currentPage === 'quadro' && (
           <QuadroIrmaos irmaos={irmaos} />
+        )}
+
+        {currentPage === 'comendas' && (
+          <Comendas permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
         )}
 
 
