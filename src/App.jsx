@@ -2000,10 +2000,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       ? 'bg-primary-700 border-l-4 border-white'
                       : 'hover:bg-primary-800'
                   }`}
-                  title="Projetos"
+                  title="Projeto/Campanha"
                 >
                   <span className="text-base">📊</span>
-                  {menuAberto && <span className="font-semibold">Projetos</span>}
+                  {menuAberto && <span className="font-semibold">Projeto/Campanha</span>}
                 </button>
 
                 <button
@@ -2579,10 +2579,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       ? 'bg-primary-700 border-l-4 border-white'
                       : 'hover:bg-primary-800'
                   }`}
-                  title="Projetos"
+                  title="Projeto/Campanha"
                 >
                   <span className="text-base">📊</span>
-                  {menuAberto && <span className="font-semibold">Projetos</span>}
+                  {menuAberto && <span className="font-semibold">Projeto/Campanha</span>}
                 </button>
 
                 <button
