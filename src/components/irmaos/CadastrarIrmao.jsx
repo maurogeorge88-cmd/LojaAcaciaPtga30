@@ -46,6 +46,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     data_elevacao: '',
     data_exaltacao: '',
     mestre_instalado: false,
+    oriundo_demolay_lowton: false,
     data_instalacao: '',
     data_ingresso_loja: '',           // NOVO: Data que veio transferido
     data_transferencia_saida: '',     // NOVO: Data que saiu transferido
@@ -302,6 +303,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       grande_oriente: irmao.grande_oriente || '',
       situacao: irmao.situacao || 'regular',
       eh_profano: irmao.eh_profano || false,
+      oriundo_demolay_lowton: irmao.oriundo_demolay_lowton || false,
       periodicidade_pagamento: irmao.periodicidade_pagamento || 'Mensal',
       data_licenca: irmao.data_licenca || '',
       data_desligamento: irmao.data_desligamento || '',
@@ -525,6 +527,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         grande_oriente: irmaoForm.grande_oriente || null,
         situacao: irmaoForm.situacao || 'regular',
         eh_profano: irmaoForm.eh_profano || false,
+        oriundo_demolay_lowton: irmaoForm.oriundo_demolay_lowton || false,
         periodicidade_pagamento: irmaoForm.periodicidade_pagamento || 'Mensal',
         data_licenca: irmaoForm.data_licenca || null,
         data_desligamento: irmaoForm.data_desligamento || null,
@@ -802,6 +805,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       data_elevacao: '',
       data_exaltacao: '',
       mestre_instalado: false,
+    oriundo_demolay_lowton: false,
       data_instalacao: '',
       loja_origem: '',
       oriente: '',
@@ -1420,6 +1424,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <span className="ml-2 text-sm">Não</span>
                   </label>
                 </div>
+              </div>
+
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
+                  Oriundo de Lowtons/DeMolay?
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!irmaoForm.oriundo_demolay_lowton}
+                    onChange={(e) => setIrmaoForm({ ...irmaoForm, oriundo_demolay_lowton: e.target.checked })}
+                    style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
+                  />
+                  <span className="ml-2 text-sm">Sim</span>
+                </label>
               </div>
 
               {irmaoForm.mestre_instalado && (
