@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { formatarData, calcularIdade } from '../../utils/formatters';
 import { supabase } from '../../supabaseClient';
 import { gerarRelatorioSituacoesPDF } from '../../utils/gerarRelatorioSituacoesPDF';
+import { gerarQuadroIrmaosPDF } from '../../utils/gerarQuadroIrmaosPDF';
 
 const QuadroIrmaos = ({ irmaos }) => {
   const [grauSelecionado, setGrauSelecionado] = useState('todos');
   const [ordenacao, setOrdenacao] = useState('nome');
   const [dadosLoja, setDadosLoja] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [gerandoQuadroPdf, setGerandoQuadroPdf] = useState(false);
 
   useEffect(() => {
     const carregarDadosLoja = async () => {
@@ -25,6 +27,19 @@ const QuadroIrmaos = ({ irmaos }) => {
       console.error('Erro ao gerar relatório de situações:', e);
     } finally {
       setGerandoPdf(false);
+    }
+  };
+
+  // Gera o PDF exatamente como a tela está — mesmo grau filtrado e mesma
+  // ordenação (nome/CIM/idade/tempo) selecionados no momento.
+  const handleGerarQuadroPdf = () => {
+    setGerandoQuadroPdf(true);
+    try {
+      gerarQuadroIrmaosPDF(irmaosOrdenados, dadosLoja, grauSelecionado, ordenacao);
+    } catch (e) {
+      console.error('Erro ao gerar PDF do quadro:', e);
+    } finally {
+      setGerandoQuadroPdf(false);
     }
   };
 
@@ -248,6 +263,17 @@ const QuadroIrmaos = ({ irmaos }) => {
               style={{width:"100%",padding:"0.5rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
             >
               Exportar Quadro
+            </button>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              onClick={handleGerarQuadroPdf}
+              disabled={gerandoQuadroPdf}
+              title="Gera o PDF igual à tela: mesmo grau filtrado e mesma ordenação selecionada"
+              style={{width:"100%",padding:"0.5rem 1.5rem",background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:gerandoQuadroPdf?"wait":"pointer",fontWeight:"700",opacity:gerandoQuadroPdf?0.7:1}}
+            >
+              {gerandoQuadroPdf ? '⏳ Gerando...' : '📄 Gerar PDF (Quadro)'}
             </button>
           </div>
 
