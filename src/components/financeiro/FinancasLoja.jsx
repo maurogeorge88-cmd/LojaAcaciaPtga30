@@ -810,7 +810,48 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             console.error('Erro ao registrar log:', logError);
           }
         }
-        
+
+        // Se a edição vinculou um projeto que esse lançamento NUNCA teve
+        // (não existe nenhuma linha em receitas_projeto/custos_projeto pra
+        // ele ainda), cria agora — é um vínculo novo, não uma correção de
+        // algo que já existia, então não atropela nada que tenha sido
+        // ajustado manualmente na tela de Projetos.
+        if (dados.projeto_id) {
+          const tabelaPonte = dados.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
+          const { data: pontesExistentes } = await supabase
+            .from(tabelaPonte)
+            .select('id')
+            .eq('lancamento_id', editando)
+            .limit(1);
+
+          if (!pontesExistentes || pontesExistentes.length === 0) {
+            const irmaoNome = dados.origem_irmao_id
+              ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+              : '';
+            if (dados.tipo === 'receita') {
+              await supabase.from('receitas_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
+                lancamento_id: editando,
+                data_receita: dados.data_lancamento,
+                descricao: dados.descricao,
+                valor: parseFloat(dados.valor),
+                origem: 'Finanças Loja',
+                forma_pagamento: dados.tipo_pagamento || '',
+                responsavel: irmaoNome,
+              }]);
+            } else {
+              await supabase.from('custos_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
+                lancamento_id: editando,
+                data_custo: dados.data_lancamento,
+                descricao: dados.descricao,
+                valor: parseFloat(dados.valor),
+                categoria: 'Finanças Loja',
+              }]);
+            }
+          }
+        }
+
         showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { data: novoLanc, error } = await supabase
