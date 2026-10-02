@@ -1164,7 +1164,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       observacoes: lancamento.observacoes || '',
       origem_tipo: lancamento.origem_tipo || 'Loja',
       origem_irmao_id: lancamento.origem_irmao_id || '',
-      evento_comemorativo_id: lancamento.evento_comemorativo_id || null
+      evento_comemorativo_id: lancamento.evento_comemorativo_id || null,
+      projeto_id: lancamento.projeto_id || ''
     });
     setEditando(lancamento.id);
     setTimeout(() => setModalLancamentoAberto(true), 0); // garante que irmaoEditando já está no state
