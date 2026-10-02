@@ -44,6 +44,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   });
 
   const tiposProjeto = [
+    { value: 'campanha', label: '🎗️ Campanha', style: {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'2px solid rgba(245,158,11,0.5)'} },
     { value: 'social', label: '🤝 Social', style: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'} },
     { value: 'administrativo', label: '📋 Administrativo', style: {background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'} },
     { value: 'beneficente', label: '❤️ Beneficente', style: {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'} },
@@ -419,15 +420,15 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-3">
         <div>
-          <h2 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>🎯 Projetos da Loja</h2>
-          <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Gerencie os projetos e seus custos</p>
+          <h2 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>🎯 Projetos/Campanhas da Loja</h2>
+          <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Gerencie os projetos, campanhas e seus custos</p>
         </div>
         {permissoes?.canEdit && (
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
             style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
           >
-            {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto'}
+            {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto/Campanha'}
           </button>
         )}
       </div>
@@ -436,7 +437,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {mostrarFormulario && (
         <form onSubmit={salvarProjeto} className="rounded-xl p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
-            {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
+            {projetoEditando ? '✏️ Editando Projeto/Campanha' : '➕ Novo Projeto/Campanha'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -548,7 +549,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
-              <div key={projeto.id} className="rounded-xl p-6 hover:shadow-xl transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div key={projeto.id} className="rounded-xl p-6 hover:shadow-xl transition" style={
+                projeto.tipo === 'campanha'
+                  ? {background:"var(--color-surface)",border:"2px solid #f59e0b",boxShadow:"0 0 0 1px rgba(245,158,11,0.15)"}
+                  : {background:"var(--color-surface)",border:"1px solid var(--color-border)"}
+              }>
                 {/* Header do Card */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
@@ -608,48 +613,62 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
 
                 {/* Financeiro */}
-                <div className="rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border: projeto.tipo === 'campanha' ? "1px solid rgba(245,158,11,0.4)" : "1px solid var(--color-border)"}}>
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold">💰 Valor Previsto:</span>
-                    <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#3b82f6"}}>
+                    <span className="font-semibold">{projeto.tipo === 'campanha' ? '🎯 Meta de Arrecadação:' : '💰 Valor Previsto:'}</span>
+                    <span style={{fontSize:"1.1rem",fontWeight:"800",color: projeto.tipo === 'campanha' ? '#f59e0b' : '#3b82f6'}}>
                       R$ {parseFloat(projeto.valor_previsto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold">💵 Receitas:</span>
+                    <span className="font-semibold">{projeto.tipo === 'campanha' ? '💵 Arrecadado:' : '💵 Receitas:'}</span>
                     <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>
                       R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold">💸 Custos:</span>
-                    <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>
-                      R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2" style={{borderTop:"1px solid var(--color-border)",background:"var(--color-surface-2)",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)"}}>
-                    <span className="font-bold">💳 Saldo:</span>
-                    <span style={{fontSize:"1.25rem",fontWeight:"800",color:saldo>=0?"#10b981":"#ef4444"}}>
-                      R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
 
-                  {/* Barra de Progresso */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Execução do Orçamento</span>
-                      <span className="font-bold">{percentual.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full rounded-full h-3 overflow-hidden" style={{background:"var(--color-surface-3)"}}>
-                      <div
-                        className="h-3 rounded-full transition-all"
-                        style={{width:`${Math.min(100, percentual)}%`, background: percentual > 100 ? '#ef4444' : percentual > 75 ? '#f59e0b' : 'var(--color-accent)'}}
-                      />
-                    </div>
-                    {percentual > 100 && (
-                      <p style={{fontSize:"0.72rem",color:"#ef4444",marginTop:"0.25rem"}}>⚠️ Custos ultrapassaram o valor previsto!</p>
-                    )}
-                  </div>
+                  {projeto.tipo !== 'campanha' && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">💸 Custos:</span>
+                        <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>
+                          R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2" style={{borderTop:"1px solid var(--color-border)",background:"var(--color-surface-2)",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)"}}>
+                        <span className="font-bold">💳 Saldo:</span>
+                        <span style={{fontSize:"1.25rem",fontWeight:"800",color:saldo>=0?"#10b981":"#ef4444"}}>
+                          R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Barra de Progresso — campanha mede arrecadado vs. meta; projeto mede custo vs. previsto */}
+                  {(() => {
+                    const pct = projeto.tipo === 'campanha'
+                      ? (parseFloat(projeto.valor_previsto) > 0 ? (totalReceitas / parseFloat(projeto.valor_previsto)) * 100 : 0)
+                      : percentual;
+                    return (
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>{projeto.tipo === 'campanha' ? 'Progresso da Meta' : 'Execução do Orçamento'}</span>
+                          <span className="font-bold">{pct.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full rounded-full h-3 overflow-hidden" style={{background:"var(--color-surface-3)"}}>
+                          <div
+                            className="h-3 rounded-full transition-all"
+                            style={{width:`${Math.min(100, pct)}%`, background: projeto.tipo === 'campanha' ? (pct >= 100 ? '#10b981' : '#f59e0b') : (pct > 100 ? '#ef4444' : pct > 75 ? '#f59e0b' : 'var(--color-accent)')}}
+                          />
+                        </div>
+                        {projeto.tipo === 'campanha' ? (
+                          pct >= 100 && <p style={{fontSize:"0.72rem",color:"#10b981",marginTop:"0.25rem"}}>🎉 Meta atingida!</p>
+                        ) : (
+                          pct > 100 && <p style={{fontSize:"0.72rem",color:"#ef4444",marginTop:"0.25rem"}}>⚠️ Custos ultrapassaram o valor previsto!</p>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Botão único de acesso financeiro */}
                   <button
@@ -701,25 +720,27 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </button>
-                <button
-                  onClick={() => setAbaAtiva('custos')}
-                  style={{
-                    padding:"0.4rem 1.2rem",
-                    borderRadius:"var(--radius-lg)",
-                    border:"none",
-                    cursor:"pointer",
-                    fontWeight:"700",
-                    fontSize:"0.88rem",
-                    background: abaAtiva === 'custos' ? '#fff' : 'rgba(255,255,255,0.2)',
-                    color: abaAtiva === 'custos' ? '#ef4444' : '#fff',
-                    transition:"all 0.15s"
-                  }}
-                >
-                  💸 Custos
-                  <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
-                    R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </button>
+                {projetoSelecionado?.tipo !== 'campanha' && (
+                  <button
+                    onClick={() => setAbaAtiva('custos')}
+                    style={{
+                      padding:"0.4rem 1.2rem",
+                      borderRadius:"var(--radius-lg)",
+                      border:"none",
+                      cursor:"pointer",
+                      fontWeight:"700",
+                      fontSize:"0.88rem",
+                      background: abaAtiva === 'custos' ? '#fff' : 'rgba(255,255,255,0.2)',
+                      color: abaAtiva === 'custos' ? '#ef4444' : '#fff',
+                      transition:"all 0.15s"
+                    }}
+                  >
+                    💸 Custos
+                    <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
+                      R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </button>
+                )}
                 <button
                   onClick={() => setAbaAtiva('arquivos')}
                   style={{
