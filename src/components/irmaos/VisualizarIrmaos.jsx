@@ -727,6 +727,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     <span className="font-semibold">Oriente:</span>
                     <span className="ml-2">{irmaoSelecionado.oriente || 'Não informado'}</span>
                   </div>
+                  <div>
+                    <span className="font-semibold">Oriundo DeMolay/Lowtons:</span>
+                    <span className="ml-2">{irmaoSelecionado.oriundo_demolay_lowton ? 'Sim' : 'Não'}</span>
+                  </div>
                   <div className="md:col-span-2">
                     <span className="font-semibold">Grande Oriente:</span>
                     <span className="ml-2">{irmaoSelecionado.grande_oriente || 'Não informado'}</span>
