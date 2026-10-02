@@ -88,7 +88,6 @@ export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado
     return [
       irmao.cim || '—',
       irmao.nome || '—',
-      irmao.profissao || '',
       grau,
       irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '—',
       irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '—',
@@ -100,30 +99,29 @@ export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado
   doc.autoTable({
     startY: y,
     margin: { left: M, right: M },
-    head: [['CIM', 'Nome', 'Profissão', 'Grau', 'Idade', 'Iniciação', 'Tempo', 'Situação']],
+    head: [['CIM', 'Nome', 'Grau', 'Idade', 'Iniciação', 'Tempo', 'Situação']],
     body: linhas,
     theme: 'striped',
     styles: { fontSize: 8, cellPadding: 1.8, valign: 'middle', overflow: 'ellipsize' },
     headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 7.5 },
     columnStyles: {
-      0: { cellWidth: 12 },
-      1: { cellWidth: 46, fontStyle: 'bold' },
-      2: { cellWidth: 32, textColor: [100, 100, 100], fontSize: 7 },
-      3: { cellWidth: 20, halign: 'center' },
-      4: { cellWidth: 15, halign: 'center' },
-      5: { cellWidth: 19, halign: 'center' },
-      6: { cellWidth: 16, halign: 'center' },
-      7: { cellWidth: 20, halign: 'center' },
+      0: { cellWidth: 14 },
+      1: { cellWidth: 62, fontStyle: 'bold' },
+      2: { cellWidth: 24, halign: 'center' },
+      3: { cellWidth: 18, halign: 'center' },
+      4: { cellWidth: 22, halign: 'center' },
+      5: { cellWidth: 18, halign: 'center' },
+      6: { cellWidth: 22, halign: 'center' },
     },
     didParseCell: (data) => {
-      // Badge colorido de Grau (coluna 3) e Situação (coluna 7) — pinta o
+      // Badge colorido de Grau (coluna 2) e Situação (coluna 6) — pinta o
       // texto na cor certa, igual aos chips coloridos da tela.
-      if (data.section === 'body' && data.column.index === 3) {
+      if (data.section === 'body' && data.column.index === 2) {
         const [r, g, b] = CORES_GRAU[data.cell.raw] || [100, 100, 100];
         data.cell.styles.textColor = [r, g, b];
         data.cell.styles.fontStyle = 'bold';
       }
-      if (data.section === 'body' && data.column.index === 7) {
+      if (data.section === 'body' && data.column.index === 6) {
         const [r, g, b] = corSituacao(data.cell.raw);
         data.cell.styles.textColor = [r, g, b];
         data.cell.styles.fontStyle = 'bold';
