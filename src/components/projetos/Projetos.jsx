@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
+// Mesmas imagens decorativas já usadas no "Visualizar" do Cronograma —
+// reaproveita o mesmo bucket, sem subir nada novo.
+const IMG_SOL = supabase.storage.from('cronograma').getPublicUrl('sol.png').data.publicUrl;
+const IMG_LUA = supabase.storage.from('cronograma').getPublicUrl('lua.png').data.publicUrl;
+const IMG_COLUNA_B = supabase.storage.from('cronograma').getPublicUrl('coluna-b.png').data.publicUrl;
+const IMG_COLUNA_J = supabase.storage.from('cronograma').getPublicUrl('coluna-j.png').data.publicUrl;
+
 export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetos, setProjetos] = useState([]);
+  const [modalVisualizacao, setModalVisualizacao] = useState(false);
+  const [projetoVisualizar, setProjetoVisualizar] = useState(null);
+  const [dadosLoja, setDadosLoja] = useState({ logo_url: '', nome_loja: 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30' });
   const [todosOsCustos, setTodosOsCustos] = useState([]);
   const [todasAsReceitas, setTodasAsReceitas] = useState([]);
   const [custosDoModal, setCustosDoModal] = useState([]);
@@ -74,7 +84,15 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   useEffect(() => {
     carregarProjetos();
+    carregarDadosLoja();
   }, []);
+
+  const carregarDadosLoja = async () => {
+    try {
+      const { data } = await supabase.from('dados_loja').select('logo_url, nome_loja').single();
+      if (data) setDadosLoja({ logo_url: data.logo_url || '', nome_loja: data.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30' });
+    } catch (e) { /* mantém o padrão se não achar configuração */ }
+  };
 
   const carregarProjetos = async () => {
     setLoading(true);
@@ -567,18 +585,25 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       </span>
                     </div>
                   </div>
-                  {permissoes?.canEdit && (
-                    <div className="flex gap-2">
-                      <button onClick={() => editarProjeto(projeto)}
-                        style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                        ✏️
-                      </button>
-                      <button onClick={() => excluirProjeto(projeto.id)}
-                        style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                        🗑️
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button onClick={() => { setProjetoVisualizar(projeto); setModalVisualizacao(true); }}
+                      title="Visualizar (pra mandar no grupo)"
+                      style={{padding:"0.25rem 0.55rem",background:"rgba(201,168,76,0.15)",color:"#c9a84c",border:"1px solid rgba(201,168,76,0.4)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                      👁️
+                    </button>
+                    {permissoes?.canEdit && (
+                      <>
+                        <button onClick={() => editarProjeto(projeto)}
+                          style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                          ✏️
+                        </button>
+                        <button onClick={() => excluirProjeto(projeto.id)}
+                          style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                          🗑️
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Descrição */}
@@ -1197,6 +1222,168 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </form>
           </div>
         </div>
+        );
+      })()}
+
+      {/* Visualizar — quadro decorado pra tirar print e mandar no grupo,
+          mesmo padrão visual do "Visualizar" do Cronograma. */}
+      {modalVisualizacao && projetoVisualizar && (() => {
+        const tipoInfo = tiposProjeto.find(t => t.value === projetoVisualizar.tipo);
+        const ehCampanha = projetoVisualizar.tipo === 'campanha';
+        const totalReceitasV = calcularTotalReceitas(projetoVisualizar);
+        const totalCustosV = calcularTotalCustos(projetoVisualizar);
+        const saldoV = calcularSaldo(projetoVisualizar, totalCustosV, totalReceitasV);
+        const metaV = parseFloat(projetoVisualizar.valor_previsto) || 0;
+        const pctV = ehCampanha
+          ? (metaV > 0 ? Math.min(100, (totalReceitasV / metaV) * 100) : 0)
+          : calcularPercentual(projetoVisualizar, totalCustosV);
+
+        return (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            style={{background:'rgba(0,0,0,0.55)'}}
+            onClick={() => setModalVisualizacao(false)}
+          >
+            <div
+              className="relative"
+              style={{background:'#e5e7eb',borderRadius:'0.75rem',padding:'2cm',boxShadow:'0 10px 40px rgba(0,0,0,0.35)',maxHeight:'92vh',overflowY:'auto'}}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setModalVisualizacao(false)}
+                style={{position:'absolute',top:'0.6cm',right:'0.6cm',zIndex:10,background:'#1a2138',border:'2px solid #c9a84c',color:'#c9a84c',borderRadius:'50%',width:'2.25rem',height:'2.25rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:'1.1rem',fontWeight:'700',boxShadow:'0 2px 8px rgba(0,0,0,0.25)'}}
+              >
+                ×
+              </button>
+
+              <div
+                id="quadro-projeto"
+                className="rounded-xl relative overflow-hidden"
+                style={{
+                  width:'32rem',
+                  maxWidth:'80vw',
+                  background:'linear-gradient(180deg, #0f1729 0%, #1a2138 100%)',
+                  border:'3px solid #c9a84c',
+                  boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
+                }}
+              >
+                {/* Sol e Lua no topo */}
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'1rem 1rem 0'}}>
+                  <img src={IMG_SOL} alt="" style={{width:'4.5rem',height:'4.5rem',objectFit:'contain',opacity:0.9}} />
+                  <img src={IMG_LUA} alt="" style={{width:'4rem',height:'4rem',objectFit:'contain',opacity:0.9}} />
+                </div>
+
+                {/* Corpo com colunas nas laterais */}
+                <div style={{display:'grid',gridTemplateColumns:'72px 1fr 72px',gap:'0.5rem',padding:'0 0.25rem 1rem',alignItems:'stretch'}}>
+                  <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+                    <img src={IMG_COLUNA_B} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
+                  </div>
+
+                  {/* Pergaminho central */}
+                  <div style={{background:'#f5f0e1',borderRadius:'0.5rem',border:'2px solid #c9a84c',padding:'1.25rem 1rem',boxShadow:'0 4px 12px rgba(0,0,0,0.35)'}}>
+                    {/* Selo do tipo */}
+                    <div style={{textAlign:'center',marginBottom:'0.5rem'}}>
+                      <span style={{...tipoInfo?.style||{background:'#eee',color:'#555',border:'1px solid #ccc'},padding:'0.2rem 0.75rem',borderRadius:'999px',fontSize:'0.72rem',fontWeight:'800'}}>
+                        {tipoInfo?.label || projetoVisualizar.tipo}
+                      </span>
+                    </div>
+
+                    <div style={{width:'60%',height:'2px',background:'linear-gradient(90deg,transparent,#c9a84c,transparent)',margin:'0 auto 0.75rem'}}></div>
+
+                    {/* Nome */}
+                    <div style={{textAlign:'center',marginBottom:'0.85rem'}}>
+                      <p style={{fontSize:'1.3rem',fontWeight:'800',color:'#1e3a8a',fontFamily:'Georgia, serif',margin:0,lineHeight:'1.3'}}>
+                        {projetoVisualizar.nome}
+                      </p>
+                    </div>
+
+                    {/* Descrição */}
+                    {projetoVisualizar.descricao && (
+                      <p style={{fontSize:'0.85rem',color:'#333',textAlign:'center',margin:'0 0 0.85rem',lineHeight:'1.5'}}>
+                        {projetoVisualizar.descricao}
+                      </p>
+                    )}
+
+                    {/* Meta/Arrecadado (campanha) ou Valor Previsto/Receitas/Custos/Saldo (projeto) */}
+                    <div style={{background:'rgba(201,168,76,0.12)',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'0.5rem',padding:'0.75rem',marginBottom:'0.75rem'}}>
+                      {ehCampanha ? (
+                        <>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.85rem',marginBottom:'0.3rem'}}>
+                            <span style={{fontWeight:'700',color:'#1a1a1a'}}>🎯 Meta:</span>
+                            <span style={{fontWeight:'800',color:'#b8860b'}}>R$ {metaV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.85rem',marginBottom:'0.5rem'}}>
+                            <span style={{fontWeight:'700',color:'#1a1a1a'}}>💵 Arrecadado:</span>
+                            <span style={{fontWeight:'800',color:'#166534'}}>R$ {totalReceitasV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                          <div className="w-full rounded-full h-3 overflow-hidden" style={{background:'#ddd'}}>
+                            <div className="h-3 rounded-full" style={{width:`${pctV}%`,background: pctV >= 100 ? '#16a34a' : '#f59e0b'}} />
+                          </div>
+                          <p style={{textAlign:'center',fontSize:'0.78rem',fontWeight:'700',color:'#555',margin:'0.3rem 0 0'}}>
+                            {pctV.toFixed(1)}% da meta {pctV >= 100 ? '— 🎉 Meta atingida!' : ''}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.82rem',marginBottom:'0.25rem'}}>
+                            <span style={{fontWeight:'700',color:'#1a1a1a'}}>💰 Previsto:</span>
+                            <span style={{fontWeight:'800',color:'#1e3a8a'}}>R$ {metaV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.82rem',marginBottom:'0.25rem'}}>
+                            <span style={{fontWeight:'700',color:'#1a1a1a'}}>💵 Receitas:</span>
+                            <span style={{fontWeight:'800',color:'#166534'}}>R$ {totalReceitasV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.82rem',marginBottom:'0.25rem'}}>
+                            <span style={{fontWeight:'700',color:'#1a1a1a'}}>💸 Custos:</span>
+                            <span style={{fontWeight:'800',color:'#b91c1c'}}>R$ {totalCustosV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.85rem',paddingTop:'0.3rem',borderTop:'1px solid rgba(201,168,76,0.4)'}}>
+                            <span style={{fontWeight:'800',color:'#1a1a1a'}}>💳 Saldo:</span>
+                            <span style={{fontWeight:'800',color: saldoV >= 0 ? '#166534' : '#b91c1c'}}>R$ {saldoV.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Datas / responsável */}
+                    <div style={{fontSize:'0.78rem',color:'#333',textAlign:'center'}}>
+                      {projetoVisualizar.data_inicio && (
+                        <p style={{margin:'0.1rem 0'}}>📅 Início: {new Date(projetoVisualizar.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                      )}
+                      {projetoVisualizar.data_prevista_termino && (
+                        <p style={{margin:'0.1rem 0'}}>🏁 Previsão: {new Date(projetoVisualizar.data_prevista_termino + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                      )}
+                      {projetoVisualizar.responsavel && (
+                        <p style={{margin:'0.1rem 0'}}>👤 {projetoVisualizar.responsavel}</p>
+                      )}
+                    </div>
+
+                    {/* Logo da Loja */}
+                    {dadosLoja.logo_url && (
+                      <div style={{textAlign:'center',marginTop:'1rem'}}>
+                        <img src={dadosLoja.logo_url} alt={dadosLoja.nome_loja} style={{width:'3.5rem',height:'3.5rem',objectFit:'contain',margin:'0 auto'}} />
+                        <p style={{fontSize:'0.6rem',color:'#666',marginTop:'0.25rem'}}>{dadosLoja.nome_loja}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+                    <img src={IMG_COLUNA_J} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div style={{padding:'0 1rem 1rem',textAlign:'center'}}>
+                  <span
+                    className="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                    style={statusLabels[projetoVisualizar.status]?.style || {}}
+                  >
+                    {statusLabels[projetoVisualizar.status]?.label || projetoVisualizar.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         );
       })()}
     </div>
