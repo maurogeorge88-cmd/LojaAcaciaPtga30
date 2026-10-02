@@ -203,6 +203,49 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
         if (error) throw error;
       }
 
+      // Se "Projeto" foi um dos campos editados, cria a ponte em
+      // receitas_projeto/custos_projeto pra quem ainda não tinha nenhuma —
+      // mesma regra do formulário individual: só cria quando é vínculo
+      // novo, nunca mexe em quem já tinha uma linha (pode ter sido
+      // corrigida manualmente direto na tela de Projetos).
+      if (campos.projeto_id.ativo && payload.projeto_id) {
+        for (const id of ids) {
+          const registro = resultados.find(r => r.id === id);
+          if (!registro) continue;
+
+          const tabelaPonte = registro.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
+          const { data: pontesExistentes } = await supabase
+            .from(tabelaPonte)
+            .select('id')
+            .eq('lancamento_id', id)
+            .limit(1);
+
+          if (!pontesExistentes || pontesExistentes.length === 0) {
+            if (registro.tipo === 'receita') {
+              await supabase.from('receitas_projeto').insert([{
+                projeto_id: payload.projeto_id,
+                lancamento_id: id,
+                data_receita: registro.data_lancamento,
+                descricao: registro.descricao,
+                valor: registro.valor,
+                origem: 'Finanças Loja',
+                forma_pagamento: registro.tipo_pagamento || '',
+                responsavel: registro.irmaos?.nome || '',
+              }]);
+            } else {
+              await supabase.from('custos_projeto').insert([{
+                projeto_id: payload.projeto_id,
+                lancamento_id: id,
+                data_custo: registro.data_lancamento,
+                descricao: registro.descricao,
+                valor: registro.valor,
+                categoria: 'Finanças Loja',
+              }]);
+            }
+          }
+        }
+      }
+
       setMsg(`✅ ${ids.length} registro(s) atualizados com sucesso!`); setMsgTipo('ok');
       setSelecionados(new Set());
       // Resetar campos
