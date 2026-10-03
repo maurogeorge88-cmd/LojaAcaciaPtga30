@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF';
 
 // Mesma lista/normalização já usada no resto do sistema pra identificar
 // licença, desligamento etc. no histórico de situações.
@@ -35,6 +36,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   const [sessoes, setSessoes] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [irmaosComendas, setIrmaosComendas] = useState([]);
+  const [dadosLoja, setDadosLoja] = useState(null);
 
   const [modalEntrega, setModalEntrega] = useState(null); // { irmao, comenda }
   const [entregaForm, setEntregaForm] = useState({ data_entrega: new Date().toISOString().split('T')[0], observacoes: '' });
@@ -45,7 +47,10 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   });
   const [editandoComendaId, setEditandoComendaId] = useState(null);
 
-  useEffect(() => { carregarTudo(); }, []);
+  useEffect(() => {
+    carregarTudo();
+    supabase.from('dados_loja').select('*').single().then(({ data }) => { if (data) setDadosLoja(data); });
+  }, []);
 
   const carregarTudo = async () => {
     setLoading(true);
@@ -193,6 +198,22 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comendas, irmaos, irmaosComendas, anos100PorIrmao, historicoSituacoes]);
 
+  // ── Relatório em PDF: um quadro por comenda ativa, igual à aba Elegíveis ──
+  const gerarPdf = () => {
+    try {
+      const dados = comendas.filter(c => c.ativo).map(c => ({
+        nome: c.nome,
+        descricao_criterio: c.descricao_criterio,
+        tipo_criterio: c.tipo_criterio,
+        elegiveis: (elegiveisPorComenda[c.id] || []).map(i => ({ nome: i.nome, cim: i.cim })),
+      }));
+      if (dados.length === 0) { showError?.('Nenhuma comenda ativa pra gerar o relatório.'); return; }
+      gerarRelatorioComendasPDF(dados, dadosLoja);
+    } catch (e) {
+      showError?.('Erro ao gerar PDF: ' + e.message);
+    }
+  };
+
   // ── Entregar comenda ─────────────────────────────────────────────────────
   const abrirEntrega = (irmao, comenda) => {
     setModalEntrega({ irmao, comenda });
@@ -300,7 +321,13 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
 
   return (
     <div className="p-6" style={{ maxWidth: '1100px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--color-text)', margin: '0 0 1.25rem' }}>🎖️ Comendas</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--color-text)', margin: 0 }}>🎖️ Comendas</h2>
+        <button onClick={gerarPdf}
+          style={{ padding: '0.5rem 1.2rem', background: '#1e3a5f', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+          📄 Gerar PDF
+        </button>
+      </div>
 
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem' }}>
         {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
