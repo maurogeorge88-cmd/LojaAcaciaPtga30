@@ -5,7 +5,25 @@ import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF
 // Mesma lista/normalização já usada no resto do sistema pra identificar
 // licença, desligamento etc. no histórico de situações.
 const normalizar = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const TIPOS_BLOQUEIO = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
+// Tipos do histórico de situações (GestaoSituacoes): licenca, desligado (Quit Placet),
+// ex_oficio, suspenso, irregular. A comparação ignora acento, hífen e sublinhado —
+// antes a lista procurava "ex-oficio" e o banco grava "ex_oficio", então Ex-Ofício
+// nunca desqualificava ninguém.
+const chaveInterrupcao = (tipo) => {
+  const n = normalizar(tipo).replace(/[_\-\s]/g, '');
+  if (n.includes('licenca')) return 'licenca';
+  if (n.includes('desligad') || n.includes('quit')) return 'desligado';
+  if (n.includes('exoficio')) return 'exoficio';
+  if (n.includes('suspens')) return 'suspenso';
+  if (n.includes('irregular')) return 'irregular';
+  if (n.includes('exclu')) return 'excluido';
+  return null;
+};
+const ROTULO_INTERRUPCAO = {
+  licenca: 'Licença', desligado: 'Desligado / Quit Placet', exoficio: 'Ex-Ofício',
+  suspenso: 'Suspensão', irregular: 'Irregularidade', excluido: 'Exclusão',
+};
+const fmtD = (d) => (d ? new Date(String(d).substring(0, 10) + 'T00:00:00').toLocaleDateString('pt-BR') : '');
 
 // Mesmo critério de "irmão ativo" do resto do sistema (Dashboard, Resumo de Irmãos):
 // situação regular ou licenciado. Falecido, desligado, irregular etc. ficam de fora —
@@ -70,7 +88,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         { data: irmaosComendasData },
       ] = await Promise.all([
         supabase.from('comendas').select('*').order('nome'),
-        supabase.from('irmaos').select('id, nome, cim, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, mestre_instalado, oriundo_demolay_lowton, status, situacao, data_falecimento').eq('status', 'ativo'),
+        supabase.from('irmaos').select('id, nome, cim, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, mestre_instalado, oriundo_demolay_lowton, status, situacao, data_falecimento, data_licenca, data_desligamento').eq('status', 'ativo'),
         supabase.from('historico_situacoes').select('*'),
         supabase.from('sessoes_presenca').select('id, data_sessao, grau_sessao_id'),
         supabase.from('irmaos_comendas').select('*, irmaos(nome, cim), comendas(nome)').order('data_entrega', { ascending: false }),
@@ -107,13 +125,47 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
 
   // ── Teve licença/desligamento/etc. alguma vez? Desqualifica de vez (regra
   // confirmada: não é descontar tempo, é perder o direito por completo). ──
-  const temInterrupcao = (irmaoId) => {
-    return historicoSituacoes.some(s => {
-      if (s.membro_id !== irmaoId) return false;
-      const tipo = normalizar(s.tipo_situacao);
-      return TIPOS_BLOQUEIO.some(b => tipo.includes(b));
+  // Guarda TODAS as interrupções de cada irmão (licença, desligamento/Quit Placet, ex-ofício...).
+  // Quem retornou continua inelegível: o histórico encerrado ("vencida") segue gravado, e é ele
+  // que conta — não a situação de hoje. Registros "cancelada" não contam (foram anulados,
+  // lançados por engano). Como reforço pra dado antigo, olha também as datas do cadastro e a
+  // situação atual de licenciado.
+  const interrupcoesPorIrmao = useMemo(() => {
+    const hojeISO = new Date().toISOString().split('T')[0];
+    const mapa = {};
+    irmaos.forEach(i => { mapa[i.id] = []; });
+
+    historicoSituacoes.forEach(sit => {
+      if (!mapa[sit.membro_id] || sit.status === 'cancelada') return;
+      const chave = chaveInterrupcao(sit.tipo_situacao);
+      if (!chave) return;
+      mapa[sit.membro_id].push({
+        chave, rotulo: ROTULO_INTERRUPCAO[chave],
+        inicio: sit.data_inicio, fim: sit.data_fim,
+        emCurso: sit.status === 'ativa' && (!sit.data_fim || sit.data_fim >= hojeISO),
+        origem: 'historico',
+      });
     });
-  };
+
+    irmaos.forEach(i => {
+      const lista = mapa[i.id];
+      const tem = (k) => lista.some(x => x.chave === k);
+      const situacao = (i.situacao || '').toLowerCase();
+      if (i.data_licenca && !tem('licenca')) {
+        lista.push({ chave: 'licenca', rotulo: ROTULO_INTERRUPCAO.licenca, inicio: i.data_licenca, fim: null, emCurso: situacao === 'licenciado', origem: 'cadastro' });
+      }
+      if (i.data_desligamento && !tem('desligado') && !tem('exoficio')) {
+        const k = situacao === 'ex_oficio' ? 'exoficio' : 'desligado';
+        lista.push({ chave: k, rotulo: ROTULO_INTERRUPCAO[k], inicio: i.data_desligamento, fim: null, emCurso: false, origem: 'cadastro' });
+      }
+      if (situacao === 'licenciado' && !tem('licenca')) {
+        lista.push({ chave: 'licenca', rotulo: ROTULO_INTERRUPCAO.licenca, inicio: null, fim: null, emCurso: true, origem: 'situação atual' });
+      }
+    });
+    return mapa;
+  }, [irmaos, historicoSituacoes]);
+
+  const temInterrupcao = (irmao) => (interrupcoesPorIrmao[irmao.id] || []).length > 0;
 
   // ── Quantos anos esse irmão já bateu 100% de presença — mesma lógica do
   // card "Presença 100%" do Dashboard, só que rodada ano a ano (não só o
@@ -173,10 +225,11 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   // ── Elegibilidade por comenda ────────────────────────────────────────────
   const jaRecebeu = (irmaoId, comendaId) => irmaosComendas.some(ic => ic.irmao_id === irmaoId && ic.comenda_id === comendaId);
 
-  const ehElegivel = (irmao, comenda) => {
+  // Atende o critério em si (tempo, instalado, origem), sem olhar licença/desligamento.
+  const atendeCriterioBase = (irmao, comenda) => {
     switch (comenda.tipo_criterio) {
       case 'tempo_maconaria': {
-        if (!irmao.data_iniciacao || temInterrupcao(irmao.id)) return false;
+        if (!irmao.data_iniciacao) return false;
         if (anosDesde(irmao.data_iniciacao) < (comenda.anos_necessarios || 0)) return false;
         if (comenda.requer_mestre_instalado !== null && comenda.requer_mestre_instalado !== undefined) {
           if (!!irmao.mestre_instalado !== comenda.requer_mestre_instalado) return false;
@@ -184,10 +237,19 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         return true;
       }
       case 'origem_demolay_lowton': {
-        if (!irmao.oriundo_demolay_lowton) return false;
-        if (!irmao.data_iniciacao || temInterrupcao(irmao.id)) return false;
+        if (!irmao.oriundo_demolay_lowton || !irmao.data_iniciacao) return false;
         return anosDesde(irmao.data_iniciacao) >= (comenda.anos_necessarios || 0);
       }
+      default:
+        return false;
+    }
+  };
+
+  const ehElegivel = (irmao, comenda) => {
+    switch (comenda.tipo_criterio) {
+      case 'tempo_maconaria':
+      case 'origem_demolay_lowton':
+        return atendeCriterioBase(irmao, comenda) && !temInterrupcao(irmao);
       case 'macom_100_acumulado':
         return (anos100PorIrmao[irmao.id] || 0) >= (comenda.qtd_necessaria || 0);
       case 'manual':
@@ -204,6 +266,23 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
     return mapa;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comendas, irmaos, irmaosComendas, anos100PorIrmao, historicoSituacoes]);
+
+  // Qualificados pelo critério, mas inelegíveis por licença/desligamento/etc. — só as
+  // comendas calculadas por tempo/origem (Maçom 100% e manual não têm essa regra).
+  const inelegiveisPorComenda = useMemo(() => {
+    const mapa = {};
+    comendas
+      .filter(c => c.ativo && (c.tipo_criterio === 'tempo_maconaria' || c.tipo_criterio === 'origem_demolay_lowton'))
+      .forEach(comenda => {
+        const lista = irmaos
+          .filter(i => !jaRecebeu(i.id, comenda.id) && atendeCriterioBase(i, comenda) && temInterrupcao(i))
+          .sort((a, b) => a.nome.localeCompare(b.nome));
+        if (lista.length > 0) mapa[comenda.id] = lista;
+      });
+    return mapa;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comendas, irmaos, irmaosComendas, historicoSituacoes]);
+  const totalInelegiveis = Object.values(inelegiveisPorComenda).reduce((t, l) => t + l.length, 0);
 
   // ── Relatório em PDF: um quadro por comenda ativa, igual à aba Elegíveis ──
   const gerarPdf = () => {
@@ -337,7 +416,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
       </div>
 
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem' }}>
-        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
+        {[['elegiveis', '✅ Elegíveis'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveis > 0 ? ` (${totalInelegiveis})` : ''}`], ['comendados', '📜 Comendados'], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
           <button key={v} onClick={() => setAba(v)}
             style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === v ? 'var(--color-accent)' : 'var(--color-surface-2)', color: aba === v ? '#fff' : 'var(--color-text)' }}>
             {l}
@@ -388,6 +467,55 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
                     ))}
                   </div>
                 )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── INELEGÍVEIS ────────────────────────────────────────────────── */}
+      {aba === 'inelegiveis' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <p style={{ margin: 0, padding: '0.75rem 1rem', fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--color-text-muted)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+            Irmãos que já cumpriram o critério da comenda, mas perderam o direito por <strong>licença</strong>, <strong>desligamento (Quit Placet)</strong> ou outra interrupção.
+            Quem <strong>retornou continua inelegível</strong>: a regra olha o histórico completo, não só a situação de hoje.
+          </p>
+
+          {totalInelegiveis === 0 && (
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem', margin: 0 }}>Nenhum irmão nessa situação.</p>
+          )}
+
+          {comendas.filter(c => inelegiveisPorComenda[c.id]).map(comenda => {
+            const lista = inelegiveisPorComenda[comenda.id];
+            return (
+              <div key={comenda.id} style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                <div style={{ padding: '0.85rem 1.25rem', background: '#475569' }}>
+                  <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{comenda.nome}</span>
+                  <span style={{ marginLeft: '0.75rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)' }}>{lista.length} inelegível(is)</span>
+                </div>
+                <div style={{ background: 'var(--color-surface)' }}>
+                  {lista.map((irmao, idx) => (
+                    <div key={irmao.id} style={{ padding: '0.65rem 1.25rem', borderLeft: '4px solid #ef4444', borderBottom: idx < lista.length - 1 ? '1px solid var(--color-border)' : 'none', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
+                      <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text)', fontSize: '0.9rem' }}>{irmao.nome}</p>
+                      <p style={{ margin: '0.1rem 0 0.4rem', fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>CIM: {irmao.cim || '—'}</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                        {(interrupcoesPorIrmao[irmao.id] || []).map((it, k) => (
+                          <span key={k} style={{
+                            fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '999px',
+                            background: it.emCurso ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                            color: it.emCurso ? '#ef4444' : '#d97706',
+                            border: `1px solid ${it.emCurso ? 'rgba(239,68,68,0.35)' : 'rgba(245,158,11,0.35)'}`,
+                          }}>
+                            {it.rotulo}
+                            {it.inicio ? ` · ${fmtD(it.inicio)}` : ''}
+                            {it.fim ? ` → ${fmtD(it.fim)}` : ''}
+                            {' · '}{it.emCurso ? 'em curso' : (['licenca', 'desligado'].includes(it.chave) ? 'retornou' : 'encerrada')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             );
           })}
