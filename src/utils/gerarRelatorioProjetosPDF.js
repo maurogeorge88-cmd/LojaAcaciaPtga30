@@ -39,15 +39,19 @@ const corStatus = (status) => {
 export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 15, LARG = W - M * 2;
-  const LIMITE_Y = 272;
+  const LIMITE_Y = 275;
+  const POR_PAGINA = 3;     // 3 quadros por folha
+  const ALT_QUADRO = 52;    // altura fixa → todos os quadros ficam iguais e 3 sempre cabem
+  const GAP_QUADRO = 5;
   let y = 10;
+  let quadrosNaPagina = 0;
 
   const txt = (t, x, yy, opts = {}) => doc.text(String(t), x, yy, opts);
 
   // ── Cabeçalho padrão da Loja ────────────────────────────────────────────
   const nomeLoja = limpar(dadosLoja?.nome_loja || dadosLoja?.nome) || 'ARLS Acácia de Paranatinga nº 30';
   if (dadosLoja?.logo_url) {
-    try { doc.addImage(dadosLoja.logo_url, 'PNG', (W - 24) / 2, y, 24, 24); y += 29; }
+    try { doc.addImage(dadosLoja.logo_url, 'PNG', (W - 20) / 2, y, 20, 20); y += 24; }
     catch (e) { y += 2; }
   }
   doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(30);
@@ -56,7 +60,7 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
   txt(limpar(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 5;
   doc.setDrawColor(80); doc.setLineWidth(0.5); doc.line(M, y, W - M, y);
   doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
-  y += 8;
+  y += 7;
 
   const rotuloAno = filtroAno === 'todos' ? 'Todos os Exercícios' : (filtroAno === 'Sem data' ? 'Sem data de início' : `Exercício ${filtroAno}`);
   doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
@@ -64,7 +68,7 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
   txt(rotuloAno.toUpperCase(), W / 2, y, { align: 'center' }); y += 4.5;
   doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(110);
-  txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' }); y += 7;
+  txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' }); y += 6;
   doc.setTextColor(0);
 
   // ── Quadros de resumo ───────────────────────────────────────────────────
@@ -82,15 +86,15 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
   const GAP = 4, CW = (LARG - GAP * 3) / 4;
   cards.forEach((c, i) => {
     const x = M + i * (CW + GAP);
-    doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, CW, 17, 2, 2, 'F');
-    doc.setDrawColor(...c.cor); doc.setLineWidth(0.5); doc.roundedRect(x, y, CW, 17, 2, 2, 'S');
+    doc.setFillColor(248, 250, 252); doc.roundedRect(x, y, CW, 15, 2, 2, 'F');
+    doc.setDrawColor(...c.cor); doc.setLineWidth(0.5); doc.roundedRect(x, y, CW, 15, 2, 2, 'S');
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...CINZA);
-    txt(c.label, x + CW / 2, y + 5.5, { align: 'center' });
+    txt(c.label, x + CW / 2, y + 5, { align: 'center' });
     doc.setFont('helvetica', 'bold'); doc.setFontSize(c.valor.length > 11 ? 9 : 12); doc.setTextColor(...c.cor);
-    txt(c.valor, x + CW / 2, y + 12.5, { align: 'center' });
+    txt(c.valor, x + CW / 2, y + 11.2, { align: 'center' });
   });
   doc.setTextColor(0);
-  y += 17 + 8;
+  y += 15 + 6;
 
   if (projetos.length === 0) {
     doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(...CINZA);
@@ -115,50 +119,55 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(210, 225, 245);
     txt(`${lista.length - camp} projeto(s)  •  ${camp} campanha(s)`, W - M - 4, y + 6, { align: 'right' });
     doc.setTextColor(0);
-    y += 9 + 4;
+    y += 9 + 3;
+  };
+
+  // Corta o texto com "…" pra caber em uma linha de largura máxima (mm)
+  const cortarLinha = (texto, larguraMax) => {
+    if (doc.getTextWidth(texto) <= larguraMax) return texto;
+    let t = texto;
+    while (t.length > 1 && doc.getTextWidth(t + '…') > larguraMax) t = t.slice(0, -1);
+    return t.trimEnd() + '…';
   };
 
   const desenharProjeto = (p) => {
     const ehCampanha = p.tipo === 'campanha';
     const corTipo = ehCampanha ? AMBAR : AZUL;
-
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-    const descLinhas = p.descricao ? doc.splitTextToSize(limpar(p.descricao), LARG - 12).slice(0, 4) : [];
-    const altDesc = descLinhas.length > 0 ? descLinhas.length * 3.7 + 2 : 0;
-    const altura = 16 + altDesc + 13 + 10 + 8;
-
-    if (y + altura > LIMITE_Y) { doc.addPage(); y = 15; }
     const y0 = y;
+    const H = ALT_QUADRO;
+    const LI = LARG - 12; // largura útil interna
 
     // caixa + faixa lateral (âmbar p/ campanha, azul p/ projeto)
-    doc.setFillColor(255, 255, 255); doc.rect(M, y0, LARG, altura, 'F');
-    doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3); doc.rect(M, y0, LARG, altura, 'S');
-    doc.setFillColor(...corTipo); doc.rect(M, y0, 1.8, altura, 'F');
+    doc.setFillColor(255, 255, 255); doc.rect(M, y0, LARG, H, 'F');
+    doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3); doc.rect(M, y0, LARG, H, 'S');
+    doc.setFillColor(...corTipo); doc.rect(M, y0, 1.8, H, 'F');
 
     // nome
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(25);
-    txt(limpar(p.nome), M + 6, y0 + 6.2);
+    txt(cortarLinha(limpar(p.nome), LI), M + 6, y0 + 6.5);
 
     // tipo • status
     doc.setFontSize(7.5); doc.setTextColor(...corTipo);
     const tipoTxt = limpar(p.tipoLabel || p.tipo).toUpperCase();
-    txt(tipoTxt, M + 6, y0 + 11);
+    txt(tipoTxt, M + 6, y0 + 11.5);
     const wTipo = doc.getTextWidth(tipoTxt);
     doc.setFont('helvetica', 'normal'); doc.setTextColor(...CINZA);
-    txt('  •  ', M + 6 + wTipo, y0 + 11);
+    txt('  •  ', M + 6 + wTipo, y0 + 11.5);
     const wSep = doc.getTextWidth('  •  ');
     doc.setFont('helvetica', 'bold'); doc.setTextColor(...corStatus(p.status));
-    txt(limpar(p.statusLabel || p.status), M + 6 + wTipo + wSep, y0 + 11);
+    txt(limpar(p.statusLabel || p.status), M + 6 + wTipo + wSep, y0 + 11.5);
 
-    // descrição
-    let yy = y0 + 16;
-    if (descLinhas.length > 0) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70);
-      descLinhas.forEach((ln, i) => txt(ln, M + 6, yy + i * 3.7 + 1));
-      yy += altDesc;
+    // descrição — no máximo 3 linhas (a última com "…" se for maior)
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70);
+    if (p.descricao) {
+      // respeita as quebras de linha digitadas na descrição (cada trecho é quebrado à parte)
+      let linhas = String(p.descricao).split(/\r?\n/).map(t => limpar(t)).filter(Boolean)
+        .flatMap(t => doc.splitTextToSize(t, LI));
+      if (linhas.length > 3) linhas = [linhas[0], linhas[1], cortarLinha(linhas[2] + ' ' + (linhas[3] || ''), LI)];
+      linhas.forEach((ln, i) => txt(ln, M + 6, y0 + 17 + i * 3.7));
     }
 
-    // métricas
+    // métricas (posição fixa, independe do tamanho da descrição)
     const metricas = ehCampanha
       ? [
           { l: 'META DE ARRECADAÇÃO', v: fmtR(p.valorPrevisto), c: AMBAR },
@@ -171,51 +180,52 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
           { l: 'CUSTOS', v: fmtR(p.totalCustos), c: VERM },
           { l: 'SALDO', v: fmtR(p.saldo), c: p.saldo >= 0 ? VERDE : VERM },
         ];
-    const colW = (LARG - 12) / metricas.length;
+    const colW = LI / metricas.length;
     metricas.forEach((m, i) => {
       const x = M + 6 + i * colW;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...CINZA);
-      txt(m.l, x, yy + 3);
+      txt(m.l, x, y0 + 31);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...m.c);
-      txt(m.v, x, yy + 8);
+      txt(m.v, x, y0 + 36);
     });
-    yy += 13;
 
     // barra de progresso
     const pct = Math.max(0, p.pct || 0);
-    const rotuloBarra = ehCampanha ? 'Progresso da meta' : 'Execução do orçamento';
-    const larguraBarra = LARG - 12;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...CINZA);
-    txt(rotuloBarra, M + 6, yy + 1.5);
+    txt(ehCampanha ? 'Progresso da meta' : 'Execução do orçamento', M + 6, y0 + 40.5);
     doc.setFont('helvetica', 'bold'); doc.setTextColor(60);
-    txt(`${pct.toFixed(1)}%`, M + 6 + larguraBarra, yy + 1.5, { align: 'right' });
-    doc.setFillColor(226, 232, 240); doc.roundedRect(M + 6, yy + 3, larguraBarra, 2.6, 1.2, 1.2, 'F');
+    txt(`${pct.toFixed(1)}%`, M + 6 + LI, y0 + 40.5, { align: 'right' });
+    doc.setFillColor(226, 232, 240); doc.roundedRect(M + 6, y0 + 42, LI, 2.6, 1.2, 1.2, 'F');
     const corBarra = ehCampanha ? (pct >= 100 ? VERDE : AMBAR) : (pct > 100 ? VERM : pct > 75 ? AMBAR : AZUL);
     doc.setFillColor(...corBarra);
-    const wPreench = larguraBarra * Math.min(100, pct) / 100;
-    if (wPreench > 0.5) doc.roundedRect(M + 6, yy + 3, wPreench, 2.6, 1.2, 1.2, 'F');
-    yy += 10;
+    const wPreench = LI * Math.min(100, pct) / 100;
+    if (wPreench > 0.5) doc.roundedRect(M + 6, y0 + 42, wPreench, 2.6, 1.2, 1.2, 'F');
 
-    // rodapé do quadro: datas e responsável
+    // rodapé do quadro: datas e responsável (uma linha, cortada se passar)
     const partes = [];
     if (p.data_inicio) partes.push(`Início: ${fmtD(p.data_inicio)}`);
     if (p.data_prevista_termino) partes.push(`Previsão: ${fmtD(p.data_prevista_termino)}`);
     if (p.responsavel) partes.push(`Responsável: ${limpar(p.responsavel)}`);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
-    txt(partes.join('   •   ') || ' ', M + 6, yy + 3);
+    txt(cortarLinha(partes.join('   •   ') || ' ', LI), M + 6, y0 + 49.5);
     doc.setTextColor(0);
 
-    y = y0 + altura + 5;
+    y = y0 + H + GAP_QUADRO;
+    quadrosNaPagina++;
   };
+
+  const novaPagina = () => { doc.addPage(); y = 15; quadrosNaPagina = 0; };
+  const cabeNaPagina = (alturaExtra) => quadrosNaPagina < POR_PAGINA && (y + alturaExtra + ALT_QUADRO <= LIMITE_Y);
 
   anos.forEach(ano => {
     const lista = porAno[ano];
-    if (mostrarFaixa) {
-      if (y + 9 + 4 + 50 > LIMITE_Y) { doc.addPage(); y = 15; }
-      desenharFaixaAno(ano, lista);
-    }
-    lista.forEach(desenharProjeto);
-    y += 3;
+    lista.forEach((projeto, idx) => {
+      const faixaAqui = mostrarFaixa && idx === 0;
+      // a faixa do ano nunca fica sozinha: vai junto do primeiro quadro dela
+      if (!cabeNaPagina(faixaAqui ? 12 : 0)) novaPagina();
+      if (faixaAqui) desenharFaixaAno(ano, lista);
+      desenharProjeto(projeto);
+    });
   });
 
   // ── Rodapé em todas as páginas ──────────────────────────────────────────
