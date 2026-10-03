@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioProjetosPDF } from '../../utils/gerarRelatorioProjetosPDF';
 
 // Mesmas imagens decorativas já usadas no "Visualizar" do Cronograma —
 // reaproveita o mesmo bucket, sem subir nada novo.
@@ -8,10 +9,15 @@ const IMG_LUA = supabase.storage.from('cronograma').getPublicUrl('lua.png').data
 const IMG_COLUNA_B = supabase.storage.from('cronograma').getPublicUrl('coluna-b.png').data.publicUrl;
 const IMG_COLUNA_J = supabase.storage.from('cronograma').getPublicUrl('coluna-j.png').data.publicUrl;
 
+// Exercício (ano) de um projeto/campanha = ano da data de início.
+const anoDoProjeto = (p) => (p?.data_inicio ? String(p.data_inicio).substring(0, 4) : 'Sem data');
+
 export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetos, setProjetos] = useState([]);
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const [projetoVisualizar, setProjetoVisualizar] = useState(null);
+  const [modalRelatorio, setModalRelatorio] = useState(false);
+  const [anoRelatorio, setAnoRelatorio] = useState('todos');
   const [dadosLoja, setDadosLoja] = useState({ logo_url: '', nome_loja: 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30' });
   const [todosOsCustos, setTodosOsCustos] = useState([]);
   const [todasAsReceitas, setTodasAsReceitas] = useState([]);
@@ -89,9 +95,43 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const carregarDadosLoja = async () => {
     try {
-      const { data } = await supabase.from('dados_loja').select('logo_url, nome_loja').single();
-      if (data) setDadosLoja({ logo_url: data.logo_url || '', nome_loja: data.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30' });
+      const { data } = await supabase.from('dados_loja').select('*').single();
+      if (data) setDadosLoja({ logo_url: data.logo_url || '', nome_loja: data.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', endereco: data.endereco || '' });
     } catch (e) { /* mantém o padrão se não achar configuração */ }
+  };
+
+  // Resumo em PDF pra enviar aos irmãos — filtrado por exercício (ou todos).
+  const gerarRelatorio = () => {
+    try {
+      const lista = projetos
+        .filter(p => anoRelatorio === 'todos' || anoDoProjeto(p) === anoRelatorio)
+        .map(p => {
+          const totalCustos = calcularTotalCustos(p);
+          const totalReceitas = calcularTotalReceitas(p);
+          const meta = parseFloat(p.valor_previsto) || 0;
+          const ehCampanha = p.tipo === 'campanha';
+          return {
+            nome: p.nome, descricao: p.descricao, tipo: p.tipo,
+            tipoLabel: tiposProjeto.find(t => t.value === p.tipo)?.label || p.tipo,
+            status: p.status, statusLabel: statusLabels[p.status]?.label || p.status,
+            ano: anoDoProjeto(p),
+            data_inicio: p.data_inicio, data_prevista_termino: p.data_prevista_termino, responsavel: p.responsavel,
+            valorPrevisto: meta, totalReceitas, totalCustos,
+            saldo: calcularSaldo(p, totalCustos, totalReceitas),
+            pct: ehCampanha ? (meta > 0 ? (totalReceitas / meta) * 100 : 0) : calcularPercentual(p, totalCustos),
+          };
+        });
+      gerarRelatorioProjetosPDF(lista, dadosLoja, anoRelatorio);
+      setModalRelatorio(false);
+    } catch (e) {
+      showError?.('Erro ao gerar relatório: ' + e.message);
+    }
+  };
+
+  const abrirModalRelatorio = () => {
+    const anosReais = [...new Set(projetos.map(anoDoProjeto).filter(a => a !== 'Sem data'))].sort((a, b) => b.localeCompare(a));
+    setAnoRelatorio(anosReais[0] || 'todos');
+    setModalRelatorio(true);
   };
 
   const carregarProjetos = async () => {
@@ -441,14 +481,22 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           <h2 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>🎯 Projetos/Campanhas da Loja</h2>
           <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Gerencie os projetos, campanhas e seus custos</p>
         </div>
-        {permissoes?.canEdit && (
+        <div className="flex gap-2 flex-wrap justify-end">
           <button
-            onClick={() => setMostrarFormulario(!mostrarFormulario)}
-            style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
+            onClick={abrirModalRelatorio}
+            style={{padding:"0.6rem 1.25rem",background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
           >
-            {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto/Campanha'}
+            📄 Relatório
           </button>
-        )}
+          {permissoes?.canEdit && (
+            <button
+              onClick={() => setMostrarFormulario(!mostrarFormulario)}
+              style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
+            >
+              {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto/Campanha'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Formulário */}
@@ -546,7 +594,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       )}
 
       {/* Lista de Projetos */}
-      <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-3">
+      <div key={refreshKey} className="px-3">
         {projetos.length === 0 ? (
           <div className="col-span-2 text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-lg">📋 Nenhum projeto cadastrado</p>
@@ -558,7 +606,37 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             )}
           </div>
         ) : (
-          projetos.map((projeto) => {
+          (() => {
+            const porAno = {};
+            projetos.forEach(p => {
+              const ano = anoDoProjeto(p);
+              if (!porAno[ano]) porAno[ano] = [];
+              porAno[ano].push(p);
+            });
+            const anos = Object.keys(porAno).sort((a, b) => {
+              if (a === 'Sem data') return 1;
+              if (b === 'Sem data') return -1;
+              return b.localeCompare(a);
+            });
+
+            return anos.map((ano) => {
+              const doAno = porAno[ano];
+              const qtdCampanhas = doAno.filter(p => p.tipo === 'campanha').length;
+              const qtdProjetos = doAno.length - qtdCampanhas;
+              return (
+              <div key={ano} className="mb-8">
+                {/* Faixa do exercício */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.5rem',padding:'0.65rem 1.1rem',marginBottom:'1rem',borderRadius:'var(--radius-lg)',background:'linear-gradient(90deg, var(--color-accent) 0%, #4338ca 100%)',color:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+                  <span style={{fontSize:'1.3rem',fontWeight:'800',letterSpacing:'0.04em'}}>
+                    📅 {ano === 'Sem data' ? 'Sem data de início' : `Exercício ${ano}`}
+                  </span>
+                  <span style={{fontSize:'0.8rem',fontWeight:'600',opacity:0.9}}>
+                    {qtdProjetos} projeto(s) · {qtdCampanhas} campanha(s)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {doAno.map((projeto) => {
             const tipoInfo = tiposProjeto.find(t => t.value === projeto.tipo);
             const statusInfo = statusLabels[projeto.status];
             const totalCustos = calcularTotalCustos(projeto);
@@ -705,7 +783,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
               </div>
             );
-          })
+          })}
+                </div>
+              </div>
+              );
+            });
+          })()
         )}
       </div>
 
@@ -1222,6 +1305,43 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </form>
           </div>
         </div>
+        );
+      })()}
+
+      {/* Relatório PDF — escolher o exercício */}
+      {modalRelatorio && (() => {
+        const anosReais = [...new Set(projetos.map(anoDoProjeto))].sort((a, b) => {
+          if (a === 'Sem data') return 1;
+          if (b === 'Sem data') return -1;
+          return b.localeCompare(a);
+        });
+        const qtd = projetos.filter(p => anoRelatorio === 'todos' || anoDoProjeto(p) === anoRelatorio).length;
+        return (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{background:'rgba(0,0,0,0.6)'}} onClick={() => setModalRelatorio(false)}>
+            <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'400px',width:'100%'}} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)',margin:'0 0 0.25rem'}}>📄 Relatório de Projetos e Campanhas</h3>
+              <p style={{fontSize:'0.8rem',color:'var(--color-text-muted)',margin:'0 0 1rem'}}>Resumo em PDF, pronto pra enviar aos irmãos.</p>
+
+              <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Exercício</label>
+              <select value={anoRelatorio} onChange={(e) => setAnoRelatorio(e.target.value)}
+                style={{width:'100%',padding:'0.55rem 0.75rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.9rem',marginBottom:'0.5rem'}}>
+                <option value="todos">Todos os exercícios</option>
+                {anosReais.map(a => <option key={a} value={a}>{a === 'Sem data' ? 'Sem data de início' : `Exercício ${a}`}</option>)}
+              </select>
+              <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:'0 0 1.25rem'}}>{qtd} projeto(s)/campanha(s) neste filtro</p>
+
+              <div style={{display:'flex',gap:'0.5rem'}}>
+                <button onClick={() => setModalRelatorio(false)}
+                  style={{flex:1,padding:'0.6rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer'}}>
+                  Cancelar
+                </button>
+                <button onClick={gerarRelatorio}
+                  style={{flex:2,padding:'0.6rem',background:'#1e3a5f',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
+                  📄 Gerar PDF
+                </button>
+              </div>
+            </div>
+          </div>
         );
       })()}
 
