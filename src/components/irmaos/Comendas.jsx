@@ -339,9 +339,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
                 ) : (
                   <div style={{ background: 'var(--color-surface)' }}>
                     {lista.map((irmao, idx) => (
-                      <div key={irmao.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1.25rem', borderBottom: idx < lista.length - 1 ? '1px solid var(--color-border)' : 'none', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
+                      <div key={irmao.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1.25rem', borderBottom: idx < lista.length - 1 ? '1px solid var(--color-border)' : 'none', borderLeft: '4px solid #f59e0b', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text)', fontSize: '0.88rem' }}>{irmao.nome}</p>
+                          <p style={{ margin: 0, fontWeight: 800, color: '#f59e0b', fontSize: '0.95rem' }}>{irmao.nome}</p>
                           <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>CIM: {irmao.cim || '—'}</p>
                         </div>
                         {podeEditar && (
