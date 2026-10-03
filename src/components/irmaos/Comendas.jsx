@@ -7,6 +7,13 @@ import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF
 const normalizar = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const TIPOS_BLOQUEIO = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
 
+// Mesmo critério de "irmão ativo" do resto do sistema (Dashboard, Resumo de Irmãos):
+// situação regular ou licenciado. Falecido, desligado, irregular etc. ficam de fora —
+// o campo "status" sozinho não basta, porque não muda quando o irmão falece ou é desligado.
+const SITUACOES_ATIVAS = ['regular', 'licenciado'];
+const ehIrmaoAtivo = (i) =>
+  SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase()) && !i.data_falecimento;
+
 const TIPOS_CRITERIO = [
   { value: 'tempo_maconaria', label: 'Tempo de Maçonaria (anos desde a iniciação)' },
   { value: 'origem_demolay_lowton', label: 'Origem DeMolay/Lowtons + tempo de Maçonaria' },
@@ -63,14 +70,14 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         { data: irmaosComendasData },
       ] = await Promise.all([
         supabase.from('comendas').select('*').order('nome'),
-        supabase.from('irmaos').select('id, nome, cim, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, mestre_instalado, oriundo_demolay_lowton, status').eq('status', 'ativo'),
+        supabase.from('irmaos').select('id, nome, cim, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, mestre_instalado, oriundo_demolay_lowton, status, situacao, data_falecimento').eq('status', 'ativo'),
         supabase.from('historico_situacoes').select('*'),
         supabase.from('sessoes_presenca').select('id, data_sessao, grau_sessao_id'),
         supabase.from('irmaos_comendas').select('*, irmaos(nome, cim), comendas(nome)').order('data_entrega', { ascending: false }),
       ]);
 
       setComendas(comendasData || []);
-      setIrmaos(irmaosData || []);
+      setIrmaos((irmaosData || []).filter(ehIrmaoAtivo));
       setHistoricoSituacoes(historicoData || []);
       setSessoes(sessoesData || []);
       setIrmaosComendas(irmaosComendasData || []);
