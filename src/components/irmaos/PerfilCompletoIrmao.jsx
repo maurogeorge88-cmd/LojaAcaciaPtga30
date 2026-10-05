@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import QuadrosComendas from './QuadrosComendas';
 
 const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [irmao, setIrmao]                           = useState(null);
@@ -336,6 +337,12 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
                 </div>
               );
             })() : <p style={{color:'var(--color-text-muted)',textAlign:'center',padding:'1rem'}}>Nenhum cargo registrado no histórico</p>}
+          </section>
+
+          {/* ── Comendas ──────────────────────────────────────────────────── */}
+          <section style={sSection}>
+            <h3 style={sSecTitle}>🎖️ Comendas</h3>
+            <QuadrosComendas irmaoId={irmao.id} />
           </section>
 
           {/* ── Comissões ─────────────────────────────────────────────────── */}
