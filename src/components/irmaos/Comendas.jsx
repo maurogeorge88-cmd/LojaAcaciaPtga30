@@ -94,7 +94,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
 
   // Registro manual de entrega (comendas da Loja e certificados antigos de Maçom 100%)
   const [modalRegistro, setModalRegistro] = useState(false);
-  const [registroForm, setRegistroForm] = useState({ irmao_id: '', comenda_id: '', data_entrega: new Date().toISOString().split('T')[0], ano_referencia: '', observacoes: '' });
+  const [registroForm, setRegistroForm] = useState({ irmao_id: '', comenda_id: '', data_entrega: new Date().toISOString().split('T')[0], ano_referencia: '', concedida_por: 'grande_loja', observacoes: '' });
 
   const [comendaForm, setComendaForm] = useState(FORM_COMENDA_VAZIO);
   const [editandoComendaId, setEditandoComendaId] = useState(null);
@@ -220,7 +220,14 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
       const anosCem = [];
       const regsIrmao = registrosPorMembro[irmao.id] || [];
 
-      for (let ano = anoMin; ano <= anoAtual; ano++) {
+      // Iniciado ou filiado: o ano de entrada na Loja não conta — só a partir do ano seguinte
+      const anoEntrada = Math.max(
+        irmao.data_iniciacao ? parseInt(String(irmao.data_iniciacao).substring(0, 4)) : 0,
+        irmao.data_ingresso_loja ? parseInt(String(irmao.data_ingresso_loja).substring(0, 4)) : 0,
+      );
+      const primeiroAno = Math.max(anoMin, anoEntrada + 1);
+
+      for (let ano = primeiroAno; ano <= anoAtual; ano++) {
         const fimAno = ano === anoAtual ? new Date() : new Date(ano, 11, 31);
         let totalRegistros = 0, presentes = 0;
 
@@ -255,6 +262,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
 
   // ── Elegibilidade por comenda ────────────────────────────────────────────
   const entregasDe = (irmaoId, comendaId) => irmaosComendas.filter(ic => ic.irmao_id === irmaoId && ic.comenda_id === comendaId);
+  // Para a Roldão só valem entregas concedidas pela Grande Loja
+  const contaAcumulo = (e) => (e.concedida_por || 'grande_loja') === 'grande_loja';
+  const entregasAcumulo = (irmaoId, baseId) => entregasDe(irmaoId, baseId).filter(contaAcumulo);
   const jaRecebeu = (irmaoId, comendaId) => irmaosComendas.some(ic => ic.irmao_id === irmaoId && ic.comenda_id === comendaId);
 
   // Atende o critério em si (tempo, instalado, origem), sem olhar licença/desligamento.
@@ -305,7 +315,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
           if (comenda.comenda_base_id && need > 0) {
             lista = irmaos
               .filter(i => !jaRecebeu(i.id, comenda.id))
-              .map(i => ({ irmao: i, qtd: entregasDe(i.id, comenda.comenda_base_id).length }))
+              .map(i => ({ irmao: i, qtd: entregasAcumulo(i.id, comenda.comenda_base_id).length }))
               .filter(x => x.qtd >= need);
           }
           break;
@@ -330,7 +340,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
       mapa[comenda.id] = irmaos
         .filter(i => !jaRecebeu(i.id, comenda.id))
         .map(i => {
-          const ents = entregasDe(i.id, comenda.comenda_base_id);
+          const ents = entregasAcumulo(i.id, comenda.comenda_base_id);
           return { irmao: i, qtd: ents.length, anos: ents.map(e => e.ano_referencia).filter(Boolean).sort((a, b) => a - b) };
         })
         .filter(x => x.qtd > 0 && x.qtd < need)
@@ -343,7 +353,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   // Selo "x/3 Roldão" exibido na comenda base (Maçom 100%)
   const selosAcumulo = (irmao, baseId) => acumulosDaBase(baseId).map(ac => {
     if (jaRecebeu(irmao.id, ac.id)) return { texto: `${ac.nome} ✓`, ok: true };
-    return { texto: `${entregasDe(irmao.id, baseId).length}/${ac.qtd_necessaria || 0} ${ac.nome}`, ok: false };
+    return { texto: `${entregasAcumulo(irmao.id, baseId).length}/${ac.qtd_necessaria || 0} ${ac.nome}`, ok: false };
   });
 
   // Qualificados pelo critério, mas inelegíveis por licença/desligamento/etc. — só as
@@ -392,8 +402,8 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   };
 
   // ── Entregar comenda ─────────────────────────────────────────────────────
-  const abrirEntrega = (irmao, comenda, ano = null) => {
-    setModalEntrega({ irmao, comenda, ano });
+  const abrirEntrega = (irmao, comenda, ano = null, concedidaPor = null) => {
+    setModalEntrega({ irmao, comenda, ano, concedida_por: concedidaPor || origemDe(comenda) });
     setEntregaForm({ data_entrega: new Date().toISOString().split('T')[0], observacoes: '', ano_referencia: ano ? String(ano) : '' });
   };
 
@@ -408,6 +418,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         comenda_id: modalEntrega.comenda.id,
         data_entrega: entregaForm.data_entrega,
         ano_referencia: entregaForm.ano_referencia ? parseInt(entregaForm.ano_referencia) : null,
+        concedida_por: modalEntrega.concedida_por || 'grande_loja',
         observacoes: entregaForm.observacoes || null,
       });
       if (error) throw error;
@@ -419,8 +430,25 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
     }
   };
 
+  // Ano encerrado sem entrega: sai da lista e não conta para a Roldão
+  const retirarSemEntrega = async (irmao, comenda, ano) => {
+    if (!window.confirm(`Retirar ${irmao.nome} da lista de ${comenda.nome} ${ano} sem entrega?\nNão contará para a Roldão. Para desfazer, exclua o registro na aba Comendados.`)) return;
+    try {
+      const { error } = await supabase.from('irmaos_comendas').insert({
+        irmao_id: irmao.id, comenda_id: comenda.id, ano_referencia: ano,
+        data_entrega: new Date().toISOString().split('T')[0],
+        concedida_por: 'nao_entregue', observacoes: 'Retirado sem entrega',
+      });
+      if (error) throw error;
+      showSuccess?.('✅ Retirado da lista.');
+      carregarTudo();
+    } catch (e) {
+      showError?.(msgErroEntrega(e));
+    }
+  };
+
   const abrirRegistro = () => {
-    setRegistroForm({ irmao_id: '', comenda_id: '', data_entrega: new Date().toISOString().split('T')[0], ano_referencia: '', observacoes: '' });
+    setRegistroForm({ irmao_id: '', comenda_id: '', data_entrega: new Date().toISOString().split('T')[0], ano_referencia: '', concedida_por: 'grande_loja', observacoes: '' });
     setModalRegistro(true);
   };
 
@@ -435,6 +463,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         comenda_id: registroForm.comenda_id,
         data_entrega: registroForm.data_entrega,
         ano_referencia: registroForm.ano_referencia ? parseInt(registroForm.ano_referencia) : null,
+        concedida_por: comendaRegistro?.tipo_criterio === 'presenca_100_anual' ? (registroForm.concedida_por || 'grande_loja') : origemDe(comendaRegistro),
         observacoes: registroForm.observacoes || null,
       });
       if (error) throw error;
@@ -633,10 +662,24 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
                             )}
                           </div>
                           {podeEditar && (
-                            <button onClick={() => abrirEntrega(irmao, comenda, it.ano || null)}
-                              style={{ padding: '0.4rem 0.9rem', background: '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', flexShrink: 0 }}>
-                              🎖️ Entregar{it.ano ? ` ${it.ano}` : ''}
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+                              <button onClick={() => abrirEntrega(irmao, comenda, it.ano || null)}
+                                style={{ padding: '0.4rem 0.9rem', background: '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                                🎖️ Entregar{it.ano ? ` ${it.ano}` : ''}
+                              </button>
+                              {ehAnual && it.ano && it.ano < anoAtualNum && (
+                                <>
+                                  <button onClick={() => abrirEntrega(irmao, comenda, it.ano, 'loja')} title="A Grande Loja não entregou; a Loja entregou (não conta para a Roldão)"
+                                    style={{ padding: '0.4rem 0.7rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer' }}>
+                                    🔺 Pela Loja
+                                  </button>
+                                  <button onClick={() => retirarSemEntrega(irmao, comenda, it.ano)} title="Retirar da lista sem entrega (não conta para a Roldão)"
+                                    style={{ padding: '0.4rem 0.7rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer' }}>
+                                    ✖ Retirar
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       );
@@ -734,15 +777,17 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
             {comendadosVisiveis.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem', margin: 0 }}>Nenhuma comenda entregue ainda.</p>
             ) : comendadosVisiveis.map((ic, idx) => (
-              <div key={ic.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 1.1rem', borderBottom: idx < comendadosVisiveis.length - 1 ? '1px solid var(--color-border)' : 'none', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
-                <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>🎖️</span>
+              <div key={ic.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 1.1rem', borderBottom: idx < comendadosVisiveis.length - 1 ? '1px solid var(--color-border)' : 'none', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', opacity: ic.concedida_por === 'nao_entregue' ? 0.6 : 1 }}>
+                <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{ic.concedida_por === 'nao_entregue' ? '✖️' : '🎖️'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text)', fontSize: '0.88rem' }}>{ic.irmaos?.nome || '—'}</p>
                   <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                     <SeloOrigem origem={ic.comendas?.origem || 'grande_loja'} />
                     <span>
-                      {ic.comendas?.nome || '—'}{ic.ano_referencia ? ` (${ic.ano_referencia})` : ''} — {new Date(ic.data_entrega + 'T00:00:00').toLocaleDateString('pt-BR')}
-                      {ic.observacoes ? ` · ${ic.observacoes}` : ''}
+                      {ic.comendas?.nome || '—'}{ic.ano_referencia ? ` (${ic.ano_referencia})` : ''}
+                      {ic.comendas?.tipo_criterio === 'presenca_100_anual' && ic.concedida_por === 'loja' ? ' · Entregue pela Loja' : ''}
+                      {ic.concedida_por === 'nao_entregue' ? ' · Retirado sem entrega' : ` — ${new Date(ic.data_entrega + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                      {ic.observacoes && ic.concedida_por !== 'nao_entregue' ? ` · ${ic.observacoes}` : ''}
                     </span>
                   </p>
                 </div>
@@ -886,6 +931,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
           <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', maxWidth: '420px', width: '100%' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.3rem' }}>🎖️ Entregar Comenda</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>{modalEntrega.comenda.nome} → <strong style={{ color: 'var(--color-text)' }}>{modalEntrega.irmao.nome}</strong></p>
+            {modalEntrega.comenda.tipo_criterio === 'presenca_100_anual' && modalEntrega.concedida_por === 'loja' && (
+              <p style={{ fontSize: '0.75rem', color: '#10b981', margin: '-0.5rem 0 1rem', fontWeight: 600 }}>🔺 Entregue pela Loja — não conta para a Roldão.</p>
+            )}
 
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={sLabel}>Data da Entrega *</label>
@@ -950,6 +998,16 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
                 <input type="number" placeholder="Ex: 2024" value={registroForm.ano_referencia} onChange={e => setRegistroForm(f => ({ ...f, ano_referencia: e.target.value }))} style={sInp} />
               </div>
             </div>
+            {comendaRegistro?.tipo_criterio === 'presenca_100_anual' && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={sLabel}>Concedida por *</label>
+                <select value={registroForm.concedida_por} onChange={e => setRegistroForm(f => ({ ...f, concedida_por: e.target.value }))} style={sInp}>
+                  <option value="grande_loja">Grande Loja (conta para a Roldão)</option>
+                  <option value="loja">Loja (não conta para a Roldão)</option>
+                  <option value="nao_entregue">Não entregue / retirado</option>
+                </select>
+              </div>
+            )}
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={sLabel}>Observações</label>
               <input value={registroForm.observacoes} onChange={e => setRegistroForm(f => ({ ...f, observacoes: e.target.value }))} style={sInp} />
