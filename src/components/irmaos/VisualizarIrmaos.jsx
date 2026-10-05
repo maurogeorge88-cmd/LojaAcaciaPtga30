@@ -455,8 +455,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 {/* Medalha — comendas 1 a 7 */}
                 {comendasPorIrmao[irmao.id]?.length > 0 && (
                   <div title={comendasPorIrmao[irmao.id].map(c => c.nome).join('\n')}
-                    style={{position:"absolute",top:"1.65rem",right:"0.35rem",display:"flex",alignItems:"center",gap:"0.1rem",background:"rgba(0,0,0,0.6)",border:"1px solid #c9a84c",color:"#c9a84c",padding:"0.05rem 0.4rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"800",cursor:"help"}}>
-                    🎖️{comendasPorIrmao[irmao.id].length > 1 && <span style={{fontSize:"0.62rem"}}>{comendasPorIrmao[irmao.id].length}</span>}
+                    style={{position:"absolute",top:"1.7rem",right:"0.35rem",display:"flex",alignItems:"center",gap:"0.15rem",background:"rgba(0,0,0,0.65)",border:"1.5px solid #c9a84c",color:"#c9a84c",padding:"0.1rem 0.45rem",borderRadius:"999px",fontSize:"1.25rem",lineHeight:1,fontWeight:"800",cursor:"help"}}>
+                    🎖️{comendasPorIrmao[irmao.id].length > 1 && <span style={{fontSize:"0.8rem"}}>{comendasPorIrmao[irmao.id].length}</span>}
                   </div>
                 )}
 
