@@ -1852,6 +1852,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => setCurrentPage('comendas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'comendas'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Comendas"
+              >
+                <span className="text-base">🎖️</span>
+                {menuAberto && <span className="font-semibold">Comendas</span>}
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('minhas-financas')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'minhas-financas'
@@ -3150,7 +3163,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {currentPage === 'comendas' && (
-          <Comendas permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
+          <Comendas permissoes={permissoes} userData={userData} showSuccess={showSuccess} showError={showError} />
         )}
 
 
