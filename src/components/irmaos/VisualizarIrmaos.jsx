@@ -9,6 +9,7 @@ import {
 } from '../../utils/formatters';
 import { STATUS_IRMAOS } from '../../utils/constants';
 import InstrucoesTrabalhos from './InstrucoesTrabalhos';
+import QuadrosComendas from './QuadrosComendas';
 
 const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto, onUpdate, showSuccess, showError, permissoes, userData }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -780,6 +781,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   showSuccess={showSuccess}
                   showError={showError}
                 />
+              </div>
+
+              {/* Comendas */}
+              <div>
+                <h4 className="font-bold text-lg mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>🎖️ Comendas</h4>
+                <QuadrosComendas irmaoId={irmaoSelecionado.id} />
               </div>
 
               {/* Cônjuge */}
