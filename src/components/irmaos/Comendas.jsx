@@ -74,8 +74,13 @@ const anosDesde = (data) => {
   return anos;
 };
 
-export default function Comendas({ permissoes, showSuccess, showError }) {
-  const podeEditar = !!permissoes?.canEdit;
+// Todos visualizam; só editam: Admin, Venerável, Orador e Secretário
+const normCargo = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const SEM_PERMISSAO = 'sem permissão para alterar (bloqueado pelo banco).';
+const CARGOS_EDITAM_COMENDAS = ['veneravel', 'veneravel mestre', 'orador', 'secretario', 'administrador'];
+
+export default function Comendas({ permissoes, userData, showSuccess, showError }) { // eslint-disable-line no-unused-vars
+  const podeEditar = userData?.nivel_acesso === 'admin' || CARGOS_EDITAM_COMENDAS.includes(normCargo(userData?.cargo));
 
   const [aba, setAba] = useState('elegiveis');
   const [loading, setLoading] = useState(true);
@@ -479,8 +484,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   const excluirEntrega = async (id) => {
     if (!window.confirm('Remover este registro de entrega? O irmão volta a aparecer como elegível.')) return;
     try {
-      const { error } = await supabase.from('irmaos_comendas').delete().eq('id', id);
+      const { data, error } = await supabase.from('irmaos_comendas').delete().eq('id', id).select();
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error(SEM_PERMISSAO);
       showSuccess?.('✅ Registro removido.');
       carregarTudo();
     } catch (e) {
@@ -522,8 +528,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
         qtd_necessaria: comendaForm.qtd_necessaria !== '' ? parseInt(comendaForm.qtd_necessaria) : null,
       };
       if (editandoComendaId) {
-        const { error } = await supabase.from('comendas').update(payload).eq('id', editandoComendaId);
+        const { data, error } = await supabase.from('comendas').update(payload).eq('id', editandoComendaId).select();
         if (error) throw error;
+        if (!data || data.length === 0) throw new Error(SEM_PERMISSAO);
         showSuccess?.('✅ Comenda atualizada!');
       } else {
         const { error } = await supabase.from('comendas').insert(payload);
@@ -539,8 +546,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
 
   const alternarAtivoComenda = async (c) => {
     try {
-      const { error } = await supabase.from('comendas').update({ ativo: !c.ativo }).eq('id', c.id);
+      const { data, error } = await supabase.from('comendas').update({ ativo: !c.ativo }).eq('id', c.id).select();
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error(SEM_PERMISSAO);
       carregarTudo();
     } catch (e) {
       showError?.('Erro ao alterar comenda: ' + e.message);
@@ -550,8 +558,9 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
   const excluirComenda = async (id) => {
     if (!window.confirm('Excluir esta comenda? O histórico de quem já recebeu também será apagado.')) return;
     try {
-      const { error } = await supabase.from('comendas').delete().eq('id', id);
+      const { data, error } = await supabase.from('comendas').delete().eq('id', id).select();
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error(SEM_PERMISSAO);
       showSuccess?.('✅ Comenda excluída.');
       carregarTudo();
     } catch (e) {
