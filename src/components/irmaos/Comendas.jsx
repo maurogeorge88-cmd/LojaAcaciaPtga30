@@ -48,12 +48,13 @@ const ORIGENS = [
 const origemDe = (c) => (c?.origem || 'grande_loja');
 const rotuloOrigem = (o) => (o === 'loja' ? 'Loja' : 'Grande Loja');
 
-const SeloOrigem = ({ origem }) => (
+// solido = usado sobre o cabeçalho colorido do card (fundo branco, texto escuro)
+const SeloOrigem = ({ origem, solido = false }) => (
   <span style={{
     fontSize: '0.62rem', fontWeight: 800, padding: '0.1rem 0.5rem', borderRadius: '999px', textTransform: 'uppercase', letterSpacing: '0.03em',
-    background: origem === 'loja' ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.18)',
-    color: origem === 'loja' ? '#10b981' : '#60a5fa',
-    border: `1px solid ${origem === 'loja' ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)'}`,
+    background: solido ? '#ffffff' : (origem === 'loja' ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.18)'),
+    color: solido ? (origem === 'loja' ? '#047857' : '#1d4ed8') : (origem === 'loja' ? '#10b981' : '#60a5fa'),
+    border: solido ? '1px solid #ffffff' : `1px solid ${origem === 'loja' ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)'}`,
   }}>{rotuloOrigem(origem)}</span>
 );
 
@@ -611,7 +612,7 @@ export default function Comendas({ permissoes, showSuccess, showError }) {
               <div key={comenda.id} style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
                 <div style={{ padding: '0.85rem 1.25rem', background: 'var(--color-accent)', display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>{comenda.nome}</span>
-                  <SeloOrigem origem={origemDe(comenda)} />
+                  <SeloOrigem origem={origemDe(comenda)} solido />
                   <span style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)' }}>
                     {lista.length} elegível(is){ehAcumulo && progresso.length > 0 ? ` · ${progresso.length} em progresso` : ''}
                   </span>
