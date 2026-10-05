@@ -572,8 +572,10 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const passaFiltro = (c) => filtroOrigem === 'todas' || origemDe(c) === filtroOrigem;
   const comendasVisiveis = comendas.filter(passaFiltro);
   const totalInelegiveisVis = comendasVisiveis.reduce((t, c) => t + (inelegiveisPorComenda[c.id]?.length || 0), 0);
+  // Quem efetivamente entregou: concedida_por (grande_loja/loja); senão, a origem da comenda
+  const entreguePor = (ic) => (['grande_loja', 'loja'].includes(ic.concedida_por) ? ic.concedida_por : (ic.comendas?.origem || 'grande_loja'));
   const comendadosVisiveis = irmaosComendas
-    .filter(ic => filtroOrigem === 'todas' || (ic.comendas?.origem || 'grande_loja') === filtroOrigem)
+    .filter(ic => filtroOrigem === 'todas' || entreguePor(ic) === filtroOrigem)
     .sort((a, b) => indiceComenda(a.comendas?.nome) - indiceComenda(b.comendas?.nome)
       || String(a.comendas?.nome || '').localeCompare(String(b.comendas?.nome || ''))
       || String(b.data_entrega || '').localeCompare(String(a.data_entrega || '')));
@@ -797,7 +799,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text)', fontSize: '0.88rem' }}>{ic.irmaos?.nome || '—'}</p>
                   <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    <SeloOrigem origem={ic.comendas?.origem || 'grande_loja'} />
+                    <SeloOrigem origem={entreguePor(ic)} />
                     <span>
                       {ic.comendas?.nome || '—'}{ic.ano_referencia ? ` (${ic.ano_referencia})` : ''}
                       {ic.comendas?.tipo_criterio === 'presenca_100_anual' && ic.concedida_por === 'loja' ? ' · Entregue pela Loja' : ''}
@@ -971,8 +973,8 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
                 Cancelar
               </button>
               <button onClick={confirmarEntrega}
-                style={{ flex: 2, padding: '0.6rem', background: '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
-                🎖️ Confirmar Entrega
+                style={{ flex: 2, padding: '0.6rem', background: modalEntrega.concedida_por === 'loja' && modalEntrega.comenda.tipo_criterio === 'presenca_100_anual' ? '#10b981' : '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
+                {modalEntrega.concedida_por === 'loja' && modalEntrega.comenda.tipo_criterio === 'presenca_100_anual' ? '🔺 Confirmar Entrega pela Loja' : '🎖️ Confirmar Entrega'}
               </button>
             </div>
           </div>
