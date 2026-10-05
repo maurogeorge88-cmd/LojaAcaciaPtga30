@@ -14,13 +14,15 @@ const AZUL   = [59, 130, 246];   // faixa de título do quadro (mesmo azul de de
 const AMBAR  = [217, 119, 6];    // nome do irmão elegível (âmbar, legível no papel)
 const BARRA  = [245, 158, 11];   // faixa lateral âmbar
 const CINZA  = [100, 116, 139];
+const AZUL_P = [96, 165, 250];   // faixa lateral "em progresso"
 
 /**
  * Relatório de Comendas — um quadro por comenda ativa, igual à aba
  * "Elegíveis" da tela: título com contagem, linha do critério e a lista
  * de irmãos elegíveis (nome em âmbar, CIM embaixo).
  *
- * @param {Array}  comendas  [{ nome, descricao_criterio, tipo_criterio, elegiveis: [{ nome, cim }] }]
+ * @param {Array}  comendas  [{ nome, origem, descricao_criterio, tipo_criterio,
+ *                              elegiveis: [{ nome, cim, detalhe }], progresso?: [{ nome, cim, detalhe }] }]
  * @param {Object} dadosLoja registro de dados_loja (nome_loja, endereco, logo_url)
  */
 export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
@@ -58,9 +60,11 @@ export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
     doc.setFillColor(...AZUL);
     doc.roundedRect(M, y, LARG, 9, 2, 2, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(255);
-    txt(limpar(comenda.nome) + (continuacao ? '  (continuação)' : ''), M + 4, y + 6);
+    const prefixo = comenda.origem ? `[${comenda.origem.toUpperCase()}]  ` : '';
+    txt(prefixo + limpar(comenda.nome) + (continuacao ? '  (continuação)' : ''), M + 4, y + 6);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(235, 243, 255);
-    txt(`${comenda.elegiveis.length} elegível(is)`, W - M - 4, y + 6, { align: 'right' });
+    const nProg = (comenda.progresso || []).length;
+    txt(`${comenda.elegiveis.length} elegível(is)${nProg ? `  •  ${nProg} em progresso` : ''}`, W - M - 4, y + 6, { align: 'right' });
     doc.setTextColor(0);
     y += 9;
   };
@@ -100,7 +104,12 @@ export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
       return;
     }
 
-    if (comenda.elegiveis.length === 0) {
+    const linhas = [
+      ...comenda.elegiveis.map(e => ({ ...e, prog: false })),
+      ...(comenda.progresso || []).map(p => ({ ...p, prog: true })),
+    ];
+
+    if (linhas.length === 0) {
       doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(...CINZA);
       txt('Nenhum irmão elegível no momento.', W / 2, y + 7, { align: 'center' });
       doc.setTextColor(0);
@@ -110,7 +119,7 @@ export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
     }
 
     let inicioTrecho = inicioCorpo;
-    comenda.elegiveis.forEach((irmao, idx) => {
+    linhas.forEach((irmao, idx) => {
       const ALT = 11;
       if (y + ALT > LIMITE_Y) {
         // fecha a borda do trecho desta página e continua na próxima
@@ -120,13 +129,19 @@ export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
         inicioTrecho = y;
       }
       if (idx % 2 === 1) { doc.setFillColor(248, 250, 252); doc.rect(M, y, LARG, ALT, 'F'); }
-      doc.setFillColor(...BARRA);
+      doc.setFillColor(...(irmao.prog ? AZUL_P : BARRA));
       doc.rect(M, y, 1.4, ALT, 'F');
 
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...AMBAR);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      if (irmao.prog) doc.setTextColor(51, 65, 85); else doc.setTextColor(...AMBAR);
       txt(limpar(irmao.nome), M + 5, y + 4.8);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
       txt(`CIM: ${irmao.cim || '—'}`, M + 5, y + 8.6);
+      if (irmao.detalhe) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+        if (irmao.prog) doc.setTextColor(37, 99, 235); else doc.setTextColor(...AMBAR);
+        txt(limpar(irmao.detalhe), W - M - 3, y + 6.6, { align: 'right' });
+      }
       doc.setTextColor(0);
       y += ALT;
     });
