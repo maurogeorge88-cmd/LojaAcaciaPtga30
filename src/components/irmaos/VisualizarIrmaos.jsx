@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { comendaDaMedalha, ordenarComendas } from '../../utils/ordemComendas';
 import {
   formatarData,
   formatarCPF,
@@ -21,6 +22,26 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
     filhos: []
   });
   const [loading, setLoading] = useState(false);
+
+  // Medalha no card: irmãos com comendas 1 a 7 (Érsio … Roldão)
+  const [comendasPorIrmao, setComendasPorIrmao] = useState({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase.from('irmaos_comendas').select('irmao_id, concedida_por, comendas(nome)');
+        if (error) throw error;
+        const mapa = {};
+        (data || []).forEach(ic => {
+          if (ic.concedida_por === 'nao_entregue' || !ic.comendas?.nome || !comendaDaMedalha(ic.comendas.nome)) return;
+          (mapa[ic.irmao_id] = mapa[ic.irmao_id] || []).push(ic.comendas);
+        });
+        Object.keys(mapa).forEach(k => mapa[k].sort(ordenarComendas));
+        setComendasPorIrmao(mapa);
+      } catch (e) {
+        console.error('Erro ao carregar comendas:', e);
+      }
+    })();
+  }, []);
 
   // Função para determinar o grau baseado nas datas
   const obterGrau = (irmao) => {
@@ -430,6 +451,14 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 <div style={{position:"absolute",top:"0.35rem",right:"0.35rem",color:"#fff",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.62rem",fontWeight:"800",...obterStyleGrau(grau)}}>
                   {grau}
                 </div>
+
+                {/* Medalha — comendas 1 a 7 */}
+                {comendasPorIrmao[irmao.id]?.length > 0 && (
+                  <div title={comendasPorIrmao[irmao.id].map(c => c.nome).join('\n')}
+                    style={{position:"absolute",top:"1.65rem",right:"0.35rem",display:"flex",alignItems:"center",gap:"0.1rem",background:"rgba(0,0,0,0.6)",border:"1px solid #c9a84c",color:"#c9a84c",padding:"0.05rem 0.4rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"800",cursor:"help"}}>
+                    🎖️{comendasPorIrmao[irmao.id].length > 1 && <span style={{fontSize:"0.62rem"}}>{comendasPorIrmao[irmao.id].length}</span>}
+                  </div>
+                )}
 
                 {/* Badge de Profano */}
                 {irmao.eh_profano && (
