@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { ordenarComendas, indiceComenda } from '../../utils/ordemComendas';
 import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF';
 
 // Mesma lista/normalização já usada no resto do sistema pra identificar
@@ -127,7 +128,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
         supabase.from('irmaos_comendas').select('*, irmaos(nome, cim), comendas(nome, origem, tipo_criterio)').order('data_entrega', { ascending: false }),
       ]);
 
-      setComendas(comendasData || []);
+      setComendas([...(comendasData || [])].sort(ordenarComendas));
       setIrmaos((irmaosData || []).filter(ehIrmaoAtivo));
       setHistoricoSituacoes(historicoData || []);
       setSessoes(sessoesData || []);
@@ -382,7 +383,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const gerarPdf = () => {
     try {
       const dados = comendasVisiveis.filter(c => c.ativo)
-        .sort((a, b) => origemDe(a).localeCompare(origemDe(b)) || a.nome.localeCompare(b.nome))
+        .sort(ordenarComendas)
         .map(c => ({
           nome: c.nome,
           origem: rotuloOrigem(origemDe(c)),
@@ -571,7 +572,11 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const passaFiltro = (c) => filtroOrigem === 'todas' || origemDe(c) === filtroOrigem;
   const comendasVisiveis = comendas.filter(passaFiltro);
   const totalInelegiveisVis = comendasVisiveis.reduce((t, c) => t + (inelegiveisPorComenda[c.id]?.length || 0), 0);
-  const comendadosVisiveis = irmaosComendas.filter(ic => filtroOrigem === 'todas' || (ic.comendas?.origem || 'grande_loja') === filtroOrigem);
+  const comendadosVisiveis = irmaosComendas
+    .filter(ic => filtroOrigem === 'todas' || (ic.comendas?.origem || 'grande_loja') === filtroOrigem)
+    .sort((a, b) => indiceComenda(a.comendas?.nome) - indiceComenda(b.comendas?.nome)
+      || String(a.comendas?.nome || '').localeCompare(String(b.comendas?.nome || ''))
+      || String(b.data_entrega || '').localeCompare(String(a.data_entrega || '')));
 
   const sInp = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
   const sLabel = { display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' };
@@ -598,7 +603,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       </div>
 
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        {[['elegiveis', '✅ Elegíveis'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`], ['comendados', '📜 Comendados'], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
+        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
           <button key={v} onClick={() => setAba(v)}
             style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === v ? 'var(--color-accent)' : 'var(--color-surface-2)', color: aba === v ? '#fff' : 'var(--color-text)' }}>
             {l}
