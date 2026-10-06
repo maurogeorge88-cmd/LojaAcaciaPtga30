@@ -342,27 +342,21 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   ];
 
   // ─── Cabeçalho ────────────────────────────────────────────
-  const logoImg = () => new Paragraph({
-    spacing: { before: 0, after: 0 },
+  // Logo da Loja centralizado, em linha (não flutuante), acima do cabeçalho
+  const logoImg = (after = 160) => new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { before: 0, after },
     children: [
       new ImageRun({
         type: 'jpg',
         data: b64ToBuffer(LOGO_LOJA_B64),
         transformation: { width: 108, height: 108 },
-        floating: {
-          horizontalPosition: { offset: 5140827 }, // centralizado na área útil
-          verticalPosition:   { offset: 180000 },
-          wrap: { type: 'none' },
-          behindDocument: false,
-        },
       }),
     ],
   });
 
   const cabecalho = () => [
     logoImg(),
-    // Parágrafo vazio pequeno para empurrar o texto abaixo do logo
-    new Paragraph({ spacing: { before: 0, after: 0 }, children: [ar('')] }),
     prC([
       ar('AUG', { bold: true, size: 26 }),
       ar('∴', { size: 26 }),
@@ -371,7 +365,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ar(' LOJA SIMB', { bold: true, size: 26 }),
       ar('∴', { size: 26 }),
       ar(` ${nomeLoja}`, { bold: true, size: 26 }),
-    ], { before: 1440, after: 40, line: 276 }),  // before=1440 ≈ 2.5cm — desce abaixo do logo
+    ], { before: 0, after: 40, line: 276 }),
     prC([ar(`Fundado em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}`, { bold: true, size: 22 })], { before: 0, after: 40 }),
     prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 280 }),
   ];
@@ -554,6 +548,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     VARS.presidente_requerimento = nomePres;
     VARS.presidente_requerimento_qualificacao = qualificacaoRequerimento(ass.irmao);
     children = [
+      logoImg(240),
       prC([ar(String(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT – 2º SERVIÇO NOTARIAL E REGISTRAL').replace(/\*/g, ''), { bold: true })], { before: 0, after: 400 }),
       vazio({ after: 200 }),
       vazio({ after: 200 }),
@@ -569,9 +564,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     // ─── Montar documento ─────────────────────────────────────
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
-    sections: [{ properties: { page: tipo.startsWith('requerimento_')
-      ? { ...pageCfg, margin: { ...pageCfg.margin, top: 1418 } }  // 2,5 cm (sem cabeçalho da Loja)
-      : pageCfg }, children }],
+    sections: [{ properties: { page: pageCfg }, children }],
   });
 
   return Packer.toBlob(doc);
