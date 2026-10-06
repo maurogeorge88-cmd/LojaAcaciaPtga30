@@ -293,7 +293,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       cidade: irmao.cidade || '',
       estado: irmao.estado || '',
       profissao: irmao.profissao || '',
-      estado_civil: irmao.estado_civil || 'solteiro',
+      estado_civil: irmao.estado_civil || '', // não preencher padrão: mostraria 'Solteiro' sem estar salvo
       uniao_estavel: irmao.uniao_estavel ?? null,
       escolaridade: irmao.escolaridade || 'fundamental_incompleto',
       foto_url: irmao.foto_url || '',
@@ -500,7 +500,10 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       if (irmaoForm.email && !validarEmail(irmaoForm.email)) {
         throw new Error('Email inválido');
       }
-      if (uniaoEstavelPendente(irmaoForm.estado_civil || 'solteiro', irmaoForm.uniao_estavel)) {
+      if (!irmaoForm.estado_civil) {
+        throw new Error('Informe o estado civil (campo obrigatório)');
+      }
+      if (uniaoEstavelPendente(irmaoForm.estado_civil, irmaoForm.uniao_estavel)) {
         throw new Error('Informe se o irmão mantém ou não união estável (campo obrigatório)');
       }
 
@@ -521,8 +524,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         cidade: irmaoForm.cidade || null,
         estado: irmaoForm.estado || null,
         profissao: irmaoForm.profissao || null,
-        estado_civil: irmaoForm.estado_civil || 'solteiro',
-        uniao_estavel: (irmaoForm.estado_civil || 'solteiro') === 'casado' ? null : irmaoForm.uniao_estavel,
+        estado_civil: irmaoForm.estado_civil || null,
+        uniao_estavel: irmaoForm.estado_civil === 'casado' ? null : irmaoForm.uniao_estavel,
         escolaridade: irmaoForm.escolaridade || 'fundamental_incompleto',
         foto_url: irmaoForm.foto_url || null,
         data_iniciacao: irmaoForm.data_iniciacao || null,
@@ -1109,6 +1112,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
+                  <option value="">Selecione... *</option>
                   {ESTADOS_CIVIS.map(ec => (
                     <option key={ec.value} value={ec.value}>{ec.label}</option>
                   ))}
