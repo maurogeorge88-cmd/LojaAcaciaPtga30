@@ -161,7 +161,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       : i.uniao_estavel === true ? 'convivente em união estável'
       : i.uniao_estavel === false ? 'não convivente em união estável'
       : '[união estável não informada]';
-    const estadoCivil = ecBase ? [ecBase, ueTexto].filter(Boolean).join(', ') : null;
+    // Sem estado civil: marca no documento para ser corrigido antes de levar ao cartório
+    const estadoCivil = [ecBase || '[estado civil não informado]', ueTexto].filter(Boolean).join(', ');
 
     return [
       i.nome,
