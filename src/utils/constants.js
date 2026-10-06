@@ -3,13 +3,23 @@ export const ESTADOS_CIVIS = [
   { value: 'solteiro', label: 'Solteiro' },
   { value: 'casado', label: 'Casado' },
   { value: 'divorciado', label: 'Divorciado' },
-  { value: 'viuvo', label: 'Viúvo' },
-  { value: 'uniao_estavel', label: 'União Estável' }
+  { value: 'viuvo', label: 'Viúvo' }
 ];
 
-// Rótulo para exibição (ex.: 'uniao_estavel' → 'União Estável')
+// Rótulo para exibição (ex.: 'viuvo' → 'Viúvo')
 export const rotuloEstadoCivil = (valor) =>
   ESTADOS_CIVIS.find(ec => ec.value === valor)?.label || valor || '';
+
+// União estável (complemento obrigatório do estado civil; não se aplica a casado)
+export const uniaoEstavelPendente = (estadoCivil, uniao) =>
+  estadoCivil !== 'casado' && uniao !== true && uniao !== false;
+
+export const rotuloUniaoEstavel = (estadoCivil, uniao) =>
+  estadoCivil === 'casado' ? '' : uniao === true ? 'Mantém união estável' : uniao === false ? 'Não mantém união estável' : 'União estável não informada';
+
+// Ex.: "Solteiro · Mantém união estável"
+export const rotuloEstadoCivilCompleto = (estadoCivil, uniao) =>
+  [rotuloEstadoCivil(estadoCivil), estadoCivil ? rotuloUniaoEstavel(estadoCivil, uniao) : ''].filter(Boolean).join(' · ');
 
 // Níveis de Escolaridade
 export const NIVEIS_ESCOLARIDADE = [
