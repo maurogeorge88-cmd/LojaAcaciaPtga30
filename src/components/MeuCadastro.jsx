@@ -5,7 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { ESTADOS_CIVIS, rotuloEstadoCivil } from '../utils/constants';
+import { ESTADOS_CIVIS, rotuloEstadoCivilCompleto, uniaoEstavelPendente } from '../utils/constants';
+import CampoUniaoEstavel from './irmaos/CampoUniaoEstavel';
 
 export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   const [meuCadastro, setMeuCadastro] = useState(null);
@@ -22,6 +23,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   
   // Dados da família (editáveis)
   const [estadoCivil, setEstadoCivil] = useState('');
+  const [uniaoEstavel, setUniaoEstavel] = useState(null);
   const [nomeConjuge, setNomeConjuge] = useState('');
   const [dataMatrimonio, setDataMatrimonio] = useState('');
   const [filhos, setFilhos] = useState('');
@@ -64,6 +66,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
         setEstado(data.estado || '');
         setCep(data.cep || '');
         setEstadoCivil(data.estado_civil || '');
+        setUniaoEstavel(data.uniao_estavel ?? null);
         setNomeConjuge(data.nome_conjuge || '');
         setDataMatrimonio(data.data_matrimonio || '');
         setFilhos(data.filhos || '');
@@ -77,6 +80,10 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   };
 
   const handleSalvar = async () => {
+    if (uniaoEstavelPendente(estadoCivil, uniaoEstavel)) {
+      showError('Informe se você mantém ou não união estável (campo obrigatório).');
+      return;
+    }
     try {
       const { error } = await supabase
         .from('irmaos')
@@ -87,6 +94,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
           estado,
           cep,
           estado_civil: estadoCivil,
+          uniao_estavel: estadoCivil === 'casado' ? null : uniaoEstavel,
           nome_conjuge: nomeConjuge,
           data_matrimonio: dataMatrimonio || null,
           filhos
@@ -324,7 +332,18 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                 </select>
               ) : (
-                <p>{rotuloEstadoCivil(estadoCivil) || '-'}</p>
+                <p>{rotuloEstadoCivilCompleto(estadoCivil, uniaoEstavel) || '-'}</p>
+              )}
+              {editando && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>União Estável *</label>
+                  <CampoUniaoEstavel
+                    estadoCivil={estadoCivil}
+                    valor={uniaoEstavel}
+                    onChange={setUniaoEstavel}
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  />
+                </div>
               )}
             </div>
             <div>
