@@ -47,7 +47,7 @@ const MODELOS_PADRAO = [
     tipo: 'ata_posse',
     nome: 'Ata de Posse',
     titulo_doc: 'ATA DA SESSÃO ORDINÁRIA DE POSSE DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
-    corpo: 'Aos {data_posse}, às {hora_posse}, na Augusta e Respeitável Loja Simbólica {nome_loja}, sob a presidência do Venerável Mestre (Presidente) {vm_instalador_nome}, 1º Vigilante (1º Vice-Presidente) {primeiro_vigilante_instalador_nome}, 2º Vigilante (2º Vice-Presidente) {segundo_vigilante_instalador_nome}. O assunto foi a posse em seus respectivos cargos dos membros, eleitos para o cargo de Venerável Mestre, membros da Diretoria e Comissões da Augusta e Respeitável Loja Simbólica {nome_loja}, gestão {gestao}. Foram empossados os Irmãos:',
+    corpo: 'Aos {data_posse}, às {hora_posse}, na Augusta e Respeitável Loja Simbólica {nome_loja}, sob a presidência do Venerável Mestre (Presidente) {vm_instalador_nome}, 1º Vigilante (1º Vice-Presidente) {primeiro_vigilante_instalador_nome}, 2º Vigilante (2º Vice-Presidente) {segundo_vigilante_instalador_nome}. O assunto foi a posse em seus respectivos cargos dos membros, eleitos para o cargo de Venerável Mestre, membros da Diretoria e Comissões da Augusta e Respeitável Loja Simbólica {nome_loja}, com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}. Foram empossados os Irmãos:',
     corpo_aclamacao: '', corpo_disputa: '',
     rodape: 'Nada mais havendo a constar, eu, {secretario_eleito_nome}, lavrei a presente ata que após lida e aprovada será assinada pelo Venerável Mestre (Presidente), 1º Vigilante (1º Vice-Presidente), 2º Vigilante (2º Vice-Presidente), Secretário, Tesoureiro, Orador e Chanceler.',
     assinatura_1_cargo: 'Venerável Mestre Instalador', assinatura_2_cargo: 'Venerável Mestre Empossado', assinatura_3_cargo: 'Secretário',
@@ -94,6 +94,9 @@ const MODELOS_PADRAO = [
 const VARIAVEIS_DISPONIVEIS = [
   { var: '{vm_nome}',                  desc: 'Nome do VM convocante' },
   { var: '{gestao}',                   desc: 'Gestão (ex: 2026/2027)' },
+  { var: '{data_inicio_gestao}',       desc: 'Início da gestão (dd/mm/aaaa)' },
+  { var: '{data_fim_gestao}',          desc: 'Fim da gestão (dd/mm/aaaa)' },
+  { var: '{ano_exercicio}',            desc: 'Ano de exercício (ex: 2026/2027)' },
   { var: '{nome_loja}',                desc: 'Nome completo da loja' },
   { var: '{num_loja}',                 desc: 'Número da loja' },
   { var: '{data_eleicao}',             desc: 'Data da eleição (dd/mm/aaaa)' },
