@@ -189,12 +189,16 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     secretario_eleito_nome:   secretarioEleitoNome,
     secretario_eleito_dados:  secretarioEleito ? dadoIrmao(secretarioEleito.irmao_id) : '[Secretário Eleito]',
     num_votantes:             String(eleicao.num_votantes_eleicao || presEleicaoLen),
-    trecho_votacao:           eleicao.tipo_votacao === 'aclamacao'
-                                ? interpolarModelo(modelo.corpo_aclamacao || '', {})
-                                : interpolarModelo(modelo.corpo_disputa || '', {}),
+    trecho_votacao:           '', // preenchido logo abaixo, já com as variáveis
     cnpj:                     dadosLoja.cnpj || '[CNPJ]',
     numero_registro_cartorio: dadosLoja.numero_registro_cartorio || '04, do Livro A-01',
   };
+
+  // Trecho da votação (aclamação/disputa) também tem variáveis, ex.: {num_votantes}
+  VARS.trecho_votacao = interpolarModelo(
+    eleicao.tipo_votacao === 'aclamacao' ? (modelo.corpo_aclamacao || '') : (modelo.corpo_disputa || ''),
+    VARS
+  );
 
   // Função para interpolar e gerar parágrafo do modelo
   const prModelo = (texto, opts = {}) => {
