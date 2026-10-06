@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { ESTADOS_CIVIS, rotuloEstadoCivil } from '../utils/constants';
 
 export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   const [meuCadastro, setMeuCadastro] = useState(null);
@@ -320,13 +321,10 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="">Selecione</option>
-                  <option value="solteiro">Solteiro</option>
-                  <option value="casado">Casado</option>
-                  <option value="divorciado">Divorciado</option>
-                  <option value="viuvo">Viúvo</option>
+                  {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                 </select>
               ) : (
-                <p className="capitalize">{estadoCivil || '-'}</p>
+                <p>{rotuloEstadoCivil(estadoCivil) || '-'}</p>
               )}
             </div>
             <div>
