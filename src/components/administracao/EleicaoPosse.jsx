@@ -68,6 +68,26 @@ const buscarModelos = async () => {
   return _modelosCache;
 };
 
+// ── Quórum da eleição: 1/3 do total de irmãos Mestres ─────────
+// Mestres = exaltados até a data da eleição, situação Regular ou Licenciado
+// (irregulares não contam), sem falecidos/desligados até a data.
+// eleicao.total_mestres_quorum (Configuração) substitui o cálculo, se preenchido.
+const calcularQuorum = (irmaos, eleicao, presencas) => {
+  const dAto = eleicao?.data_eleicao ? new Date(eleicao.data_eleicao + 'T00:00:00') : new Date();
+  const antesDoAto = (d) => d && new Date(d + 'T00:00:00') <= dAto;
+  const totalCalculado = (irmaos || []).filter(i => {
+    const sit = String(i.situacao || 'regular').toLowerCase();
+    if (!['regular', 'licenciado'].includes(sit)) return false;
+    if (!antesDoAto(i.data_exaltacao)) return false;
+    if (antesDoAto(i.data_falecimento) || antesDoAto(i.data_desligamento)) return false;
+    return true;
+  }).length;
+  const totalMestres = Number(eleicao?.total_mestres_quorum) > 0 ? Number(eleicao.total_mestres_quorum) : totalCalculado;
+  const quorumMinimo = Math.ceil(totalMestres / 3);
+  const presentes = Number(eleicao?.num_votantes_eleicao) || (presencas || []).filter(p => p.sessao === 'eleicao').length;
+  return { totalCalculado, totalMestres, quorumMinimo, presentes, atingido: presentes >= quorumMinimo };
+};
+
 const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) => {
 
   const modelos      = await buscarModelos();
@@ -189,6 +209,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     secretario_eleito_nome:   secretarioEleitoNome,
     secretario_eleito_dados:  secretarioEleito ? dadoIrmao(secretarioEleito.irmao_id) : '[Secretário Eleito]',
     num_votantes:             String(eleicao.num_votantes_eleicao || presEleicaoLen),
+    total_mestres:            String(calcularQuorum(irmaos, eleicao, presencas).totalMestres),
+    quorum_minimo:            String(calcularQuorum(irmaos, eleicao, presencas).quorumMinimo),
     trecho_votacao:           '', // preenchido logo abaixo, já com as variáveis
     cnpj:                     dadosLoja.cnpj || '[CNPJ]',
     numero_registro_cartorio: dadosLoja.numero_registro_cartorio || '04, do Livro A-01',
@@ -1121,6 +1143,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
                 { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
                 { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
+                { key: 'total_mestres_quorum', label: 'Total de Mestres (quórum)', type: 'number', placeholder: `Automático: ${calcularQuorum(irmaos, eleicaoSelecionada, presencas).totalCalculado}` },
               ].map(f => (
                 <div key={f.key}>
                   <label style={S.label}>{f.label}</label>
@@ -1415,6 +1438,18 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       {/* ── Etapa 4: Documentos ── */}
       {etapa === 4 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+          {/* Quórum da eleição */}
+          {(() => {
+            const q = calcularQuorum(irmaos, eleicaoSelecionada, presencas);
+            return (
+              <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', color: 'var(--color-text)',
+                background: q.atingido ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.12)', border: `1px solid ${q.atingido ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.5)'}` }}>
+                {q.atingido ? '✅' : '⛔'} <strong>Quórum da eleição:</strong> {q.presentes} presente(s) de {q.totalMestres} irmãos Mestres — mínimo 1/3 = {q.quorumMinimo}.
+                {!q.atingido && <> <strong>Quórum NÃO atingido</strong> — confira antes de gerar a ata.</>}
+              </div>
+            );
+          })()}
 
           {/* Alerta campos incompletos */}
           {!dadosLoja.cnpj && (
