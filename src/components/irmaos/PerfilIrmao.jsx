@@ -106,6 +106,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   };
 
   const handleSalvarEdicao = async () => {
+    if (!irmaoForm.estado_civil) {
+      showError('❌ Informe o estado civil (campo obrigatório).');
+      return;
+    }
     if (uniaoEstavelPendente(irmaoForm.estado_civil, irmaoForm.uniao_estavel)) {
       showError('❌ Informe se o irmão mantém ou não união estável (campo obrigatório).');
       return;
@@ -692,6 +696,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
+                      <option value="">Selecione... *</option>
                       {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                     </select>
                   ) : (
