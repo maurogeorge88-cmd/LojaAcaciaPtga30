@@ -604,6 +604,13 @@ function App() {
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       }
+
+      // Tesoureiro e Tesoureiro Adjunto: financeiro total automático pelo cargo
+      // (não depende das marcações de permissão, que são para outros acessos)
+      const cargoNorm = String(data.cargo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      if (cargoNorm.includes('tesoureiro')) {
+        setPermissoes(p => ({ ...p, canViewFinancial: true, canEditFinancial: true }));
+      }
     }
    } catch (err) {
      console.error('Erro ao carregar dados do usuário:', err);
