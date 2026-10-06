@@ -59,7 +59,7 @@ import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
 import MenuLoja from './components/layout/MenuLoja';
-import { rotuloEstadoCivil } from './utils/constants';
+import { rotuloEstadoCivilCompleto } from './utils/constants';
 import { permissoesEfetivas, montarPermissoesLegado, podeAbrirPagina, pode } from './config/permissoes';
 
 // ========================================
@@ -1483,7 +1483,7 @@ function App() {
       <div class="info-item"><span class="info-label">RG:</span><span class="info-value">${irmao.rg || '-'}</span></div>
       <div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(irmao.data_nascimento)}</span></div>
       <div class="info-item"><span class="info-label">Naturalidade:</span><span class="info-value">${irmao.naturalidade || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Estado Civil:</span><span class="info-value">${rotuloEstadoCivil(irmao.estado_civil) || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Estado Civil:</span><span class="info-value">${rotuloEstadoCivilCompleto(irmao.estado_civil, irmao.uniao_estavel) || '-'}</span></div>
       <div class="info-item"><span class="info-label">Profissão:</span><span class="info-value">${irmao.profissao || '-'}</span></div>
       <div class="info-item"><span class="info-label">Formação:</span><span class="info-value">${irmao.formacao || '-'}</span></div>
       <div class="info-item"><span class="info-label">Situação:</span><span class="info-value">${irmao.situacao || 'Regular'}</span></div>
