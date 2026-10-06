@@ -1416,20 +1416,40 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               )}
             </div>
 
-            {editandoChapas ? (
+            {editandoChapas ? (() => {
+              // Irmão em mais de um cargo → destaca em vermelho
+              const cargosPorIrmao = {};
+              ORDEM_CARGOS.forEach(cg => { const id = chapaForm[cg]; if (id) (cargosPorIrmao[id] = cargosPorIrmao[id] || []).push(cg); });
+              const totalDup = Object.values(cargosPorIrmao).filter(l => l.length > 1).length;
+              return (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {ORDEM_CARGOS.map(cargo => (
-                  <div key={cargo} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '0.5rem', alignItems: 'center' }}>
-                    <label style={{ ...S.label, margin: 0 }}>{cargo}</label>
-                    <select style={S.select} value={chapaForm[cargo] || ''}
-                      onChange={e => setChapaForm(p => ({ ...p, [cargo]: e.target.value || undefined }))}>
-                      <option value="">— sem designação —</option>
-                      {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-                    </select>
+                {totalDup > 0 && (
+                  <div style={{ padding: '0.6rem 0.9rem', borderRadius: 'var(--radius-md)', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.5)', color: '#ef4444', fontSize: '0.8rem', fontWeight: 700 }}>
+                    ⚠️ {totalDup} irmão(s) em mais de um cargo — confira os campos em vermelho.
                   </div>
-                ))}
+                )}
+                {ORDEM_CARGOS.map(cargo => {
+                  const id = chapaForm[cargo];
+                  const outros = id ? (cargosPorIrmao[id] || []).filter(cg => cg !== cargo) : [];
+                  const dup = outros.length > 0;
+                  return (
+                  <div key={cargo} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '0.5rem', alignItems: 'center' }}>
+                    <label style={{ ...S.label, margin: 0, color: dup ? '#ef4444' : S.label.color }}>{cargo}</label>
+                    <div>
+                      <select style={{ ...S.select, ...(dup ? { border: '2px solid #ef4444', background: 'rgba(239,68,68,0.12)', color: '#ef4444', fontWeight: 700 } : {}) }}
+                        value={id || ''}
+                        onChange={e => setChapaForm(p => ({ ...p, [cargo]: e.target.value || undefined }))}>
+                        <option value="">— sem designação —</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                      {dup && <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: '0.2rem' }}>Também em: {outros.join(', ')}</div>}
+                    </div>
+                  </div>
+                  );
+                })}
               </div>
-            ) : chapaEleita.length === 0 ? (
+              );
+            })() : chapaEleita.length === 0 ? (
               <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Nenhum membro designado ainda.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
