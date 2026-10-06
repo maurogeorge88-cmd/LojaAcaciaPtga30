@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { comendaDaMedalha, ordenarComendas } from '../../utils/ordemComendas';
-import { rotuloEstadoCivil } from '../../utils/constants';
+import { rotuloEstadoCivilCompleto } from '../../utils/constants';
 import {
   formatarData,
   formatarCPF,
@@ -230,7 +230,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         RG: ${irmao.rg || 'Não informado'}
         Data de Nascimento: ${irmao.data_nascimento ? formatarData(irmao.data_nascimento) : 'Não informado'}
         Idade: ${irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : 'Não informado'}
-        Estado Civil: ${rotuloEstadoCivil(irmao.estado_civil) || 'Não informado'}
+        Estado Civil: ${rotuloEstadoCivilCompleto(irmao.estado_civil, irmao.uniao_estavel) || 'Não informado'}
         Profissão: ${irmao.profissao || 'Não informado'}
         Escolaridade: ${irmao.escolaridade || 'Não informado'}
 
@@ -671,7 +671,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   </div>
                   <div>
                     <span className="font-semibold">Estado Civil:</span>
-                    <span className="ml-2">{rotuloEstadoCivil(irmaoSelecionado.estado_civil) || 'Não informado'}</span>
+                    <span className="ml-2">{rotuloEstadoCivilCompleto(irmaoSelecionado.estado_civil, irmaoSelecionado.uniao_estavel) || 'Não informado'}</span>
                   </div>
                   <div>
                     <span className="font-semibold">Profissão:</span>
