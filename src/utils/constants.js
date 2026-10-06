@@ -3,8 +3,13 @@ export const ESTADOS_CIVIS = [
   { value: 'solteiro', label: 'Solteiro' },
   { value: 'casado', label: 'Casado' },
   { value: 'divorciado', label: 'Divorciado' },
-  { value: 'viuvo', label: 'Viuvo' }
+  { value: 'viuvo', label: 'Viúvo' },
+  { value: 'uniao_estavel', label: 'União Estável' }
 ];
+
+// Rótulo para exibição (ex.: 'uniao_estavel' → 'União Estável')
+export const rotuloEstadoCivil = (valor) =>
+  ESTADOS_CIVIS.find(ec => ec.value === valor)?.label || valor || '';
 
 // Níveis de Escolaridade
 export const NIVEIS_ESCOLARIDADE = [
