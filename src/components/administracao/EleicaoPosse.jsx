@@ -369,8 +369,16 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       // Título via modelo (editável no banco)
       ...tituloModelo(modelo.titulo_doc),
 
-      // Corpo via modelo com todas as variáveis interpoladas (instaladores incluídos)
-      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
+      // Corpo via modelo com todas as variáveis interpoladas (instaladores incluídos).
+      // Se o modelo salvo no banco ainda tiver o texto antigo ("gestão {gestao}"),
+      // troca pelo período da gestão.
+      prModelo(
+        String(modelo.corpo || '').includes('{data_inicio_gestao}')
+          ? modelo.corpo
+          : String(modelo.corpo || '').replace(/,\s*gest[ãa]o\s*(de\s*)?\{gestao\}\s*\.?/i,
+              ', com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}.'),
+        { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }
+      ),
 
       // "Foram empossados os Irmãos:" — texto fixo introdutório
       pr([ar('Foram empossados os Irmãos:')], { firstLine: true, before: 80, after: 80 }),
