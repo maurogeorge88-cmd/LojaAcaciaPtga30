@@ -80,6 +80,10 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   };
 
   const handleSalvar = async () => {
+    if (!estadoCivil) {
+      showError('Informe o estado civil (campo obrigatório).');
+      return;
+    }
     if (uniaoEstavelPendente(estadoCivil, uniaoEstavel)) {
       showError('Informe se você mantém ou não união estável (campo obrigatório).');
       return;
