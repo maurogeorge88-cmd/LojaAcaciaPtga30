@@ -11,11 +11,32 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import PermissoesModulos from './PermissoesModulos';
-import { derivarDoLegado, limparMapa, colunasLegadoDoMapa } from '../../config/permissoes';
+import { derivarDoLegado, limparMapa, colunasLegadoDoMapa, MODULOS } from '../../config/permissoes';
 
 const nivelDoCargo = (cargo) => cargo === 'arco_real_externo' ? 'arco_real'
   : cargo === 'irmao' ? 'irmao'
   : (cargo === 'veneravel' || cargo === 'administrador') ? 'admin' : 'cargo';
+
+// Resumo compacto do acesso na lista de usuários
+const ResumoAcesso = ({ usuario }) => {
+  const chip = (txt, cor, bg, title) => (
+    <span title={title} style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-sm)', color: cor, background: bg, whiteSpace: 'nowrap' }}>{txt}</span>
+  );
+  if (['veneravel', 'administrador'].includes(usuario.cargo) || usuario.nivel_acesso === 'admin') {
+    return chip('👑 Acesso total', 'var(--color-accent)', 'var(--color-accent-bg)', 'Venerável / Administrador');
+  }
+  if (usuario.nivel_acesso === 'arco_real') return chip('🔺 Arco Real', 'var(--color-accent)', 'var(--color-accent-bg)', 'Usuário externo do Arco Real');
+  const mapa = usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario);
+  const editar = MODULOS.filter(m => mapa[m.id] === 'editar');
+  const verExtra = MODULOS.filter(m => m.base === 'nenhum' && mapa[m.id] === 'ver');
+  if (editar.length === 0 && verExtra.length === 0) return chip('Acesso padrão', 'var(--color-text-muted)', 'var(--color-surface-2)', 'Somente o acesso padrão de irmão');
+  return (
+    <div className="flex gap-1 justify-center flex-wrap">
+      {editar.length > 0 && chip(`✏️ ${editar.length}`, 'var(--color-success)', 'var(--color-success-bg)', 'Edita: ' + editar.map(m => m.label).join(', '))}
+      {verExtra.length > 0 && chip(`👁️ ${verExtra.length}`, 'var(--color-warning)', 'var(--color-warning-bg)', 'Visualiza: ' + verExtra.map(m => m.label).join(', '))}
+    </div>
+  );
+};
 
 export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, showError, embedded = false }) {
   const [usuarioForm, setUsuarioForm] = useState({
@@ -46,6 +67,12 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   const [loading, setLoading] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [resetandoSenha, setResetandoSenha] = useState(null);
+
+  // Modal de usuário: null | 'novo' | 'ver' | 'editar'
+  const [modalModo, setModalModo] = useState(null);
+  const [abaModal, setAbaModal] = useState('dados');
+  const [busca, setBusca] = useState('');
+  const [filtroCargo, setFiltroCargo] = useState('');
 
   // Função para formatar cargo para exibição
   const formatarCargo = (cargo) => {
@@ -291,6 +318,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
+    setModalModo(null);
+    setAbaModal('dados');
   };
 
   const gerarSenhaAleatoria = () => {
@@ -512,7 +541,6 @@ IMPORTANTE: Copie estas informações agora!
       pode_editar_presenca: usuario.pode_editar_presenca || false,
       permissoes: usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario)
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleExcluirUsuario = async (usuario) => {
@@ -538,15 +566,53 @@ IMPORTANTE: Copie estas informações agora!
     }
   };
 
+  // ── Modal / lista ──
+  const abrirNovo = () => { limparFormulario(); setModalModo('novo'); };
+  const abrirUsuario = (usuario, modo) => { handleEditarUsuario(usuario); setAbaModal('dados'); setModalModo(modo); };
+
+  const usuariosFiltrados = (usuarios || []).filter(u => {
+    const t = busca.trim().toLowerCase();
+    if (t && !(`${u.nome || ''} ${u.email || ''}`.toLowerCase().includes(t))) return false;
+    if (filtroCargo && u.cargo !== filtroCargo) return false;
+    return true;
+  });
+
     const conteudoUsuarios = (
       <div className="space-y-6">
-      {/* FORMULÁRIO */}
-      <div className="card">
-        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
-          {modoEdicao ? '✏️ Editar Usuário' : '➕ Novo Usuário'}
-        </h3>
+      {/* MODAL DO USUÁRIO — abas Dados de Acesso / Permissões */}
+      {modalModo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={limparFormulario}>
+          <form
+            onSubmit={modalModo === 'novo' ? handleCriarUsuario : handleAtualizarUsuario}
+            onClick={e => e.stopPropagation()}
+            onInvalidCapture={() => setAbaModal('dados')}
+            className="w-full h-full md:h-auto"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', maxWidth: '860px', maxHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            {/* Cabeçalho */}
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <h3 style={{ margin: 0, flex: 1, fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-text)' }}>
+                {modalModo === 'novo' ? '➕ Novo Usuário' : modalModo === 'editar' ? `✏️ ${usuarioForm.nome}` : `👁️ ${usuarioForm.nome}`}
+              </h3>
+              <button type="button" onClick={limparFormulario} title="Fechar"
+                style={{ background: 'transparent', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--color-text-muted)' }}>✕</button>
+            </div>
 
-        <form onSubmit={modoEdicao ? handleAtualizarUsuario : handleCriarUsuario} className="space-y-4">
+            {/* Abas */}
+            <div style={{ display: 'flex', gap: '0.4rem', padding: '0.75rem 1.25rem 0', borderBottom: '1px solid var(--color-border)' }}>
+              {[['dados', '👤 Dados de Acesso'], ['permissoes', '🔐 Permissões']].map(([id, label]) => (
+                <button key={id} type="button" onClick={() => setAbaModal(id)}
+                  style={{ padding: '0.5rem 1rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', border: 'none', borderBottom: `3px solid ${abaModal === id ? 'var(--color-accent)' : 'transparent'}`,
+                    background: 'transparent', color: abaModal === id ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Conteúdo */}
+            <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1, maxHeight: 'calc(100vh - 170px)' }}>
+              <fieldset disabled={modalModo === 'ver'} style={{ border: 'none', margin: 0, padding: 0, minWidth: 0 }}>
+                <div className="space-y-4" style={{ display: abaModal === 'dados' ? 'block' : 'none' }}>
           {/* Nome e Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -736,17 +802,7 @@ IMPORTANTE: Copie estas informações agora!
             </div>
           </div>
 
-          {/* PERMISSÕES POR MÓDULO (Fase 2) */}
           {usuarioForm.cargo !== 'arco_real_externo' && (
-            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <PermissoesModulos
-                valor={usuarioForm.permissoes || {}}
-                onChange={(mapa) => setUsuarioForm(f => ({ ...f, permissoes: mapa }))}
-                acessoTotal={['veneravel', 'administrador'].includes(usuarioForm.cargo)}
-                tesoureiro={String(usuarioForm.cargo || '').includes('tesoureiro')}
-                onAplicarModelo={() => setUsuarioForm(f => ({ ...f, permissoes: modeloDoCargo(f.cargo) }))}
-              />
-
               <div style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.85rem' }}>
                 <label className="form-label">Vincular ao cadastro no Arco Real (opcional)</label>
                 <select
@@ -760,8 +816,23 @@ IMPORTANTE: Copie estas informações agora!
                     <option key={m.id} value={m.id}>{m.nome}</option>
                   ))}
                 </select>
-                <p className="form-hint">Se essa pessoa também tem cadastro no Arco Real, vincule aqui pra ela ver "Meus Dados" lá. O acesso ao Arco Real é definido no módulo "Arco Real" acima.</p>
+                <p className="form-hint">Se essa pessoa também tem cadastro no Arco Real, vincule aqui pra ela ver "Meus Dados" lá. O acesso ao Arco Real é definido na aba Permissões.</p>
               </div>
+          )}
+                </div>
+                <div className="space-y-4" style={{ display: abaModal === 'permissoes' ? 'block' : 'none' }}>
+          {/* PERMISSÕES POR MÓDULO (Fase 2) */}
+          {usuarioForm.cargo !== 'arco_real_externo' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <PermissoesModulos
+                valor={usuarioForm.permissoes || {}}
+                onChange={(mapa) => setUsuarioForm(f => ({ ...f, permissoes: mapa }))}
+                acessoTotal={['veneravel', 'administrador'].includes(usuarioForm.cargo)}
+                tesoureiro={String(usuarioForm.cargo || '').includes('tesoureiro')}
+                onAplicarModelo={modalModo === 'ver' ? null : () => setUsuarioForm(f => ({ ...f, permissoes: modeloDoCargo(f.cargo) }))}
+                somenteLeitura={modalModo === 'ver'}
+              />
+
             </div>
           )}
 
@@ -1121,69 +1192,61 @@ IMPORTANTE: Copie estas informações agora!
           </>
           )}
 
-          {/* Botões */}
-          <div className="flex gap-2 justify-end pt-4">
-            {modoEdicao && (
-              <button
-                type="button"
-                onClick={limparFormulario}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'var(--color-surface-2)',
-                  color: 'var(--color-text)',
-                  border: '2px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontWeight: '600',
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-3)'}
-                onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-2)'}
-              >
-                Cancelar
-              </button>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                fontWeight: '600',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                opacity: loading ? 0.5 : 1
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.background = 'var(--color-accent-hover)';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.background = 'var(--color-accent)';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-                }
-              }}
-            >
-              {loading ? 'Salvando...' : (modoEdicao ? '💾 Atualizar' : '➕ Criar Usuário')}
-            </button>
-          </div>
-        </form>
-      </div>
+                  <p className="form-hint" style={{ marginTop: '0.25rem' }}>⚠️ Determinadas permissões devem ser solicitadas ao administrador.</p>
+                </div>
+              </fieldset>
+            </div>
+
+            {/* Rodapé */}
+            <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              {modalModo === 'ver' ? (
+                <>
+                  <button type="button" onClick={limparFormulario}
+                    style={{ padding: '0.6rem 1.25rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>
+                    Fechar
+                  </button>
+                  <button type="button" onClick={() => setModalModo('editar')}
+                    style={{ padding: '0.6rem 1.25rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
+                    ✏️ Editar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={limparFormulario}
+                    style={{ padding: '0.6rem 1.25rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                  <button type="submit" disabled={loading}
+                    style={{ padding: '0.6rem 1.25rem', background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+                    {loading ? 'Salvando...' : (modalModo === 'novo' ? '➕ Criar Usuário' : '💾 Salvar')}
+                  </button>
+                </>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* LISTA DE USUÁRIOS */}
       <div className="card">
-        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
-          👥 Usuários Cadastrados ({usuarios?.length || 0})
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <h3 className="text-xl font-bold" style={{ color: 'var(--color-text)', margin: 0, flex: 1 }}>
+            👥 Usuários Cadastrados ({usuariosFiltrados.length})
+          </h3>
+          <button type="button" onClick={abrirNovo}
+            style={{ padding: '0.55rem 1.1rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
+            ➕ Novo Usuário
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <input className="form-input" placeholder="🔍 Buscar por nome ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} style={{ flex: 2, minWidth: '200px' }} />
+          <select className="form-input" value={filtroCargo} onChange={e => setFiltroCargo(e.target.value)} style={{ flex: 1, minWidth: '160px', cursor: 'pointer' }}>
+            <option value="">Todos os cargos</option>
+            {[...new Set((usuarios || []).map(u => u.cargo).filter(Boolean))].sort().map(c => (
+              <option key={c} value={c}>{formatarCargo(c)}</option>
+            ))}
+          </select>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -1199,10 +1262,13 @@ IMPORTANTE: Copie estas informações agora!
               </tr>
             </thead>
             <tbody>
-              {usuarios?.map((usuario) => (
+              {usuariosFiltrados.map((usuario) => (
                 <tr key={usuario.id} style={{ borderTop: '1px solid var(--color-border)' }}>
                   <td className="px-4 py-3">
-                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>{usuario.nome}</span>
+                    <button type="button" onClick={() => abrirUsuario(usuario, 'ver')} title="Visualizar"
+                      className="font-medium" style={{ color: 'var(--color-text)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', textDecoration: 'underline dotted' }}>
+                      {usuario.nome}
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                     {usuario.email}
@@ -1219,59 +1285,8 @@ IMPORTANTE: Copie estas informações agora!
                       {formatarCargo(usuario.cargo)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1 justify-center flex-wrap">
-                      {usuario.pode_editar_cadastros && (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          background: 'var(--color-success-bg)',
-                          color: 'var(--color-success)',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontWeight: '600'
-                        }}>✏️</span>
-                      )}
-                      {usuario.pode_visualizar_financeiro && (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          background: 'var(--color-warning-bg)',
-                          color: 'var(--color-warning)',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontWeight: '600'
-                        }}>👁️</span>
-                      )}
-                      {usuario.pode_editar_financeiro && (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          background: 'var(--color-accent-bg)',
-                          color: 'var(--color-accent)',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontWeight: '600'
-                        }}>💰</span>
-                      )}
-                      {usuario.pode_visualizar_arco_real && (
-                        <span title="Arco Real" style={{
-                          fontSize: '0.75rem',
-                          background: 'var(--color-accent-bg)',
-                          color: 'var(--color-accent)',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontWeight: '600'
-                        }}>🔺</span>
-                      )}
-                      {usuario.pode_gerenciar_usuarios && (
-                        <span style={{
-                          fontSize: '0.75rem',
-                          background: 'var(--color-danger-bg)',
-                          color: 'var(--color-danger)',
-                          padding: '0.25rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontWeight: '600'
-                        }}>👥</span>
-                      )}
-                    </div>
+                  <td className="px-4 py-3 text-center">
+                    <ResumoAcesso usuario={usuario} />
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {usuario.senha_temporaria ? (
@@ -1299,7 +1314,14 @@ IMPORTANTE: Copie estas informações agora!
                   <td className="px-4 py-3">
                     <div className="flex gap-2 justify-center">
                       <button
-                        onClick={() => handleEditarUsuario(usuario)}
+                        onClick={() => abrirUsuario(usuario, 'ver')}
+                        title="Visualizar"
+                        style={{ padding: '0.25rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        👁️
+                      </button>
+                      <button
+                        onClick={() => abrirUsuario(usuario, 'editar')}
                         title="Editar"
                         style={{
                           padding: '0.25rem 0.75rem',
@@ -1365,28 +1387,13 @@ IMPORTANTE: Copie estas informações agora!
           </table>
         </div>
 
-        {usuarios?.length === 0 && (
+        {usuariosFiltrados.length === 0 && (
           <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
             Nenhum usuário cadastrado ainda.
           </div>
         )}
       </div>
 
-      {/* LEGENDA */}
-      <div style={{
-        background: 'var(--color-accent-bg)',
-        border: '1px solid var(--color-accent)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '1rem'
-      }}>
-        <h4 className="font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>💡 Sobre Permissões</h4>
-        <ul className="text-sm space-y-1" style={{ color: 'var(--color-text)' }}>
-          <li>• <strong>Sugestões automáticas:</strong> Ao selecionar um cargo, permissões são sugeridas</li>
-          <li>• <strong>Totalmente customizável:</strong> Você pode marcar/desmarcar qualquer permissão</li>
-          <li>• <strong>Flexível:</strong> Um Irmão pode ter permissão de editar finanças se necessário</li>
-          <li>• <strong>Senha:</strong> Definida pelo admin na criação, pode ser resetada depois</li>
-        </ul>
-      </div>
       </div>
     );
 
