@@ -2300,6 +2300,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 {/* Subitens do submenu */}
                 {(submenuIrmaos && menuAberto) && (
                   <div className="bg-primary-900 bg-opacity-50">
+                    {permissoes?.canEditMembers && (
                     <button
                       onClick={() => setCurrentPage('cadastro')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
@@ -2311,6 +2312,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       <span>➕</span>
                       <span>Cadastrar</span>
                     </button>
+                    )}
 
                     <button
                       onClick={() => setCurrentPage('visualizar')}
@@ -2710,7 +2712,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
-                {/* SUBMENU: PRESENÇA IRMÃOS */}
+                {/* SUBMENU: PRESENÇA IRMÃOS — só com permissão de presença (Fase 1) */}
+                {permissoes?.pode_editar_presenca && (
                 <div className="border-t border-primary-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
@@ -2780,6 +2783,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
@@ -3397,7 +3401,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EventosComemorativos
             showSuccess={showSuccess}
             showError={showError}
-            podeEditar={userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo'}
+            podeEditar={!!permissoes?.canEditFinancial}
           />
         )}
 
