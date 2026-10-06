@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { ESTADOS_CIVIS, rotuloEstadoCivil } from '../../utils/constants';
+import { ESTADOS_CIVIS, rotuloEstadoCivilCompleto, uniaoEstavelPendente } from '../../utils/constants';
+import CampoUniaoEstavel from './CampoUniaoEstavel';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
 import GestaoSituacoes from './GestaoSituacoes';
 import InstrucoesTrabalhos from './InstrucoesTrabalhos';
@@ -105,11 +106,15 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   };
 
   const handleSalvarEdicao = async () => {
+    if (uniaoEstavelPendente(irmaoForm.estado_civil, irmaoForm.uniao_estavel)) {
+      showError('❌ Informe se o irmão mantém ou não união estável (campo obrigatório).');
+      return;
+    }
     try {
-      // Salvar dados básicos do irmão
+      // Salvar dados básicos do irmão (casado: união estável não se aplica)
       const { error: erroIrmao } = await supabase
         .from('irmaos')
-        .update(irmaoForm)
+        .update({ ...irmaoForm, uniao_estavel: irmaoForm.estado_civil === 'casado' ? null : irmaoForm.uniao_estavel })
         .eq('id', irmaoId);
 
       if (erroIrmao) throw erroIrmao;
@@ -690,7 +695,18 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                     </select>
                   ) : (
-                    <p>{rotuloEstadoCivil(irmao.estado_civil) || 'Não informado'}</p>
+                    <p>{rotuloEstadoCivilCompleto(irmao.estado_civil, irmao.uniao_estavel) || 'Não informado'}</p>
+                  )}
+                  {modoEdicao && (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>União Estável *</label>
+                      <CampoUniaoEstavel
+                        estadoCivil={irmaoForm.estado_civil}
+                        valor={irmaoForm.uniao_estavel}
+                        onChange={(v) => setIrmaoForm({ ...irmaoForm, uniao_estavel: v })}
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      />
+                    </div>
                   )}
                 </div>
 
