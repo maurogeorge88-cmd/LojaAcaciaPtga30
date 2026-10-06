@@ -153,8 +153,15 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     const endereco = endParts.length > 0 ? `residente e domiciliado na ${endParts.join(', ')}` : null;
 
     // Estado civil por extenso (valor gravado é código: 'uniao_estavel', 'viuvo'...)
-    const ESTADO_CIVIL_TEXTO = { solteiro: 'solteiro', casado: 'casado', divorciado: 'divorciado', viuvo: 'viúvo', uniao_estavel: 'convivente em união estável' };
-    const estadoCivil = i.estado_civil ? (ESTADO_CIVIL_TEXTO[i.estado_civil] || i.estado_civil) : null;
+    // + união estável (obrigatório, exceto casado): "solteiro, convivente em união estável"
+    //   ou "solteiro, não convivente em união estável"
+    const ESTADO_CIVIL_TEXTO = { solteiro: 'solteiro', casado: 'casado', divorciado: 'divorciado', viuvo: 'viúvo' };
+    const ecBase = i.estado_civil ? (ESTADO_CIVIL_TEXTO[i.estado_civil] || i.estado_civil) : null;
+    const ueTexto = i.estado_civil === 'casado' ? null
+      : i.uniao_estavel === true ? 'convivente em união estável'
+      : i.uniao_estavel === false ? 'não convivente em união estável'
+      : '[união estável não informada]';
+    const estadoCivil = ecBase ? [ecBase, ueTexto].filter(Boolean).join(', ') : null;
 
     return [
       i.nome,
