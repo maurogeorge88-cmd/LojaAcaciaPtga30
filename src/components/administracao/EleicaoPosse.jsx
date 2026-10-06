@@ -302,8 +302,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   // ─── Helpers ──────────────────────────────────────────────
   const ar = (txt, opts = {}) => new TextRun({
     text: String(txt ?? ''),
-    font: 'Arial',
-    size: opts.size || 24,
+    font: 'Times New Roman',
+    size: 24, // padrão: Times New Roman 12 em todos os documentos
     bold: opts.bold || false,
     italics: opts.italic || false,
   });
@@ -316,6 +316,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   });
 
   const prC = (runs, opts = {}) => pr(runs, { ...opts, align: AlignmentType.CENTER });
+  // Linha em branco entre blocos (mesmo espaço dos modelos em Word)
+  const vazio = (opts = {}) => pr([ar('')], { before: 0, after: 0, ...opts });
   const prL = (runs, opts = {}) => pr(runs, { ...opts, align: AlignmentType.LEFT });
 
   const alignFromStr = (s) => s === 'center' ? AlignmentType.CENTER : s === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
@@ -394,8 +396,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     children = [
       ...cabecalho(),
       ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Eleição'),
+      vazio({ after: 240 }),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      vazio({ after: 200 }),
       prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_eleicao}.`)], { before: 200, after: 0 }),
+      vazio({ before: 200 }),
       // Gestão SAINTE assina o edital de eleição
       ...assModelo(vmConvocante?.nome || '[VM Sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
@@ -406,8 +411,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     children = [
       ...cabecalho(),
       ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Posse'),
+      vazio({ after: 240 }),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      vazio({ after: 200 }),
       prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_posse}.`)], { before: 200, after: 0 }),
+      vazio({ before: 200 }),
       // Gestão SAINTE ainda assina o edital de posse (ainda está no cargo)
       ...assModelo(vmConvocante?.nome || '[VM Sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
@@ -547,16 +555,23 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     VARS.presidente_requerimento_qualificacao = qualificacaoRequerimento(ass.irmao);
     children = [
       prC([ar(String(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT – 2º SERVIÇO NOTARIAL E REGISTRAL').replace(/\*/g, ''), { bold: true })], { before: 0, after: 400 }),
+      vazio({ after: 200 }),
+      vazio({ after: 200 }),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      vazio({ after: 200 }),
+      vazio({ after: 200 }),
       prC([ar(`${VARS.cidade}, ${formatarDataExtenso(ass.dataEmissao)}.`)], { before: 200, after: 0 }),
+      vazio({ before: 200 }),
       ...assModelo(ass.irmao?.nome || '[Presidente]', modelo.assinatura_1_cargo || 'Presidente'),
     ];
   }
 
     // ─── Montar documento ─────────────────────────────────────
   const doc = new Document({
-    styles: { default: { document: { run: { font: 'Arial', size: 24 } } } },
-    sections: [{ properties: { page: pageCfg }, children }],
+    styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
+    sections: [{ properties: { page: tipo.startsWith('requerimento_')
+      ? { ...pageCfg, margin: { ...pageCfg.margin, top: 1418 } }  // 2,5 cm (sem cabeçalho da Loja)
+      : pageCfg }, children }],
   });
 
   return Packer.toBlob(doc);
