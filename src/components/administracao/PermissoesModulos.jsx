@@ -4,7 +4,7 @@ import { MODULOS } from '../../config/permissoes';
 const ROTULO = { nenhum: '🚫 Nenhum', ver: '👁️ Ver', editar: '✏️ Editar' };
 const COR = { nenhum: '#94a3b8', ver: '#60a5fa', editar: '#10b981' };
 
-export default function PermissoesModulos({ valor = {}, onChange, acessoTotal = false, tesoureiro = false, onAplicarModelo }) {
+export default function PermissoesModulos({ valor = {}, onChange, acessoTotal = false, tesoureiro = false, onAplicarModelo, somenteLeitura = false }) {
   const grupos = [...new Set(MODULOS.map(m => m.grupo))];
 
   if (acessoTotal) {
@@ -57,6 +57,11 @@ export default function PermissoesModulos({ valor = {}, onChange, acessoTotal = 
                         </p>
                       )}
                     </div>
+                    {somenteLeitura ? (
+                      <span style={{ padding: '0.3rem 0.75rem', borderRadius: '999px', fontSize: '0.74rem', fontWeight: 800, color: '#fff', background: COR[atual] }}>
+                        {ROTULO[atual]}
+                      </span>
+                    ) : (
                     <div style={{ display: 'flex', gap: '0.3rem' }}>
                       {m.niveis.map(n => {
                         const sel = atual === n;
@@ -69,6 +74,7 @@ export default function PermissoesModulos({ valor = {}, onChange, acessoTotal = 
                         );
                       })}
                     </div>
+                    )}
                   </div>
                 );
               })}
@@ -77,7 +83,7 @@ export default function PermissoesModulos({ valor = {}, onChange, acessoTotal = 
         ))}
       </div>
       <p className="form-hint" style={{ marginTop: '0.6rem' }}>
-        Módulos sem a opção "Nenhum" são visíveis a todos os irmãos; a escolha define quem pode editar. Estatísticas, Festividades, Visualizar Irmãos e Altos Graus são livres.
+        Estatísticas, Festividades, Visualizar Irmãos e Altos Graus são livres para todos.
       </p>
     </div>
   );
