@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { ESTADOS_CIVIS, rotuloEstadoCivil } from '../../utils/constants';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
 import GestaoSituacoes from './GestaoSituacoes';
 import InstrucoesTrabalhos from './InstrucoesTrabalhos';
@@ -686,13 +687,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
-                      <option value="solteiro">Solteiro</option>
-                      <option value="casado">Casado</option>
-                      <option value="divorciado">Divorciado</option>
-                      <option value="viuvo">Viúvo</option>
+                      {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                     </select>
                   ) : (
-                    <p className="capitalize">{irmao.estado_civil || 'Não informado'}</p>
+                    <p>{rotuloEstadoCivil(irmao.estado_civil) || 'Não informado'}</p>
                   )}
                 </div>
 
