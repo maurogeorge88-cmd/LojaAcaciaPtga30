@@ -121,16 +121,27 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       : nomeMae ? `filho de ${nomeMae}`
       : null;
 
-    // Endereço: campos separados endereco + cidade + estado
-    const endParts = [i.endereco, i.cidade, i.estado].filter(Boolean);
+    // Endereço completo: rua, nº, complemento, bairro, cidade/UF, CEP
+    const logradouro = [
+      i.endereco,
+      i.numero ? `nº ${i.numero}` : null,
+      i.complemento || null,
+      i.bairro ? `bairro ${i.bairro}` : null,
+    ].filter(Boolean).join(', ');
+    const cidadeEnd = [i.cidade, i.estado].filter(Boolean).join('/');
+    const endParts = [logradouro, cidadeEnd, i.cep ? `CEP ${i.cep}` : null].filter(Boolean);
     const endereco = endParts.length > 0 ? `residente e domiciliado na ${endParts.join(', ')}` : null;
+
+    // Estado civil por extenso (valor gravado é código: 'uniao_estavel', 'viuvo'...)
+    const ESTADO_CIVIL_TEXTO = { solteiro: 'solteiro', casado: 'casado', divorciado: 'divorciado', viuvo: 'viúvo', uniao_estavel: 'convivente em união estável' };
+    const estadoCivil = i.estado_civil ? (ESTADO_CIVIL_TEXTO[i.estado_civil] || i.estado_civil) : null;
 
     return [
       i.nome,
       i.nacionalidade || 'brasileiro',
-      i.estado_civil  || null,
+      estadoCivil,
       i.profissao     || null,
-      i.cidade        ? `natural de ${i.cidade}` : null,  // naturalidade = cidade de nascimento
+      i.naturalidade  ? `natural de ${i.naturalidade}` : null,  // naturalidade = cidade de nascimento (não a de residência)
       i.data_nascimento ? `nascido em ${formatarData(i.data_nascimento)}` : null,
       filiacao,
       i.rg  ? `portador da Cédula de Identidade RG sob nº ${i.rg}` : null,
