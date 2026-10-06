@@ -71,14 +71,19 @@ export const CARGOS_ADMINISTRATIVOS = [
   'Chanceler',
   'Hospitaleiro',
   'Mestre de Cerimonia',
+  'Mestre de Cerimonia Adjunto',
+  '1º Experto',
+  '2º Experto',
   'Mestre de Harmonia',
   'Mestre de Banquetes',
+  'Porta Bandeira',
   'Porta Espada',
   'Porta Estandarte',
   '1º Diácono',
   '2º Diácono',
   'Cobridor Externo',
   'Guarda do Templo',
+  'Arquiteto Decorador',
   'Bibliotecario'
 ];
 
