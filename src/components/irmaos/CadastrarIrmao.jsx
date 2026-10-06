@@ -20,6 +20,8 @@ import {
   NIVEIS_ESCOLARIDADE,
   STATUS_IRMAOS
 } from '../../utils/constants';
+import { uniaoEstavelPendente } from '../../utils/constants';
+import CampoUniaoEstavel from './CampoUniaoEstavel';
 
 const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showError, onCancelarEdicao, userData }) => {
   // Estado do formulário principal
@@ -40,6 +42,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     estado: '',
     profissao: '',
     estado_civil: 'solteiro',
+    uniao_estavel: null,
     escolaridade: 'fundamental_incompleto',
     foto_url: '',
     data_iniciacao: '',
@@ -291,6 +294,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       estado: irmao.estado || '',
       profissao: irmao.profissao || '',
       estado_civil: irmao.estado_civil || 'solteiro',
+      uniao_estavel: irmao.uniao_estavel ?? null,
       escolaridade: irmao.escolaridade || 'fundamental_incompleto',
       foto_url: irmao.foto_url || '',
       data_iniciacao: irmao.data_iniciacao || '',
@@ -496,6 +500,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       if (irmaoForm.email && !validarEmail(irmaoForm.email)) {
         throw new Error('Email inválido');
       }
+      if (uniaoEstavelPendente(irmaoForm.estado_civil || 'solteiro', irmaoForm.uniao_estavel)) {
+        throw new Error('Informe se o irmão mantém ou não união estável (campo obrigatório)');
+      }
 
       // Preparar dados do irmão (TODOS os campos)
       const dadosIrmao = {
@@ -515,6 +522,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         estado: irmaoForm.estado || null,
         profissao: irmaoForm.profissao || null,
         estado_civil: irmaoForm.estado_civil || 'solteiro',
+        uniao_estavel: (irmaoForm.estado_civil || 'solteiro') === 'casado' ? null : irmaoForm.uniao_estavel,
         escolaridade: irmaoForm.escolaridade || 'fundamental_incompleto',
         foto_url: irmaoForm.foto_url || null,
         data_iniciacao: irmaoForm.data_iniciacao || null,
@@ -799,6 +807,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       estado: '',
       profissao: '',
       estado_civil: 'solteiro',
+      uniao_estavel: null,
       escolaridade: 'fundamental_incompleto',
       foto_url: '',
       data_iniciacao: '',
@@ -1104,6 +1113,18 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <option key={ec.value} value={ec.value}>{ec.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                  União Estável *
+                </label>
+                <CampoUniaoEstavel
+                  estadoCivil={irmaoForm.estado_civil}
+                  valor={irmaoForm.uniao_estavel}
+                  onChange={(v) => setIrmaoForm({ ...irmaoForm, uniao_estavel: v })}
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                />
               </div>
 
               <div>
