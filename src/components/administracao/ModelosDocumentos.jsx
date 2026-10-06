@@ -7,7 +7,7 @@ const MODELOS_PADRAO = [
     tipo: 'edital_eleicao',
     nome: 'Edital de Convocação para Eleição',
     titulo_doc: 'Edital de Convocação para Eleição',
-    corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_eleicao}, às {hora_eleicao} horas nas dependências do Templo situado a Avenida Brasil, nº 2.300, Centro, conforme estabelece o Artigo 187 do Regulamento Geral.',
+    corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_eleicao}, às {hora_eleicao} horas nas dependências do Templo situado a {endereco_loja}, conforme estabelece o Artigo 187 do Regulamento Geral.',
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
@@ -16,7 +16,7 @@ const MODELOS_PADRAO = [
     tipo: 'edital_posse',
     nome: 'Edital de Convocação para Posse',
     titulo_doc: 'Edital de Convocação para Posse',
-    corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_posse}, às {hora_posse} horas nas dependências do Templo situado a Avenida Brasil, nº 2.300, Centro, conforme estabelece o Artigo 187 do Regulamento Geral.',
+    corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_posse}, às {hora_posse} horas nas dependências do Templo situado a {endereco_loja}, conforme estabelece o Artigo 187 do Regulamento Geral.',
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
@@ -508,7 +508,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
                   <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                     Preview do layout
                   </div>
-                  <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', color: '#000', fontFamily: 'Arial, sans-serif', fontSize: '0.8rem', lineHeight: '1.6' }}>
+                  <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', color: '#000', fontFamily: '"Times New Roman", Times, serif', fontSize: '0.8rem', lineHeight: '1.6' }}>
                     {form.titulo_doc && (
                       <div style={{ textAlign: form.alinhamento_titulo, fontWeight: 'bold', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
                         {form.titulo_doc.replace(/\{[^}]+\}/g, m => `[${m.slice(1,-1)}]`)}
