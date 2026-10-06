@@ -10,6 +10,12 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import PermissoesModulos from './PermissoesModulos';
+import { derivarDoLegado, limparMapa, colunasLegadoDoMapa } from '../../config/permissoes';
+
+const nivelDoCargo = (cargo) => cargo === 'arco_real_externo' ? 'arco_real'
+  : cargo === 'irmao' ? 'irmao'
+  : (cargo === 'veneravel' || cargo === 'administrador') ? 'admin' : 'cargo';
 
 export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, showError, embedded = false }) {
   const [usuarioForm, setUsuarioForm] = useState({
@@ -24,7 +30,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     pode_visualizar_financeiro: false,
     pode_editar_financeiro: false,
     pode_visualizar_arco_real: false,
-    pode_gerenciar_usuarios: false
+    pode_gerenciar_usuarios: false,
+    permissoes: {}
   });
 
   const [membrosArcoReal, setMembrosArcoReal] = useState([]);
@@ -233,12 +240,29 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     }
   };
 
+  // Modelo de módulos do cargo, gerado a partir das sugestões acima
+  const modeloDoCargo = (cargo) => {
+    const sugestao = SUGESTOES_PERMISSOES[cargo] || SUGESTOES_PERMISSOES['irmao'];
+    return derivarDoLegado({ ...sugestao, cargo, nivel_acesso: nivelDoCargo(cargo) });
+  };
+
   const aplicarSugestaoPermissoes = (cargo) => {
     const sugestao = SUGESTOES_PERMISSOES[cargo] || SUGESTOES_PERMISSOES['irmao'];
     setUsuarioForm(prev => ({
       ...prev,
-      ...sugestao
+      ...sugestao,
+      permissoes: modeloDoCargo(cargo)
     }));
+  };
+
+  // Campos de permissão gravados no banco: jsonb por módulo + colunas antigas
+  // (as antigas continuam sendo usadas pelas policies do banco). Arco Real
+  // externo mantém o modelo antigo de checkboxes.
+  const camposPermissao = () => {
+    if (usuarioForm.cargo === 'arco_real_externo') return { permissoes: null };
+    const mapa = limparMapa(usuarioForm.permissoes);
+    if (String(usuarioForm.cargo || '').includes('tesoureiro')) mapa.financeiro = 'editar';
+    return { permissoes: mapa, ...colunasLegadoDoMapa(mapa) };
   };
 
   const limparFormulario = () => {
@@ -262,7 +286,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false,
-      pode_editar_projetos: false
+      pode_editar_projetos: false,
+      permissoes: modeloDoCargo('irmao')
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
@@ -328,7 +353,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: usuarioForm.arco_real_membro_id || null
+          arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
+          ...camposPermissao()
         }]);
 
       if (dbError) throw dbError;
@@ -392,7 +418,8 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
-          arco_real_membro_id: usuarioForm.arco_real_membro_id || null
+          arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
+          ...camposPermissao()
         })
         .eq('id', usuarioEditando.id)
         .select();
@@ -482,7 +509,8 @@ IMPORTANTE: Copie estas informações agora!
       pode_editar_pranchas: usuario.pode_editar_pranchas || false,
       pode_editar_comissoes: usuario.pode_editar_comissoes || false,
       pode_editar_corpo_admin: usuario.pode_editar_corpo_admin || false,
-      pode_editar_presenca: usuario.pode_editar_presenca || false
+      pode_editar_presenca: usuario.pode_editar_presenca || false,
+      permissoes: usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario)
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -708,6 +736,38 @@ IMPORTANTE: Copie estas informações agora!
             </div>
           </div>
 
+          {/* PERMISSÕES POR MÓDULO (Fase 2) */}
+          {usuarioForm.cargo !== 'arco_real_externo' && (
+            <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <PermissoesModulos
+                valor={usuarioForm.permissoes || {}}
+                onChange={(mapa) => setUsuarioForm(f => ({ ...f, permissoes: mapa }))}
+                acessoTotal={['veneravel', 'administrador'].includes(usuarioForm.cargo)}
+                tesoureiro={String(usuarioForm.cargo || '').includes('tesoureiro')}
+                onAplicarModelo={() => setUsuarioForm(f => ({ ...f, permissoes: modeloDoCargo(f.cargo) }))}
+              />
+
+              <div style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.85rem' }}>
+                <label className="form-label">Vincular ao cadastro no Arco Real (opcional)</label>
+                <select
+                  value={usuarioForm.arco_real_membro_id}
+                  onChange={(e) => setUsuarioForm({ ...usuarioForm, arco_real_membro_id: e.target.value })}
+                  className="form-input"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <option value="">— Nenhum vínculo —</option>
+                  {membrosArcoReal.map(m => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+                <p className="form-hint">Se essa pessoa também tem cadastro no Arco Real, vincule aqui pra ela ver "Meus Dados" lá. O acesso ao Arco Real é definido no módulo "Arco Real" acima.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Arco Real externo: modelo antigo de permissões */}
+          {usuarioForm.cargo === 'arco_real_externo' && (
+          <>
           {/* PERMISSÕES CUSTOMIZÁVEIS */}
           <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
             <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
@@ -1057,6 +1117,9 @@ IMPORTANTE: Copie estas informações agora!
               </div>
             </div>
           </div>
+
+          </>
+          )}
 
           {/* Botões */}
           <div className="flex gap-2 justify-end pt-4">
