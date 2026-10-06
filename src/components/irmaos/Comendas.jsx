@@ -75,13 +75,11 @@ const anosDesde = (data) => {
   return anos;
 };
 
-// Todos visualizam; só editam: Admin, Venerável, Orador e Secretário
-const normCargo = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const SEM_PERMISSAO = 'sem permissão para alterar (bloqueado pelo banco).';
-const CARGOS_EDITAM_COMENDAS = ['veneravel', 'veneravel mestre', 'orador', 'secretario', 'administrador'];
 
 export default function Comendas({ permissoes, userData, showSuccess, showError }) { // eslint-disable-line no-unused-vars
-  const podeEditar = userData?.nivel_acesso === 'admin' || CARGOS_EDITAM_COMENDAS.includes(normCargo(userData?.cargo));
+  // Fase 2: edição definida pelo módulo 'comendas' (Admin/Venerável sempre; demais conforme Usuários)
+  const podeEditar = !!permissoes?.canEdit;
 
   const [aba, setAba] = useState('elegiveis');
   const [loading, setLoading] = useState(true);
