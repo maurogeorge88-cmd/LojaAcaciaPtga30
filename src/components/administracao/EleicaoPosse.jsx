@@ -68,6 +68,34 @@ const buscarModelos = async () => {
   return _modelosCache;
 };
 
+// ── Requerimentos: quem assina ─────────────────────────────────
+// Configuração por requerimento (eleicao/posse): data de emissão (vazia = hoje)
+// e assinante: 'auto' | 'sainte' | 'eleito' | 'outro' (+ irmão escolhido).
+// Automático: emitido antes do Início da Gestão → VM Sainte; senão → VM Eleito.
+const hojeISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const resolverAssinanteRequerimento = (qual, eleicao, chapas, irmaos) => {
+  const dataEmissao = eleicao?.[`req_${qual}_data`] || hojeISO();
+  const modo = eleicao?.[`req_${qual}_assinante`] || 'auto';
+  const vmEleitoChapa = (chapas || []).filter(c => c.eleita).find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+  const idSainte = eleicao?.vm_convocante_id || null;
+  const idEleito = vmEleitoChapa?.irmao_id || null;
+  let origem = modo;
+  let id = null;
+  if (modo === 'sainte') id = idSainte;
+  else if (modo === 'eleito') id = idEleito;
+  else if (modo === 'outro') id = eleicao?.[`req_${qual}_assinante_id`] || null;
+  else {
+    const corte = eleicao?.data_inicio_gestao || eleicao?.data_posse || null;
+    origem = corte && dataEmissao < corte ? 'sainte' : 'eleito';
+    id = origem === 'sainte' ? idSainte : idEleito;
+  }
+  const irmao = (irmaos || []).find(i => i.id === id) || null;
+  return { dataEmissao, modo, origem, irmao };
+};
+
 // ── Quórum da eleição: 1/3 do total de irmãos Mestres ─────────
 // Mestres = exaltados até a data da eleição, situação Regular ou Licenciado
 // (irregulares não contam), sem falecidos/desligados até a data.
@@ -178,6 +206,37 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     ].filter(Boolean).join(', ');
   };
 
+  // Qualificação para requerimentos (sem naturalidade/filiação), no formato do cartório:
+  // "brasileiro, casado, contador, portador do RG nº X e inscrito no CPF/MF sob nº Y,
+  //  residente e domiciliado na Rua..., nº ..., Centro, Paranatinga – MT"
+  const qualificacaoRequerimento = (i) => {
+    if (!i) return '[qualificação do presidente]';
+    const ESTADO_CIVIL_TEXTO = { solteiro: 'solteiro', casado: 'casado', divorciado: 'divorciado', viuvo: 'viúvo' };
+    const ecBase = i.estado_civil ? (ESTADO_CIVIL_TEXTO[i.estado_civil] || i.estado_civil) : '[estado civil não informado]';
+    const ue = i.estado_civil === 'casado' ? null
+      : i.uniao_estavel === true ? 'convivente em união estável'
+      : i.uniao_estavel === false ? 'não convivente em união estável'
+      : '[união estável não informada]';
+    const docs = [
+      i.rg ? `portador do RG nº ${i.rg}` : null,
+      i.cpf ? `inscrito no CPF/MF sob nº ${i.cpf}` : null,
+    ].filter(Boolean).join(' e ');
+    const end = [
+      i.endereco,
+      i.numero ? `nº ${i.numero}` : null,
+      i.complemento || null,
+      i.bairro || null,
+      [i.cidade, i.estado].filter(Boolean).join(' – ') || null,
+    ].filter(Boolean).join(', ');
+    return [
+      i.nacionalidade || 'brasileiro',
+      ecBase, ue,
+      i.profissao || null,
+      docs || null,
+      end ? `residente e domiciliado na ${end}` : null,
+    ].filter(Boolean).join(', ');
+  };
+
   // ── Mapa de variáveis para interpolação ─────────────────────
   const orador_el  = chapaEleita.find(c => c.cargo === 'Orador');
   const oradorNome = orador_el ? (irmaos.find(i => i.id === orador_el.irmao_id)?.nome || '') : '';
@@ -231,9 +290,13 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   );
 
   // Função para interpolar e gerar parágrafo do modelo
+  // Trechos entre *asteriscos* saem em negrito (sem os asteriscos)
+  const runsComNegrito = (texto, base = {}) =>
+    String(texto || '').split(/(\*[^*]+\*)/g).filter(t => t !== '').map(t =>
+      t.length > 2 && t.startsWith('*') && t.endsWith('*') ? ar(t.slice(1, -1), { ...base, bold: true }) : ar(t, base));
   const prModelo = (texto, opts = {}) => {
     const interpolado = interpolarModelo(texto, VARS);
-    return pr([ar(interpolado)], opts);
+    return pr(runsComNegrito(interpolado), opts);
   };
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -260,7 +323,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const tituloModelo = (texto) => {
     if (!texto) return [];
     const t = interpolarModelo(texto, VARS);
-    return [pr([ar(t, { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: 240 })];
+    return [pr([ar(t.replace(/\*/g, ''), { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: 240 })];
   };
 
   const rodapeModelo = () => {
@@ -476,17 +539,17 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'requerimento_eleicao' || tipo === 'requerimento_posse') {
-    const dataReq = eleicao.data_posse || eleicao.data_eleicao;
-    // Requerimentos: Secretário eleito representa a loja; Presidente eleito (VM eleito) assina
-    // Atualizar VARS.secretario_dados para usar eleito
-    VARS.secretario_dados = secretarioEleitoNome || '[Secretário Eleito]';
-    VARS.secretario_nome  = secretarioEleitoNome || '[Secretário Eleito]';
+    // Assina o VM da gestão vigente na data de emissão (ou o escolhido na Configuração)
+    const qual = tipo === 'requerimento_eleicao' ? 'eleicao' : 'posse';
+    const ass = resolverAssinanteRequerimento(qual, eleicao, chapas, irmaos);
+    const nomePres = ass.irmao?.nome ? ass.irmao.nome.toUpperCase() : '[PRESIDENTE]';
+    VARS.presidente_requerimento = nomePres;
+    VARS.presidente_requerimento_qualificacao = qualificacaoRequerimento(ass.irmao);
     children = [
-      prL([ar(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT', { bold: true })], { before: 0, after: 200 }),
+      prC([ar(String(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT – 2º SERVIÇO NOTARIAL E REGISTRAL').replace(/\*/g, ''), { bold: true })], { before: 0, after: 400 }),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
-      prC([ar(`${VARS.cidade}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
-      // Gestão ELEITA assina os requerimentos
-      ...assModelo(vmEleitoNome, modelo.assinatura_1_cargo || 'Presidente'),
+      prC([ar(`${VARS.cidade}, ${formatarDataExtenso(ass.dataEmissao)}.`)], { before: 200, after: 0 }),
+      ...assModelo(ass.irmao?.nome || '[Presidente]', modelo.assinatura_1_cargo || 'Presidente'),
     ];
   }
 
@@ -1142,26 +1205,88 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
             <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: 'var(--color-text)', fontSize: '0.95rem' }}>📅 Datas e Responsáveis</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
               {[
-                { key: 'data_eleicao', label: 'Data da Eleição', type: 'date' },
-                { key: 'hora_eleicao', label: 'Hora da Eleição', type: 'time' },
-                { key: 'data_edital_eleicao', label: 'Data Edital Eleição', type: 'date' },
-                { key: 'data_posse', label: 'Data da Posse', type: 'date' },
-                { key: 'hora_posse', label: 'Hora da Posse', type: 'time' },
-                { key: 'data_edital_posse', label: 'Data Edital Posse', type: 'date' },
-                { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
-                { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
-                { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
-                { key: 'total_mestres_quorum', label: 'Total de Mestres (quórum)', type: 'number', placeholder: `Automático: ${calcularQuorum(irmaos, eleicaoSelecionada, presencas).totalCalculado}` },
-              ].map(f => (
-                <div key={f.key}>
-                  <label style={S.label}>{f.label}</label>
-                  <input type={f.type} style={S.input} disabled={!podeEditar} placeholder={f.placeholder}
-                    value={eleicaoSelecionada[f.key] || ''}
-                    onChange={e => setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value }))}
-                    onBlur={e => podeEditar && atualizarEleicao({ [f.key]: e.target.value || null })}
-                  />
+                { titulo: '🗳️ Eleição', cor: '#60a5fa', campos: [
+                  { key: 'data_edital_eleicao', label: 'Data Edital Eleição', type: 'date' },
+                  { key: 'data_eleicao', label: 'Data da Eleição', type: 'date' },
+                  { key: 'hora_eleicao', label: 'Hora da Eleição', type: 'time' },
+                ]},
+                { titulo: '🎖️ Posse', cor: '#c9a84c', campos: [
+                  { key: 'data_edital_posse', label: 'Data Edital Posse', type: 'date' },
+                  { key: 'data_posse', label: 'Data da Posse', type: 'date' },
+                  { key: 'hora_posse', label: 'Hora da Posse', type: 'time' },
+                ]},
+                { titulo: '📆 Gestão e Quórum', cor: '#10b981', campos: [
+                  { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
+                  { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
+                  { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
+                  { key: 'total_mestres_quorum', label: 'Total de Mestres (quórum)', type: 'number', placeholder: `Automático: ${calcularQuorum(irmaos, eleicaoSelecionada, presencas).totalCalculado}` },
+                ]},
+              ].map(g => (
+                <div key={g.titulo} style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${g.cor}` }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: g.cor, textTransform: 'uppercase', marginBottom: '0.6rem' }}>{g.titulo}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '0.75rem' }}>
+                    {g.campos.map(f => (
+                      <div key={f.key}>
+                        <label style={S.label}>{f.label}</label>
+                        <input type={f.type} style={S.input} disabled={!podeEditar} placeholder={f.placeholder}
+                          value={eleicaoSelecionada[f.key] || ''}
+                          onChange={e => setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value }))}
+                          onBlur={e => podeEditar && atualizarEleicao({ [f.key]: e.target.value || null })}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
+              {/* Grupo: Requerimentos ao cartório */}
+              <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid #a78bfa' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                  📩 Requerimentos ao Cartório — data de emissão e quem assina
+                </div>
+                {[['eleicao', 'Requerimento — Eleição'], ['posse', 'Requerimento — Posse']].map(([qual, titulo]) => {
+                  const ass = resolverAssinanteRequerimento(qual, eleicaoSelecionada, chapas, irmaos);
+                  const modo = eleicaoSelecionada[`req_${qual}_assinante`] || 'auto';
+                  const salvar = (campos) => { setEleicaoSelecionada(p => ({ ...p, ...campos })); podeEditar && atualizarEleicao(campos); };
+                  return (
+                    <div key={qual} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '0.75rem', alignItems: 'end', marginBottom: '0.6rem' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--color-text)', alignSelf: 'center' }}>{titulo}</div>
+                      <div>
+                        <label style={S.label}>Data de Emissão</label>
+                        <input type="date" style={S.input} disabled={!podeEditar}
+                          value={eleicaoSelecionada[`req_${qual}_data`] || ''}
+                          onChange={e => setEleicaoSelecionada(p => ({ ...p, [`req_${qual}_data`]: e.target.value }))}
+                          onBlur={e => podeEditar && atualizarEleicao({ [`req_${qual}_data`]: e.target.value || null })} />
+                      </div>
+                      <div>
+                        <label style={S.label}>Quem Assina</label>
+                        <select style={S.input} disabled={!podeEditar} value={modo}
+                          onChange={e => salvar({ [`req_${qual}_assinante`]: e.target.value, ...(e.target.value !== 'outro' ? { [`req_${qual}_assinante_id`]: null } : {}) })}>
+                          <option value="auto">Automático (pela data)</option>
+                          <option value="sainte">VM Sainte</option>
+                          <option value="eleito">VM Eleito</option>
+                          <option value="outro">Outro irmão</option>
+                        </select>
+                      </div>
+                      {modo === 'outro' && (
+                        <div>
+                          <label style={S.label}>Irmão</label>
+                          <select style={S.input} disabled={!podeEditar} value={eleicaoSelecionada[`req_${qual}_assinante_id`] || ''}
+                            onChange={e => salvar({ [`req_${qual}_assinante_id`]: e.target.value || null })}>
+                            <option value="">Selecione...</option>
+                            {[...(irmaos || [])].sort((a, b) => a.nome.localeCompare(b.nome)).map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', alignSelf: 'center' }}>
+                        ✍️ Assinará: <strong style={{ color: ass.irmao ? 'var(--color-text)' : '#ef4444' }}>{ass.irmao?.nome || 'não definido'}</strong>
+                        {modo === 'auto' && <> ({ass.origem === 'sainte' ? 'VM Sainte' : 'VM Eleito'})</>}
+                        {!eleicaoSelecionada[`req_${qual}_data`] && <> · data: hoje</>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
               {/* Grupo: Gestão Sainte */}
               <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
