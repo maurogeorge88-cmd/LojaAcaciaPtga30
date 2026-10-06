@@ -1201,22 +1201,22 @@ IMPORTANTE: Copie estas informações agora!
             <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
               {modalModo === 'ver' ? (
                 <>
-                  <button type="button" onClick={limparFormulario}
+                  <button key="btn-fechar" type="button" onClick={limparFormulario}
                     style={{ padding: '0.6rem 1.25rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>
                     Fechar
                   </button>
-                  <button type="button" onClick={() => setModalModo('editar')}
+                  <button key="btn-modo-editar" type="button" onClick={(e) => { e.preventDefault(); setModalModo('editar'); }}
                     style={{ padding: '0.6rem 1.25rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
                     ✏️ Editar
                   </button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={limparFormulario}
+                  <button key="btn-cancelar" type="button" onClick={limparFormulario}
                     style={{ padding: '0.6rem 1.25rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>
                     Cancelar
                   </button>
-                  <button type="submit" disabled={loading}
+                  <button key="btn-salvar" type="submit" disabled={loading}
                     style={{ padding: '0.6rem 1.25rem', background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
                     {loading ? 'Salvando...' : (modalModo === 'novo' ? '➕ Criar Usuário' : '💾 Salvar')}
                   </button>
