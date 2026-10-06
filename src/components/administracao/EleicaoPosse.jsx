@@ -159,6 +159,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const VARS = {
     vm_nome:                  vmConvocante?.nome || '[VM Sainte]',
     gestao,
+    // Período da gestão (aba Configuração)
+    data_inicio_gestao:       eleicao.data_inicio_gestao ? formatarData(eleicao.data_inicio_gestao) : '[início da gestão]',
+    data_fim_gestao:          eleicao.data_fim_gestao ? formatarData(eleicao.data_fim_gestao) : '[fim da gestão]',
+    ano_exercicio:            eleicao.ano_exercicio || gestao,
     nome_loja:                nomeLoja,
     num_loja:                 dadosLoja.numero_loja || '30',
     data_eleicao:             formatarData(eleicao.data_eleicao),
@@ -1102,10 +1106,13 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 { key: 'data_posse', label: 'Data da Posse', type: 'date' },
                 { key: 'hora_posse', label: 'Hora da Posse', type: 'time' },
                 { key: 'data_edital_posse', label: 'Data Edital Posse', type: 'date' },
+                { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
+                { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
+                { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
               ].map(f => (
                 <div key={f.key}>
                   <label style={S.label}>{f.label}</label>
-                  <input type={f.type} style={S.input} disabled={!podeEditar}
+                  <input type={f.type} style={S.input} disabled={!podeEditar} placeholder={f.placeholder}
                     value={eleicaoSelecionada[f.key] || ''}
                     onChange={e => setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value }))}
                     onBlur={e => podeEditar && atualizarEleicao({ [f.key]: e.target.value || null })}
