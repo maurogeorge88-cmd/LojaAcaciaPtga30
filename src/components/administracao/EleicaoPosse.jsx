@@ -659,14 +659,18 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const [chapaVencedora, setChapaVencedora] = useState('A');
 
   const podeEditar = permissoes?.pode_editar_corpo_admin || false;
-  const irmaosAtivos = (irmaos || []).filter(i => i.status === 'ativo');
+  // Somente irmãos REGULARES: fora falecidos, desligados, irregulares e licenciados
+  const ehRegular = (i) => String(i.situacao || 'regular').toLowerCase() === 'regular'
+    && !i.data_falecimento
+    && (!i.status || i.status === 'ativo');
+  const irmaosAtivos = (irmaos || []).filter(ehRegular).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
   // Filtra irmãos aptos para um determinado ato (eleição ou posse)
-  // Regra: situação deve ser regular/licenciado/irregular na data do ato
+  // Regra: somente situação regular na data do ato
   // Exclui: falecido/desligado/excluido/ex_oficio/suspenso
   // E se tiver data_falecimento ou data_desligamento anterior à data do ato, também exclui
   const irmaosAptosParaAto = (dataAto) => {
-    const situacoesAptas = ['regular', 'licenciado', 'irregular'];
+    const situacoesAptas = ['regular']; // licenciados, irregulares, falecidos e desligados não aparecem
     return (irmaos || []).filter(i => {
       // Situação deve ser apta
       const sit = (i.situacao || 'regular').toLowerCase();
@@ -1284,7 +1288,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                           <select style={S.input} disabled={!podeEditar} value={eleicaoSelecionada[`req_${qual}_assinante_id`] || ''}
                             onChange={e => salvar({ [`req_${qual}_assinante_id`]: e.target.value || null })}>
                             <option value="">Selecione...</option>
-                            {[...(irmaos || [])].sort((a, b) => a.nome.localeCompare(b.nome)).map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                            {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
                           </select>
                         </div>
                       )}
