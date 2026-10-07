@@ -4,6 +4,16 @@ import { supabase } from '../../supabaseClient';
 // ── Modelos padrão — usados para popular o banco na primeira abertura ──────
 const MODELOS_PADRAO = [
   {
+    tipo: 'apresentacao_chapa',
+    nome: 'Apresentação da Chapa',
+    titulo_doc: 'APRESENTAÇÃO DE CHAPA – {nome_chapa_maiusculo}',
+    corpo: "À A∴R∴L∴S∴ {nome_loja} Oriente de {cidade}-{estado}.\n{cidade}-{estado}, aos {data_edital_eleicao_extenso} da Era Vulgar.\nMeus queridos Irmãos,\n\nEm atenção ao Edital de Convocação para as eleições da administração desta Respeitável Loja, venho, com espírito de fraternidade e responsabilidade, apresentar a *Chapa regularmente formada*, para concorrer aos cargos da gestão do próximo ano:\n\nA composição da Chapa é a seguinte:",
+    corpo_aclamacao: '', corpo_disputa: '',
+    rodape: "Apresento esta Chapa com o firme propósito de dar continuidade aos trabalhos da Oficina, fortalecer a união entre os Irmãos e zelar pelos princípios que norteiam nossa Sublime Instituição.\nColoco-me, juntamente com os demais Irmãos que compõem esta Chapa, à disposição desta Respeitável Loja, para ouvir, dialogar e trabalhar com dedicação pelo engrandecimento de nossa Oficina.\n\n{cidade}-{estado}, {data_emissao_extenso}.\n\nT∴F∴A∴",
+    assinatura_1_cargo: 'Candidato à Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'left',
+  },
+  {
     tipo: 'edital_eleicao',
     nome: 'Edital de Convocação para Eleição',
     titulo_doc: 'Edital de Convocação para Eleição',
@@ -119,6 +129,10 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{orador_eleito_nome}',        desc: 'Nome do Orador Eleito' },
   { var: '{secretario_dados}',         desc: 'Qualificação completa do Secretário' },
   { var: '{num_votantes}',             desc: 'Número de votantes presentes' },
+  { var: '{nome_chapa_maiusculo}',     desc: 'Nome da chapa em maiúsculas' },
+  { var: '{data_edital_eleicao_extenso}', desc: 'Data do edital de eleição (ex: 13 de Outubro de 2025)' },
+  { var: '{data_emissao_extenso}',     desc: 'Data de hoje (emissão do documento)' },
+  { var: '{vm_candidato_nome}',        desc: 'Candidato a Venerável Mestre da chapa' },
   { var: '{presidente_requerimento}',  desc: 'Requerimentos: nome do presidente que assina (maiúsculas)' },
   { var: '{presidente_requerimento_qualificacao}', desc: 'Requerimentos: qualificação do presidente (estado civil, RG, CPF, endereço)' },
   { var: '{total_mestres}',            desc: 'Total de irmãos Mestres (base do quórum)' },
