@@ -567,6 +567,87 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   }
 
   // ══════════════════════════════════════════════════════════
+  else if (tipo === 'apresentacao_chapa') {
+    // Apresentação da Chapa à Loja (modelo da Loja: logo à esquerda, GLEMT/Loja à direita)
+    const MESES_CAP = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const extensoCap = (d) => {
+      if (!d) return '[data]';
+      const [a, m, di] = String(d).substring(0, 10).split('-');
+      return `${di} de ${MESES_CAP[parseInt(m) - 1]} de ${a}`;
+    };
+    const NOME_CARGO = { 'Veneravel Mestre': 'Venerável Mestre', 'Primeiro Vigilante': '1º Vigilante', 'Segundo Vigilante': '2º Vigilante',
+      'Secretario': 'Secretário', 'Mestre de Cerimonia': 'Mestre de Cerimônias', 'Mestre de Cerimonia Adjunto': 'Mestre de Cerimônias Adjunto', 'Bibliotecario': 'Bibliotecário' };
+    // Chapa apresentada (antes da eleição): todos os cargos preenchidos, na ordem oficial
+    const membros = (chapas || []).filter(c => c.irmao_id)
+      .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo));
+    const nomeDe = (id) => irmaos.find(x => x.id === id)?.nome || '';
+    const vmCand = membros.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+
+    // Textos padrão, caso o modelo ainda não exista no banco
+    const CORPO_PADRAO = "À A∴R∴L∴S∴ {nome_loja} Oriente de {cidade}-{estado}.\n{cidade}-{estado}, aos {data_edital_eleicao_extenso} da Era Vulgar.\nMeus queridos Irmãos,\n\nEm atenção ao Edital de Convocação para as eleições da administração desta Respeitável Loja, venho, com espírito de fraternidade e responsabilidade, apresentar a *Chapa regularmente formada*, para concorrer aos cargos da gestão do próximo ano:\n\nA composição da Chapa é a seguinte:";
+    const RODAPE_PADRAO = "Apresento esta Chapa com o firme propósito de dar continuidade aos trabalhos da Oficina, fortalecer a união entre os Irmãos e zelar pelos princípios que norteiam nossa Sublime Instituição.\nColoco-me, juntamente com os demais Irmãos que compõem esta Chapa, à disposição desta Respeitável Loja, para ouvir, dialogar e trabalhar com dedicação pelo engrandecimento de nossa Oficina.\n\n{cidade}-{estado}, {data_emissao_extenso}.\n\nT∴F∴A∴";
+    modelo.corpo = modelo.corpo || CORPO_PADRAO;
+    modelo.rodape = modelo.rodape || RODAPE_PADRAO;
+    VARS.nome_chapa = eleicao.nome_chapa || '[nome da chapa]';
+    VARS.nome_chapa_maiusculo = String(eleicao.nome_chapa || '[NOME DA CHAPA]').toUpperCase();
+    VARS.data_edital_eleicao_extenso = extensoCap(eleicao.data_edital_eleicao);
+    VARS.data_emissao_extenso = extensoCap(hojeISO());
+    VARS.vm_candidato_nome = vmCand ? nomeDe(vmCand.irmao_id) : '[Candidato a Venerável Mestre]';
+
+    // Texto do modelo: cada linha = um parágrafo; linha vazia = espaço
+    const paragrafos = (texto) => interpolarModelo(texto || '', VARS).split('\n').map(l =>
+      l.trim() === '' ? pr([ar('')], { before: 0, after: 0 }) : pr(runsComNegrito(l), { before: 0, after: 160, align: alignFromStr(modelo.alinhamento_corpo || 'justify') }));
+
+    const semBorda = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+    const sb = { top: semBorda, bottom: semBorda, left: semBorda, right: semBorda };
+    const W = DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight;
+    const tri = (t, size = 32) => new TextRun({ text: t, font: 'Times New Roman', size });
+    const cabecalhoApresentacao = new Table({
+      width: { size: W, type: WidthType.DXA }, columnWidths: [2000, W - 2000],
+      rows: [new TableRow({ children: [
+        new TableCell({ borders: sb, width: { size: 2000, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
+          new Paragraph({ alignment: AlignmentType.LEFT, children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 100, height: 100 } })] }),
+        ]}),
+        new TableCell({ borders: sb, width: { size: W - 2000, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
+          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [tri('Grande Loja do Estado de Mato Grosso – GLEMT')] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [tri(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`)] }),
+        ]}),
+      ]})],
+    });
+
+    const thin = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+    const bd = { top: thin, bottom: thin, left: thin, right: thin };
+    const padT = { top: 30, bottom: 30, left: 100, right: 100 };
+    const CWc = [Math.round(W * 0.38), W - Math.round(W * 0.38)];
+    const celula = (txt, w, bold = false) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: padT,
+      children: [pr([ar(txt, { bold })], { before: 0, after: 0, align: AlignmentType.LEFT, line: 240 })] });
+    const tabelaChapa = new Table({
+      width: { size: W, type: WidthType.DXA }, columnWidths: CWc,
+      rows: [
+        new TableRow({ tableHeader: true, children: [celula('Cargo', CWc[0]), celula('Irmãos', CWc[1])] }),
+        ...membros.map(c => new TableRow({ children: [
+          celula(NOME_CARGO[c.cargo] || c.cargo, CWc[0], true),
+          celula(`Ir∴ ${nomeDe(c.irmao_id)}`, CWc[1]),
+        ]})),
+      ],
+    });
+
+    children = [
+      cabecalhoApresentacao,
+      vazio({ after: 200 }),
+      prC([ar(interpolarModelo(modelo.titulo_doc || 'APRESENTAÇÃO DE CHAPA – {nome_chapa_maiusculo}', VARS).replace(/\*/g, ''), { bold: true })], { before: 0, after: 360 }),
+      ...paragrafos(modelo.corpo),
+      vazio({ after: 120 }),
+      tabelaChapa,
+      ...paragrafos(modelo.rodape),
+      vazio({ after: 200 }),
+      vazio({ after: 200 }),
+      pr([ar(VARS.vm_candidato_nome, { bold: true })], { before: 0, after: 20, align: AlignmentType.LEFT }),
+      pr([ar(modelo.assinatura_1_cargo || 'Candidato à Venerável Mestre')], { before: 0, after: 0, align: AlignmentType.LEFT }),
+    ];
+  }
+
+  // ══════════════════════════════════════════════════════════
   else if (tipo === 'requerimento_eleicao' || tipo === 'requerimento_posse') {
     // Assina o VM da gestão vigente na data de emissão (ou o escolhido na Configuração)
     const qual = tipo === 'requerimento_eleicao' ? 'eleicao' : 'posse';
@@ -1678,9 +1759,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           <div style={S.card}>
             <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>📊 Quadro da Gestão</h3>
             <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.85rem' }}>
-              PDF com logo, nome da chapa e os cargos da gestão, para enviar aos irmãos.
+              Apresentação da Chapa à Loja (Word) e PDF com o quadro de cargos da gestão para enviar aos irmãos.
               {!eleicaoSelecionada.nome_chapa && <span style={{ color: '#f59e0b' }}> Preencha o Nome da Chapa na Configuração.</span>}
             </p>
+            <BotaoDoc emoji="📄" label="Apresentação da Chapa (Word)" disabled={chapas.filter(c => c.irmao_id).length === 0} gerando={gerando === 'apresentacao_chapa'}
+              onClick={() => gerarDoc('apresentacao_chapa', `Apresentacao_Chapa_${(eleicaoSelecionada.nome_chapa || 'Chapa').replace(/\s+/g, '_')}.docx`)} />
             <BotaoDoc emoji="📊" label="Quadro da Gestão (PDF)" disabled={chapaEleita.length === 0} gerando={gerando === 'quadro_gestao'}
               onClick={() => {
                 setGerando('quadro_gestao');
