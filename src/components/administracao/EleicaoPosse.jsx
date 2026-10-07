@@ -792,12 +792,13 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   // Regra: somente situação regular na data do ato
   // Exclui: falecido/desligado/excluido/ex_oficio/suspenso
   // E se tiver data_falecimento ou data_desligamento anterior à data do ato, também exclui
-  const irmaosAptosParaAto = (dataAto, sessao) => {
-    // Regulares NA DATA do ato; quem já tem presença gravada na sessão sempre aparece
+  const irmaosAptosParaAto = (dataAto, sessao, situacoesAceitas = ['regular']) => {
+    // Situação NA DATA do ato; quem já tem presença gravada na sessão sempre aparece
+    // Eleição: só regulares. Posse: regulares e licenciados.
     const comPresenca = new Set(presencas.filter(p => p.sessao === sessao).map(p => String(p.irmao_id)));
     return (irmaos || []).filter(i => {
       if (sessao && comPresenca.has(String(i.id))) return true;
-      if (situacaoNaData(i, dataAto, historicoSituacoes) !== 'regular') return false;
+      if (!situacoesAceitas.includes(situacaoNaData(i, dataAto, historicoSituacoes))) return false;
       // Se há data do ato, verifica datas de saída
       if (dataAto) {
         const dAto = new Date(dataAto + 'T00:00:00');
@@ -1677,14 +1678,17 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAptosParaAto(eleicaoSelecionada.data_posse, 'posse')
+              {irmaosAptosParaAto(eleicaoSelecionada.data_posse, 'posse', ['regular', 'licenciado'])
                 .filter(i => {
-                  if (!i.data_exaltacao) return false;
+                  // Posse: todos os irmãos (Aprendizes, Companheiros e Mestres) iniciados até a data da posse
+                  if (presPosse.some(p => String(p.irmao_id) === String(i.id))) return true;
+                  if (!i.data_iniciacao) return false;
                   if (eleicaoSelecionada.data_posse) {
-                    return new Date(i.data_exaltacao + 'T00:00:00') <= new Date(eleicaoSelecionada.data_posse + 'T00:00:00');
+                    return new Date(i.data_iniciacao + 'T00:00:00') <= new Date(eleicaoSelecionada.data_posse + 'T00:00:00');
                   }
                   return true;
                 })
+                .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
                 .map(i => {
                 const marcado = presPosse.some(p => p.irmao_id === i.id);
                 return (
