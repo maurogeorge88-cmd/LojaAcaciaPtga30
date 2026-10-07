@@ -14,6 +14,7 @@ import {
   Table, TableRow, TableCell, ShadingType, VerticalAlign,
 } from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
+import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
@@ -250,6 +251,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     data_inicio_gestao:       eleicao.data_inicio_gestao ? formatarData(eleicao.data_inicio_gestao) : '[início da gestão]',
     data_fim_gestao:          eleicao.data_fim_gestao ? formatarData(eleicao.data_fim_gestao) : '[fim da gestão]',
     ano_exercicio:            eleicao.ano_exercicio || gestao,
+    nome_chapa:               eleicao.nome_chapa || '[nome da chapa]',
     nome_loja:                nomeLoja,
     num_loja:                 dadosLoja.numero_loja || '30',
     data_eleicao:             formatarData(eleicao.data_eleicao),
@@ -1223,7 +1225,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   { key: 'data_posse', label: 'Data da Posse', type: 'date' },
                   { key: 'hora_posse', label: 'Hora da Posse', type: 'time' },
                 ]},
-                { titulo: '📆 Gestão e Quórum', cor: '#10b981', campos: [
+                { titulo: '📆 Gestão, Chapa e Quórum', cor: '#10b981', campos: [
+                  { key: 'nome_chapa', label: 'Nome da Chapa', type: 'text', placeholder: 'Ex: Chapa Acácia Unida' },
                   { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
                   { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
                   { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
@@ -1618,6 +1621,30 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               ⚠️ CNPJ da loja não cadastrado. Preencha em <strong>Sistema → Dados da Loja</strong> para que os requerimentos fiquem completos.
             </div>
           )}
+
+          {/* Quadro da Gestão (PDF para os irmãos) */}
+          <div style={S.card}>
+            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '0.5rem' }}>📊 Quadro da Gestão</h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.85rem' }}>
+              PDF com logo, nome da chapa e os cargos da gestão, para enviar aos irmãos.
+              {!eleicaoSelecionada.nome_chapa && <span style={{ color: '#f59e0b' }}> Preencha o Nome da Chapa na Configuração.</span>}
+            </p>
+            <BotaoDoc emoji="📊" label="Quadro da Gestão (PDF)" disabled={chapaEleita.length === 0} gerando={gerando === 'quadro_gestao'}
+              onClick={() => {
+                setGerando('quadro_gestao');
+                try {
+                  gerarQuadroGestaoPDF({
+                    eleicao: eleicaoSelecionada, chapaEleita, irmaos: irmaos || [], dadosLoja,
+                    logoB64: LOGO_LOJA_B64, ordemCargos: ORDEM_CARGOS,
+                    nomeLoja: `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`,
+                  });
+                } catch (e) {
+                  showError('Erro ao gerar o Quadro da Gestão: ' + e.message);
+                } finally {
+                  setGerando('');
+                }
+              }} />
+          </div>
 
           {/* Grupo: Editais */}
           <div style={S.card}>
