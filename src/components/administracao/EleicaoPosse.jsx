@@ -97,15 +97,40 @@ const resolverAssinanteRequerimento = (qual, eleicao, chapas, irmaos) => {
   return { dataEmissao, modo, origem, irmao };
 };
 
+// ── Situação do irmão NA DATA do ato (usa o histórico de situações) ──
+// Retorna 'regular' | 'licenciado' | 'irregular' | 'desligado' | 'falecido' | <situação atual>
+// Assim, uma licença/desligamento posterior não altera eleição já realizada.
+const situacaoNaData = (i, dataISO, historico) => {
+  const atual = String(i?.situacao || 'regular').toLowerCase();
+  if (!dataISO) return atual;
+  const d = String(dataISO).substring(0, 10);
+  if (i.data_falecimento && i.data_falecimento <= d) return 'falecido';
+  const hist = (historico || []).filter(h => h.membro_id === i.id && h.status !== 'cancelada');
+  const cobre = hist.find(h => h.data_inicio && h.data_inicio <= d && (!h.data_fim || h.data_fim >= d));
+  if (cobre) {
+    const t = String(cobre.tipo_situacao || '').toLowerCase();
+    if (t.includes('licen')) return 'licenciado';
+    if (t.includes('deslig') || t.includes('exclu') || t.includes('quite') || t.includes('placet')) return 'desligado';
+    if (t.includes('falec')) return 'falecido';
+    return 'irregular';
+  }
+  if (atual === 'regular') return 'regular';
+  // Situação atual não-regular que começou DEPOIS da data → era regular na data
+  if (hist.some(h => h.data_inicio && h.data_inicio > d)) return 'regular';
+  if (i.data_desligamento && i.data_desligamento > d) return 'regular';
+  return atual;
+};
+
 // ── Quórum da eleição: 1/3 do total de irmãos Mestres ─────────
 // Mestres = exaltados até a data da eleição, situação Regular ou Licenciado
 // (irregulares não contam), sem falecidos/desligados até a data.
 // eleicao.total_mestres_quorum (Configuração) substitui o cálculo, se preenchido.
-const calcularQuorum = (irmaos, eleicao, presencas) => {
+const calcularQuorum = (irmaos, eleicao, presencas, historico = []) => {
   const dAto = eleicao?.data_eleicao ? new Date(eleicao.data_eleicao + 'T00:00:00') : new Date();
   const antesDoAto = (d) => d && new Date(d + 'T00:00:00') <= dAto;
   const totalCalculado = (irmaos || []).filter(i => {
-    const sit = String(i.situacao || 'regular').toLowerCase();
+    // situação NA DATA da eleição (licenciados contam, por enquanto)
+    const sit = situacaoNaData(i, eleicao?.data_eleicao, historico);
     if (!['regular', 'licenciado'].includes(sit)) return false;
     if (!antesDoAto(i.data_exaltacao)) return false;
     if (antesDoAto(i.data_falecimento) || antesDoAto(i.data_desligamento)) return false;
@@ -117,7 +142,7 @@ const calcularQuorum = (irmaos, eleicao, presencas) => {
   return { totalCalculado, totalMestres, quorumMinimo, presentes, atingido: presentes >= quorumMinimo };
 };
 
-const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) => {
+const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = []) => {
 
   const modelos      = await buscarModelos();
   const modelo       = modelos[tipo] || {};
@@ -278,8 +303,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     secretario_eleito_nome:   secretarioEleitoNome,
     secretario_eleito_dados:  secretarioEleito ? dadoIrmao(secretarioEleito.irmao_id) : '[Secretário Eleito]',
     num_votantes:             String(eleicao.num_votantes_eleicao || presEleicaoLen),
-    total_mestres:            String(calcularQuorum(irmaos, eleicao, presencas).totalMestres),
-    quorum_minimo:            String(calcularQuorum(irmaos, eleicao, presencas).quorumMinimo),
+    total_mestres:            String(calcularQuorum(irmaos, eleicao, presencas, historico).totalMestres),
+    quorum_minimo:            String(calcularQuorum(irmaos, eleicao, presencas, historico).quorumMinimo),
     trecho_votacao:           '', // preenchido logo abaixo, já com as variáveis
     cnpj:                     dadosLoja.cnpj || '[CNPJ]',
     numero_registro_cartorio: dadosLoja.numero_registro_cartorio || '04, do Livro A-01',
@@ -621,6 +646,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const [eleicaoSelecionada, setEleicaoSelecionada] = useState(null);
   const [chapas, setChapas] = useState([]);
   const [presencas, setPresencas] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [dadosLoja, setDadosLoja] = useState({});
   const [loading, setLoading] = useState(true);
   const [gerando, setGerando] = useState('');
@@ -659,22 +685,38 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const [chapaVencedora, setChapaVencedora] = useState('A');
 
   const podeEditar = permissoes?.pode_editar_corpo_admin || false;
-  // Somente irmãos REGULARES: fora falecidos, desligados, irregulares e licenciados
-  const ehRegular = (i) => String(i.situacao || 'regular').toLowerCase() === 'regular'
-    && !i.data_falecimento
-    && (!i.status || i.status === 'ativo');
-  const irmaosAtivos = (irmaos || []).filter(ehRegular).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+  // Listas de escolha: somente irmãos REGULARES na data da eleição (fora falecidos,
+  // desligados, irregulares e licenciados). Quem já foi escolhido nesta eleição
+  // continua na lista, com aviso se hoje não estiver regular.
+  const porNome = (a, b) => (a.nome || '').localeCompare(b.nome || '');
+  const ROTULO_SIT = { licenciado: 'Licenciado', irregular: 'Irregular', desligado: 'Desligado', falecido: 'Falecido' };
+  const dataRefEleicao = eleicaoSelecionada?.data_eleicao || null;
+  const idsJaEscolhidos = new Set([
+    ...chapas.map(c => c.irmao_id),
+    ...Object.entries(eleicaoSelecionada || {}).filter(([k, v]) => k.endsWith('_id') && v && k !== 'id').map(([, v]) => v),
+  ].filter(Boolean).map(String));
+  const irmaosAtivos = (irmaos || [])
+    .filter(i => situacaoNaData(i, dataRefEleicao, historicoSituacoes) === 'regular' || idsJaEscolhidos.has(String(i.id)))
+    .map(i => {
+      const hoje = String(i.situacao || 'regular').toLowerCase();
+      return hoje === 'regular' && !i.data_falecimento ? i : { ...i, nome: `${i.nome} (hoje: ${ROTULO_SIT[hoje] || i.situacao || 'Falecido'})` };
+    })
+    .sort(porNome);
+  // Escolhas para atos de HOJE (ex.: quem assina o requerimento): regulares hoje
+  const irmaosRegularesHoje = (irmaos || [])
+    .filter(i => String(i.situacao || 'regular').toLowerCase() === 'regular' && !i.data_falecimento)
+    .sort(porNome);
 
   // Filtra irmãos aptos para um determinado ato (eleição ou posse)
   // Regra: somente situação regular na data do ato
   // Exclui: falecido/desligado/excluido/ex_oficio/suspenso
   // E se tiver data_falecimento ou data_desligamento anterior à data do ato, também exclui
-  const irmaosAptosParaAto = (dataAto) => {
-    const situacoesAptas = ['regular']; // licenciados, irregulares, falecidos e desligados não aparecem
+  const irmaosAptosParaAto = (dataAto, sessao) => {
+    // Regulares NA DATA do ato; quem já tem presença gravada na sessão sempre aparece
+    const comPresenca = new Set(presencas.filter(p => p.sessao === sessao).map(p => String(p.irmao_id)));
     return (irmaos || []).filter(i => {
-      // Situação deve ser apta
-      const sit = (i.situacao || 'regular').toLowerCase();
-      if (!situacoesAptas.includes(sit)) return false;
+      if (sessao && comPresenca.has(String(i.id))) return true;
+      if (situacaoNaData(i, dataAto, historicoSituacoes) !== 'regular') return false;
       // Se há data do ato, verifica datas de saída
       if (dataAto) {
         const dAto = new Date(dataAto + 'T00:00:00');
@@ -724,6 +766,12 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       .select('*')
       .eq('eleicao_id', id);
     setPresencas(pr || []);
+
+    // Histórico de situações (licenças, desligamentos...) para avaliar a situação na data do ato
+    const { data: hs } = await supabase
+      .from('historico_situacoes')
+      .select('membro_id, tipo_situacao, data_inicio, data_fim, status');
+    setHistoricoSituacoes(hs || []);
   }, []);
 
   useEffect(() => { if (temAcesso) carregar(); }, [carregar, temAcesso]);
@@ -912,7 +960,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const gerarDoc = async (tipo, nomeArq) => {
     setGerando(tipo);
     try {
-      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || []);
+      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes);
       downloadDocx(buf, nomeArq);
     } catch (e) {
       showError('Erro ao gerar documento: ' + e.message);
@@ -1234,7 +1282,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   { key: 'data_inicio_gestao', label: 'Início da Gestão', type: 'date' },
                   { key: 'data_fim_gestao', label: 'Fim da Gestão', type: 'date' },
                   { key: 'ano_exercicio', label: 'Ano de Exercício', type: 'text', placeholder: 'Ex: 2026/2027' },
-                  { key: 'total_mestres_quorum', label: 'Total de Mestres (quórum)', type: 'number', placeholder: `Automático: ${calcularQuorum(irmaos, eleicaoSelecionada, presencas).totalCalculado}` },
+                  { key: 'total_mestres_quorum', label: 'Total de Mestres (quórum)', type: 'number', placeholder: `Automático: ${calcularQuorum(irmaos, eleicaoSelecionada, presencas, historicoSituacoes).totalCalculado}` },
                 ]},
               ].map(g => (
                 <div key={g.titulo} style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${g.cor}` }}>
@@ -1288,7 +1336,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                           <select style={S.input} disabled={!podeEditar} value={eleicaoSelecionada[`req_${qual}_assinante_id`] || ''}
                             onChange={e => salvar({ [`req_${qual}_assinante_id`]: e.target.value || null })}>
                             <option value="">Selecione...</option>
-                            {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                            {irmaosRegularesHoje.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
                           </select>
                         </div>
                       )}
@@ -1487,7 +1535,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAptosParaAto(eleicaoSelecionada.data_eleicao)
+              {irmaosAptosParaAto(eleicaoSelecionada.data_eleicao, 'eleicao')
                 .filter(i => {
                   // Apenas Mestres: deve ter data_exaltacao anterior ou igual à data do ato
                   if (!i.data_exaltacao) return false;
@@ -1548,7 +1596,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAptosParaAto(eleicaoSelecionada.data_posse)
+              {irmaosAptosParaAto(eleicaoSelecionada.data_posse, 'posse')
                 .filter(i => {
                   if (!i.data_exaltacao) return false;
                   if (eleicaoSelecionada.data_posse) {
@@ -1609,7 +1657,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
           {/* Quórum da eleição */}
           {(() => {
-            const q = calcularQuorum(irmaos, eleicaoSelecionada, presencas);
+            const q = calcularQuorum(irmaos, eleicaoSelecionada, presencas, historicoSituacoes);
             return (
               <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', color: 'var(--color-text)',
                 background: q.atingido ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.12)', border: `1px solid ${q.atingido ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.5)'}` }}>
