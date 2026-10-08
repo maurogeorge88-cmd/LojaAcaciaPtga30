@@ -85,6 +85,7 @@ export default function MenuLoja({
       { pagina: 'gestao-sistema-logs', icone: '🔐', label: 'Controle de Acesso', mostrar: editar('usuarios') },
       { pagina: 'dados-loja', icone: '🏛️', label: 'Dados da Loja', mostrar: ehAdminTotal(userData) },
       { pagina: 'acesso-cunhadas', icone: '💜', label: 'Acesso das Cunhadas', mostrar: editar('usuarios') },
+      { pagina: 'modelos-documentos', icone: '📝', label: 'Modelos de Documentos', mostrar: editar('modelos') },
     ]},
 
     { tipo: 'item', pagina: 'sobre', icone: 'ℹ️', label: 'Sobre', mostrar: true },
