@@ -11,7 +11,7 @@ import { supabase } from '../../supabaseClient';
 import {
   Document, Packer, Paragraph, TextRun, ImageRun,
   AlignmentType, UnderlineType, BorderStyle, WidthType,
-  Table, TableRow, TableCell, ShadingType, VerticalAlign,
+  Table, TableRow, TableCell, ShadingType, VerticalAlign, Tab, TabStopType,
 } from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
@@ -366,10 +366,29 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   const assModelo = (nome, cargo) => cargo ? assinatura(nome, cargo) : [];
 
+  // Assinaturas: nome e cargo com espaçamento simples (1,0) e 0 antes/depois
+  const LINHA_ASS = '_____________________________________';
   const assinatura = (nome, cargo) => [
-    prC([ar('___________________________________________')], { before: 500, after: 40 }),
-    prC([ar(nome, { bold: true })], { before: 0, after: 20 }),
-    prC([ar(cargo)], { before: 0, after: 200 }),
+    prC([ar(LINHA_ASS)], { before: 500, after: 0, line: 240 }),
+    prC([ar(nome, { bold: true })], { before: 0, after: 0, line: 240 }),
+    prC([ar(cargo)], { before: 0, after: 0, line: 240 }),
+  ];
+
+  // Duas assinaturas lado a lado por tabulação centralizada (4 cm e 12,5 cm)
+  const TABS_ASS = [
+    { type: TabStopType.CENTER, position: 2268 },  // 4 cm
+    { type: TabStopType.CENTER, position: 7087 },  // 12,5 cm
+  ];
+  const runTab = (txt, bold = false) => new TextRun({ children: [new Tab(), String(txt ?? '')], font: 'Times New Roman', size: 24, bold });
+  const linhaTab = (a, b, bold = false, before = 0) => new Paragraph({
+    tabStops: TABS_ASS,
+    spacing: { before, after: 0, line: 240 },
+    children: [runTab(a, bold), runTab(b, bold)],
+  });
+  const assinaturaDupla = (nome1, cargo1, nome2, cargo2) => [
+    linhaTab(LINHA_ASS, LINHA_ASS, false, 500),
+    linhaTab(nome1, nome2, true),
+    linhaTab(cargo1, cargo2),
   ];
 
   // ─── Cabeçalho ────────────────────────────────────────────
@@ -498,27 +517,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
     // Comissão instaladora (aba Configuração): VM Instalador em cima, Vigilantes lado a lado
     const nomeAss = (i, fallback) => i?.nome ? `Ir∴ ${i.nome.toUpperCase()}` : fallback;
-    const semB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
-    const bordasNone = { top: semB, bottom: semB, left: semB, right: semB };
-    const Wutil = DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight;
-    const celAss = (nome, cargo) => new TableCell({
-      borders: bordasNone, width: { size: Math.floor(Wutil / 2), type: WidthType.DXA },
-      children: [
-        prC([ar('______________________________')], { before: 500, after: 40 }),
-        prC([ar(nome, { bold: true })], { before: 0, after: 20 }),
-        prC([ar(cargo)], { before: 0, after: 200 }),
-      ],
-    });
     const assinaturasInstaladores = [
       ...assinatura(nomeAss(vmInstalador, '[VM Instalador]'), 'Venerável Mestre Instalador'),
-      new Table({
-        width: { size: Wutil, type: WidthType.DXA },
-        columnWidths: [Math.floor(Wutil / 2), Wutil - Math.floor(Wutil / 2)],
-        rows: [new TableRow({ children: [
-          celAss(nomeAss(primeiroVigilanteInstalador, '[1º Vigilante Instalador]'), '1º Vigilante Instalador'),
-          celAss(nomeAss(segundoVigilanteInstalador, '[2º Vigilante Instalador]'), '2º Vigilante Instalador'),
-        ]})],
-      }),
+      ...assinaturaDupla(
+        nomeAss(primeiroVigilanteInstalador, '[1º Vigilante Instalador]'), '1º Vigilante Instalador',
+        nomeAss(segundoVigilanteInstalador, '[2º Vigilante Instalador]'), '2º Vigilante Instalador',
+      ),
     ];
 
     children = [
