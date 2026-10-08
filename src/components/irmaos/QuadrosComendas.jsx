@@ -42,9 +42,10 @@ export default function QuadrosComendas({ irmaoId }) {
       {QUADROS.map(({ chave, titulo, cor }) => {
         const itens = lista
           .filter(ic => (ic.concedida_por || ic.comendas?.origem || 'grande_loja') === chave)
-          .sort((a, b) => ordenarComendas(a.comendas, b.comendas)
-            || (a.ano_referencia || 0) - (b.ano_referencia || 0)
-            || String(a.data_entrega || '').localeCompare(String(b.data_entrega || '')));
+          // Mais recentes primeiro (data de entrega/ano decrescente); empate segue a ordem oficial
+          .sort((a, b) => String(b.data_entrega || '').localeCompare(String(a.data_entrega || ''))
+            || (b.ano_referencia || 0) - (a.ano_referencia || 0)
+            || ordenarComendas(a.comendas, b.comendas));
         const meio = Math.ceil(itens.length / 2);
         const colunas = [itens.slice(0, meio), itens.slice(meio)];
 
