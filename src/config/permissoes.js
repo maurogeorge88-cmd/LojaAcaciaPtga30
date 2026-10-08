@@ -31,6 +31,7 @@ export const MODULOS = [
   { id: 'email',               label: 'Central E-Mail',            icone: '📧', grupo: 'Geral',         niveis: ['ver', 'editar'],           base: 'ver', ajuda: 'Editar = enviar e-mails' },
   { id: 'presenca',            label: 'Presença Irmãos',           icone: '✅', grupo: 'Presença',      niveis: ['nenhum', 'editar'],        base: 'nenhum', ajuda: 'Sessões e registro de presença' },
   { id: 'usuarios',            label: 'Gestão do Sistema',         icone: '🔐', grupo: 'Sistema',       niveis: ['nenhum', 'editar'],        base: 'nenhum', ajuda: 'Usuários, logs, graus e acesso das cunhadas' },
+  { id: 'modelos',             label: 'Modelos de Documentos',     icone: '📝', grupo: 'Sistema',       niveis: ['nenhum', 'editar'],        base: 'nenhum', ajuda: 'Editar textos de editais, atas, requerimentos…' },
   { id: 'arco_real',           label: 'Arco Real',                 icone: '🔺', grupo: 'Sistema',       niveis: ['nenhum', 'ver'],           base: 'nenhum' },
 ];
 
@@ -67,6 +68,7 @@ export const derivarDoLegado = (u = {}) => {
     presenca: u.pode_editar_presenca ? 'editar' : 'nenhum',
     usuarios: u.pode_gerenciar_usuarios ? 'editar' : 'nenhum',
     arco_real: u.pode_visualizar_arco_real ? 'ver' : 'nenhum',
+    modelos: c === 'secretario' ? 'editar' : 'nenhum', // padrão: Secretário (Admin/VM já têm tudo)
   };
   return limparMapa(m);
 };
@@ -161,6 +163,7 @@ export const PAGINAS = {
   'gestao-sistema-logs': ['usuarios', 'editar'],
   'acesso-cunhadas': ['usuarios', 'editar'],
   'usuarios': ['usuarios', 'editar'],
+  'modelos-documentos': ['modelos', 'editar'],
 };
 
 export const podeAbrirPagina = (mapa, pagina) => {
