@@ -176,7 +176,7 @@ const MODULOS_MODELOS = {
   geral: '📄 Geral',
 };
 
-export default function ModelosDocumentos({ permissoes, showSuccess, showError }) {
+export default function ModelosDocumentos({ permissoes, showSuccess, showError, onVoltar }) {
   const [modelos, setModelos]           = useState([]);
   const [modeloAtivo, setModeloAtivo]   = useState(null);
   const [form, setForm]                 = useState({});
@@ -319,6 +319,12 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
 
       {/* ── Coluna esquerda: lista de modelos ── */}
       <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {onVoltar && (
+          <button onClick={onVoltar}
+            style={{ padding: '0.55rem 0.85rem', marginBottom: '0.6rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left' }}>
+            ← Voltar para Eleição e Posse
+          </button>
+        )}
         <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem', marginBottom: '0.5rem' }}>
           📄 Modelos ({modelos.length})
         </div>
