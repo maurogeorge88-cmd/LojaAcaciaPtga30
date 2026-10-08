@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 // ── Modelos padrão — usados para popular o banco na primeira abertura ──────
 const MODELOS_PADRAO = [
   {
+    modulo: 'eleicao_posse',
     tipo: 'apresentacao_chapa',
     nome: 'Apresentação da Chapa',
     titulo_doc: 'APRESENTAÇÃO DE CHAPA – {nome_chapa_maiusculo}',
@@ -14,6 +15,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'left',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'edital_eleicao',
     nome: 'Edital de Convocação para Eleição',
     titulo_doc: 'Edital de Convocação para Eleição',
@@ -23,6 +25,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'edital_posse',
     nome: 'Edital de Convocação para Posse',
     titulo_doc: 'Edital de Convocação para Posse',
@@ -32,6 +35,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'ata_eleicao_loja',
     nome: 'Ata de Eleição (Loja)',
     titulo_doc: 'ATA DA SESSÃO ORDINÁRIA DE ELEIÇÃO DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
@@ -43,6 +47,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'ata_eleicao_cartorio',
     nome: 'Ata de Eleição (Cartório)',
     titulo_doc: 'ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
@@ -54,6 +59,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'ata_posse',
     nome: 'Ata de Posse',
     titulo_doc: 'ATA DA SESSÃO ORDINÁRIA DE POSSE DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
@@ -64,6 +70,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'requerimento_eleicao',
     nome: 'Requerimento — Eleição',
     titulo_doc: '',
@@ -73,6 +80,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'left', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'requerimento_posse',
     nome: 'Requerimento — Posse',
     titulo_doc: '',
@@ -82,6 +90,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'left', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'lista_presenca_eleicao',
     nome: 'Lista de Presença — Eleição',
     titulo_doc: 'Lista de Presença — Sessão de Eleição',
@@ -91,6 +100,7 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'center', alinhamento_assinatura: 'center',
   },
   {
+    modulo: 'eleicao_posse',
     tipo: 'lista_presenca_posse',
     nome: 'Lista de Presença — Posse',
     titulo_doc: 'Lista de Presença — Sessão de Posse',
@@ -156,6 +166,14 @@ const S = {
     borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.15s',
   }),
   select: { padding: '0.45rem 0.7rem', background: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)', fontSize: '0.82rem' },
+};
+
+// Módulos (grupos) da lista de modelos — novos módulos entram aqui
+const MODULOS_MODELOS = {
+  eleicao_posse: '🗳️ Eleição e Posse',
+  financeiro: '💰 Financeiro',
+  filantropia: '🤝 Filantropia',
+  geral: '📄 Geral',
 };
 
 export default function ModelosDocumentos({ permissoes, showSuccess, showError }) {
@@ -293,7 +311,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
 
   // Não mostrar abas que não se aplicam ao tipo
   const temAclamacao = modeloAtivo && (modeloAtivo.tipo.startsWith('ata_eleicao'));
-  const temRodape    = modeloAtivo && (modeloAtivo.tipo.startsWith('ata_') || modeloAtivo.tipo.startsWith('requerimento_'));
+  const temRodape    = modeloAtivo && (modeloAtivo.tipo.startsWith('ata_') || modeloAtivo.tipo.startsWith('requerimento_') || modeloAtivo.tipo === 'apresentacao_chapa');
   const temAss       = modeloAtivo && !modeloAtivo.tipo.startsWith('lista_presenca');
 
   return (
@@ -304,7 +322,14 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
         <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem', marginBottom: '0.5rem' }}>
           📄 Modelos ({modelos.length})
         </div>
-        {modelos.map(m => (
+        {Object.entries(
+          modelos.reduce((g, m) => { const k = m.modulo || 'eleicao_posse'; (g[k] = g[k] || []).push(m); return g; }, {})
+        ).map(([mod, lista]) => (
+          <div key={mod} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
+            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-accent)', textTransform: 'uppercase', padding: '0 0.25rem' }}>
+              {MODULOS_MODELOS[mod] || mod}
+            </div>
+        {lista.map(m => (
           <button key={m.id}
             onClick={() => selecionarModelo(m)}
             style={{
@@ -318,6 +343,8 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
             }}>
             {m.nome}
           </button>
+        ))}
+          </div>
         ))}
       </div>
 
@@ -423,6 +450,9 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError }
                 </div>
                 <div>
                   <label style={S.label}>Texto do corpo</label>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.35rem' }}>
+                    ↵ Enter = novo parágrafo · linha vazia = espaço entre parágrafos · <strong>*texto*</strong> = negrito
+                  </p>
                   <textarea name="corpo" style={{ ...S.textarea, minHeight: '260px' }}
                     value={form.corpo || ''} disabled={!podeEditar}
                     onChange={e => handleChange('corpo', e.target.value)} />
