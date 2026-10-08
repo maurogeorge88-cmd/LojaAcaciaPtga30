@@ -95,9 +95,10 @@ export const gerarRelatorioComendasPDF = (comendas, dadosLoja) => {
     };
     bordaCorpo();
 
-    if (comenda.tipo_criterio === 'manual') {
+    // Manual sem indicados: mensagem; com indicados: lista normal
+    if (comenda.tipo_criterio === 'manual' && comenda.elegiveis.length === 0) {
       doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-      txt('Critério manual — sem apuração automática.', W / 2, y + 7, { align: 'center' });
+      txt('Critério manual — nenhum irmão indicado.', W / 2, y + 7, { align: 'center' });
       doc.setTextColor(0);
       doc.rect(M, inicioCorpo, LARG, 11);
       y += 11 + 6;
