@@ -4,6 +4,18 @@ import { gerarRelatorioInstrucoesTrabalhosPDF } from '../../utils/gerarRelatorio
 
 const GRAUS = ['Aprendiz', 'Companheiro', 'Mestre'];
 const NUMEROS_INSTRUCAO = ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global', 'Peça de Arquitetura'];
+
+// Instruções disponíveis por grau (Peça de Arquitetura em todos)
+const INSTRUCOES_POR_GRAU = {
+  Aprendiz:    ['1ª Instrução', '2ª Instrução', '3ª Instrução', '4ª Instrução', '5ª Instrução', 'Trabalho Global', 'Peça de Arquitetura'],
+  Companheiro: ['1ª Instrução', '2ª Instrução', '3ª Instrução', 'Trabalho Global', 'Peça de Arquitetura'],
+  Mestre:      ['1ª Instrução', '2ª Instrução', 'Peça de Arquitetura'],
+};
+const opcoesInstrucao = (grau, atual) => {
+  const lista = INSTRUCOES_POR_GRAU[grau] || NUMEROS_INSTRUCAO;
+  // Registro antigo fora da lista do grau: mantém a opção para não perder o dado
+  return atual && !lista.includes(atual) ? [...lista, atual] : lista;
+};
 // Esses dois não são "instrução" de verdade — não faz sentido exigir Data da
 // Instrução pra eles. O que importa nesses casos é a Data da Apresentação.
 const TIPOS_SEM_INSTRUCAO = ['Trabalho Global', 'Peça de Arquitetura'];
@@ -426,7 +438,12 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
             <div style={{ padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={sLabel}>Grau</label>
-                <select value={form.grau} onChange={e => setForm({ ...form, grau: e.target.value })} style={sInput}>
+                <select value={form.grau} onChange={e => {
+                  const novoGrau = e.target.value;
+                  const lista = INSTRUCOES_POR_GRAU[novoGrau] || NUMEROS_INSTRUCAO;
+                  const numero = lista.includes(form.numero_instrucao) ? form.numero_instrucao : lista[0];
+                  setForm({ ...form, grau: novoGrau, numero_instrucao: numero, data_instrucao: TIPOS_SEM_INSTRUCAO.includes(numero) ? '' : form.data_instrucao });
+                }} style={sInput}>
                   {GRAUS.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
@@ -436,7 +453,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
                   const novoTipo = e.target.value;
                   setForm({ ...form, numero_instrucao: novoTipo, data_instrucao: TIPOS_SEM_INSTRUCAO.includes(novoTipo) ? '' : form.data_instrucao });
                 }} style={sInput}>
-                  {NUMEROS_INSTRUCAO.map(n => <option key={n} value={n}>{n}</option>)}
+                  {opcoesInstrucao(form.grau, form.numero_instrucao).map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
