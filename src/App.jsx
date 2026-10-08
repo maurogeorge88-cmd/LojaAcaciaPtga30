@@ -59,6 +59,7 @@ import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
 import MenuLoja from './components/layout/MenuLoja';
+import ModelosDocumentos from './components/administracao/ModelosDocumentos';
 import { rotuloEstadoCivilCompleto } from './utils/constants';
 import { permissoesEfetivas, montarPermissoesLegado, podeAbrirPagina, pode } from './config/permissoes';
 
@@ -173,6 +174,7 @@ function App() {
     'visualizar': '👥 Visualizar Irmãos',
     'quadro': '📋 Quadro de Irmãos',
     'comendas': '🎖️ Comendas',
+    'modelos-documentos': '📝 Modelos de Documentos',
     'balaustres': '📜 Balaustres',
     'pranchas': '📄 Pranchas Expedidas',
     'corpo-admin': '👔 Corpo Administrativo',
@@ -1963,6 +1965,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <QuadroIrmaos irmaos={irmaos} />
         )}
 
+        {currentPage === 'modelos-documentos' && (
+          <ModelosDocumentos
+            permissoes={{ ...permissoes, pode_editar_corpo_admin: pode(mapaPermissoes, 'modelos', 'editar') }}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
         {currentPage === 'comendas' && (
           <Comendas permissoes={{ ...permissoes, canEdit: pode(mapaPermissoes, 'comendas', 'editar') }} userData={userData} showSuccess={showSuccess} showError={showError} />
         )}
@@ -2078,6 +2088,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EleicaoPosse
             irmaos={irmaos}
             permissoes={permissoes}
+            podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
+            onAbrirModelos={() => setCurrentPage('modelos-documentos')}
             showSuccess={showSuccess}
             showError={showError}
           />
