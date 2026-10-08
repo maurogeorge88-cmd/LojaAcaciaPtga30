@@ -359,9 +359,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     return [pr([ar(t.replace(/\*/g, ''), { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: 240 })];
   };
 
-  const rodapeModelo = () => {
+  const rodapeModelo = (opts = {}) => {
     if (!modelo.rodape) return [];
-    return [prModelo(modelo.rodape, { firstLine: true, before: 160, after: 0 })];
+    return [prModelo(modelo.rodape, { firstLine: true, before: 160, after: 0, ...opts })];
   };
 
   const assModelo = (nome, cargo) => cargo ? assinatura(nome, cargo) : [];
@@ -487,13 +487,39 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       'Chanceler',
     ];
 
+    const NOME_CARGO_ASS = { 'Veneravel Mestre': 'Venerável Mestre', 'Primeiro Vigilante': '1º Vigilante', 'Segundo Vigilante': '2º Vigilante', 'Secretario': 'Secretário' };
     const assinaturasEleitos = chapaEleita
       .filter(ch => CARGOS_ASSINAM_POSSE.includes(ch.cargo))
       .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
       .flatMap(ch => {
         const irmao = irmaos.find(i => i.id === ch.irmao_id);
-        return irmao ? assinatura(`Ir.: ${irmao.nome.toUpperCase()}`, ch.cargo) : [];
+        return irmao ? assinatura(`Ir∴ ${irmao.nome.toUpperCase()}`, NOME_CARGO_ASS[ch.cargo] || ch.cargo) : [];
       });
+
+    // Comissão instaladora (aba Configuração): VM Instalador em cima, Vigilantes lado a lado
+    const nomeAss = (i, fallback) => i?.nome ? `Ir∴ ${i.nome.toUpperCase()}` : fallback;
+    const semB = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+    const bordasNone = { top: semB, bottom: semB, left: semB, right: semB };
+    const Wutil = DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight;
+    const celAss = (nome, cargo) => new TableCell({
+      borders: bordasNone, width: { size: Math.floor(Wutil / 2), type: WidthType.DXA },
+      children: [
+        prC([ar('______________________________')], { before: 500, after: 40 }),
+        prC([ar(nome, { bold: true })], { before: 0, after: 20 }),
+        prC([ar(cargo)], { before: 0, after: 200 }),
+      ],
+    });
+    const assinaturasInstaladores = [
+      ...assinatura(nomeAss(vmInstalador, '[VM Instalador]'), 'Venerável Mestre Instalador'),
+      new Table({
+        width: { size: Wutil, type: WidthType.DXA },
+        columnWidths: [Math.floor(Wutil / 2), Wutil - Math.floor(Wutil / 2)],
+        rows: [new TableRow({ children: [
+          celAss(nomeAss(primeiroVigilanteInstalador, '[1º Vigilante Instalador]'), '1º Vigilante Instalador'),
+          celAss(nomeAss(segundoVigilanteInstalador, '[2º Vigilante Instalador]'), '2º Vigilante Instalador'),
+        ]})],
+      }),
+    ];
 
     children = [
       // Título via modelo (editável no banco)
@@ -507,11 +533,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
           ? modelo.corpo
           : String(modelo.corpo || '').replace(/,\s*gest[ãa]o\s*(de\s*)?\{gestao\}\s*\.?/i,
               ', com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}.'),
-        { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }
+        { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) } // sem recuo: parágrafos na margem
       ),
 
       // "Foram empossados os Irmãos:" — texto fixo introdutório
-      pr([ar('Foram empossados os Irmãos:')], { firstLine: true, before: 80, after: 80 }),
+      pr([ar('Foram empossados os Irmãos:')], { before: 80, after: 80 }),
 
       // Lista dos eleitos com qualificação completa (gerada do banco de dados)
       ...chapaEleita
@@ -521,13 +547,14 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
           return pr([
             ar(`${ch.cargo}: `, { bold: true }),
             ar(irmao ? dadoIrmao(ch.irmao_id) : '[Irmão não encontrado]'),
-          ], { firstLine: true, before: 60, after: 60 });
+          ], { before: 60, after: 60 });
         }),
 
-      // Rodapé via modelo (editável no banco)
-      ...rodapeModelo(),
+      // Rodapé via modelo (editável no banco), sem recuo
+      ...rodapeModelo({ firstLine: false }),
 
-      // Assinaturas dos eleitos empossados até Chanceler
+      // Assinaturas: comissão instaladora e, abaixo, os eleitos empossados até Chanceler
+      ...assinaturasInstaladores,
       ...assinaturasEleitos,
     ];
   }
@@ -725,6 +752,7 @@ const STATUS_INFO = {
 // ════════════════════════════════════════════════════════════════════════════
 
 export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showError, podeEditarModelos = false, onAbrirModelos }) {
+  const CHAVE_RETORNO = 'eleicao_posse_retorno';
   const temAcesso = permissoes?.canManageUsers || permissoes?.canEditFinancial || permissoes?.canEdit || false;
 
   const [eleicoes, setEleicoes] = useState([]);
@@ -832,6 +860,15 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         .select('*')
         .order('created_at', { ascending: false });
       setEleicoes(el || []);
+      // Voltando de "Modelos de Documentos": reabre a mesma eleição na aba Documentos
+      try {
+        const ret = JSON.parse(sessionStorage.getItem(CHAVE_RETORNO) || 'null');
+        if (ret?.id) {
+          sessionStorage.removeItem(CHAVE_RETORNO);
+          const alvo = (el || []).find(x => String(x.id) === String(ret.id));
+          if (alvo) { setEleicaoSelecionada(alvo); setEtapa(ret.etapa || 4); }
+        }
+      } catch { /* sem retorno */ }
     } catch (e) {
       console.error(e);
     } finally {
@@ -1766,7 +1803,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           {/* Atalho: editar os textos dos documentos */}
           {podeEditarModelos && onAbrirModelos && (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={onAbrirModelos} style={S.btn('surface')}>📝 Editar modelos dos documentos</button>
+              <button onClick={() => {
+                try { sessionStorage.setItem(CHAVE_RETORNO, JSON.stringify({ id: eleicaoSelecionada.id, etapa: 4 })); } catch { /* ignore */ }
+                onAbrirModelos();
+              }} style={S.btn('surface')}>📝 Editar modelos dos documentos</button>
             </div>
           )}
 
