@@ -159,6 +159,8 @@ function App() {
   const [permissoes, setPermissoes] = useState(null);
   // Fase 2: mapa de permissões por módulo { modulo: 'ver' | 'editar' }
   const [mapaPermissoes, setMapaPermissoes] = useState({});
+  // Página para onde voltar ao sair de Modelos de Documentos (ex.: Eleição e Posse)
+  const [retornoModelos, setRetornoModelos] = useState(null);
   // ========================================
   // NOMES DAS TELAS + CONTROLE DE ACESSO ÚNICO POR SESSÃO
   // ========================================
@@ -1967,6 +1969,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'modelos-documentos' && (
           <ModelosDocumentos
+            onVoltar={retornoModelos ? () => { const p = retornoModelos; setRetornoModelos(null); setCurrentPage(p); } : null}
             permissoes={{ ...permissoes, pode_editar_corpo_admin: pode(mapaPermissoes, 'modelos', 'editar') }}
             showSuccess={showSuccess}
             showError={showError}
@@ -2089,7 +2092,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             permissoes={permissoes}
             podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
-            onAbrirModelos={() => setCurrentPage('modelos-documentos')}
+            onAbrirModelos={() => { setRetornoModelos('eleicao-posse'); setCurrentPage('modelos-documentos'); }}
             showSuccess={showSuccess}
             showError={showError}
           />
