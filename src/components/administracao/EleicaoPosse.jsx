@@ -321,9 +321,13 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   const runsComNegrito = (texto, base = {}) =>
     String(texto || '').split(/(\*[^*]+\*)/g).filter(t => t !== '').map(t =>
       t.length > 2 && t.startsWith('*') && t.endsWith('*') ? ar(t.slice(1, -1), { ...base, bold: true }) : ar(t, base));
+  // Cada linha do modelo = um parágrafo; linha vazia = espaço (as listas são achatadas ao montar o documento)
   const prModelo = (texto, opts = {}) => {
-    const interpolado = interpolarModelo(texto, VARS);
-    return pr(runsComNegrito(interpolado), opts);
+    const linhas = interpolarModelo(texto, VARS).split('\n');
+    if (linhas.length === 1) return pr(runsComNegrito(linhas[0]), opts);
+    return linhas.map(l => l.trim() === ''
+      ? pr([ar('')], { before: 0, after: 0 })
+      : pr(runsComNegrito(l), opts));
   };
 
   // ─── Helpers ──────────────────────────────────────────────
@@ -672,7 +676,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     // ─── Montar documento ─────────────────────────────────────
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
-    sections: [{ properties: { page: pageCfg }, children }],
+    sections: [{ properties: { page: pageCfg }, children: children.flat(3) }],
   });
 
   return Packer.toBlob(doc);
@@ -720,7 +724,7 @@ const STATUS_INFO = {
 // COMPONENTE PRINCIPAL
 // ════════════════════════════════════════════════════════════════════════════
 
-export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showError }) {
+export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showError, podeEditarModelos = false, onAbrirModelos }) {
   const temAcesso = permissoes?.canManageUsers || permissoes?.canEditFinancial || permissoes?.canEdit || false;
 
   const [eleicoes, setEleicoes] = useState([]);
@@ -1756,6 +1760,13 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           {!dadosLoja.cnpj && (
             <div style={{ padding: '0.75rem 1rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--color-text)' }}>
               ⚠️ CNPJ da loja não cadastrado. Preencha em <strong>Sistema → Dados da Loja</strong> para que os requerimentos fiquem completos.
+            </div>
+          )}
+
+          {/* Atalho: editar os textos dos documentos */}
+          {podeEditarModelos && onAbrirModelos && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={onAbrirModelos} style={S.btn('surface')}>📝 Editar modelos dos documentos</button>
             </div>
           )}
 
