@@ -90,6 +90,10 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const [sessoes, setSessoes] = useState([]);
   const [registros, setRegistros] = useState([]);
   const [irmaosComendas, setIrmaosComendas] = useState([]);
+  // Indicações das comendas manuais (aparecem em Elegíveis até a entrega)
+  const [indicacoes, setIndicacoes] = useState([]);
+  const [modalIndicacao, setModalIndicacao] = useState(null); // comenda
+  const [indicacaoForm, setIndicacaoForm] = useState({ irmao_id: '', ano_referencia: '', observacoes: '' });
   const [dadosLoja, setDadosLoja] = useState(null);
 
   const [filtroOrigem, setFiltroOrigem] = useState('todas');
@@ -118,12 +122,14 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
         { data: historicoData },
         { data: sessoesData },
         { data: irmaosComendasData },
+        { data: indicacoesData },
       ] = await Promise.all([
         supabase.from('comendas').select('*').order('nome'),
         supabase.from('irmaos').select('id, nome, cim, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, mestre_instalado, oriundo_demolay_lowton, status, situacao, data_falecimento, data_licenca, data_desligamento').eq('status', 'ativo'),
         supabase.from('historico_situacoes').select('*'),
         supabase.from('sessoes_presenca').select('id, data_sessao, grau_sessao_id'),
         supabase.from('irmaos_comendas').select('*, irmaos(nome, cim), comendas(nome, origem, tipo_criterio)').order('data_entrega', { ascending: false }),
+        supabase.from('comendas_indicacoes').select('*').order('created_at'),
       ]);
 
       setComendas([...(comendasData || [])].sort(ordenarComendas));
@@ -131,6 +137,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       setHistoricoSituacoes(historicoData || []);
       setSessoes(sessoesData || []);
       setIrmaosComendas(irmaosComendasData || []);
+      setIndicacoes(indicacoesData || []);
 
       // Registros de presença — paginado, pode ser um histórico grande
       const sessaoIds = (sessoesData || []).map(s => s.id);
@@ -328,6 +335,13 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
         case 'macom_100_acumulado':
           lista = irmaos.filter(i => !jaRecebeu(i.id, comenda.id) && (anosCemPorIrmao[i.id] || []).length >= (comenda.qtd_necessaria || 0)).map(i => ({ irmao: i }));
           break;
+        case 'manual':
+          // Indicados manualmente, até serem entregues
+          lista = indicacoes.filter(ind => ind.comenda_id === comenda.id).map(ind => ({
+            irmao: irmaos.find(i => i.id === ind.irmao_id) || { id: ind.irmao_id, nome: '(irmão inativo)', cim: '' },
+            ano: ind.ano_referencia || null, indicacaoId: ind.id, obs: ind.observacoes,
+          }));
+          break;
         default:
           lista = [];
       }
@@ -335,7 +349,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
     });
     return mapa;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comendas, irmaos, irmaosComendas, anosCemPorIrmao, historicoSituacoes]);
+  }, [comendas, irmaos, irmaosComendas, anosCemPorIrmao, historicoSituacoes, indicacoes]);
 
   // Em progresso para comendas de acúmulo (ex.: Roldão 1/3, 2/3)
   const progressoPorComenda = useMemo(() => {
@@ -407,8 +421,8 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   };
 
   // ── Entregar comenda ─────────────────────────────────────────────────────
-  const abrirEntrega = (irmao, comenda, ano = null, concedidaPor = null) => {
-    setModalEntrega({ irmao, comenda, ano, concedida_por: concedidaPor || origemDe(comenda) });
+  const abrirEntrega = (irmao, comenda, ano = null, concedidaPor = null, indicacaoId = null) => {
+    setModalEntrega({ irmao, comenda, ano, concedida_por: concedidaPor || origemDe(comenda), indicacaoId });
     setEntregaForm({ data_entrega: new Date().toISOString().split('T')[0], observacoes: '', ano_referencia: ano ? String(ano) : '' });
   };
 
@@ -427,11 +441,50 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
         observacoes: entregaForm.observacoes || null,
       });
       if (error) throw error;
+      // Comenda manual: a indicação sai de Elegíveis após a entrega
+      if (modalEntrega.indicacaoId) {
+        await supabase.from('comendas_indicacoes').delete().eq('id', modalEntrega.indicacaoId);
+      }
       showSuccess?.(`✅ ${modalEntrega.comenda.nome} entregue a ${modalEntrega.irmao.nome}!`);
       setModalEntrega(null);
       carregarTudo();
     } catch (e) {
       showError?.(msgErroEntrega(e));
+    }
+  };
+
+  // ── Indicação (comendas manuais) ──
+  const abrirIndicacao = (comenda) => {
+    setIndicacaoForm({ irmao_id: '', ano_referencia: String(new Date().getFullYear()), observacoes: '' });
+    setModalIndicacao(comenda);
+  };
+  const confirmarIndicacao = async () => {
+    if (!indicacaoForm.irmao_id) { showError?.('Selecione o irmão.'); return; }
+    try {
+      const { error } = await supabase.from('comendas_indicacoes').insert({
+        comenda_id: modalIndicacao.id,
+        irmao_id: indicacaoForm.irmao_id,
+        ano_referencia: indicacaoForm.ano_referencia ? parseInt(indicacaoForm.ano_referencia) : null,
+        observacoes: indicacaoForm.observacoes || null,
+      });
+      if (error) throw error;
+      showSuccess?.('✅ Irmão indicado — aparece em Elegíveis até a entrega.');
+      setModalIndicacao(null);
+      carregarTudo();
+    } catch (e) {
+      showError?.(e?.code === '23505' ? 'Esse irmão já está indicado para essa comenda (nesse ano).' : 'Erro ao indicar: ' + e.message);
+    }
+  };
+  const removerIndicacao = async (it, comenda) => {
+    if (!window.confirm(`Remover a indicação de ${it.irmao.nome} para ${comenda.nome}?`)) return;
+    try {
+      const { data, error } = await supabase.from('comendas_indicacoes').delete().eq('id', it.indicacaoId).select();
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error(SEM_PERMISSAO);
+      showSuccess?.('Indicação removida.');
+      carregarTudo();
+    } catch (e) {
+      showError?.('Erro ao remover: ' + e.message);
     }
   };
 
@@ -636,9 +689,17 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
                     {comenda.descricao_criterio}
                   </p>
                 )}
-                {comenda.tipo_criterio === 'manual' ? (
+                {comenda.tipo_criterio === 'manual' && podeEditar && (
+                  <div style={{ padding: '0.5rem 1.25rem', background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => abrirIndicacao(comenda)}
+                      style={{ padding: '0.35rem 0.85rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                      ➕ Indicar irmão
+                    </button>
+                  </div>
+                )}
+                {comenda.tipo_criterio === 'manual' && lista.length === 0 ? (
                   <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '1rem', margin: 0, background: 'var(--color-surface)' }}>
-                    Critério manual — use o botão "➕ Registrar entrega" na aba "Comendados".
+                    Nenhum irmão indicado. {podeEditar ? 'Use "➕ Indicar irmão" para registrar quem vai receber.' : ''}
                   </p>
                 ) : ehAcumulo && !comenda.comenda_base_id ? (
                   <p style={{ textAlign: 'center', color: '#ef4444', padding: '1rem', margin: 0, background: 'var(--color-surface)' }}>
@@ -678,10 +739,16 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
                           </div>
                           {podeEditar && (
                             <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
-                              <button onClick={() => abrirEntrega(irmao, comenda, it.ano || null)}
+                              <button onClick={() => abrirEntrega(irmao, comenda, it.ano || null, null, it.indicacaoId || null)}
                                 style={{ padding: '0.4rem 0.9rem', background: '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
                                 🎖️ Entregar{it.ano ? ` ${it.ano}` : ''}
                               </button>
+                              {it.indicacaoId && (
+                                <button onClick={() => removerIndicacao(it, comenda)} title="Remover indicação"
+                                  style={{ padding: '0.4rem 0.7rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.74rem', cursor: 'pointer' }}>
+                                  ✖
+                                </button>
+                              )}
                               {ehAnual && it.ano && it.ano < anoAtualNum && (
                                 <>
                                   <button onClick={() => abrirEntrega(irmao, comenda, it.ano, 'loja')} title="A Grande Loja não entregou; a Loja entregou (não conta para a Roldão)"
@@ -973,6 +1040,41 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
               <button onClick={confirmarEntrega}
                 style={{ flex: 2, padding: '0.6rem', background: modalEntrega.concedida_por === 'loja' && modalEntrega.comenda.tipo_criterio === 'presenca_100_anual' ? '#10b981' : '#c9a84c', color: '#1a1a1a', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
                 {modalEntrega.concedida_por === 'loja' && modalEntrega.comenda.tipo_criterio === 'presenca_100_anual' ? '🔺 Confirmar Entrega pela Loja' : '🎖️ Confirmar Entrega'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal de indicação (comenda manual) ─────────────────────────── */}
+      {modalIndicacao && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setModalIndicacao(null)}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', maxWidth: '440px', width: '100%' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.3rem' }}>➕ Indicar Irmão</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>{modalIndicacao.nome} — fica em Elegíveis até a entrega.</p>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={sLabel}>Irmão *</label>
+              <select value={indicacaoForm.irmao_id} onChange={e => setIndicacaoForm(f => ({ ...f, irmao_id: e.target.value }))} style={sInp}>
+                <option value="">Selecione...</option>
+                {[...irmaos].sort((a, b) => a.nome.localeCompare(b.nome)).map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={sLabel}>Ano de Referência</label>
+              <input type="number" value={indicacaoForm.ano_referencia} onChange={e => setIndicacaoForm(f => ({ ...f, ano_referencia: e.target.value }))} style={sInp} />
+            </div>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={sLabel}>Observações</label>
+              <input value={indicacaoForm.observacoes} onChange={e => setIndicacaoForm(f => ({ ...f, observacoes: e.target.value }))} style={sInp} placeholder="Ex.: Melhor Trabalho do ano" />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalIndicacao(null)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={confirmarIndicacao}
+                style={{ flex: 2, padding: '0.6rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
+                ➕ Indicar
               </button>
             </div>
           </div>
