@@ -7,8 +7,9 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_aprendiz',
-    nome: 'Ata da Sessão de Aprendiz',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    grau: 'Aprendiz',
+    nome: 'Ata Aprendiz',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -18,8 +19,9 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_companheiro',
-    nome: 'Ata da Sessão de Companheiro',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    grau: 'Companheiro',
+    nome: 'Ata Companheiro',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -29,8 +31,9 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_mestre',
-    nome: 'Ata da Sessão de Mestre',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    grau: 'Mestre',
+    nome: 'Ata Mestre',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -301,7 +304,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_titulo:    form.alinhamento_titulo,
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
-          ...(form.modulo === 'balaustres' ? { mostrar_logo: !!form.mostrar_logo } : {}),
+          ...(form.modulo === 'balaustres' ? { mostrar_logo: !!form.mostrar_logo, grau: form.grau || null } : {}),
         })
         .eq('id', form.id);
 
@@ -314,6 +317,39 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
     } finally {
       setSalvando(false);
     }
+  };
+
+  // ── Atas de sessão: criar / excluir modelos extras ─────────
+  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre'];
+  const novoModeloAta = async () => {
+    const nome = window.prompt('Nome do novo modelo de ata (ex.: Ata Iniciação Aprendiz):');
+    if (!nome || !nome.trim()) return;
+    const grauIn = window.prompt('Grau da sessão (Aprendiz, Companheiro ou Mestre):', 'Aprendiz');
+    const grau = ['Aprendiz', 'Companheiro', 'Mestre'].find(g => g.toLowerCase() === String(grauIn || '').trim().toLowerCase());
+    if (!grau) { showError('Grau inválido. Use Aprendiz, Companheiro ou Mestre.'); return; }
+    // Começa como cópia do modelo base do grau
+    const base = modelos.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`) || MODELOS_PADRAO.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`) || {};
+    const novo = {
+      modulo: 'balaustres', grau, tipo: `ata_sessao_extra_${Date.now()}`, nome: nome.trim(),
+      titulo_doc: base.titulo_doc || '', corpo: base.corpo || '', corpo_aclamacao: '', corpo_disputa: '', rodape: base.rodape || '',
+      assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
+      alinhamento_titulo: 'center', alinhamento_corpo: base.alinhamento_corpo || 'justify', alinhamento_assinatura: 'center',
+      mostrar_logo: !!base.mostrar_logo,
+    };
+    const { data, error } = await supabase.from('modelos_documentos').insert(novo).select().single();
+    if (error) { showError('Erro ao criar modelo: ' + error.message); return; }
+    setModelos(prev => [...prev, data]);
+    selecionarModelo(data);
+    showSuccess('Modelo criado a partir da ata de ' + grau + '. Edite o texto e salve.');
+  };
+  const excluirModeloAta = async () => {
+    if (!modeloAtivo || TIPOS_BASE_ATA.includes(modeloAtivo.tipo)) return;
+    if (!window.confirm(`Excluir o modelo "${modeloAtivo.nome}"?`)) return;
+    const { data, error } = await supabase.from('modelos_documentos').delete().eq('id', modeloAtivo.id).select();
+    if (error || !data?.length) { showError('Não foi possível excluir o modelo.'); return; }
+    setModelos(prev => prev.filter(m => m.id !== modeloAtivo.id));
+    setModeloAtivo(null); setForm({});
+    showSuccess('Modelo excluído.');
   };
 
   // ── Restaurar padrão ──────────────────────────────────────
@@ -384,6 +420,12 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
             <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-accent)', textTransform: 'uppercase', padding: '0 0.25rem' }}>
               {MODULOS_MODELOS[mod] || mod}
             </div>
+            {mod === 'balaustres' && podeEditar && (
+              <button onClick={novoModeloAta}
+                style={{ padding: '0.45rem 0.7rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px dashed var(--color-accent)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
+                ➕ Novo modelo de ata
+              </button>
+            )}
         {lista.map(m => (
           <button key={m.id}
             onClick={() => selecionarModelo(m)}
@@ -496,12 +538,32 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                 </div>
                 <div>
                   <label style={S.label}>Título no documento</label>
+                  {form.modulo === 'balaustres' ? (
+                    <textarea name="titulo_doc" rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.titulo_doc || ''} disabled={!podeEditar}
+                      onChange={e => handleChange('titulo_doc', e.target.value)} placeholder="Cada linha = uma linha do título" />
+                  ) : (
                   <input name="titulo_doc" style={S.input} value={form.titulo_doc || ''} disabled={!podeEditar}
                     onChange={e => handleChange('titulo_doc', e.target.value)}
                     placeholder="Deixe vazio se não tiver título" />
+                  )}
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                     Suporta variáveis como {'{nome_loja}'}, {'{gestao}'}
                   </p>
+                  {form.modulo === 'balaustres' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Grau da sessão:</label>
+                      <select style={{ ...S.input, width: 'auto' }} value={form.grau || ''} disabled={!podeEditar || TIPOS_BASE_ATA.includes(form.tipo)}
+                        onChange={e => handleChange('grau', e.target.value)}>
+                        <option value="">—</option>
+                        {['Aprendiz', 'Companheiro', 'Mestre'].map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      {podeEditar && !TIPOS_BASE_ATA.includes(form.tipo) && (
+                        <button onClick={excluirModeloAta} style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                          🗑️ Excluir modelo
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {form.modulo === 'balaustres' && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
                       <input type="checkbox" checked={!!form.mostrar_logo} disabled={!podeEditar}
