@@ -277,6 +277,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     data_fim_gestao:          eleicao.data_fim_gestao ? formatarData(eleicao.data_fim_gestao) : '[fim da gestão]',
     ano_exercicio:            eleicao.ano_exercicio || gestao,
     nome_chapa:               eleicao.nome_chapa || '[nome da chapa]',
+    data_atual:               (() => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; })(),
     nome_loja:                nomeLoja,
     num_loja:                 dadosLoja.numero_loja || '30',
     data_eleicao:             formatarData(eleicao.data_eleicao),
