@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
+import { gerarAtaSessao } from '../../utils/gerarAtaSessao';
 
 const Balaustres = ({ 
   balaustres, 
@@ -10,8 +11,37 @@ const Balaustres = ({
   showSuccess, 
   showError,
   permissoes,
-  grauUsuario
+  grauUsuario,
+  podeEditarModelos = false,
+  onAbrirModelos
 }) => {
+  // ── Ata da sessão (Word) ──
+  const [gerandoAta, setGerandoAta] = useState(null);
+  const [avisoSemBalaustre, setAvisoSemBalaustre] = useState(false);
+  const hojeISO = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  const COR_GRAU = { aprendiz: '#3b82f6', companheiro: '#10b981', mestre: '#8b5cf6' };
+  const corDoGrau = (g) => COR_GRAU[(g || '').trim().toLowerCase()] || 'var(--color-accent)';
+
+  const gerarAta = async (balaustre) => {
+    setGerandoAta(balaustre.id);
+    try {
+      const r = await gerarAtaSessao({ balaustre });
+      if (r?.faltando?.length) showError(`Ata gerada, mas falta no Corpo Administrativo de ${balaustre.ano_balaustre}: ${r.faltando.join(', ')}.`);
+      else showSuccess('📄 Ata gerada!');
+    } catch (e) {
+      showError('Erro ao gerar a ata: ' + e.message);
+    } finally {
+      setGerandoAta(null);
+    }
+  };
+
+  // "Ata de hoje": gera se houver balaustre com a data de hoje; senão avisa para cadastrar
+  const gerarAtaDeHoje = () => {
+    const doDia = balaustres.filter(b => b.data_sessao === hojeISO);
+    const alvo = doDia.find(b => (b.grau_sessao || '').toLowerCase() === grauSelecionado.toLowerCase()) || doDia[0];
+    if (alvo) gerarAta(alvo); else setAvisoSemBalaustre(true);
+  };
+
   
   // Estados do formulário
   const [balaustreForm, setBalaustreForm] = useState({
@@ -22,7 +52,9 @@ const Balaustres = ({
     dia_semana: '',
     tipo_sessao_id: '',
     ordem_dia: '',
-    observacoes: ''
+    observacoes: '',
+    hora_abertura: '20:00',
+    hora_encerramento: '22:00'
   });
 
   // Estados de controle
@@ -96,7 +128,9 @@ const Balaustres = ({
       dia_semana: '',
       tipo_sessao_id: '',
       ordem_dia: '',
-      observacoes: ''
+      observacoes: '',
+      hora_abertura: '20:00',
+      hora_encerramento: '22:00'
     });
     setModoEdicao(false);
     setBalaustreEditando(null);
@@ -139,12 +173,14 @@ const Balaustres = ({
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const { data: alterados, error } = await supabase
         .from('balaustres')
         .update(balaustreForm)
-        .eq('id', balaustreEditando.id);
+        .eq('id', balaustreEditando.id)
+        .select();
 
       if (error) throw error;
+      if (!alterados || alterados.length === 0) throw new Error('O banco não permitiu a alteração (sem permissão). Nada foi salvo.');
 
       showSuccess('Balaustre atualizado com sucesso!');
       limparFormulario();
@@ -171,7 +207,9 @@ const Balaustres = ({
       dia_semana: balaustre.dia_semana,
       tipo_sessao_id: balaustre.tipo_sessao_id,
       ordem_dia: balaustre.ordem_dia || '',
-      observacoes: balaustre.observacoes || ''
+      observacoes: balaustre.observacoes || '',
+      hora_abertura: (balaustre.hora_abertura || '20:00').substring(0, 5),
+      hora_encerramento: (balaustre.hora_encerramento || '22:00').substring(0, 5)
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -188,12 +226,14 @@ const Balaustres = ({
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data: excluidos, error } = await supabase
         .from('balaustres')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) throw error;
+      if (!excluidos || excluidos.length === 0) throw new Error('O banco não permitiu a alteração (sem permissão). Nada foi salvo.');
 
       showSuccess('Balaustre excluído com sucesso!');
       onUpdate();
@@ -332,6 +372,17 @@ const Balaustres = ({
                 </div>
               </div>
 
+              {/* Horários (usados na ata) */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                {[['hora_abertura','Abertura dos Trabalhos'],['hora_encerramento','Encerramento']].map(([k,l]) => (
+                  <div key={k}>
+                    <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>{l}</label>
+                    <input type="time" value={balaustreForm[k] || ''} onChange={e => setBalaustreForm({...balaustreForm, [k]: e.target.value})}
+                      style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+                  </div>
+                ))}
+              </div>
+
               {/* Ordem do Dia e Observações */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
@@ -369,15 +420,53 @@ const Balaustres = ({
         </div>
       )}
 
-      {/* FILTRO POR GRAU + BOTÃO NOVO */}
-      {permissoes?.pode_editar_balaustres && (
-        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
-          <button onClick={() => { limparFormulario(); setModalAberto(true); }}
-            style={{height:'38px',padding:'0 1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',display:'flex',alignItems:'center',gap:'0.4rem'}}>
-            ➕ Novo Balaustre
+      {/* BARRA DE AÇÕES */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.75rem',flexWrap:'wrap',marginBottom:'1rem'}}>
+        <h2 style={{margin:0,fontSize:'1.25rem',fontWeight:800,color:'var(--color-text)'}}>📜 Balaustres</h2>
+        <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+          <button onClick={gerarAtaDeHoje} disabled={!!gerandoAta}
+            style={{height:'38px',padding:'0 1rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer'}}>
+            📄 Ata de hoje
           </button>
+          {podeEditarModelos && onAbrirModelos && (
+            <button onClick={onAbrirModelos}
+              style={{height:'38px',padding:'0 1rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer'}}>
+              📝 Modelos de Ata
+            </button>
+          )}
+          {permissoes?.pode_editar_balaustres && (
+            <button onClick={() => { limparFormulario(); setModalAberto(true); }}
+              style={{height:'38px',padding:'0 1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer'}}>
+              ➕ Novo Balaustre
+            </button>
+          )}
         </div>
-      )}
+      </div>
+
+      {/* RESUMO DO GRAU SELECIONADO */}
+      {(() => {
+        const anoAtual = new Date().getFullYear();
+        const doGrau = balaustresFiltradosPorAcesso;
+        const doAno = doGrau.filter(b => parseInt(b.ano_balaustre || String(b.data_sessao || '').substring(0, 4)) === anoAtual);
+        const ultimo = [...doGrau].sort((x, y) => String(y.data_sessao || '').localeCompare(String(x.data_sessao || '')))[0];
+        const proximo = doAno.length ? Math.max(...doAno.map(b => parseInt(b.numero_balaustre) || 0)) + 1 : 1;
+        const cor = corDoGrau(grauSelecionado);
+        const card = (titulo, valor, sub) => (
+          <div style={{flex:'1 1 180px',background:'var(--color-surface)',border:'1px solid var(--color-border)',borderTop:`3px solid ${cor}`,borderRadius:'var(--radius-lg)',padding:'0.75rem 1rem'}}>
+            <div style={{fontSize:'0.68rem',fontWeight:800,textTransform:'uppercase',color:'var(--color-text-muted)'}}>{titulo}</div>
+            <div style={{fontSize:'1.35rem',fontWeight:800,color:cor,lineHeight:1.3}}>{valor}</div>
+            {sub && <div style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{sub}</div>}
+          </div>
+        );
+        return (
+          <div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',marginBottom:'1rem'}}>
+            {card(`${grauSelecionado} em ${anoAtual}`, doAno.length, 'balaustre(s) no ano')}
+            {card('Último balaustre', ultimo ? `${ultimo.numero_balaustre}/${ultimo.ano_balaustre || ''}` : '—', ultimo ? formatarData(ultimo.data_sessao) : 'nenhum cadastrado')}
+            {card('Próximo número', `${proximo}/${anoAtual}`, grauSelecionado)}
+          </div>
+        );
+      })()}
+
       <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-2">
           <button
@@ -529,7 +618,7 @@ const Balaustres = ({
                         <div key={balaustre.id}
                           className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                           style={{
-                            borderLeftColor: 'var(--color-accent)',
+                            borderLeftColor: corDoGrau(balaustre.grau_sessao),
                             background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
                             width: '100%',
                             boxSizing: 'border-box',
@@ -539,7 +628,7 @@ const Balaustres = ({
                         >
                           {/* Número/Ano */}
                           <div style={{flexShrink:0,width:'68px',overflow:'hidden'}}>
-                            <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
+                            <p className="font-bold text-sm" style={{color:corDoGrau(balaustre.grau_sessao)}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
                           </div>
                           {/* Data */}
@@ -554,12 +643,15 @@ const Balaustres = ({
                           </div>
                           {/* Ordem do dia */}
                           <div style={{flex:1,minWidth:0,width:0,overflow:'hidden'}}>
-                            <p style={{color:'var(--color-text-muted)',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',width:'100%',display:'block'}} title={balaustre.ordem_dia}>
+                            <p style={{color:'var(--color-text-muted)',fontSize:'0.85rem',margin:0,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',lineHeight:1.35}}>
                               {balaustre.ordem_dia || '—'}
                             </p>
                           </div>
                           {/* Ações */}
                           <div className="flex gap-1.5" style={{flexShrink:0}}>
+                            <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id}
+                              style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
+                              title="Gerar ata (Word)">{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
                             <button onClick={() => handleVisualizar(balaustre)}
                               style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
                               title="Visualizar">👁️</button>
@@ -579,6 +671,30 @@ const Balaustres = ({
           </div>
         );
       })()}
+
+      {/* AVISO: sem balaustre para hoje */}
+      {avisoSemBalaustre && (
+        <div onClick={() => setAvisoSemBalaustre(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'440px',width:'100%'}}>
+            <h3 style={{margin:'0 0 0.5rem',fontSize:'1rem',fontWeight:800,color:'var(--color-text)'}}>⚠️ Sem balaustre para hoje</h3>
+            <p style={{margin:'0 0 1.25rem',fontSize:'0.88rem',color:'var(--color-text-muted)'}}>
+              Não há balaustre cadastrado para hoje ({hojeISO.split('-').reverse().join('/')}). Cadastre o balaustre antes de gerar a ata.
+            </p>
+            <div style={{display:'flex',gap:'0.5rem',justifyContent:'flex-end'}}>
+              <button onClick={() => setAvisoSemBalaustre(false)}
+                style={{padding:'0.55rem 1.1rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:600,cursor:'pointer'}}>Fechar</button>
+              {permissoes?.pode_editar_balaustres && (
+                <button onClick={() => {
+                  setAvisoSemBalaustre(false);
+                  limparFormulario();
+                  setBalaustreForm(f => ({ ...f, grau_sessao: grauSelecionado, data_sessao: hojeISO }));
+                  setModalAberto(true);
+                }} style={{padding:'0.55rem 1.1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:700,cursor:'pointer'}}>➕ Cadastrar agora</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && balaustreVisualizando && (
@@ -651,6 +767,10 @@ const Balaustres = ({
 
               {/* Botão Fechar */}
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button onClick={() => gerarAta(balaustreVisualizando)}
+                  style={{padding:'0.5rem 1.25rem',background:'#c9a84c',color:'#1a1a1a',border:'none',borderRadius:'var(--radius-lg)',fontWeight:700,cursor:'pointer'}}>
+                  📄 Gerar Ata
+                </button>
                 <button
                   onClick={() => setModalVisualizar(false)}
                   className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors"
