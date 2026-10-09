@@ -147,8 +147,9 @@ export const gerarAtaSessao = async ({ balaustre }) => {
     : par(runs(l), { align: modelo.alinhamento_corpo === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED })));
 
   const children = [
-    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-      children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 90, height: 90 } })] }),
+    // Logo opcional (Modelos de Documentos → "Exibir o logo da Loja")
+    ...(modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
+      children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 90, height: 90 } })] })] : []),
     par([ar(interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, ''), { bold: true })], { align: AlignmentType.CENTER, after: 0 }),
     par([ar(`Sessão de ${VARS.grau_extenso}`, { bold: true })], { align: AlignmentType.CENTER, after: 280 }),
     ...paragrafos,
@@ -163,7 +164,7 @@ export const gerarAtaSessao = async ({ balaustre }) => {
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 850, bottom: 1418, left: 1701, right: 1701 } } },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 2835, bottom: 1588, left: 1984, right: 1134 } /* sup. 5 cm · inf. 2,8 cm · esq. 3,5 cm · dir. 2 cm */ } },
       children,
     }],
   });
