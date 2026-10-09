@@ -5,6 +5,7 @@ import { supabase } from '../../supabaseClient';
 const MODELOS_PADRAO = [
   {
     modulo: 'balaustres',
+    mostrar_logo: false,
     tipo: 'ata_sessao_aprendiz',
     nome: 'Ata da Sessão de Aprendiz',
     titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
@@ -15,6 +16,7 @@ const MODELOS_PADRAO = [
   },
   {
     modulo: 'balaustres',
+    mostrar_logo: false,
     tipo: 'ata_sessao_companheiro',
     nome: 'Ata da Sessão de Companheiro',
     titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
@@ -25,6 +27,7 @@ const MODELOS_PADRAO = [
   },
   {
     modulo: 'balaustres',
+    mostrar_logo: false,
     tipo: 'ata_sessao_mestre',
     nome: 'Ata da Sessão de Mestre',
     titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
@@ -298,6 +301,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_titulo:    form.alinhamento_titulo,
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
+          ...(form.modulo === 'balaustres' ? { mostrar_logo: !!form.mostrar_logo } : {}),
         })
         .eq('id', form.id);
 
@@ -498,6 +502,13 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                     Suporta variáveis como {'{nome_loja}'}, {'{gestao}'}
                   </p>
+                  {form.modulo === 'balaustres' && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                      <input type="checkbox" checked={!!form.mostrar_logo} disabled={!podeEditar}
+                        onChange={e => handleChange('mostrar_logo', e.target.checked)} />
+                      Exibir o logo da Loja no topo do documento
+                    </label>
+                  )}
                 </div>
                 <div>
                   <label style={S.label}>Texto do corpo</label>
