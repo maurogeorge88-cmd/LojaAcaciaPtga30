@@ -97,6 +97,9 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const [dadosLoja, setDadosLoja] = useState(null);
 
   const [filtroOrigem, setFiltroOrigem] = useState('todas');
+  // Filtros da aba Comendados (só opções que existem nas entregas)
+  const [filtroIrmaoCom, setFiltroIrmaoCom] = useState('');
+  const [filtroComendaCom, setFiltroComendaCom] = useState('');
 
   const [modalEntrega, setModalEntrega] = useState(null); // { irmao, comenda, ano }
   const [entregaForm, setEntregaForm] = useState({ data_entrega: new Date().toISOString().split('T')[0], observacoes: '', ano_referencia: '' });
@@ -625,8 +628,18 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
   const totalInelegiveisVis = comendasVisiveis.reduce((t, c) => t + (inelegiveisPorComenda[c.id]?.length || 0), 0);
   // Quem efetivamente entregou: concedida_por (grande_loja/loja); senão, a origem da comenda
   const entreguePor = (ic) => (['grande_loja', 'loja'].includes(ic.concedida_por) ? ic.concedida_por : (ic.comendas?.origem || 'grande_loja'));
-  const comendadosVisiveis = irmaosComendas
-    .filter(ic => filtroOrigem === 'todas' || entreguePor(ic) === filtroOrigem)
+  const comendadosOrigem = irmaosComendas.filter(ic => filtroOrigem === 'todas' || entreguePor(ic) === filtroOrigem);
+  // Opções dos filtros: apenas irmãos e comendas que têm entrega cadastrada
+  const opcoesIrmaosCom = [...new Map(comendadosOrigem
+    .filter(ic => !filtroComendaCom || String(ic.comenda_id) === filtroComendaCom)
+    .map(ic => [String(ic.irmao_id), ic.irmaos?.nome || '—'])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  const opcoesComendasCom = [...new Map(comendadosOrigem
+    .filter(ic => !filtroIrmaoCom || String(ic.irmao_id) === filtroIrmaoCom)
+    .map(ic => [String(ic.comenda_id), ic.comendas?.nome || '—'])).entries()]
+    .sort((a, b) => indiceComenda(a[1]) - indiceComenda(b[1]) || a[1].localeCompare(b[1]));
+  const comendadosVisiveis = comendadosOrigem
+    .filter(ic => !filtroIrmaoCom || String(ic.irmao_id) === filtroIrmaoCom)
+    .filter(ic => !filtroComendaCom || String(ic.comenda_id) === filtroComendaCom)
     .sort((a, b) => indiceComenda(a.comendas?.nome) - indiceComenda(b.comendas?.nome)
       || String(a.comendas?.nome || '').localeCompare(String(b.comendas?.nome || ''))
       || String(b.data_entrega || '').localeCompare(String(a.data_entrega || '')));
@@ -847,6 +860,23 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       {/* ── COMENDADOS ─────────────────────────────────────────────────── */}
       {aba === 'comendados' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <select value={filtroIrmaoCom} onChange={e => setFiltroIrmaoCom(e.target.value)} style={{ ...sInp, width: 'auto', flex: '1 1 220px' }}>
+              <option value="">👤 Todos os irmãos ({opcoesIrmaosCom.length})</option>
+              {opcoesIrmaosCom.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+            <select value={filtroComendaCom} onChange={e => setFiltroComendaCom(e.target.value)} style={{ ...sInp, width: 'auto', flex: '1 1 220px' }}>
+              <option value="">🎖️ Todas as comendas ({opcoesComendasCom.length})</option>
+              {opcoesComendasCom.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}
+            </select>
+            {(filtroIrmaoCom || filtroComendaCom) && (
+              <button onClick={() => { setFiltroIrmaoCom(''); setFiltroComendaCom(''); }}
+                style={{ padding: '0.5rem 0.85rem', background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', cursor: 'pointer' }}>
+                ✕ Limpar
+              </button>
+            )}
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{comendadosVisiveis.length} registro(s)</span>
+          </div>
           {podeEditar && (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button onClick={abrirRegistro}
