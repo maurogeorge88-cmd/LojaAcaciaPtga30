@@ -4,6 +4,36 @@ import { supabase } from '../../supabaseClient';
 // ── Modelos padrão — usados para popular o banco na primeira abertura ──────
 const MODELOS_PADRAO = [
   {
+    modulo: 'balaustres',
+    tipo: 'ata_sessao_aprendiz',
+    nome: 'Ata da Sessão de Aprendiz',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
+  },
+  {
+    modulo: 'balaustres',
+    tipo: 'ata_sessao_companheiro',
+    nome: 'Ata da Sessão de Companheiro',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
+  },
+  {
+    modulo: 'balaustres',
+    tipo: 'ata_sessao_mestre',
+    nome: 'Ata da Sessão de Mestre',
+    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}",
+    corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
+  },
+  {
     modulo: 'eleicao_posse',
     tipo: 'apresentacao_chapa',
     nome: 'Apresentação da Chapa',
@@ -139,6 +169,17 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{orador_eleito_nome}',        desc: 'Nome do Orador Eleito' },
   { var: '{secretario_dados}',         desc: 'Qualificação completa do Secretário' },
   { var: '{num_votantes}',             desc: 'Número de votantes presentes' },
+  { var: '{numero_balaustre}',         desc: 'Atas de sessão: número do balaustre' },
+  { var: '{ano_balaustre}',            desc: 'Atas de sessão: ano do balaustre' },
+  { var: '{data_sessao_extenso}',      desc: 'Atas de sessão: "sete dias do mês de outubro de 2.026"' },
+  { var: '{grau_reuniao}',             desc: 'Atas de sessão: Aprendiz Maçom / Companheiro Maçom / Mestre Maçom' },
+  { var: '{hora_abertura}',            desc: 'Atas de sessão: abertura (padrão 20:00)' },
+  { var: '{hora_encerramento}',        desc: 'Atas de sessão: encerramento (padrão 22:00)' },
+  { var: '{ordem_dia}',                desc: 'Atas de sessão: ordem do dia do balaustre' },
+  { var: '{vm_nome}',                  desc: 'Atas de sessão: Venerável Mestre (Corpo Adm. do ano)' },
+  { var: '{primeiro_vigilante_nome}',  desc: 'Atas de sessão: 1º Vigilante (Corpo Adm. do ano)' },
+  { var: '{segundo_vigilante_nome}',   desc: 'Atas de sessão: 2º Vigilante (Corpo Adm. do ano)' },
+  { var: '{orador_nome}',              desc: 'Atas de sessão: Orador (Corpo Adm. do ano)' },
   { var: '{nome_chapa_maiusculo}',     desc: 'Nome da chapa em maiúsculas' },
   { var: '{data_edital_eleicao_extenso}', desc: 'Data do edital de eleição (ex: 13 de Outubro de 2025)' },
   { var: '{data_emissao_extenso}',     desc: 'Data de hoje (emissão do documento)' },
@@ -171,12 +212,13 @@ const S = {
 // Módulos (grupos) da lista de modelos — novos módulos entram aqui
 const MODULOS_MODELOS = {
   eleicao_posse: '🗳️ Eleição e Posse',
+  balaustres: '📜 Balaustres (Atas de Sessão)',
   financeiro: '💰 Financeiro',
   filantropia: '🤝 Filantropia',
   geral: '📄 Geral',
 };
 
-export default function ModelosDocumentos({ permissoes, showSuccess, showError, onVoltar }) {
+export default function ModelosDocumentos({ permissoes, showSuccess, showError, onVoltar, rotuloVoltar = 'Eleição e Posse' }) {
   const [modelos, setModelos]           = useState([]);
   const [modeloAtivo, setModeloAtivo]   = useState(null);
   const [form, setForm]                 = useState({});
@@ -322,7 +364,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
         {onVoltar && (
           <button onClick={onVoltar}
             style={{ padding: '0.55rem 0.85rem', marginBottom: '0.6rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left' }}>
-            ← Voltar para Eleição e Posse
+            ← Voltar para {rotuloVoltar}
           </button>
         )}
         <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 0.25rem', marginBottom: '0.5rem' }}>
