@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
-import { gerarAtaSessao } from '../../utils/gerarAtaSessao';
+import { gerarAtaSessao, listarModelosAta } from '../../utils/gerarAtaSessao';
 
 const Balaustres = ({ 
   balaustres, 
@@ -22,10 +22,24 @@ const Balaustres = ({
   const COR_GRAU = { aprendiz: '#3b82f6', companheiro: '#10b981', mestre: '#8b5cf6' };
   const corDoGrau = (g) => COR_GRAU[(g || '').trim().toLowerCase()] || 'var(--color-accent)';
 
+  // Escolha do modelo quando o grau tem mais de um (ex.: Ata Mestre / Ata Exaltação Mestre)
+  const [escolhaModelo, setEscolhaModelo] = useState(null); // { balaustre, modelos }
+
   const gerarAta = async (balaustre) => {
+    try {
+      const modelos = await listarModelosAta(balaustre.grau_sessao);
+      if (modelos.length > 1) { setEscolhaModelo({ balaustre, modelos }); return; }
+      await gerarAtaComModelo(balaustre, modelos[0]?.id || null);
+    } catch (e) {
+      showError('Erro ao carregar os modelos de ata: ' + e.message);
+    }
+  };
+
+  const gerarAtaComModelo = async (balaustre, modeloId) => {
+    setEscolhaModelo(null);
     setGerandoAta(balaustre.id);
     try {
-      const r = await gerarAtaSessao({ balaustre });
+      const r = await gerarAtaSessao({ balaustre, modeloId });
       if (r?.faltando?.length) showError(`Ata gerada, mas falta no Corpo Administrativo de ${balaustre.ano_balaustre}: ${r.faltando.join(', ')}.`);
       else showSuccess('📄 Ata gerada!');
     } catch (e) {
@@ -671,6 +685,30 @@ const Balaustres = ({
           </div>
         );
       })()}
+
+      {/* ESCOLHA DO MODELO DE ATA */}
+      {escolhaModelo && (
+        <div onClick={() => setEscolhaModelo(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:60,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'420px',width:'100%'}}>
+            <h3 style={{margin:'0 0 0.3rem',fontSize:'1rem',fontWeight:800,color:'var(--color-text)'}}>📄 Qual modelo de ata?</h3>
+            <p style={{margin:'0 0 1rem',fontSize:'0.82rem',color:'var(--color-text-muted)'}}>
+              Balaustre {escolhaModelo.balaustre.numero_balaustre}/{escolhaModelo.balaustre.ano_balaustre} — {escolhaModelo.balaustre.grau_sessao}
+            </p>
+            <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
+              {escolhaModelo.modelos.map(m => (
+                <button key={m.id} onClick={() => gerarAtaComModelo(escolhaModelo.balaustre, m.id)}
+                  style={{padding:'0.65rem 0.9rem',textAlign:'left',background:'var(--color-surface-2)',color:'var(--color-text)',border:`1px solid ${corDoGrau(escolhaModelo.balaustre.grau_sessao)}`,borderRadius:'var(--radius-lg)',fontWeight:700,fontSize:'0.88rem',cursor:'pointer'}}>
+                  📄 {m.nome}
+                </button>
+              ))}
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:'1rem'}}>
+              <button onClick={() => setEscolhaModelo(null)}
+                style={{padding:'0.5rem 1rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:600,cursor:'pointer'}}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AVISO: sem balaustre para hoje */}
       {avisoSemBalaustre && (
