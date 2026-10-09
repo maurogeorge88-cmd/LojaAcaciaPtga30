@@ -1970,6 +1970,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'modelos-documentos' && (
           <ModelosDocumentos
             onVoltar={retornoModelos ? () => { const p = retornoModelos; setRetornoModelos(null); setCurrentPage(p); } : null}
+            rotuloVoltar={retornoModelos === 'balaustres' ? 'Balaustres' : 'Eleição e Posse'}
             permissoes={{ ...permissoes, pode_editar_corpo_admin: pode(mapaPermissoes, 'modelos', 'editar') }}
             showSuccess={showSuccess}
             showError={showError}
@@ -1991,6 +1992,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+            podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
+            onAbrirModelos={() => { setRetornoModelos('balaustres'); setCurrentPage('modelos-documentos'); }}
             grauUsuario={grauUsuarioLogado}
           />
         )}
