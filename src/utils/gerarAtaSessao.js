@@ -59,7 +59,16 @@ const NORM = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g,
 
 const b64ToBuffer = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
-export const gerarAtaSessao = async ({ balaustre }) => {
+// Modelos de ata disponíveis para o grau (base + extras criados em Modelos de Documentos)
+export const listarModelosAta = async (grau) => {
+  const { data } = await supabase.from('modelos_documentos').select('id, tipo, nome, grau').eq('modulo', 'balaustres');
+  const g = String(grau || '').toLowerCase();
+  return (data || [])
+    .filter(m => String(m.grau || m.tipo.replace('ata_sessao_', '')).toLowerCase() === g)
+    .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
+};
+
+export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
@@ -71,7 +80,9 @@ export const gerarAtaSessao = async ({ balaustre }) => {
   const anoSessao = parseInt(balaustre.ano_balaustre || String(balaustre.data_sessao || '').substring(0, 4)) || new Date().getFullYear();
 
   // Modelo
-  const { data: mod } = await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_MODELO_ATA[grau]).maybeSingle();
+  const { data: mod } = modeloId
+    ? await supabase.from('modelos_documentos').select('*').eq('id', modeloId).maybeSingle()
+    : await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_MODELO_ATA[grau]).maybeSingle();
   const modelo = mod || {};
 
   // Balaustre anterior do mesmo grau (sessão imediatamente antes desta)
@@ -150,8 +161,12 @@ export const gerarAtaSessao = async ({ balaustre }) => {
     // Logo opcional (Modelos de Documentos → "Exibir o logo da Loja")
     ...(modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
       children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 90, height: 90 } })] })] : []),
-    par([ar(interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, ''), { bold: true })], { align: AlignmentType.CENTER, after: 0 }),
-    par([ar(`Sessão de ${VARS.grau_extenso}`, { bold: true })], { align: AlignmentType.CENTER, after: 280 }),
+    // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
+    ...(() => {
+      const linhasTit = interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+      if (linhasTit.length === 1) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
+      return linhasTit.map((l, i) => par([ar(l, { bold: true })], { align: AlignmentType.CENTER, after: i === linhasTit.length - 1 ? 280 : 0 }));
+    })(),
     ...paragrafos,
     // Assinaturas (centralizadas): Venerável Mestre, Orador e Secretário
     ...[[VARS.vm_nome, 'Venerável Mestre'], [VARS.orador_nome, 'Orador'], [VARS.secretario_nome, 'Secretário']].flatMap(([n, c], i) => [
