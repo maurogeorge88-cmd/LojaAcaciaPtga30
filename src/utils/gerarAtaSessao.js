@@ -74,6 +74,18 @@ export const gerarAtaSessao = async ({ balaustre }) => {
   const { data: mod } = await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_MODELO_ATA[grau]).maybeSingle();
   const modelo = mod || {};
 
+  // Balaustre anterior do mesmo grau (sessão imediatamente antes desta)
+  const { data: anteriores } = await supabase.from('balaustres')
+    .select('numero_balaustre, ano_balaustre, data_sessao')
+    .eq('grau_sessao', grau)
+    .lt('data_sessao', balaustre.data_sessao || '9999-12-31')
+    .order('data_sessao', { ascending: false })
+    .limit(1);
+  const anterior = (anteriores || [])[0] || null;
+  const fmt = (iso) => (iso ? String(iso).substring(0, 10).split('-').reverse().join('/') : '');
+  const hoje = new Date();
+  const dataAtual = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+
   // Corpo Administrativo do ano da sessão
   // (ano_exercicio pode ser "2026" ou "2026/2027")
   const { data: corpoTodos } = await supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id');
@@ -91,6 +103,9 @@ export const gerarAtaSessao = async ({ balaustre }) => {
 
   const VARS = {
     numero_balaustre: String(balaustre.numero_balaustre ?? ''),
+    data_atual: dataAtual,
+    balaustre_anterior: anterior ? `${anterior.numero_balaustre}/${anterior.ano_balaustre || String(anterior.data_sessao || '').substring(0, 4)}` : '[sem balaustre anterior]',
+    data_balaustre_anterior: anterior ? fmt(anterior.data_sessao) : '[sem data]',
     ano_balaustre: String(anoSessao),
     data_sessao: balaustre.data_sessao ? balaustre.data_sessao.split('-').reverse().join('/') : '',
     data_sessao_extenso: dataSessaoExtenso(balaustre.data_sessao),
