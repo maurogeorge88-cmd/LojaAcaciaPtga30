@@ -11,6 +11,8 @@ import { LOGO_LOJA_B64 } from './logoLoja';
 // do ano da sessão.
 // ════════════════════════════════════════════════════════════════════════
 
+export const TIPO_ATA_ELEICAO_GLEMT = 'ata_eleicao_glemt';
+
 export const TIPO_MODELO_ATA = {
   Aprendiz: 'ata_sessao_aprendiz',
   Companheiro: 'ata_sessao_companheiro',
@@ -34,6 +36,17 @@ export const CORPO_ATA_PADRAO = [
   '*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.',
 ].join('\n');
 export const TITULO_ATA_PADRAO = 'ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}';
+
+// Ata da Sessão Eleitoral — eleição de Grão-Mestre e Adjunto da GLEMT
+export const TITULO_ELEICAO_GLEMT_PADRAO = 'ATA DA SESSÃO ELEITORAL Nº {numero_balaustre}/{ano_balaustre}\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT – Período {periodo_glemt}';
+export const CORPO_ELEICAO_GLEMT_PADRAO = [
+  'Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se em Sessão Eleitoral os Mestres Maçons do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, jurisdicionada à Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para a eleição do Grão-Mestre e do Grão-Mestre Adjunto para o período de {periodo_glemt}. Às {hora_abertura} horas, o V∴ M∴ {vm_nome} declarou aberta a Sessão Eleitoral, convidando para compor a Mesa Eleitoral o Orad∴ {orador_nome} e o Secr∴ {secretario_nome}, e designou como escrutinadores os IIr∴ {escrutinador1_nome} e {escrutinador2_nome}.',
+  '*CHAPAS CONCORRENTES:* {chapas_lista}',
+  '*VOTAÇÃO:* Após a assinatura da lista de presença pelos eleitores, foram distribuídas as cédulas rubricadas pela Mesa Eleitoral, tendo votado {total_votantes} Mestres Maçons. Encerrada a votação, a urna foi aberta e o número de cédulas conferido com o número de votantes.',
+  '*APURAÇÃO:* Realizada a apuração pelos escrutinadores, obteve-se o seguinte resultado: {resultado_apuracao} Votos em branco: {votos_brancos}. Votos nulos: {votos_nulos}.',
+  '*PROCLAMAÇÃO:* Concluída a apuração e não havendo impugnação ao ato eleitoral, o V∴ M∴ proclamou o resultado da votação nesta Oficina, em nome da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso, sendo mais votada a {chapa_vencedora}.',
+  '*ENCERRAMENTO:* Nada mais havendo a tratar, o V∴ M∴ encerrou a Sessão Eleitoral às {hora_encerramento} horas, tendo eu, {secretario_nome}, Secretário, lavrado a presente ata, que, lida e aprovada, será assinada por quem de direito.',
+].join('\n');
 
 const UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze',
   'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove', 'vinte'];
@@ -60,11 +73,13 @@ const NORM = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g,
 const b64ToBuffer = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
 // Modelos de ata disponíveis para o grau (base + extras criados em Modelos de Documentos)
-export const listarModelosAta = async (grau) => {
+export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
   const { data } = await supabase.from('modelos_documentos').select('id, tipo, nome, grau').eq('modulo', 'balaustres');
   const g = String(grau || '').toLowerCase();
   return (data || [])
     .filter(m => String(m.grau || m.tipo.replace('ata_sessao_', '')).toLowerCase() === g)
+    // Sessão de eleição da GLEMT usa só o modelo de eleição; sessões normais não o mostram
+    .filter(m => (eleicao ? m.tipo === TIPO_ATA_ELEICAO_GLEMT : m.tipo !== TIPO_ATA_ELEICAO_GLEMT))
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
@@ -72,7 +87,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
-    supabase.from('irmaos').select('id, nome'),
+    supabase.from('irmaos').select('id, nome, cim, data_exaltacao, situacao, data_falecimento'),
   ]);
   const dadosLoja = (lojaData && lojaData[0]) || {};
   const irmaos = irmaosData || [];
@@ -80,10 +95,11 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const anoSessao = parseInt(balaustre.ano_balaustre || String(balaustre.data_sessao || '').substring(0, 4)) || new Date().getFullYear();
 
   // Modelo
+  const ehEleicao = !!(balaustre.eleicao_glemt && balaustre.eleicao_glemt.ativo);
   const { data: mod } = modeloId
     ? await supabase.from('modelos_documentos').select('*').eq('id', modeloId).maybeSingle()
-    : await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_MODELO_ATA[grau]).maybeSingle();
-  const modelo = mod || {};
+    : await supabase.from('modelos_documentos').select('*').eq('tipo', ehEleicao ? TIPO_ATA_ELEICAO_GLEMT : TIPO_MODELO_ATA[grau]).maybeSingle();
+  const modelo = mod || (ehEleicao ? { titulo_doc: TITULO_ELEICAO_GLEMT_PADRAO, corpo: CORPO_ELEICAO_GLEMT_PADRAO } : {});
 
   // Balaustre anterior do mesmo grau (sessão imediatamente antes desta)
   const { data: anteriores } = await supabase.from('balaustres')
@@ -138,6 +154,32 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     orador_nome: orador || '[Orador]',
     secretario_nome: secretario || '[Secretário]',
   };
+  // ── Eleição da GLEMT (balaustre.eleicao_glemt) ──
+  const el = balaustre.eleicao_glemt && balaustre.eleicao_glemt.ativo ? balaustre.eleicao_glemt : null;
+  if (el) {
+    const nomeIr = (id) => irmaos.find(i => String(i.id) === String(id))?.nome || '';
+    const chapas = (el.chapas || []).filter(c => c && (c.nome || c.gm));
+    const num = (v) => (v === '' || v === null || v === undefined ? 0 : Number(v) || 0);
+    const vencedora = [...chapas].map((c, i) => ({ ...c, i })).sort((a, b) => num(b.votos) - num(a.votos))[0];
+    const empate = chapas.filter(c => num(c.votos) === num(vencedora?.votos)).length > 1;
+    Object.assign(VARS, {
+      periodo_glemt: el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '[período]',
+      escrutinador1_nome: nomeIr(el.escrutinador1_id) || '[Escrutinador 1]',
+      escrutinador2_nome: nomeIr(el.escrutinador2_id) || '[Escrutinador 2]',
+      chapas_lista: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: Grão-Mestre Ir∴ ${c.gm || '[nome]'} e Grão-Mestre Adjunto Ir∴ ${c.gm_adjunto || '[nome]'}`).join('; ') + '.',
+      resultado_apuracao: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${num(c.votos)} voto(s)`).join('; ') + '.',
+      votos_brancos: String(num(el.brancos)),
+      votos_nulos: String(num(el.nulos)),
+      total_votantes: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos))),
+      chapa_vencedora: !vencedora ? '[chapa]' : empate ? 'votação empatada entre as chapas' : `Chapa ${vencedora.i + 1} – ${vencedora.nome}`,
+    });
+    chapas.forEach((c, i) => {
+      VARS[`chapa${i + 1}_nome`] = c.nome || '';
+      VARS[`chapa${i + 1}_gm`] = c.gm || '';
+      VARS[`chapa${i + 1}_gm_adjunto`] = c.gm_adjunto || '';
+      VARS[`votos_chapa${i + 1}`] = String(num(c.votos));
+    });
+  }
   const interp = (t) => Object.entries(VARS).reduce((x, [k, v]) => x.replaceAll(`{${k}}`, v ?? ''), String(t || ''));
 
   // ── Helpers de formatação (Times New Roman 12, como os demais documentos) ──
@@ -190,4 +232,63 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   a.href = url; a.download = nome; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
   return { faltando: [!vm && 'Venerável Mestre', !orador && 'Orador', !secretario && 'Secretário'].filter(Boolean) };
+};
+
+// ════════════════════════════════════════════════════════════════════════
+// Lista de presença — Sessão Eleitoral da GLEMT (Mestres regulares na data)
+// ════════════════════════════════════════════════════════════════════════
+export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
+  const { Table, TableRow, TableCell, WidthType, BorderStyle } = await import('docx');
+  const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
+    supabase.from('dados_loja').select('*').limit(1),
+    supabase.from('irmaos').select('id, nome, cim, data_exaltacao, situacao, data_falecimento'),
+  ]);
+  const dadosLoja = (lojaData && lojaData[0]) || {};
+  const d = String(balaustre.data_sessao || '').substring(0, 10);
+  const mestres = (irmaosData || [])
+    .filter(i => String(i.situacao || 'regular').toLowerCase() === 'regular')
+    .filter(i => i.data_exaltacao && (!d || i.data_exaltacao <= d))
+    .filter(i => !i.data_falecimento || (d && i.data_falecimento > d))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
+  const el = balaustre.eleicao_glemt || {};
+  const periodo = el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '';
+
+  const ar = (t, o = {}) => new TextRun({ text: String(t ?? ''), font: 'Times New Roman', size: o.size || 24, bold: !!o.bold });
+  const par = (children, o = {}) => new Paragraph({ alignment: o.align ?? AlignmentType.CENTER, spacing: { before: 0, after: o.after ?? 0, line: 240 }, children });
+  const fino = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+  const bd = { top: fino, bottom: fino, left: fino, right: fino };
+  const W = 11906 - 1984 - 1134;
+  const CW = [600, 4400, 1300, W - 6300];
+  const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
+    children: [par([ar(t, o)], { align: o.align ?? AlignmentType.LEFT })] });
+
+  const tabela = new Table({
+    width: { size: W, type: WidthType.DXA }, columnWidths: CW,
+    rows: [
+      new TableRow({ tableHeader: true, children: [cel('Nº', CW[0], { bold: true, align: AlignmentType.CENTER }), cel('Irmão', CW[1], { bold: true }), cel('CIM', CW[2], { bold: true, align: AlignmentType.CENTER }), cel('Assinatura', CW[3], { bold: true, align: AlignmentType.CENTER })] }),
+      ...mestres.map((m, i) => new TableRow({ children: [
+        cel(String(i + 1), CW[0], { align: AlignmentType.CENTER }), cel(m.nome, CW[1]), cel(m.cim || '', CW[2], { align: AlignmentType.CENTER }), cel('', CW[3]),
+      ] })),
+    ],
+  });
+
+  const dataFmt = d ? d.split('-').reverse().join('/') : '';
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
+    sections: [{
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1418, bottom: 1418, left: 1984, right: 1134 } } },
+      children: [
+        par([ar('LISTA DE PRESENÇA — SESSÃO ELEITORAL', { bold: true })]),
+        par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
+        par([ar(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'} — ${dadosLoja.cidade || 'Paranatinga'}-${dadosLoja.estado || 'MT'} — Sessão de ${dataFmt}`)], { after: 240 }),
+        tabela,
+        par([ar(`Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
+      ],
+    }],
+  });
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Lista_Presenca_Eleicao_GLEMT_${dataFmt.replace(/\//g, '-')}.docx`; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 };
