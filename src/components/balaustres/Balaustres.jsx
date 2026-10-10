@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
-import { gerarAtaSessao, listarModelosAta } from '../../utils/gerarAtaSessao';
+import { gerarAtaSessao, listarModelosAta, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
+import { supabase as supabaseEleicao } from '../../supabaseClient';
 
 const Balaustres = ({ 
   balaustres, 
@@ -22,12 +23,39 @@ const Balaustres = ({
   const COR_GRAU = { aprendiz: '#3b82f6', companheiro: '#10b981', mestre: '#8b5cf6' };
   const corDoGrau = (g) => COR_GRAU[(g || '').trim().toLowerCase()] || 'var(--color-accent)';
 
+  // ── Eleição da GLEMT (a cada 3 anos) ──
+  const [mestresRegulares, setMestresRegulares] = useState([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseEleicao.from('irmaos').select('id, nome, situacao, data_exaltacao, data_falecimento');
+      setMestresRegulares((data || [])
+        .filter(i => String(i.situacao || 'regular').toLowerCase() === 'regular' && i.data_exaltacao && !i.data_falecimento)
+        .sort((a, b) => a.nome.localeCompare(b.nome)));
+    })();
+  }, []);
+  const ELEICAO_VAZIA = () => {
+    const ano = new Date().getFullYear() + 1;
+    return { ativo: true, ano_inicio: ano, ano_fim: ano + 3,
+      chapas: [{ nome: '', gm: '', gm_adjunto: '', votos: '' }, { nome: '', gm: '', gm_adjunto: '', votos: '' }],
+      brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '' };
+  };
+  const el = balaustreForm.eleicao_glemt;
+  const setEl = (campos) => setBalaustreForm(f => ({ ...f, eleicao_glemt: { ...(f.eleicao_glemt || ELEICAO_VAZIA()), ...campos } }));
+  const setChapa = (idx, campos) => setEl({ chapas: (el?.chapas || []).map((c, i) => (i === idx ? { ...c, ...campos } : c)) });
+  const [gerandoLista, setGerandoLista] = useState(null);
+  const gerarListaPresenca = async (balaustre) => {
+    setGerandoLista(balaustre.id);
+    try { await gerarListaPresencaEleicaoGLEMT({ balaustre }); showSuccess('📋 Lista de presença gerada!'); }
+    catch (e) { showError('Erro ao gerar a lista: ' + e.message); }
+    finally { setGerandoLista(null); }
+  };
+
   // Escolha do modelo quando o grau tem mais de um (ex.: Ata Mestre / Ata Exaltação Mestre)
   const [escolhaModelo, setEscolhaModelo] = useState(null); // { balaustre, modelos }
 
   const gerarAta = async (balaustre) => {
     try {
-      const modelos = await listarModelosAta(balaustre.grau_sessao);
+      const modelos = await listarModelosAta(balaustre.grau_sessao, { eleicao: !!balaustre.eleicao_glemt?.ativo });
       if (modelos.length > 1) { setEscolhaModelo({ balaustre, modelos }); return; }
       await gerarAtaComModelo(balaustre, modelos[0]?.id || null);
     } catch (e) {
@@ -68,7 +96,8 @@ const Balaustres = ({
     ordem_dia: '',
     observacoes: '',
     hora_abertura: '20:00',
-    hora_encerramento: '22:00'
+    hora_encerramento: '22:00',
+    eleicao_glemt: null
   });
 
   // Estados de controle
@@ -144,7 +173,8 @@ const Balaustres = ({
       ordem_dia: '',
       observacoes: '',
       hora_abertura: '20:00',
-      hora_encerramento: '22:00'
+      hora_encerramento: '22:00',
+      eleicao_glemt: null
     });
     setModoEdicao(false);
     setBalaustreEditando(null);
@@ -223,7 +253,8 @@ const Balaustres = ({
       ordem_dia: balaustre.ordem_dia || '',
       observacoes: balaustre.observacoes || '',
       hora_abertura: (balaustre.hora_abertura || '20:00').substring(0, 5),
-      hora_encerramento: (balaustre.hora_encerramento || '22:00').substring(0, 5)
+      hora_encerramento: (balaustre.hora_encerramento || '22:00').substring(0, 5),
+      eleicao_glemt: balaustre.eleicao_glemt || null
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -385,6 +416,68 @@ const Balaustres = ({
                   </select>
                 </div>
               </div>
+
+              {/* ELEIÇÃO DA GLEMT (somente sessões de Mestre) */}
+              {(balaustreForm.grau_sessao || '').trim().toLowerCase() === 'mestre' && (
+                <div style={{border:'1px solid rgba(139,92,246,0.45)',borderRadius:'var(--radius-lg)',padding:'0.85rem',background:'rgba(139,92,246,0.06)'}}>
+                  <label style={{display:'flex',alignItems:'center',gap:'0.5rem',fontWeight:700,fontSize:'0.88rem',color:'var(--color-text)',cursor:'pointer'}}>
+                    <input type="checkbox" checked={!!el?.ativo}
+                      onChange={e => setBalaustreForm(f => ({ ...f, eleicao_glemt: e.target.checked ? (f.eleicao_glemt ? { ...f.eleicao_glemt, ativo: true } : ELEICAO_VAZIA()) : null }))} />
+                    🗳️ Sessão de Eleição da GLEMT (Grão-Mestre e Adjunto)
+                  </label>
+                  {el?.ativo && (
+                    <div style={{display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'0.75rem'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:'0.6rem'}}>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Período — de</label>
+                          <input type="number" value={el.ano_inicio || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
+                            onChange={e => { const v = parseInt(e.target.value) || ''; setEl({ ano_inicio: v, ano_fim: v ? v + 3 : el.ano_fim }); }} /></div>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>até</label>
+                          <input type="number" value={el.ano_fim || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ ano_fim: parseInt(e.target.value) || '' })} /></div>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Escrutinador 1</label>
+                          <select value={el.escrutinador1_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ escrutinador1_id: e.target.value })}>
+                            <option value="">Selecione...</option>
+                            {mestresRegulares.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                          </select></div>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Escrutinador 2</label>
+                          <select value={el.escrutinador2_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ escrutinador2_id: e.target.value })}>
+                            <option value="">Selecione...</option>
+                            {mestresRegulares.filter(m => String(m.id) !== String(el.escrutinador1_id)).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+                          </select></div>
+                      </div>
+
+                      {(el.chapas || []).map((c, idx) => (
+                        <div key={idx} style={{border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.6rem',background:'var(--color-surface)'}}>
+                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.4rem'}}>
+                            <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>Chapa {idx + 1}</strong>
+                            {idx >= 2 && (
+                              <button type="button" onClick={() => setEl({ chapas: el.chapas.filter((_, i) => i !== idx) })}
+                                style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:'0.78rem',fontWeight:700}}>✕ Remover</button>
+                            )}
+                          </div>
+                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:'0.5rem'}}>
+                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Nome da chapa</label><input value={c.nome || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { nome: e.target.value })} /></div>
+                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre</label><input value={c.gm || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm: e.target.value })} /></div>
+                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre Adjunto</label><input value={c.gm_adjunto || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm_adjunto: e.target.value })} /></div>
+                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos</label><input type="number" min="0" value={c.votos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { votos: e.target.value })} /></div>
+                          </div>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setEl({ chapas: [...(el.chapas || []), { nome: '', gm: '', gm_adjunto: '', votos: '' }] })}
+                        style={{alignSelf:'flex-start',padding:'0.35rem 0.8rem',background:'transparent',color:'#8b5cf6',border:'1px dashed #8b5cf6',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.78rem',cursor:'pointer'}}>
+                        ➕ Adicionar chapa
+                      </button>
+
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:'0.6rem'}}>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos em branco</label><input type="number" min="0" value={el.brancos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ brancos: e.target.value })} /></div>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos nulos</label><input type="number" min="0" value={el.nulos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ nulos: e.target.value })} /></div>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Total de votantes</label>
+                          <input type="number" min="0" value={el.votantes ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ votantes: e.target.value })}
+                            placeholder={String((el.chapas || []).reduce((t, c) => t + (Number(c.votos) || 0), 0) + (Number(el.brancos) || 0) + (Number(el.nulos) || 0))} /></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Horários (usados na ata) */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
@@ -643,6 +736,11 @@ const Balaustres = ({
                           {/* Número/Ano */}
                           <div style={{flexShrink:0,width:'68px',overflow:'hidden'}}>
                             <p className="font-bold text-sm" style={{color:corDoGrau(balaustre.grau_sessao)}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
+                            {balaustre.eleicao_glemt?.ativo && (
+                              <span style={{display:'inline-block',marginTop:'0.2rem',fontSize:'0.62rem',fontWeight:800,padding:'0.1rem 0.45rem',borderRadius:'999px',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',whiteSpace:'nowrap'}}>
+                                🗳️ GLEMT {balaustre.eleicao_glemt.ano_inicio}–{balaustre.eleicao_glemt.ano_fim}
+                              </span>
+                            )}
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
                           </div>
                           {/* Data */}
@@ -663,6 +761,11 @@ const Balaustres = ({
                           </div>
                           {/* Ações */}
                           <div className="flex gap-1.5" style={{flexShrink:0}}>
+                            {balaustre.eleicao_glemt?.ativo && (
+                              <button onClick={() => gerarListaPresenca(balaustre)} disabled={gerandoLista === balaustre.id}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
+                                title="Lista de presença (Word)">{gerandoLista === balaustre.id ? '⏳' : '📋'}</button>
+                            )}
                             <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id}
                               style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
                               title="Gerar ata (Word)">{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
