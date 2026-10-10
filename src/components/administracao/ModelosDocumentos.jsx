@@ -6,6 +6,18 @@ const MODELOS_PADRAO = [
   {
     modulo: 'balaustres',
     mostrar_logo: false,
+    tipo: 'ata_eleicao_glemt',
+    grau: 'Mestre',
+    nome: 'Ata Eleição GLEMT',
+    titulo_doc: "ATA DA SESSÃO ELEITORAL Nº {numero_balaustre}/{ano_balaustre}\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT – Período {periodo_glemt}",
+    corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se em Sessão Eleitoral os Mestres Maçons do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, jurisdicionada à Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para a eleição do Grão-Mestre e do Grão-Mestre Adjunto para o período de {periodo_glemt}. Às {hora_abertura} horas, o V∴ M∴ {vm_nome} declarou aberta a Sessão Eleitoral, convidando para compor a Mesa Eleitoral o Orad∴ {orador_nome} e o Secr∴ {secretario_nome}, e designou como escrutinadores os IIr∴ {escrutinador1_nome} e {escrutinador2_nome}.\n*CHAPAS CONCORRENTES:* {chapas_lista}\n*VOTAÇÃO:* Após a assinatura da lista de presença pelos eleitores, foram distribuídas as cédulas rubricadas pela Mesa Eleitoral, tendo votado {total_votantes} Mestres Maçons. Encerrada a votação, a urna foi aberta e o número de cédulas conferido com o número de votantes.\n*APURAÇÃO:* Realizada a apuração pelos escrutinadores, obteve-se o seguinte resultado: {resultado_apuracao} Votos em branco: {votos_brancos}. Votos nulos: {votos_nulos}.\n*PROCLAMAÇÃO:* Concluída a apuração e não havendo impugnação ao ato eleitoral, o V∴ M∴ proclamou o resultado da votação nesta Oficina, em nome da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso, sendo mais votada a {chapa_vencedora}.\n*ENCERRAMENTO:* Nada mais havendo a tratar, o V∴ M∴ encerrou a Sessão Eleitoral às {hora_encerramento} horas, tendo eu, {secretario_nome}, Secretário, lavrado a presente ata, que, lida e aprovada, será assinada por quem de direito.",
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
+  },
+  {
+    modulo: 'balaustres',
+    mostrar_logo: false,
     tipo: 'ata_sessao_aprendiz',
     grau: 'Aprendiz',
     nome: 'Ata Aprendiz',
@@ -178,6 +190,19 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{data_atual}',               desc: 'Data de hoje (ex: 09/10/2026)' },
   { var: '{numero_balaustre}',         desc: 'Atas de sessão: número do balaustre' },
   { var: '{balaustre_anterior}',       desc: 'Atas de sessão: balaustre anterior do mesmo grau (ex: 11/2026)' },
+  { var: '{periodo_glemt}',            desc: 'Eleição GLEMT: período (ex: 2027 a 2030)' },
+  { var: '{chapas_lista}',             desc: 'Eleição GLEMT: todas as chapas com Grão-Mestre e Adjunto' },
+  { var: '{resultado_apuracao}',       desc: 'Eleição GLEMT: votos de cada chapa' },
+  { var: '{chapa1_nome}',              desc: 'Eleição GLEMT: nome da Chapa 1 (chapa2_..., chapa3_...)' },
+  { var: '{chapa1_gm}',                desc: 'Eleição GLEMT: Grão-Mestre da Chapa 1' },
+  { var: '{chapa1_gm_adjunto}',        desc: 'Eleição GLEMT: Grão-Mestre Adjunto da Chapa 1' },
+  { var: '{votos_chapa1}',             desc: 'Eleição GLEMT: votos da Chapa 1' },
+  { var: '{votos_brancos}',            desc: 'Eleição GLEMT: votos em branco' },
+  { var: '{votos_nulos}',              desc: 'Eleição GLEMT: votos nulos' },
+  { var: '{total_votantes}',           desc: 'Eleição GLEMT: total de votantes' },
+  { var: '{chapa_vencedora}',          desc: 'Eleição GLEMT: chapa mais votada' },
+  { var: '{escrutinador1_nome}',       desc: 'Eleição GLEMT: Escrutinador 1' },
+  { var: '{escrutinador2_nome}',       desc: 'Eleição GLEMT: Escrutinador 2' },
   { var: '{data_balaustre_anterior}',  desc: 'Atas de sessão: data do balaustre anterior (ex: 30/09/2026)' },
   { var: '{ano_balaustre}',            desc: 'Atas de sessão: ano do balaustre' },
   { var: '{data_sessao_extenso}',      desc: 'Atas de sessão: "sete dias do mês de outubro de 2.026"' },
@@ -320,7 +345,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
   };
 
   // ── Atas de sessão: criar / excluir modelos extras ─────────
-  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre'];
+  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre', 'ata_eleicao_glemt'];
   const novoModeloAta = async () => {
     const nome = window.prompt('Nome do novo modelo de ata (ex.: Ata Iniciação Aprendiz):');
     if (!nome || !nome.trim()) return;
