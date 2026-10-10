@@ -38,15 +38,8 @@ export const CORPO_ATA_PADRAO = [
 export const TITULO_ATA_PADRAO = 'ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}';
 
 // Ata da Sessão Eleitoral — eleição de Grão-Mestre e Adjunto da GLEMT
-export const TITULO_ELEICAO_GLEMT_PADRAO = 'ATA DA SESSÃO ELEITORAL Nº {numero_balaustre}/{ano_balaustre}\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT – Período {periodo_glemt}';
-export const CORPO_ELEICAO_GLEMT_PADRAO = [
-  'Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se em Sessão Eleitoral os Mestres Maçons do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, jurisdicionada à Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para a eleição do Grão-Mestre e do Grão-Mestre Adjunto para o período de {periodo_glemt}. Às {hora_abertura} horas, o V∴ M∴ {vm_nome} declarou aberta a Sessão Eleitoral, convidando para compor a Mesa Eleitoral o Orad∴ {orador_nome} e o Secr∴ {secretario_nome}, e designou como escrutinadores os IIr∴ {escrutinador1_nome} e {escrutinador2_nome}.',
-  '*CHAPAS CONCORRENTES:* {chapas_lista}',
-  '*VOTAÇÃO:* Após a assinatura da lista de presença pelos eleitores, foram distribuídas as cédulas rubricadas pela Mesa Eleitoral, tendo votado {total_votantes} Mestres Maçons. Encerrada a votação, a urna foi aberta e o número de cédulas conferido com o número de votantes.',
-  '*APURAÇÃO:* Realizada a apuração pelos escrutinadores, obteve-se o seguinte resultado: {resultado_apuracao} Votos em branco: {votos_brancos}. Votos nulos: {votos_nulos}.',
-  '*PROCLAMAÇÃO:* Concluída a apuração e não havendo impugnação ao ato eleitoral, o V∴ M∴ proclamou o resultado da votação nesta Oficina, em nome da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso, sendo mais votada a {chapa_vencedora}.',
-  '*ENCERRAMENTO:* Nada mais havendo a tratar, o V∴ M∴ encerrou a Sessão Eleitoral às {hora_encerramento} horas, tendo eu, {secretario_nome}, Secretário, lavrado a presente ata, que, lida e aprovada, será assinada por quem de direito.',
-].join('\n');
+export const TITULO_ELEICAO_GLEMT_PADRAO = "ATA DA ASSEMBLEIA GERAL ORDINÁRIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA ELEIÇÃO DA GRANDE LOJA DO ESTADO DE MATO GROSSO PARA O PERÍODO {periodo_glemt_barra}";
+export const CORPO_ELEICAO_GLEMT_PADRAO = "Aos {data_sessao} da era vulgar, às {hora_abertura} horas, reuniram-se nesta A∴R∴L∴S∴ Acácia de Paranatinga nº 30, na sua sede localizada na {endereco_loja}, cidade de {cidade}/{estado}, em Sessão Ordinária para Eleição da Administração da Grande Loja do Estado de Mato Grosso – GLEMT, para os cargos do Sereníssimo Grão-Mestre, Eminente Grão-Mestre Adjunto, atendendo à convocação feita pelo Respeitabilíssimo Mestre (Presidente) e Membros da Diretoria, para cumprimento do que determinam a Constituição, Regulamento Geral da Ordem e Código Eleitoral Maçônico da GLEMT.\n\nPreenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Respeitabilíssimo Mestre da Oficina, dispensando-se a Leitura da Ata dos últimos trabalhos e dos Expedientes, passando diretamente à deliberação da Ordem do Dia.\n*ORDEM DO DIA:* Consta da Ordem do Dia eleição do Sereníssimo Grão-Mestre e Eminente Grão-Mestre Adjunto da GLEMT, de acordo com o Edital de Convocação, para o período maçônico de {periodo_glemt}. De acordo com o Regulamento Geral da Ordem, os Veneráveis Irmãos Orador e Secretário foram convidados para formarem a Mesa Eleitoral, consequentemente, foram nomeados os Veneráveis Irmãos {escrutinador1_nome} e {escrutinador2_nome}, para ocuparem respectivamente, os lugares dos Veneráveis Irmãos Orador e Secretário de Ofício e serem os Escrutinadores. Por ordem do Respeitabilíssimo Mestre, houve a COMPOSIÇÃO DA MESA ELEITORAL E ESCRUTINADORES, formados pelo Respeitab∴ Mestre, Ir∴ {vm_nome}; Ven∴ Orador, Ir∴ {orador_nome}; Ven∴ Secretário, Ir∴ {secretario_nome}; Ven∴ Escrutinador, Ir∴ {escrutinador1_nome}; Ven∴ Escrutinador, Ir∴ {escrutinador2_nome}.\nA Mesa Eleitoral composta, o Respeitabilíssimo Mestre ordenou ao Ir∴ Secretário Substituto, que procedesse a leitura das Chapas apresentadas, a fim que todos os Veneráveis Irmãos presentes tomassem conhecimento dos nomes dos candidatos e seus respectivos cargos; e, assim o fez, sendo apresentada {chapas_apresentadas}\nEm seguida, por ordem do Respeitabilíssimo Mestre, o Venerável Chanceler, Ir∴ {chanceler_nome}, anunciou os Veneráveis Irmãos aptos a votar e ser votados. Em seguida, o Ir∴ Tesoureiro da Loja, anunciou os Ir∴ aptos a votar e ser votados, conforme o Regulamento Geral da Ordem e o Código Eleitoral Maçônico.\nEstando os Obreiros aptos a votar e serem votados, o Venerável Mestre de Cerimônias, procedeu a distribuição das Cédulas a todos os Obreiros Eleitores presentes à Sessão e por ordem do Respeitabilíssimo Mestre houve a suspensão dos trabalhos temporariamente para que os IIr∴ exercessem o direito de voto. Finalizado o processo de votação, o Respeitabilíssimo Mestre reencetou os trabalhos. Neste momento, o Ir∴ Secretário realizou a chamada dos Obreiros Eleitores em ordem, a fim de assinarem a Folha de Votação e depositarem o seu voto na urna.\nPor ordem do Respeitabilíssimo Mestre, o Venerável Mestre de Cerimônias em posse da urna contendo as Cédulas Eleitorais entregou no Trono, e com a ajuda dos Veneráveis Irmãos Orador e Secretário Substitutos, houve a conferência da quantidade de Cédulas com o número de votantes presentes, bem como, a fazer a apuração, com o seguinte resultado: {resultado_apuracao} Votos em branco: {votos_brancos}; votos nulos: {votos_nulos}; total de votantes: {total_votantes}. Com a finalização do processo de votação e apuração, o Respeitabilíssimo Mestre solicitou aos Veneráveis Irmãos Orador e Secretário de Ofício que retornem a seus postos e reassumam suas respectivas Joias e que os Veneráveis Irmãos Escrutinadores retornem, cada qual, a seu lugar, já em seguida, colocou a Palavra nas Colunas e no Oriente, a fim que os Veneráveis Irmãos se manifestassem exclusivamente sobre o Ato Eleitoral.\n*TRONCO DE SOLIDARIEDADE:* O Tronco de Solidariedade após fazer seu giro, sem formalidades conforme Regulamento Geral e do Código Eleitoral Maçônico, recolheu ______ kg de moedas cunhadas.\nEsta Ata é o que foi deliberado em Assembleia da Loja, em {data_sessao}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, {secretario_nome} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.";
 
 const UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze',
   'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove', 'vinte'];
@@ -127,6 +120,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const v2 = nomeCargo('segundo vigilante', '2º vigilante', '2o vigilante');
   const orador = nomeCargo('orador');
   const secretario = nomeCargo('secretario');
+  const chanceler = nomeCargo('chanceler');
 
   const VARS = {
     numero_balaustre: String(balaustre.numero_balaustre ?? ''),
@@ -153,6 +147,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     segundo_vigilante_nome: v2 || '[2º Vigilante]',
     orador_nome: orador || '[Orador]',
     secretario_nome: secretario || '[Secretário]',
+    chanceler_nome: chanceler || '[Chanceler]',
   };
   // ── Eleição da GLEMT (balaustre.eleicao_glemt) ──
   const el = balaustre.eleicao_glemt && balaustre.eleicao_glemt.ativo ? balaustre.eleicao_glemt : null;
@@ -164,6 +159,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     const empate = chapas.filter(c => num(c.votos) === num(vencedora?.votos)).length > 1;
     Object.assign(VARS, {
       periodo_glemt: el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '[período]',
+      periodo_glemt_barra: el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '[período]',
+      chapas_apresentadas: chapas.length
+        ? chapas.map(c => `a Chapa ${c.nome || '[nome]'}, para a qual o Ir∴ ${c.gm || '[nome]'} é candidato para o cargo de Grão-Mestre e o Ir∴ ${c.gm_adjunto || '[nome]'}, para o cargo de Grão-Mestre Adjunto`).join('; e, ') + '.'
+        : '[chapas].',
       escrutinador1_nome: nomeIr(el.escrutinador1_id) || '[Escrutinador 1]',
       escrutinador2_nome: nomeIr(el.escrutinador2_id) || '[Escrutinador 2]',
       chapas_lista: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: Grão-Mestre Ir∴ ${c.gm || '[nome]'} e Grão-Mestre Adjunto Ir∴ ${c.gm_adjunto || '[nome]'}`).join('; ') + '.',
@@ -206,7 +205,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
       const linhasTit = interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
-      if (linhasTit.length === 1) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
+      if (linhasTit.length === 1 && !ehEleicao) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
       return linhasTit.map((l, i) => par([ar(l, { bold: true })], { align: AlignmentType.CENTER, after: i === linhasTit.length - 1 ? 280 : 0 }));
     })(),
     ...paragrafos,
