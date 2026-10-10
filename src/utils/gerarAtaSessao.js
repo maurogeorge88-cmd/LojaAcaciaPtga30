@@ -169,7 +169,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
       resultado_apuracao: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${num(c.votos)} voto(s)`).join('; ') + '.',
       votos_brancos: String(num(el.brancos)),
       votos_nulos: String(num(el.nulos)),
-      total_votantes: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos))),
+      total_votantes: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
       chapa_vencedora: !vencedora ? '[chapa]' : empate ? 'votação empatada entre as chapas' : `Chapa ${vencedora.i + 1} – ${vencedora.nome}`,
     });
     chapas.forEach((c, i) => {
@@ -244,12 +244,15 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   ]);
   const dadosLoja = (lojaData && lojaData[0]) || {};
   const d = String(balaustre.data_sessao || '').substring(0, 10);
+  const el = balaustre.eleicao_glemt || {};
+  // Presença marcada no balaustre → só os presentes; sem marcação → todos os Mestres aptos
+  const presentes = (el.presentes || []).map(String);
   const mestres = (irmaosData || [])
-    .filter(i => String(i.situacao || 'regular').toLowerCase() === 'regular')
+    .filter(i => !presentes.length || presentes.includes(String(i.id)))
+    .filter(i => presentes.length || String(i.situacao || 'regular').toLowerCase() === 'regular')
     .filter(i => i.data_exaltacao && (!d || i.data_exaltacao <= d))
     .filter(i => !i.data_falecimento || (d && i.data_falecimento > d))
     .sort((a, b) => a.nome.localeCompare(b.nome));
-  const el = balaustre.eleicao_glemt || {};
   const periodo = el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '';
 
   const ar = (t, o = {}) => new TextRun({ text: String(t ?? ''), font: 'Times New Roman', size: o.size || 24, bold: !!o.bold });
@@ -281,7 +284,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
         par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
         par([ar(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'} — ${dadosLoja.cidade || 'Paranatinga'}-${dadosLoja.estado || 'MT'} — Sessão de ${dataFmt}`)], { after: 240 }),
         tabela,
-        par([ar(`Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
+        par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
       ],
     }],
   });
