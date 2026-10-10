@@ -39,9 +39,6 @@ const Balaustres = ({
       chapas: [{ nome: '', gm: '', gm_adjunto: '', votos: '' }, { nome: '', gm: '', gm_adjunto: '', votos: '' }],
       brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '' };
   };
-  const el = balaustreForm.eleicao_glemt;
-  const setEl = (campos) => setBalaustreForm(f => ({ ...f, eleicao_glemt: { ...(f.eleicao_glemt || ELEICAO_VAZIA()), ...campos } }));
-  const setChapa = (idx, campos) => setEl({ chapas: (el?.chapas || []).map((c, i) => (i === idx ? { ...c, ...campos } : c)) });
   const [gerandoLista, setGerandoLista] = useState(null);
   const gerarListaPresenca = async (balaustre) => {
     setGerandoLista(balaustre.id);
@@ -106,6 +103,11 @@ const Balaustres = ({
   const [balaustreEditando, setBalaustreEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
+
+  // Eleição GLEMT: atalhos do formulário (depois do estado balaustreForm)
+  const el = balaustreForm.eleicao_glemt;
+  const setEl = (campos) => setBalaustreForm(f => ({ ...f, eleicao_glemt: { ...(f.eleicao_glemt || ELEICAO_VAZIA()), ...campos } }));
+  const setChapa = (idx, campos) => setEl({ chapas: (el?.chapas || []).map((c, i) => (i === idx ? { ...c, ...campos } : c)) });
   const [anoSelecionado, setAnoSelecionado] = useState(null); // null = todos os anos
   const [balaustreVisualizando, setBalaustreVisualizando] = useState(null);
   const [modalVisualizar, setModalVisualizar] = useState(false);
