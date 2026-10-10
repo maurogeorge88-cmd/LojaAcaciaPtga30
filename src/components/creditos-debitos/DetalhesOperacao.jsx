@@ -311,8 +311,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                 <div className="flex items-center gap-2 mt-1">
                   <div style={{flex:1,background:"var(--color-surface-2)",borderRadius:"999px",height:"0.5rem"}}>
                     <div 
-                      style={{background:"#8b5cf6",height:"0.5rem",borderRadius:"999px",transition:"width 0.3s"}}
-                      style={{ width: `${percentualPago}%` }}
+                      style={{background:"#8b5cf6",height:"0.5rem",borderRadius:"999px",transition:"width 0.3s",width:`${percentualPago}%`}}
                     />
                   </div>
                   <span style={{fontSize:"0.82rem",fontWeight:"700",color:"#8b5cf6"}}>{percentualPago}%</span>
