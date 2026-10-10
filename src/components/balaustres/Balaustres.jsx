@@ -37,7 +37,7 @@ const Balaustres = ({
     const ano = new Date().getFullYear() + 1;
     return { ativo: true, ano_inicio: ano, ano_fim: ano + 3,
       chapas: [{ nome: '', gm: '', gm_adjunto: '', votos: '' }, { nome: '', gm: '', gm_adjunto: '', votos: '' }],
-      brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '' };
+      brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '', presentes: [] };
   };
   const [gerandoLista, setGerandoLista] = useState(null);
   const gerarListaPresenca = async (balaustre) => {
@@ -469,12 +469,45 @@ const Balaustres = ({
                         ➕ Adicionar chapa
                       </button>
 
+                      {/* PRESENÇA: Mestres presentes à sessão eleitoral */}
+                      {(() => {
+                        const pres = (el.presentes || []).map(String);
+                        const dataSes = balaustreForm.data_sessao || '';
+                        const aptos = mestresRegulares.filter(m => !dataSes || m.data_exaltacao <= dataSes);
+                        const toggle = (id) => setEl({ presentes: pres.includes(String(id)) ? pres.filter(x => x !== String(id)) : [...pres, String(id)] });
+                        return (
+                          <div style={{border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.6rem',background:'var(--color-surface)'}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.5rem',flexWrap:'wrap',marginBottom:'0.5rem'}}>
+                              <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>✅ Presentes: {pres.length} de {aptos.length} Mestres</strong>
+                              <div style={{display:'flex',gap:'0.4rem'}}>
+                                <button type="button" onClick={() => setEl({ presentes: aptos.map(m => String(m.id)) })}
+                                  style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Marcar todos</button>
+                                <button type="button" onClick={() => setEl({ presentes: [] })}
+                                  style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Limpar</button>
+                              </div>
+                            </div>
+                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'0.25rem',maxHeight:'220px',overflowY:'auto'}}>
+                              {aptos.map(m => {
+                                const marcado = pres.includes(String(m.id));
+                                return (
+                                  <label key={m.id} style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.8rem',padding:'0.25rem 0.4rem',borderRadius:'var(--radius-md)',cursor:'pointer',
+                                    background: marcado ? 'rgba(16,185,129,0.12)' : 'transparent', color: marcado ? 'var(--color-text)' : 'var(--color-text-muted)'}}>
+                                    <input type="checkbox" checked={marcado} onChange={() => toggle(m.id)} />
+                                    {m.nome}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:'0.6rem'}}>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos em branco</label><input type="number" min="0" value={el.brancos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ brancos: e.target.value })} /></div>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos nulos</label><input type="number" min="0" value={el.nulos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ nulos: e.target.value })} /></div>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Total de votantes</label>
                           <input type="number" min="0" value={el.votantes ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ votantes: e.target.value })}
-                            placeholder={String((el.chapas || []).reduce((t, c) => t + (Number(c.votos) || 0), 0) + (Number(el.brancos) || 0) + (Number(el.nulos) || 0))} /></div>
+                            placeholder={String((el.chapas || []).reduce((t, c) => t + (Number(c.votos) || 0), 0) + (Number(el.brancos) || 0) + (Number(el.nulos) || 0) || (el.presentes || []).length)} /></div>
                       </div>
                     </div>
                   )}
