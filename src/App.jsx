@@ -299,30 +299,7 @@ function App() {
   const [modoEdicaoCorpoAdmin, setModoEdicaoCorpoAdmin] = useState(false);
   const [corpoAdminEditando, setCorpoAdminEditando] = useState(null);
 
-  // Lista fixa de cargos administrativos
-  const cargosAdministrativos = [
-    'Venerável Mestre',
-    '1º Vigilante',
-    '2º Vigilante',
-    'Orador',
-    'Secretário',
-    'Tesoureiro',
-    'Chanceler',
-    'Mestre de Cerimônias',
-    'Mestre de Harmonia',
-    'Hospitaleiro',
-    'Guarda do Templo',
-    '1º Diácono',
-    '2º Diácono',
-    '1º Experto',
-    '2º Experto',
-    'Porta-Estandarte',
-    'Porta-Espada',
-    'Bibliotecário',
-    'Orador Adjunto',
-    'Secretário Adjunto',
-    'Tesoureiro Adjunto'
-  ];
+  // (lista de cargos removida daqui: o sistema usa CARGOS_ADMINISTRATIVOS de utils/constants.js)
 
   // ========================================
   // FUNÇÃO REGISTRAR ACESSO
