@@ -269,9 +269,10 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const fino = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
   const bd = { top: fino, bottom: fino, left: fino, right: fino };
   const W = 11906 - margens.left - margens.right;
-  const CW = [600, 4400, 1300, W - 6300];
+  // Nº e CIM estreitos, nome menor (fonte 11) e mais espaço para a assinatura
+  const CW = [500, 3500, 950, W - 4950];
   const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
-    children: [par([ar(t, o)], { align: o.align ?? AlignmentType.LEFT })] });
+    children: [par([ar(t, { ...o, size: 22 })], { align: o.align ?? AlignmentType.LEFT })] }); // tabela em fonte 11
 
   const tabela = new Table({
     width: { size: W, type: WidthType.DXA }, columnWidths: CW,
