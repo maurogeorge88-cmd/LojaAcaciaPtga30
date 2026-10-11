@@ -176,7 +176,7 @@ export const gerarQuadroGestaoPDF = ({ eleicao, chapaEleita, irmaos, dadosLoja, 
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
     doc.text(`Emitido em ${emitido}`, M, H - 9);
     doc.text(`Loja ${nomeLoja}`, W / 2, H - 9, { align: 'center' });
-    doc.text(`Página ${p} de ${total}`, W - M, H - 9, { align: 'right' });
+    doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
 
   doc.save(`Quadro_Gestao_${String(gestao).replace('/', '-') || 'chapa'}.pdf`);
