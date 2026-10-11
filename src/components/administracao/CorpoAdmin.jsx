@@ -75,6 +75,71 @@ export const CorpoAdmin = ({
   const [loading, setLoading] = useState(false);
 
   const cargosAdministrativos = CARGOS_ADMINISTRATIVOS;
+  const podeEditarCorpo = !!permissoes?.pode_editar_corpo_admin;
+
+  // ── Modal: cadastrar/editar todos os cargos de um ano de uma vez ──
+  const [modalCorpo, setModalCorpo] = useState(false);
+  const [anoModal, setAnoModal] = useState(new Date().getFullYear().toString());
+  const [cargosModal, setCargosModal] = useState({}); // { cargo: irmao_id }
+  const [salvandoModal, setSalvandoModal] = useState(false);
+  const irmaosAtivosOrdenados = (irmaos || []).filter(i => i.status === 'ativo').sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+  const carregarAnoNoModal = (ano) => {
+    const mapa = {};
+    corpoAdmin.filter(ca => String(ca.ano_exercicio) === String(ano)).forEach(ca => { mapa[ca.cargo] = String(ca.irmao_id ?? ''); });
+    setCargosModal(mapa);
+  };
+  const abrirModalCorpo = (ano = new Date().getFullYear().toString()) => {
+    setAnoModal(String(ano));
+    carregarAnoNoModal(ano);
+    setModalCorpo(true);
+  };
+  const copiarAnoAnterior = () => {
+    const anos = [...new Set(corpoAdmin.map(ca => String(ca.ano_exercicio)))].filter(a => a < String(anoModal)).sort().reverse();
+    if (!anos.length) { showError('Não há ano anterior cadastrado para copiar.'); return; }
+    carregarAnoNoModal(anos[0]);
+    showSuccess(`Cargos copiados de ${anos[0]} — revise e salve.`);
+  };
+  const salvarModalCorpo = async () => {
+    if (!anoModal) { showError('Informe o ano de exercício.'); return; }
+    setSalvandoModal(true);
+    try {
+      const existentes = corpoAdmin.filter(ca => String(ca.ano_exercicio) === String(anoModal));
+      const inserir = [], atualizar = [], excluir = [];
+      cargosAdministrativos.forEach(cargo => {
+        const val = cargosModal[cargo] || '';
+        const ex = existentes.find(ca => ca.cargo === cargo);
+        if (val && !ex) inserir.push({ cargo, irmao_id: val, ano_exercicio: String(anoModal) });
+        else if (val && ex && String(ex.irmao_id) !== String(val)) atualizar.push({ id: ex.id, irmao_id: val });
+        else if (!val && ex) excluir.push(ex.id);
+      });
+      if (inserir.length) {
+        const { error } = await supabase.from('corpo_administrativo').insert(inserir);
+        if (error) throw error;
+      }
+      for (const u of atualizar) {
+        const { data, error } = await supabase.from('corpo_administrativo').update({ irmao_id: u.irmao_id }).eq('id', u.id).select();
+        if (error) throw error;
+        if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      }
+      if (excluir.length) {
+        const { data, error } = await supabase.from('corpo_administrativo').delete().in('id', excluir).select();
+        if (error) throw error;
+        if ((data || []).length < excluir.length) throw new Error('o banco não permitiu remover todos os cargos (sem permissão).');
+      }
+      showSuccess(`✅ Corpo Administrativo ${anoModal} salvo (${inserir.length} novo(s), ${atualizar.length} alterado(s), ${excluir.length} removido(s)).`);
+      setModalCorpo(false);
+      onUpdate();
+    } catch (err) {
+      showError('Erro ao salvar: ' + err.message);
+    } finally {
+      setSalvandoModal(false);
+    }
+  };
+
+  // Faixas por ano recolhidas; clique expande
+  const [anosAbertos, setAnosAbertos] = useState({});
+  const alternarAno = (ano) => setAnosAbertos(a => ({ ...a, [ano]: !a[ano] }));
 
   const limparFormularioCorpoAdmin = () => {
     setCorpoAdminForm({
@@ -239,106 +304,60 @@ export const CorpoAdmin = ({
         </div>
       )}
 
-      {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
-      {permissoes?.pode_editar_corpo_admin && (
-        <div className="card">
-          <h3 style={{ 
-            fontSize: '1.25rem', 
-            fontWeight: 'bold', 
-            color: 'var(--color-text)', 
-            marginBottom: '1rem' 
-          }}>
-            {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
-          </h3>
+      {/* CADASTRO EM LOTE (modal) */}
+      {podeEditarCorpo && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <button onClick={() => abrirModalCorpo()}
+            style={{ padding: '0.6rem 1.2rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer' }}>
+            ➕ Cadastrar / Editar Corpo Administrativo
+          </button>
+        </div>
+      )}
 
-          <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="form-label">Irmão *</label>
-                <select
-                  value={corpoAdminForm.irmao_id}
-                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
-                  className="form-input"
-                  required
-                >
-                  <option value="">Selecione um irmão</option>
-                  {irmaos
-                    .filter(i => i.status === 'ativo')
-                    .map(irmao => (
-                      <option key={irmao.id} value={irmao.id}>
-                        {irmao.nome} - CIM {irmao.cim}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Cargo *</label>
-                <select
-                  value={corpoAdminForm.cargo}
-                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
-                  className="form-input"
-                  required
-                >
-                  <option value="">Selecione um cargo</option>
-                  {cargosAdministrativos.map((cargo) => (
-                    <option key={cargo} value={cargo}>
-                      {cargo}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Ano de Exercício *</label>
-                <input
-                  type="text"
-                  value={corpoAdminForm.ano_exercicio}
-                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
-                  className="form-input"
-                  placeholder="Ex: 2024"
-                  required
-                  pattern="[0-9]{4}"
-                  title="Digite um ano válido (4 dígitos)"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4 mt-6">
-              {modoEdicaoCorpoAdmin && (
-                <button
-                  type="button"
-                  onClick={limparFormularioCorpoAdmin}
-                  style={{ padding: "0.5rem 1.5rem", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", color: "var(--color-text)", fontWeight: "600", background: "transparent", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => e.target.style.background = "var(--color-surface-2)"} onMouseLeave={(e) => e.target.style.background = "transparent"}
-                >
-                  Cancelar
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  padding: '0.5rem 2rem',
-                  background: 'var(--color-accent)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: 'bold',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  opacity: loading ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) e.target.style.background = 'var(--color-accent-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) e.target.style.background = 'var(--color-accent)';
-                }}
-              >
-                {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
+      {modalCorpo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setModalCorpo(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '900px', maxHeight: '92vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, flex: 1, fontSize: '1.1rem', fontWeight: 800, color: 'var(--color-text)' }}>👔 Corpo Administrativo</h3>
+              <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 700 }}>Ano de exercício</label>
+              <input className="form-input" style={{ width: '110px' }} value={anoModal}
+                onChange={e => { setAnoModal(e.target.value); if (/^\d{4}$/.test(e.target.value)) carregarAnoNoModal(e.target.value); }} />
+              <button type="button" onClick={copiarAnoAnterior}
+                style={{ padding: '0.45rem 0.85rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+                ↺ Copiar do ano anterior
               </button>
             </div>
-          </form>
+            <div style={{ padding: '1rem 1.25rem', overflowY: 'auto' }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                {cargosAdministrativos.map(cargo => {
+                  const repetido = cargosModal[cargo] && Object.entries(cargosModal).some(([c, v]) => c !== cargo && v && v === cargosModal[cargo]);
+                  return (
+                    <div key={cargo} style={{ display: 'grid', gridTemplateColumns: '170px minmax(0,1fr)', gap: '0.5rem', alignItems: 'center' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: repetido ? '#ef4444' : 'var(--color-text-muted)' }}>{cargo}</label>
+                      <select className="form-input" value={cargosModal[cargo] || ''}
+                        onChange={e => setCargosModal(m => ({ ...m, [cargo]: e.target.value }))}
+                        style={repetido ? { border: '2px solid #ef4444' } : undefined}>
+                        <option value="">— vago —</option>
+                        {irmaosAtivosOrdenados.map(i => <option key={i.id} value={String(i.id)}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0.75rem 0 0' }}>
+                Campo "— vago —" remove o cargo do ano. Em vermelho: irmão escolhido em mais de um cargo.
+              </p>
+            </div>
+            <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button onClick={() => setModalCorpo(false)}
+                style={{ padding: '0.6rem 1.2rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+              <button onClick={salvarModalCorpo} disabled={salvandoModal}
+                style={{ padding: '0.6rem 1.2rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: 'pointer', opacity: salvandoModal ? 0.6 : 1 }}>
+                {salvandoModal ? 'Salvando...' : '💾 Salvar todos'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -385,18 +404,29 @@ export const CorpoAdmin = ({
           .sort((a, b) => b - a)
           .map(ano => (
             <div key={ano} className="card" style={{ overflow: 'hidden', padding: 0 }}>
-              <div style={{ 
-                padding: '1rem', 
+              <div onClick={() => alternarAno(ano)} style={{ 
+                padding: '0.85rem 1rem', 
                 background: 'var(--color-accent)', 
-                color: 'white' 
+                color: 'white',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem'
               }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Administração {ano}</h3>
-                <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>
-                  {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
-                </p>
+                <span style={{ fontSize: '0.9rem', transition: 'transform 0.2s', transform: anosAbertos[ano] ? 'rotate(90deg)' : 'none' }}>▶</span>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Administração {ano}</h3>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.9, margin: 0 }}>
+                    {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
+                  </p>
+                </div>
+                {podeEditarCorpo && (
+                  <button onClick={e => { e.stopPropagation(); abrirModalCorpo(ano); }}
+                    style={{ padding: '0.35rem 0.8rem', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
+                    ✏️ Editar ano
+                  </button>
+                )}
               </div>
 
-              <div style={{padding:'1rem', display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem'}}>
+              {anosAbertos[ano] && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{padding:'1rem', gap:'0.75rem'}}>
 
                     {corpoAdmin
                       .filter(ca => ca.ano_exercicio === ano)
@@ -537,10 +567,10 @@ export const CorpoAdmin = ({
                                 CIM {irmao?.cim || '-'}
                               </span>
 
-                              {permissoes?.canEdit && (
+                              {podeEditarCorpo && (
                                 <div style={{display:'flex', gap:'0.25rem'}}>
                                   <button
-                                    onClick={() => handleEditarCorpoAdmin(item)}
+                                    onClick={() => abrirModalCorpo(item.ano_exercicio)}
                                     title="Editar"
                                     style={{background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-sm)',padding:'0.2rem 0.4rem',cursor:'pointer',fontSize:'0.75rem',lineHeight:1}}
                                   >✏️</button>
@@ -556,6 +586,7 @@ export const CorpoAdmin = ({
                         );
                       })}
               </div>
+              )}
             </div>
           ))}
 
