@@ -207,7 +207,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const children = [
     // Logo opcional (Modelos de Documentos → "Exibir o logo da Loja")
     ...(modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-      children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 90, height: 90 } })] })] : []),
+      children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : []),
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
       const linhasTit = interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
@@ -290,7 +290,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
         ...(modeloEl.mostrar_logo_lista ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-          children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 80, height: 80 } })] })] : []),
+          children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : []),
         par([ar('LISTA DE PRESENÇA — SESSÃO ELEITORAL', { bold: true })]),
         par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
         par([ar(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'} — ${dadosLoja.cidade || 'Paranatinga'}-${dadosLoja.estado || 'MT'} — Sessão de ${dataFmt}`)], { after: 240 }),
