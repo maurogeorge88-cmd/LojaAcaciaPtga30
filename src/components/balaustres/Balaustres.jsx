@@ -429,12 +429,14 @@ const Balaustres = ({
                   </label>
                   {el?.ativo && (
                     <div style={{display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'0.75rem'}}>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:'0.6rem'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem'}}>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Período — de</label>
                           <input type="number" value={el.ano_inicio || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
                             onChange={e => { const v = parseInt(e.target.value) || ''; setEl({ ano_inicio: v, ano_fim: v ? v + 3 : el.ano_fim }); }} /></div>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>até</label>
                           <input type="number" value={el.ano_fim || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ ano_fim: parseInt(e.target.value) || '' })} /></div>
+                        </div>
+                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem'}}>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Escrutinador 1</label>
                           <select value={el.escrutinador1_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ escrutinador1_id: e.target.value })}>
                             <option value="">Selecione...</option>
@@ -456,11 +458,13 @@ const Balaustres = ({
                                 style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:'0.78rem',fontWeight:700}}>✕ Remover</button>
                             )}
                           </div>
-                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:'0.5rem'}}>
+                          <div style={{display:'grid',gridTemplateColumns:'minmax(0,3fr) minmax(0,1fr)',gap:'0.5rem',marginBottom:'0.5rem'}}>
                             <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Nome da chapa</label><input value={c.nome || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { nome: e.target.value })} /></div>
+                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos</label><input type="number" min="0" value={c.votos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { votos: e.target.value })} /></div>
+                          </div>
+                          <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.5rem'}}>
                             <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre</label><input value={c.gm || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm: e.target.value })} /></div>
                             <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre Adjunto</label><input value={c.gm_adjunto || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm_adjunto: e.target.value })} /></div>
-                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos</label><input type="number" min="0" value={c.votos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { votos: e.target.value })} /></div>
                           </div>
                         </div>
                       ))}
@@ -502,7 +506,7 @@ const Balaustres = ({
                         );
                       })()}
 
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:'0.6rem'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:'0.6rem'}}>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos em branco</label><input type="number" min="0" value={el.brancos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ brancos: e.target.value })} /></div>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos nulos</label><input type="number" min="0" value={el.nulos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ nulos: e.target.value })} /></div>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Total de votantes</label>
