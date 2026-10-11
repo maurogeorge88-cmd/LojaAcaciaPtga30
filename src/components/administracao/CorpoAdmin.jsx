@@ -412,7 +412,16 @@ export const CorpoAdmin = ({
               }}>
                 <span style={{ fontSize: '0.9rem', transition: 'transform 0.2s', transform: anosAbertos[ano] ? 'rotate(90deg)' : 'none' }}>▶</span>
                 <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Administração {ano}</h3>
+                  {(() => {
+                    // Venerável Mestre do ano (identifica a faixa)
+                    const vm = corpoAdmin.find(ca => ca.ano_exercicio === ano && /vener/i.test(String(ca.cargo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
+                    const nomeVm = vm ? (vm.irmao?.nome || irmaos?.find(i => i.id === vm.irmao_id)?.nome) : null;
+                    return (
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
+                        Administração {ano}{nomeVm && <span style={{ fontWeight: 600 }}> — Veneralato do Ir∴ {nomeVm}</span>}
+                      </h3>
+                    );
+                  })()}
                   <p style={{ fontSize: '0.8rem', opacity: 0.9, margin: 0 }}>
                     {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
                   </p>
