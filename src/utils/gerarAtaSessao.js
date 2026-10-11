@@ -1,5 +1,5 @@
 import {
-  Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType,
+  Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, PageNumber,
 } from 'docx';
 import { supabase } from '../supabaseClient';
 import { LOGO_LOJA_B64 } from './logoLoja';
@@ -226,6 +226,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
+      // Rodapé: numeração "1 de 3" à direita
+      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
+      new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
+    ] })] }) },
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margensDoModelo(modelo) } },
       children,
     }],
@@ -288,6 +292,10 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
+      // Rodapé: numeração "1 de 3" à direita
+      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
+      new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
+    ] })] }) },
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
         ...(modeloEl.mostrar_logo_lista ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
