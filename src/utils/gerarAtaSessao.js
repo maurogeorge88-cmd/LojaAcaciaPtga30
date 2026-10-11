@@ -3,6 +3,7 @@ import {
 } from 'docx';
 import { supabase } from '../supabaseClient';
 import { LOGO_LOJA_B64 } from './logoLoja';
+import { cabecalhoLojaDocx } from './cabecalhoLoja';
 
 // ════════════════════════════════════════════════════════════════════════
 // Ata (Balaústre) das sessões normais — Aprendiz, Companheiro e Mestre
@@ -38,7 +39,7 @@ export const CORPO_ATA_PADRAO = [
 export const TITULO_ATA_PADRAO = 'ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}';
 
 // Ata da Sessão Eleitoral — eleição de Grão-Mestre e Adjunto da GLEMT
-export const TITULO_ELEICAO_GLEMT_PADRAO = "ATA DA ASSEMBLEIA GERAL ORDINÁRIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA ELEIÇÃO DA GRANDE LOJA DO ESTADO DE MATO GROSSO PARA O PERÍODO {periodo_glemt_barra}";
+export const TITULO_ELEICAO_GLEMT_PADRAO = "ATA DA ASSEMBLEIA GERAL ORDINÁRIA PARA ELEIÇÃO DA GRANDE LOJA DO ESTADO DE MATO GROSSO PARA O PERÍODO {periodo_glemt_barra}";
 export const CORPO_ELEICAO_GLEMT_PADRAO = "Aos {data_sessao} da era vulgar, às {hora_abertura} horas, reuniram-se nesta A∴R∴L∴S∴ Acácia de Paranatinga nº 30, na sua sede localizada na {endereco_loja}, cidade de {cidade}/{estado}, em Sessão Ordinária para Eleição da Administração da Grande Loja do Estado de Mato Grosso – GLEMT, para os cargos do Sereníssimo Grão-Mestre, Eminente Grão-Mestre Adjunto, atendendo à convocação feita pelo Respeitabilíssimo Mestre (Presidente) e Membros da Diretoria, para cumprimento do que determinam a Constituição, Regulamento Geral da Ordem e Código Eleitoral Maçônico da GLEMT.\n\nPreenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Respeitabilíssimo Mestre da Oficina, dispensando-se a Leitura da Ata dos últimos trabalhos e dos Expedientes, passando diretamente à deliberação da Ordem do Dia.\n*ORDEM DO DIA:* Consta da Ordem do Dia eleição do Sereníssimo Grão-Mestre e Eminente Grão-Mestre Adjunto da GLEMT, de acordo com o Edital de Convocação, para o período maçônico de {periodo_glemt}. De acordo com o Regulamento Geral da Ordem, os Veneráveis Irmãos Orador e Secretário foram convidados para formarem a Mesa Eleitoral, consequentemente, foram nomeados os Veneráveis Irmãos {escrutinador1_nome} e {escrutinador2_nome}, para ocuparem respectivamente, os lugares dos Veneráveis Irmãos Orador e Secretário de Ofício e serem os Escrutinadores. Por ordem do Respeitabilíssimo Mestre, houve a COMPOSIÇÃO DA MESA ELEITORAL E ESCRUTINADORES, formados pelo Respeitab∴ Mestre, Ir∴ {vm_nome}; Ven∴ Orador, Ir∴ {orador_nome}; Ven∴ Secretário, Ir∴ {secretario_nome}; Ven∴ Escrutinador, Ir∴ {escrutinador1_nome}; Ven∴ Escrutinador, Ir∴ {escrutinador2_nome}.\nA Mesa Eleitoral composta, o Respeitabilíssimo Mestre ordenou ao Ir∴ Secretário Substituto, que procedesse a leitura das Chapas apresentadas, a fim que todos os Veneráveis Irmãos presentes tomassem conhecimento dos nomes dos candidatos e seus respectivos cargos; e, assim o fez, sendo apresentada {chapas_apresentadas}\nEm seguida, por ordem do Respeitabilíssimo Mestre, o Venerável Chanceler, Ir∴ {chanceler_nome}, anunciou os Veneráveis Irmãos aptos a votar e ser votados. Em seguida, o Ir∴ Tesoureiro da Loja, anunciou os Ir∴ aptos a votar e ser votados, conforme o Regulamento Geral da Ordem e o Código Eleitoral Maçônico.\nEstando os Obreiros aptos a votar e serem votados, o Venerável Mestre de Cerimônias, procedeu a distribuição das Cédulas a todos os Obreiros Eleitores presentes à Sessão e por ordem do Respeitabilíssimo Mestre houve a suspensão dos trabalhos temporariamente para que os IIr∴ exercessem o direito de voto. Finalizado o processo de votação, o Respeitabilíssimo Mestre reencetou os trabalhos. Neste momento, o Ir∴ Secretário realizou a chamada dos Obreiros Eleitores em ordem, a fim de assinarem a Folha de Votação e depositarem o seu voto na urna.\nPor ordem do Respeitabilíssimo Mestre, o Venerável Mestre de Cerimônias em posse da urna contendo as Cédulas Eleitorais entregou no Trono, e com a ajuda dos Veneráveis Irmãos Orador e Secretário Substitutos, houve a conferência da quantidade de Cédulas com o número de votantes presentes, bem como, a fazer a apuração, com o seguinte resultado: {resultado_apuracao} Votos em branco: {votos_brancos}; votos nulos: {votos_nulos}; total de votantes: {total_votantes}. Com a finalização do processo de votação e apuração, o Respeitabilíssimo Mestre solicitou aos Veneráveis Irmãos Orador e Secretário de Ofício que retornem a seus postos e reassumam suas respectivas Joias e que os Veneráveis Irmãos Escrutinadores retornem, cada qual, a seu lugar, já em seguida, colocou a Palavra nas Colunas e no Oriente, a fim que os Veneráveis Irmãos se manifestassem exclusivamente sobre o Ato Eleitoral.\n*TRONCO DE SOLIDARIEDADE:* O Tronco de Solidariedade após fazer seu giro, sem formalidades conforme Regulamento Geral e do Código Eleitoral Maçônico, recolheu ______ kg de moedas cunhadas.\nEsta Ata é o que foi deliberado em Assembleia da Loja, em {data_sessao}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, {secretario_nome} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.";
 
 const UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze',
@@ -199,18 +200,21 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const LINHA = '_____________________________________';
   const linhaSimples = (t, bold = false, before = 0) => par([ar(t, { bold })], { align: AlignmentType.CENTER, before, after: 0, line: 240 });
 
-  const corpoTexto = interp(modelo.corpo || CORPO_ATA_PADRAO);
+  const corpoTexto = interp(modelo.corpo || (ehEleicao ? CORPO_ELEICAO_GLEMT_PADRAO : CORPO_ATA_PADRAO));
   const paragrafos = corpoTexto.split('\n').map(l => (l.trim() === ''
     ? par([ar('')], { after: 0 })
     : par(runs(l), { align: modelo.alinhamento_corpo === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED })));
 
   const children = [
-    // Logo opcional (Modelos de Documentos → "Exibir o logo da Loja")
-    ...(modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-      children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : []),
+    // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
+    // atas de sessão simples mantêm o logo opcional centralizado
+    ...(ehEleicao
+      ? cabecalhoLojaDocx({ dadosLoja, comLogo: !!modelo.mostrar_logo, larguraUtil: 11906 - margensDoModelo(modelo).left - margensDoModelo(modelo).right, after: 240 })
+      : (modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
+        children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : [])),
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
-      const linhasTit = interp(modelo.titulo_doc || TITULO_ATA_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+      const linhasTit = interp(modelo.titulo_doc || (ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO)).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
       if (linhasTit.length === 1 && !ehEleicao) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
       return linhasTit.map((l, i) => par([ar(l, { bold: true })], { align: AlignmentType.CENTER, after: i === linhasTit.length - 1 ? 280 : 0 }));
     })(),
@@ -298,11 +302,11 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
     ] })] }) },
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
-        ...(modeloEl.mostrar_logo_lista ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-          children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : []),
+        // Cabeçalho da Loja (logo à esquerda, ou só texto se desmarcado)
+        ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloEl.mostrar_logo_lista, larguraUtil: W, after: 240 }),
         par([ar('LISTA DE PRESENÇA — SESSÃO ELEITORAL', { bold: true })]),
         par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
-        par([ar(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'} — ${dadosLoja.cidade || 'Paranatinga'}-${dadosLoja.estado || 'MT'} — Sessão de ${dataFmt}`)], { after: 240 }),
+        par([ar(`Sessão de ${dataFmt}`)], { after: 240 }),
         tabela,
         par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
       ],
