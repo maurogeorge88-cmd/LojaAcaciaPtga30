@@ -401,7 +401,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       new ImageRun({
         type: 'jpg',
         data: b64ToBuffer(LOGO_LOJA_B64),
-        transformation: { width: 108, height: 108 },
+        transformation: { width: 132, height: 132 }, // 3,5 cm
       }),
     ],
   });
@@ -639,12 +639,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     const W = DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight;
     const tri = (t, size = 32) => new TextRun({ text: t, font: 'Times New Roman', size });
     const cabecalhoApresentacao = new Table({
-      width: { size: W, type: WidthType.DXA }, columnWidths: [2000, W - 2000],
+      width: { size: W, type: WidthType.DXA }, columnWidths: [2300, W - 2300],
       rows: [new TableRow({ children: [
-        new TableCell({ borders: sb, width: { size: 2000, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
-          new Paragraph({ alignment: AlignmentType.LEFT, children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 100, height: 100 } })] }),
+        new TableCell({ borders: sb, width: { size: 2300, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
+          new Paragraph({ alignment: AlignmentType.LEFT, children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] }), // 3,5 cm
         ]}),
-        new TableCell({ borders: sb, width: { size: W - 2000, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
+        new TableCell({ borders: sb, width: { size: W - 2300, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
           new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [tri('Grande Loja do Estado de Mato Grosso – GLEMT')] }),
           new Paragraph({ alignment: AlignmentType.CENTER, children: [tri(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`)] }),
         ]}),
