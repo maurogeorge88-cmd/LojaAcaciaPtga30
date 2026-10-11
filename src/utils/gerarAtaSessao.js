@@ -65,6 +65,12 @@ const NORM = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g,
 
 const b64ToBuffer = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
 
+// Margens do modelo (cm → twips); vazio = padrão 5 / 2,8 / 3,5 / 2 cm
+const margensDoModelo = (m = {}) => {
+  const cm = (v, pad) => Math.round((v === null || v === undefined || v === '' || isNaN(Number(v)) ? pad : Number(v)) * 567);
+  return { top: cm(m.margem_sup, 5), bottom: cm(m.margem_inf, 2.8), left: cm(m.margem_esq, 3.5), right: cm(m.margem_dir, 2) };
+};
+
 // Modelos de ata disponíveis para o grau (base + extras criados em Modelos de Documentos)
 export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
   const { data } = await supabase.from('modelos_documentos').select('id, tipo, nome, grau').eq('modulo', 'balaustres');
@@ -220,7 +226,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 2835, bottom: 1588, left: 1984, right: 1134 } /* sup. 5 cm · inf. 2,8 cm · esq. 3,5 cm · dir. 2 cm */ } },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: margensDoModelo(modelo) } },
       children,
     }],
   });
@@ -238,11 +244,14 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
 // ════════════════════════════════════════════════════════════════════════
 export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const { Table, TableRow, TableCell, WidthType, BorderStyle } = await import('docx');
-  const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
+  const [{ data: lojaData }, { data: irmaosData }, { data: modEl }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
     supabase.from('irmaos').select('id, nome, cim, data_exaltacao, situacao, data_falecimento'),
+    supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_ATA_ELEICAO_GLEMT).maybeSingle(),
   ]);
   const dadosLoja = (lojaData && lojaData[0]) || {};
+  const modeloEl = modEl || {};
+  const margens = margensDoModelo(modeloEl);
   const d = String(balaustre.data_sessao || '').substring(0, 10);
   const el = balaustre.eleicao_glemt || {};
   // Presença marcada no balaustre → só os presentes; sem marcação → todos os Mestres aptos
@@ -259,7 +268,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const par = (children, o = {}) => new Paragraph({ alignment: o.align ?? AlignmentType.CENTER, spacing: { before: 0, after: o.after ?? 0, line: 240 }, children });
   const fino = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
   const bd = { top: fino, bottom: fino, left: fino, right: fino };
-  const W = 11906 - 1984 - 1134;
+  const W = 11906 - margens.left - margens.right;
   const CW = [600, 4400, 1300, W - 6300];
   const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
     children: [par([ar(t, o)], { align: o.align ?? AlignmentType.LEFT })] });
@@ -278,8 +287,10 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1418, bottom: 1418, left: 1984, right: 1134 } } },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
+        ...(modeloEl.mostrar_logo_lista ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
+          children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 80, height: 80 } })] })] : []),
         par([ar('LISTA DE PRESENÇA — SESSÃO ELEITORAL', { bold: true })]),
         par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
         par([ar(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'} — ${dadosLoja.cidade || 'Paranatinga'}-${dadosLoja.estado || 'MT'} — Sessão de ${dataFmt}`)], { after: 240 }),
