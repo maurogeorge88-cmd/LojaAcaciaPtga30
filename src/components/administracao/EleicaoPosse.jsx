@@ -15,6 +15,7 @@ import {
 } from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
+import { cabecalhoLojaDocx } from '../../utils/cabecalhoLoja';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
@@ -421,6 +422,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 280 }),
   ];
 
+  // Cabeçalho das atas: logo à esquerda + texto da Loja (ou só o texto, se o logo estiver desmarcado no modelo)
+  const cabecalhoAta = () => cabecalhoLojaDocx({
+    dadosLoja, comLogo: modelo.mostrar_logo !== false,
+    larguraUtil: DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight,
+  });
+
   // ─── Lista eleitos ─────────────────────────────────────────
   const listaEleitos = () => chapaEleita
     .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
@@ -469,6 +476,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_loja') {
     children = [
+      ...cabecalhoAta(),
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
@@ -483,6 +491,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_cartorio') {
     children = [
+      ...cabecalhoAta(),
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
@@ -527,6 +536,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     ];
 
     children = [
+      ...cabecalhoAta(),
       // Título via modelo (editável no banco)
       ...tituloModelo(modelo.titulo_doc),
 
