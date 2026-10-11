@@ -332,7 +332,14 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_titulo:    form.alinhamento_titulo,
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
-          ...(form.modulo === 'balaustres' ? { mostrar_logo: !!form.mostrar_logo, grau: form.grau || null } : {}),
+          ...(form.modulo === 'balaustres' ? {
+            mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
+            mostrar_logo_lista: !!form.mostrar_logo_lista,
+            margem_sup: form.margem_sup === '' || form.margem_sup == null ? null : Number(form.margem_sup),
+            margem_inf: form.margem_inf === '' || form.margem_inf == null ? null : Number(form.margem_inf),
+            margem_esq: form.margem_esq === '' || form.margem_esq == null ? null : Number(form.margem_esq),
+            margem_dir: form.margem_dir === '' || form.margem_dir == null ? null : Number(form.margem_dir),
+          } : {}),
         })
         .eq('id', form.id);
 
@@ -598,6 +605,29 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                         onChange={e => handleChange('mostrar_logo', e.target.checked)} />
                       Exibir o logo da Loja no topo do documento
                     </label>
+                  )}
+                  {form.modulo === 'balaustres' && form.tipo === 'ata_eleicao_glemt' && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                      <input type="checkbox" checked={!!form.mostrar_logo_lista} disabled={!podeEditar}
+                        onChange={e => handleChange('mostrar_logo_lista', e.target.checked)} />
+                      Exibir o logo da Loja na lista de presença da eleição
+                    </label>
+                  )}
+                  {form.modulo === 'balaustres' && (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <label style={S.label}>Margens da página (cm){form.tipo === 'ata_eleicao_glemt' ? ' — também usadas na lista de presença' : ''}</label>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
+                        {[['margem_sup', 'Superior', 5], ['margem_inf', 'Inferior', 2.8], ['margem_esq', 'Esquerda', 3.5], ['margem_dir', 'Direita', 2]].map(([k, l, pad]) => (
+                          <div key={k}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{l}</span>
+                            <input type="number" step="0.1" min="0" style={S.input} disabled={!podeEditar}
+                              value={form[k] ?? ''} placeholder={String(pad).replace('.', ',')}
+                              onChange={e => handleChange(k, e.target.value)} />
+                          </div>
+                        ))}
+                      </div>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.3rem 0 0' }}>Vazio = padrão (5 / 2,8 / 3,5 / 2 cm).</p>
+                    </div>
                   )}
                 </div>
                 <div>
