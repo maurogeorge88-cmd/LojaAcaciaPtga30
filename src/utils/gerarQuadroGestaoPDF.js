@@ -66,9 +66,9 @@ export const gerarQuadroGestaoPDF = ({ eleicao, chapaEleita, irmaos, dadosLoja, 
   // ── Cabeçalho ──
   let y = 10;
   if (logoB64) {
-    try { doc.addImage(`data:image/jpeg;base64,${logoB64}`, 'JPEG', (W - 26) / 2, y, 26, 26); } catch (e) { /* sem logo */ }
+    try { doc.addImage(`data:image/jpeg;base64,${logoB64}`, 'JPEG', (W - 35) / 2, y, 35, 35); } catch (e) { /* sem logo (3,5 cm) */ }
   }
-  y += 32;
+  y += 41;
   linhaLoja(doc, nomeLoja, y, W);
   y += 5.5;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
