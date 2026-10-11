@@ -11,7 +11,7 @@ import { supabase } from '../../supabaseClient';
 import {
   Document, Packer, Paragraph, TextRun, ImageRun,
   AlignmentType, UnderlineType, BorderStyle, WidthType,
-  Table, TableRow, TableCell, ShadingType, VerticalAlign, Tab, TabStopType,
+  Table, TableRow, TableCell, ShadingType, VerticalAlign, Tab, TabStopType, Footer, PageNumber,
 } from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
@@ -708,7 +708,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     // ─── Montar documento ─────────────────────────────────────
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
-    sections: [{ properties: { page: pageCfg }, children: children.flat(3) }],
+    // Rodapé: numeração "1 de 3" à direita
+    sections: [{ properties: { page: pageCfg }, footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
+      new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
+    ] })] }) }, children: children.flat(3) }],
   });
 
   return Packer.toBlob(doc);
