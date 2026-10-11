@@ -996,8 +996,12 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const salvarChapas = async () => {
     setLoadingAcao(true);
     try {
-      // Remove chapas antigas
-      await supabase.from('eleicao_chapas').delete().eq('eleicao_id', eleicaoSelecionada.id);
+      // Remove chapas antigas — e confere: se o banco não apagar, não insere de novo (evita cargos duplicados)
+      const { error: errDel } = await supabase.from('eleicao_chapas').delete().eq('eleicao_id', eleicaoSelecionada.id);
+      if (errDel) throw errDel;
+      const { count: restantes } = await supabase.from('eleicao_chapas')
+        .select('id', { count: 'exact', head: true }).eq('eleicao_id', eleicaoSelecionada.id);
+      if (restantes > 0) throw new Error('o banco não permitiu substituir a chapa (sem permissão para excluir). Nada foi alterado.');
 
       const novas = ORDEM_CARGOS
         .filter(cargo => chapaForm[cargo])
@@ -1071,8 +1075,14 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         cargo: c.cargo,
         ano_exercicio: String(ano),
       }));
-      if (inserir.length) {
-        await supabase.from('corpo_administrativo').insert(inserir);
+      // Só insere o que ainda não existe (confirmar a posse mais de uma vez não duplica)
+      const { data: existentes } = await supabase.from('corpo_administrativo')
+        .select('irmao_id, cargo, ano_exercicio').eq('ano_exercicio', String(ano));
+      const chave = (r) => `${r.irmao_id}|${r.cargo}|${r.ano_exercicio}`;
+      const jaTem = new Set((existentes || []).map(chave));
+      const novos = inserir.filter(r => !jaTem.has(chave(r)));
+      if (novos.length) {
+        await supabase.from('corpo_administrativo').insert(novos);
       }
       showSuccess('Posse confirmada e corpo administrativo atualizado!');
     } catch (e) {
