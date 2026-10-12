@@ -5,8 +5,21 @@ import { supabase } from '../../supabaseClient';
 const MODELOS_PADRAO = [
   {
     modulo: 'balaustres',
+    mostrar_logo: true,
+    tipo: 'edital_eleicao_glemt',
+    grau: 'Mestre',
+    nome: 'Edital Eleição GLEMT',
+    titulo_doc: "EDITAL DE CONVOCAÇÃO\nELEIÇÃO DA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – PERÍODO {periodo_glemt_barra}",
+    corpo: "O Venerável Mestre da Augusta e Respeitável Loja Simbólica {nome_loja}, no uso de suas atribuições e em cumprimento ao que determinam a Constituição, o Regulamento Geral da Ordem e o Código Eleitoral Maçônico da GLEMT, *CONVOCA* os Irmãos *Mestres Maçons* do quadro desta Oficina, regulares e quites com suas obrigações, para a Sessão Ordinária de Eleição do Sereníssimo Grão-Mestre e do Eminente Grão-Mestre Adjunto da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para o período maçônico de {periodo_glemt}, a realizar-se no dia {data_sessao}, às {hora_abertura} horas, no Templo da Loja, situado na {endereco_loja}, cidade de {cidade}/{estado}.\n\nConcorrem ao pleito as seguintes chapas:\n{chapas_edital}\n\nPara conhecimento de todos, expede-se o presente Edital.",
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'justify', alinhamento_assinatura: 'center',
+  },
+  {
+    modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_eleicao_glemt',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     grau: 'Mestre',
     nome: 'Ata Eleição GLEMT',
     titulo_doc: "ATA DA ASSEMBLEIA GERAL ORDINÁRIA PARA ELEIÇÃO DA GRANDE LOJA DO ESTADO DE MATO GROSSO PARA O PERÍODO {periodo_glemt_barra}",
@@ -19,9 +32,10 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_aprendiz',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     grau: 'Aprendiz',
     nome: 'Ata Aprendiz',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
+    titulo_doc: "ATA DE REUNIÃO\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -31,9 +45,10 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_companheiro',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     grau: 'Companheiro',
     nome: 'Ata Companheiro',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
+    titulo_doc: "ATA DE REUNIÃO\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -43,9 +58,10 @@ const MODELOS_PADRAO = [
     modulo: 'balaustres',
     mostrar_logo: false,
     tipo: 'ata_sessao_mestre',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     grau: 'Mestre',
     nome: 'Ata Mestre',
-    titulo_doc: "ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}\nSessão de {grau_extenso}",
+    titulo_doc: "ATA DE REUNIÃO\nSessão de {grau_extenso}",
     corpo: "Aos {data_sessao_extenso} da E∴ V∴, no Templo Maçônico, sito à {endereco_loja}, no Oriente de {cidade}-{estado}, reuniram-se no grau de {grau_reuniao} os obreiros do quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, em nome e sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT. Os trabalhos foram abertos ritualisticamente às {hora_abertura} horas. A Loja estava assim constituída: V∴ M∴ {vm_nome}, 1º Vig∴ {primeiro_vigilante_nome}, 2º Vig∴ {segundo_vigilante_nome}, Orad∴ {orador_nome}, Secr∴ {secretario_nome}. O V∴ M∴ iniciou os trabalhos determinando que o Ir∴ Secr∴ procedesse à leitura do Balaústre da sessão anterior.\n*EXPEDIENTE:* \n*BOLSA DE PROPOSTA E INFORMAÇÕES:* \n*ORDEM DO DIA:* {ordem_dia}\n*TRONCO DE SOLIDARIEDADE:* Em seu giro recolheu a importância de R$ ______, moedas cunhadas e gravadas, a serem creditadas à Hospitalaria e debitadas à Tesouraria.\n*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* \n*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.",
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
@@ -85,6 +101,7 @@ const MODELOS_PADRAO = [
   {
     modulo: 'eleicao_posse',
     tipo: 'ata_eleicao_loja',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     nome: 'Ata de Eleição (Loja)',
     titulo_doc: 'ATA DA SESSÃO ORDINÁRIA DE ELEIÇÃO DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
     corpo: 'Aos {data_eleicao} (E∴ V∴), às {hora_eleicao} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de {cidade}, Estado de {estado}, na {endereco_loja}, cidade de {cidade}/{estado}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica {nome_loja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em SESSÃO ORDINÁRIA, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº {num_loja}. Presentes os irmãos que preencheram os cargos, estando todos revestidos de suas insígnias, sob a presidência do Venerável Mestre (Presidente) {vm_nome}, e pelos membros, {orador_nome} e {secretario_nome}, Orador e Secretário, respectivamente, estando os demais cargos regularmente constituídos. Os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão {num_votantes} membros votantes, conforme a lista de presença, e que foram declarados pelos Irmãos Chanceler e Tesoureiro como aptos ao exercício do voto. Então, por ordem do Venerável Mestre (Presidente) e {trecho_votacao} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa única para a gestão de {ano_exercicio}, com início em {data_inicio_gestao} até {data_fim_gestao}, que ficou composta dos seguintes cargos e seus membros e comissões:',
@@ -97,6 +114,7 @@ const MODELOS_PADRAO = [
   {
     modulo: 'eleicao_posse',
     tipo: 'ata_eleicao_cartorio',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     nome: 'Ata de Eleição (Cartório)',
     titulo_doc: 'ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
     corpo: 'Aos {data_eleicao} da era vulgar, às {hora_eleicao} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3°, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº {num_loja}, na sua sede, localizada na {endereco_loja}, cidade de {cidade}/{estado}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) {vm_nome}, e pelos membros, {orador_nome} e {secretario_nome}, Orador e Secretário, respectivamente, {trecho_votacao} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa para a gestão de {ano_exercicio}, com início em {data_inicio_gestao} até {data_fim_gestao}, que ficou composta dos seguintes cargos e seus membros e comissões:',
@@ -109,6 +127,7 @@ const MODELOS_PADRAO = [
   {
     modulo: 'eleicao_posse',
     tipo: 'ata_posse',
+    subtitulo: 'Balaústre nº {numero_balaustre}/{ano_balaustre}',
     nome: 'Ata de Posse',
     titulo_doc: 'ATA DA SESSÃO ORDINÁRIA DE POSSE DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA {nome_loja}, PARA O PERÍODO {gestao}',
     corpo: 'Aos {data_posse}, às {hora_posse}, na Augusta e Respeitável Loja Simbólica {nome_loja}, sob a presidência do Venerável Mestre (Presidente) {vm_instalador_nome}, 1º Vigilante (1º Vice-Presidente) {primeiro_vigilante_instalador_nome}, 2º Vigilante (2º Vice-Presidente) {segundo_vigilante_instalador_nome}. O assunto foi a posse em seus respectivos cargos dos membros, eleitos para o cargo de Venerável Mestre, membros da Diretoria e Comissões da Augusta e Respeitável Loja Simbólica {nome_loja}, com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}. Foram empossados os Irmãos:',
@@ -192,6 +211,10 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{balaustre_anterior}',       desc: 'Atas de sessão: balaustre anterior do mesmo grau (ex: 11/2026)' },
   { var: '{periodo_glemt}',            desc: 'Eleição GLEMT: período (ex: 2027 a 2030)' },
   { var: '{periodo_glemt_barra}',      desc: 'Eleição GLEMT: período (ex: 2027/2030)' },
+  { var: '{data_sessao}',              desc: 'Data da sessão do balaustre (dd/mm/aaaa)' },
+  { var: '{data_edital}',              desc: 'Edital GLEMT: data do edital (dd/mm/aaaa)' },
+  { var: '{data_edital_extenso}',      desc: 'Edital GLEMT: data do edital por extenso' },
+  { var: '{chapas_edital}',            desc: 'Edital GLEMT: uma linha por chapa com Grão-Mestre e Adjunto' },
   { var: '{chapas_apresentadas}',      desc: 'Eleição GLEMT: "a Chapa X, para a qual o Ir∴ ... é candidato..."' },
   { var: '{chanceler_nome}',           desc: 'Atas de sessão: Chanceler (Corpo Adm. do ano)' },
   { var: '{chapas_lista}',             desc: 'Eleição GLEMT: todas as chapas com Grão-Mestre e Adjunto' },
@@ -333,6 +356,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
           ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
+          ...(String(form.tipo || '').startsWith('ata_') ? { subtitulo: form.subtitulo ?? '' } : {}),
           ...(form.modulo === 'balaustres' ? {
             mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
             mostrar_logo_lista: !!form.mostrar_logo_lista,
@@ -356,7 +380,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
   };
 
   // ── Atas de sessão: criar / excluir modelos extras ─────────
-  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre', 'ata_eleicao_glemt'];
+  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre', 'ata_eleicao_glemt', 'edital_eleicao_glemt'];
   const novoModeloAta = async () => {
     const nome = window.prompt('Nome do novo modelo de ata (ex.: Ata Iniciação Aprendiz):');
     if (!nome || !nome.trim()) return;
@@ -574,13 +598,14 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                 </div>
                 <div>
                   <label style={S.label}>Título no documento</label>
-                  {form.modulo === 'balaustres' ? (
-                    <textarea name="titulo_doc" rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.titulo_doc || ''} disabled={!podeEditar}
-                      onChange={e => handleChange('titulo_doc', e.target.value)} placeholder="Cada linha = uma linha do título" />
-                  ) : (
-                  <input name="titulo_doc" style={S.input} value={form.titulo_doc || ''} disabled={!podeEditar}
-                    onChange={e => handleChange('titulo_doc', e.target.value)}
-                    placeholder="Deixe vazio se não tiver título" />
+                  <textarea name="titulo_doc" rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.titulo_doc || ''} disabled={!podeEditar}
+                    onChange={e => handleChange('titulo_doc', e.target.value)} placeholder="Cada linha = uma linha do título (vazio = sem título)" />
+                  {String(form.tipo || '').startsWith('ata_') && (
+                    <div style={{ marginTop: '0.6rem' }}>
+                      <label style={S.label}>Subtítulo (abaixo do título, antes do texto)</label>
+                      <textarea rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.subtitulo ?? ''} disabled={!podeEditar}
+                        onChange={e => handleChange('subtitulo', e.target.value)} placeholder="Ex.: Balaústre nº {numero_balaustre}/{ano_balaustre}" />
+                    </div>
                   )}
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                     Suporta variáveis como {'{nome_loja}'}, {'{gestao}'}
