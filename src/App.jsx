@@ -1948,6 +1948,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <ModelosDocumentos
             onVoltar={retornoModelos ? () => { const p = retornoModelos; setRetornoModelos(null); setCurrentPage(p); } : null}
             rotuloVoltar={retornoModelos === 'balaustres' ? 'Balaustres' : 'Eleição e Posse'}
+            modulo={retornoModelos === 'balaustres' ? 'balaustres' : retornoModelos === 'eleicao-posse' ? 'eleicao_posse' : null}
             permissoes={{ ...permissoes, pode_editar_corpo_admin: pode(mapaPermissoes, 'modelos', 'editar') }}
             showSuccess={showSuccess}
             showError={showError}
