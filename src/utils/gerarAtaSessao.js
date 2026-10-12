@@ -36,7 +36,21 @@ export const CORPO_ATA_PADRAO = [
   '*PALAVRA A BEM DA ORDEM E DO QUADRO EM PARTICULAR:* ',
   '*ENCERRAMENTO:* O V∴ M∴ encerrou a presente sessão ritualisticamente às {hora_encerramento} horas, tendo eu, {secretario_nome}, que a tudo assisti, elaborei e redigi o presente Balaústre, tomando o cuidado de fazê-lo em local ermo e longe das vistas profanas, o qual lido e, se aprovado, será assinado por quem de direito.',
 ].join('\n');
-export const TITULO_ATA_PADRAO = 'ATA DE REUNIÃO Nº {numero_balaustre}/{ano_balaustre}';
+export const TITULO_ATA_PADRAO = 'ATA DE REUNIÃO';
+// Subtítulo padrão (abaixo do título, antes do texto): número do balaustre
+export const SUBTITULO_ATA_PADRAO = 'Balaústre nº {numero_balaustre}/{ano_balaustre}';
+
+// Edital de convocação — eleição da GLEMT (dirigido aos Mestres)
+export const TIPO_EDITAL_GLEMT = 'edital_eleicao_glemt';
+export const TITULO_EDITAL_GLEMT_PADRAO = 'EDITAL DE CONVOCAÇÃO\nELEIÇÃO DA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – PERÍODO {periodo_glemt_barra}';
+export const CORPO_EDITAL_GLEMT_PADRAO = [
+  'O Venerável Mestre da Augusta e Respeitável Loja Simbólica {nome_loja}, no uso de suas atribuições e em cumprimento ao que determinam a Constituição, o Regulamento Geral da Ordem e o Código Eleitoral Maçônico da GLEMT, *CONVOCA* os Irmãos *Mestres Maçons* do quadro desta Oficina, regulares e quites com suas obrigações, para a Sessão Ordinária de Eleição do Sereníssimo Grão-Mestre e do Eminente Grão-Mestre Adjunto da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para o período maçônico de {periodo_glemt}, a realizar-se no dia {data_sessao}, às {hora_abertura} horas, no Templo da Loja, situado na {endereco_loja}, cidade de {cidade}/{estado}.',
+  '',
+  'Concorrem ao pleito as seguintes chapas:',
+  '{chapas_edital}',
+  '',
+  'Para conhecimento de todos, expede-se o presente Edital.',
+].join('\n');
 
 // Ata da Sessão Eleitoral — eleição de Grão-Mestre e Adjunto da GLEMT
 export const TITULO_ELEICAO_GLEMT_PADRAO = "ATA DA ASSEMBLEIA GERAL ORDINÁRIA PARA ELEIÇÃO DA GRANDE LOJA DO ESTADO DE MATO GROSSO PARA O PERÍODO {periodo_glemt_barra}";
@@ -80,10 +94,12 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
     .filter(m => String(m.grau || m.tipo.replace('ata_sessao_', '')).toLowerCase() === g)
     // Sessão de eleição da GLEMT usa só o modelo de eleição; sessões normais não o mostram
     .filter(m => (eleicao ? m.tipo === TIPO_ATA_ELEICAO_GLEMT : m.tipo !== TIPO_ATA_ELEICAO_GLEMT))
+    .filter(m => m.tipo !== 'edital_eleicao_glemt') // edital não é ata
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
-export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
+export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata' }) => {
+  const ehEdital = documento === 'edital';
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
@@ -98,8 +114,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const ehEleicao = !!(balaustre.eleicao_glemt && balaustre.eleicao_glemt.ativo);
   const { data: mod } = modeloId
     ? await supabase.from('modelos_documentos').select('*').eq('id', modeloId).maybeSingle()
-    : await supabase.from('modelos_documentos').select('*').eq('tipo', ehEleicao ? TIPO_ATA_ELEICAO_GLEMT : TIPO_MODELO_ATA[grau]).maybeSingle();
-  const modelo = mod || (ehEleicao ? { titulo_doc: TITULO_ELEICAO_GLEMT_PADRAO, corpo: CORPO_ELEICAO_GLEMT_PADRAO } : {});
+    : await supabase.from('modelos_documentos').select('*')
+      .eq('tipo', ehEdital ? TIPO_EDITAL_GLEMT : ehEleicao ? TIPO_ATA_ELEICAO_GLEMT : TIPO_MODELO_ATA[grau]).maybeSingle();
+  const modelo = mod || (ehEdital ? { titulo_doc: TITULO_EDITAL_GLEMT_PADRAO, corpo: CORPO_EDITAL_GLEMT_PADRAO, mostrar_logo: true }
+    : ehEleicao ? { titulo_doc: TITULO_ELEICAO_GLEMT_PADRAO, corpo: CORPO_ELEICAO_GLEMT_PADRAO } : {});
 
   // Balaustre anterior do mesmo grau (sessão imediatamente antes desta)
   const { data: anteriores } = await supabase.from('balaustres')
@@ -167,6 +185,21 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     Object.assign(VARS, {
       periodo_glemt: el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '[período]',
       periodo_glemt_barra: el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '[período]',
+      chapas_edital: chapas.length
+        ? chapas.map((c, i) => `*Chapa ${i + 1} – ${c.nome || '[nome]'}:* Grão-Mestre: Ir∴ ${c.gm || '[nome]'}; Grão-Mestre Adjunto: Ir∴ ${c.gm_adjunto || '[nome]'}.`).join('\n')
+        : '[chapas]',
+      data_edital: (() => {
+        let d = el.data_edital;
+        if (!d && balaustre.data_sessao) { const x = new Date(balaustre.data_sessao + 'T00:00:00'); x.setDate(x.getDate() - 15); d = x.toISOString().substring(0, 10); }
+        return d ? d.split('-').reverse().join('/') : '[data do edital]';
+      })(),
+      data_edital_extenso: (() => {
+        let d = el.data_edital;
+        if (!d && balaustre.data_sessao) { const x = new Date(balaustre.data_sessao + 'T00:00:00'); x.setDate(x.getDate() - 15); d = x.toISOString().substring(0, 10); }
+        if (!d) return '[data do edital]';
+        const [a, m, di] = d.split('-').map(Number);
+        return `${String(di).padStart(2, '0')} de ${MESES[m - 1]} de ${a}`;
+      })(),
       chapas_apresentadas: chapas.length
         ? chapas.map(c => `a Chapa ${c.nome || '[nome]'}, para a qual o Ir∴ ${c.gm || '[nome]'} é candidato para o cargo de Grão-Mestre e o Ir∴ ${c.gm_adjunto || '[nome]'}, para o cargo de Grão-Mestre Adjunto`).join('; e, ') + '.'
         : '[chapas].',
@@ -208,19 +241,25 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
   const children = [
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
     // atas de sessão simples mantêm o logo opcional centralizado
-    ...(ehEleicao
+    ...((ehEleicao || ehEdital)
       ? cabecalhoLojaDocx({ dadosLoja, comLogo: !!modelo.mostrar_logo, larguraUtil: 11906 - margensDoModelo(modelo).left - margensDoModelo(modelo).right, after: 240 })
       : (modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
         children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : [])),
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
-      const linhasTit = interp(modelo.titulo_doc || (ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO)).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
-      if (linhasTit.length === 1 && !ehEleicao) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
-      return linhasTit.map((l, i) => par([ar(l, { bold: true })], { align: AlignmentType.CENTER, after: i === linhasTit.length - 1 ? 280 : 0 }));
+      const linhasTit = interp(modelo.titulo_doc || (ehEdital ? TITULO_EDITAL_GLEMT_PADRAO : ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO)).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+      if (linhasTit.length === 1 && !ehEleicao && !ehEdital) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
+      // Subtítulo (ex.: "Balaústre nº 12/2026") logo abaixo do título, antes do texto — não se aplica ao edital
+      const sub = ehEdital ? '' : (modelo.subtitulo ?? SUBTITULO_ATA_PADRAO);
+      const linhasSub = interp(sub).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+      const todas = [...linhasTit.map(l => ({ l, bold: true })), ...linhasSub.map(l => ({ l, bold: false }))];
+      return todas.map((x, i) => par([ar(x.l, { bold: x.bold })], { align: AlignmentType.CENTER, after: i === todas.length - 1 ? 280 : 0 }));
     })(),
     ...paragrafos,
-    // Assinaturas (centralizadas): Venerável Mestre, Orador e Secretário
-    ...[[VARS.vm_nome, 'Venerável Mestre'], [VARS.orador_nome, 'Orador'], [VARS.secretario_nome, 'Secretário']].flatMap(([n, c], i) => [
+    // Edital: cidade e data do edital
+    ...(ehEdital ? [par([ar(`${VARS.cidade}-${VARS.estado}, ${VARS.data_edital_extenso || ''}.`)], { align: AlignmentType.CENTER, before: 360, after: 0 })] : []),
+    // Assinaturas (centralizadas): ata = VM, Orador e Secretário; edital = só o VM
+    ...(ehEdital ? [[VARS.vm_nome, 'Venerável Mestre']] : [[VARS.vm_nome, 'Venerável Mestre'], [VARS.orador_nome, 'Orador'], [VARS.secretario_nome, 'Secretário']]).flatMap(([n, c], i) => [
       linhaSimples(LINHA, false, i === 0 ? 700 : 600),
       linhaSimples(`Ir∴ ${String(n).toUpperCase()}`, true),
       linhaSimples(c),
@@ -239,13 +278,18 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null }) => {
     }],
   });
   const blob = await Packer.toBlob(doc);
-  const nome = `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}.docx`;
+  const nome = ehEdital
+    ? `Edital_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}.docx`
+    : `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}.docx`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = nome; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
-  return { faltando: [!vm && 'Venerável Mestre', !orador && 'Orador', !secretario && 'Secretário'].filter(Boolean) };
+  return { faltando: (ehEdital ? [!vm && 'Venerável Mestre'] : [!vm && 'Venerável Mestre', !orador && 'Orador', !secretario && 'Secretário']).filter(Boolean) };
 };
+
+// Edital de convocação da eleição GLEMT (assinado só pelo VM)
+export const gerarEditalEleicaoGLEMT = async ({ balaustre }) => gerarAtaSessao({ balaustre, documento: 'edital' });
 
 // ════════════════════════════════════════════════════════════════════════
 // Lista de presença — Sessão Eleitoral da GLEMT (Mestres regulares na data)
