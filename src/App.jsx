@@ -2073,6 +2073,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             permissoes={permissoes}
             podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
             onAbrirModelos={() => { setRetornoModelos('eleicao-posse'); setCurrentPage('modelos-documentos'); }}
+            onAbrirBalaustres={() => setCurrentPage('balaustres')}
             showSuccess={showSuccess}
             showError={showError}
           />
