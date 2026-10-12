@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
-import { gerarAtaSessao, listarModelosAta, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
+import { gerarAtaSessao, listarModelosAta, gerarListaPresencaEleicaoGLEMT, gerarEditalEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { supabase as supabaseEleicao } from '../../supabaseClient';
 
 const Balaustres = ({ 
@@ -40,6 +40,54 @@ const Balaustres = ({
       brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '', presentes: [] };
   };
   const [gerandoLista, setGerandoLista] = useState(null);
+
+  // ── Pendente (eleição GLEMT agendada, sem número) ──
+  const ehPendente = (b) => !!(b?.eleicao_glemt?.ativo && b.eleicao_glemt.status === 'pendente');
+  const menos15 = (iso) => { if (!iso) return ''; const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() - 15); return d.toISOString().substring(0, 10); };
+  const agendarEleicaoGLEMT = () => {
+    limparFormulario();
+    setGrauSelecionado('Mestre');
+    setBalaustreForm(f => ({ ...f, grau_sessao: 'Mestre', numero_balaustre: '',
+      eleicao_glemt: { ...ELEICAO_VAZIA(), status: 'pendente', data_edital: '' } }));
+    setModalAberto(true);
+  };
+  const [gerandoEdital, setGerandoEdital] = useState(null);
+  const gerarEdital = async (balaustre) => {
+    setGerandoEdital(balaustre.id);
+    try {
+      const r = await gerarEditalEleicaoGLEMT({ balaustre });
+      if (r?.faltando?.length) showError(`Edital gerado, mas falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
+      else showSuccess('📢 Edital gerado!');
+    } catch (e) { showError('Erro ao gerar o edital: ' + e.message); }
+    finally { setGerandoEdital(null); }
+  };
+  const marcarRealizada = async (balaustre) => {
+    const ano = parseInt(String(balaustre.data_sessao || '').substring(0, 4)) || new Date().getFullYear();
+    if (!window.confirm(`Marcar a eleição GLEMT de ${formatarData(balaustre.data_sessao)} como REALIZADA?\nO balaustre receberá o próximo número de Mestre de ${ano}.`)) return;
+    try {
+      const { data: ult } = await supabase.from('balaustres').select('numero_balaustre')
+        .eq('grau_sessao', balaustre.grau_sessao || 'Mestre').eq('ano_balaustre', ano)
+        .not('numero_balaustre', 'is', null).order('numero_balaustre', { ascending: false }).limit(1);
+      const numero = (ult && ult[0] ? parseInt(ult[0].numero_balaustre) || 0 : 0) + 1;
+      const { data, error } = await supabase.from('balaustres')
+        .update({ numero_balaustre: numero, ano_balaustre: ano, eleicao_glemt: { ...balaustre.eleicao_glemt, status: 'realizada' } })
+        .eq('id', balaustre.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      showSuccess(`✅ Sessão realizada — Balaustre nº ${numero}/${ano}.`);
+      onUpdate();
+    } catch (e) { showError('Erro: ' + e.message); }
+  };
+
+  // ── Eleições da Loja (para vincular sessões de Eleição/Posse) ──
+  const [eleicoesLoja, setEleicoesLoja] = useState([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseEleicao.from('eleicoes').select('id, gestao, data_eleicao, data_posse').order('data_eleicao', { ascending: false });
+      setEleicoesLoja(data || []);
+    })();
+  }, []);
+  const gestaoDe = (id) => eleicoesLoja.find(e => String(e.id) === String(id))?.gestao || '';
   const gerarListaPresenca = async (balaustre) => {
     setGerandoLista(balaustre.id);
     try { await gerarListaPresencaEleicaoGLEMT({ balaustre }); showSuccess('📋 Lista de presença gerada!'); }
@@ -51,6 +99,10 @@ const Balaustres = ({
   const [escolhaModelo, setEscolhaModelo] = useState(null); // { balaustre, modelos }
 
   const gerarAta = async (balaustre) => {
+    if (ehPendente(balaustre)) {
+      showError('Sessão pendente: marque como realizada (✅) para numerar o balaustre e gerar a ata.');
+      return;
+    }
     try {
       const modelos = await listarModelosAta(balaustre.grau_sessao, { eleicao: !!balaustre.eleicao_glemt?.ativo });
       if (modelos.length > 1) { setEscolhaModelo({ balaustre, modelos }); return; }
@@ -94,7 +146,9 @@ const Balaustres = ({
     observacoes: '',
     hora_abertura: '20:00',
     hora_encerramento: '22:00',
-    eleicao_glemt: null
+    eleicao_glemt: null,
+    sessao_especial: '',
+    eleicao_id: ''
   });
 
   // Estados de controle
@@ -176,7 +230,9 @@ const Balaustres = ({
       observacoes: '',
       hora_abertura: '20:00',
       hora_encerramento: '22:00',
-      eleicao_glemt: null
+      eleicao_glemt: null,
+      sessao_especial: '',
+      eleicao_id: ''
     });
     setModoEdicao(false);
     setBalaustreEditando(null);
@@ -185,15 +241,24 @@ const Balaustres = ({
   };
 
   // Cadastrar balaustre
+  // Campos vazios → null; pendente da eleição GLEMT fica sem número
+  const payloadBalaustre = () => ({
+    ...balaustreForm,
+    numero_balaustre: ehPendente(balaustreForm) ? null : (balaustreForm.numero_balaustre || null),
+    sessao_especial: balaustreForm.sessao_especial || null,
+    eleicao_id: balaustreForm.sessao_especial ? (balaustreForm.eleicao_id || null) : null,
+  });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (balaustreForm.sessao_especial && !balaustreForm.eleicao_id) { showError('Escolha a eleição da Loja vinculada a esta sessão.'); return; }
     setLoading(true);
 
     try {
       const { data, error } = await supabase
         .from('balaustres')
         .insert([{
-          ...balaustreForm,
+          ...payloadBalaustre(),
           created_by: session.user.id
         }])
         .select()
@@ -221,7 +286,7 @@ const Balaustres = ({
     try {
       const { data: alterados, error } = await supabase
         .from('balaustres')
-        .update(balaustreForm)
+        .update(payloadBalaustre())
         .eq('id', balaustreEditando.id)
         .select();
 
@@ -256,7 +321,9 @@ const Balaustres = ({
       observacoes: balaustre.observacoes || '',
       hora_abertura: (balaustre.hora_abertura || '20:00').substring(0, 5),
       hora_encerramento: (balaustre.hora_encerramento || '22:00').substring(0, 5),
-      eleicao_glemt: balaustre.eleicao_glemt || null
+      eleicao_glemt: balaustre.eleicao_glemt || null,
+      sessao_especial: balaustre.sessao_especial || '',
+      eleicao_id: balaustre.eleicao_id || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -383,9 +450,10 @@ const Balaustres = ({
                 </div>
                 <div>
                   <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Nº *</label>
-                  <input type="number" value={balaustreForm.numero_balaustre} min="1" placeholder="Nº"
+                  <input type="number" value={ehPendente(balaustreForm) ? '' : balaustreForm.numero_balaustre} min="1" placeholder={ehPendente(balaustreForm) ? 'Pendente' : 'Nº'}
+                    disabled={ehPendente(balaustreForm)} required={!ehPendente(balaustreForm)}
                     onChange={e => setBalaustreForm({...balaustreForm, numero_balaustre: parseInt(e.target.value)||''})}
-                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
                 </div>
                 <div>
                   <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Ano *</label>
@@ -419,8 +487,33 @@ const Balaustres = ({
                 </div>
               </div>
 
+              {/* SESSÃO ESPECIAL: Eleição / Posse da Loja (exigida para gerar as atas em Eleição e Posse) */}
+              {!balaustreForm.eleicao_glemt?.ativo && (
+                <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem',border:'1px solid rgba(201,168,76,0.45)',borderRadius:'var(--radius-lg)',padding:'0.75rem',background:'rgba(201,168,76,0.06)'}}>
+                  <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Sessão especial</label>
+                    <select value={balaustreForm.sessao_especial || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
+                      onChange={e => {
+                        const v = e.target.value;
+                        const grau = v === 'eleicao_loja' ? 'Mestre' : v === 'posse_loja' ? 'Aprendiz' : balaustreForm.grau_sessao;
+                        setBalaustreForm(f => ({ ...f, sessao_especial: v, grau_sessao: grau, eleicao_id: v ? f.eleicao_id : '' }));
+                        if (v) setGrauSelecionado(grau);
+                      }}>
+                      <option value="">Nenhuma (sessão normal)</option>
+                      <option value="eleicao_loja">🏛️ Eleição da Loja (grau Mestre)</option>
+                      <option value="posse_loja">🎖️ Posse da Loja (grau Aprendiz)</option>
+                    </select></div>
+                  {balaustreForm.sessao_especial && (
+                    <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Eleição vinculada *</label>
+                      <select value={balaustreForm.eleicao_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setBalaustreForm(f => ({ ...f, eleicao_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {eleicoesLoja.map(el2 => <option key={el2.id} value={el2.id}>Gestão {el2.gestao}</option>)}
+                      </select></div>
+                  )}
+                </div>
+              )}
+
               {/* ELEIÇÃO DA GLEMT (somente sessões de Mestre) */}
-              {(balaustreForm.grau_sessao || '').trim().toLowerCase() === 'mestre' && (
+              {(balaustreForm.grau_sessao || '').trim().toLowerCase() === 'mestre' && !balaustreForm.sessao_especial && (
                 <div style={{border:'1px solid rgba(139,92,246,0.45)',borderRadius:'var(--radius-lg)',padding:'0.85rem',background:'rgba(139,92,246,0.06)'}}>
                   <label style={{display:'flex',alignItems:'center',gap:'0.5rem',fontWeight:700,fontSize:'0.88rem',color:'var(--color-text)',cursor:'pointer'}}>
                     <input type="checkbox" checked={!!el?.ativo}
@@ -429,6 +522,28 @@ const Balaustres = ({
                   </label>
                   {el?.ativo && (
                     <div style={{display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'0.75rem'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem',alignItems:'end'}}>
+                        <label style={{display:'flex',alignItems:'center',gap:'0.45rem',fontSize:'0.82rem',fontWeight:700,color:'var(--color-text)',cursor:'pointer'}}>
+                          <input type="checkbox" checked={el.status === 'pendente'} disabled={modoEdicao && el.status !== 'pendente'}
+                            onChange={e => setEl({ status: e.target.checked ? 'pendente' : 'realizada' })} />
+                          ⏳ Sessão agendada (pendente, sem número)
+                        </label>
+                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Data do edital</label>
+                          <input type="date" value={el.data_edital || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
+                            placeholder={menos15(balaustreForm.data_sessao)} onChange={e => setEl({ data_edital: e.target.value })} />
+                        </div>
+                      </div>
+                      {(() => {
+                        const de = el.data_edital || menos15(balaustreForm.data_sessao);
+                        if (!de || !balaustreForm.data_sessao) return null;
+                        const dias = Math.round((new Date(balaustreForm.data_sessao + 'T00:00:00') - new Date(de + 'T00:00:00')) / 86400000);
+                        return (
+                          <p style={{margin:0,fontSize:'0.75rem',color: dias < 15 ? '#ef4444' : 'var(--color-text-muted)',fontWeight: dias < 15 ? 700 : 400}}>
+                            {el.data_edital ? '' : `Sem data informada: o edital usa ${de.split('-').reverse().join('/')} (15 dias antes). `}
+                            {dias < 15 ? `⚠️ O edital está a ${dias} dia(s) da sessão — o mínimo é 15.` : `Edital ${dias} dias antes da sessão.`}
+                          </p>
+                        );
+                      })()}
                       <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem'}}>
                         <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Período — de</label>
                           <input type="number" value={el.ano_inicio || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
@@ -581,6 +696,12 @@ const Balaustres = ({
             </button>
           )}
           {permissoes?.pode_editar_balaustres && (
+            <button onClick={agendarEleicaoGLEMT}
+              style={{height:'38px',padding:'0 1rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.5)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer'}}>
+              🗳️ Agendar Eleição GLEMT
+            </button>
+          )}
+          {permissoes?.pode_editar_balaustres && (
             <button onClick={() => { limparFormulario(); setModalAberto(true); }}
               style={{height:'38px',padding:'0 1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer'}}>
               ➕ Novo Balaustre
@@ -592,7 +713,7 @@ const Balaustres = ({
       {/* RESUMO DO GRAU SELECIONADO */}
       {(() => {
         const anoAtual = new Date().getFullYear();
-        const doGrau = balaustresFiltradosPorAcesso;
+        const doGrau = balaustresFiltradosPorAcesso.filter(b => !ehPendente(b));
         const doAno = doGrau.filter(b => parseInt(b.ano_balaustre || String(b.data_sessao || '').substring(0, 4)) === anoAtual);
         const ultimo = [...doGrau].sort((x, y) => String(y.data_sessao || '').localeCompare(String(x.data_sessao || '')))[0];
         const proximo = doAno.length ? Math.max(...doAno.map(b => parseInt(b.numero_balaustre) || 0)) + 1 : 1;
@@ -740,32 +861,13 @@ const Balaustres = ({
                         if (anoB !== anoA) return anoB - anoA;
                         return b.numero_balaustre - a.numero_balaustre;
                       });
-                    if (lista.length === 0) return (
-                      <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
-                        Nenhum balaustre cadastrado
-                      </div>
-                    );
-                    // Agrupar por ano
-                    const grupos = lista.reduce((acc, b) => {
-                      const ano = getAnoBal(b);
-                      if (!acc[ano]) acc[ano] = [];
-                      acc[ano].push(b);
-                      return acc;
-                    }, {});
-                    const anosGrupo = Object.keys(grupos).map(Number).sort((a,b) => b-a);
-                    return anosGrupo.map(ano => (
-                      <div key={ano} style={{overflow:'hidden',maxWidth:'100%'}}>
-                        {/* Cabeçalho do ano */}
-                        <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.75rem 0 0.5rem',padding:'0.4rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',borderLeft:'3px solid var(--color-accent)'}}>
-                          <span style={{fontWeight:'700',fontSize:'0.9rem',color:'var(--color-accent)'}}>📅 {ano}</span>
-                          <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{grupos[ano].length} balaustre(s)</span>
-                        </div>
-                        {grupos[ano].map((balaustre, idx) => (
+                    const renderLinha = (balaustre, idx) => (
                         <div key={balaustre.id}
                           className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                           style={{
                             borderLeftColor: corDoGrau(balaustre.grau_sessao),
-                            background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                            background: ehPendente(balaustre) ? 'rgba(245,158,11,0.10)' : (idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'),
+                            outline: ehPendente(balaustre) ? '1px dashed rgba(245,158,11,0.7)' : 'none',
                             width: '100%',
                             boxSizing: 'border-box',
                             overflow: 'hidden',
@@ -774,10 +876,20 @@ const Balaustres = ({
                         >
                           {/* Número/Ano */}
                           <div style={{flexShrink:0,width:'68px',overflow:'hidden'}}>
-                            <p className="font-bold text-sm" style={{color:corDoGrau(balaustre.grau_sessao)}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
+                            <p className="font-bold text-sm" style={{color: ehPendente(balaustre) ? '#d97706' : corDoGrau(balaustre.grau_sessao)}}>{ehPendente(balaustre) ? '⏳ Pend.' : `${balaustre.numero_balaustre}/${balaustre.ano_balaustre || new Date().getFullYear()}`}</p>
                             {balaustre.eleicao_glemt?.ativo && (
                               <span style={{display:'inline-block',marginTop:'0.2rem',fontSize:'0.62rem',fontWeight:800,padding:'0.1rem 0.45rem',borderRadius:'999px',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',whiteSpace:'nowrap'}}>
                                 🗳️ GLEMT {balaustre.eleicao_glemt.ano_inicio}–{balaustre.eleicao_glemt.ano_fim}
+                              </span>
+                            )}
+                            {balaustre.sessao_especial === 'eleicao_loja' && (
+                              <span style={{display:'inline-block',marginTop:'0.2rem',fontSize:'0.62rem',fontWeight:800,padding:'0.1rem 0.45rem',borderRadius:'999px',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.45)',whiteSpace:'nowrap'}}>
+                                🏛️ Eleição {gestaoDe(balaustre.eleicao_id)}
+                              </span>
+                            )}
+                            {balaustre.sessao_especial === 'posse_loja' && (
+                              <span style={{display:'inline-block',marginTop:'0.2rem',fontSize:'0.62rem',fontWeight:800,padding:'0.1rem 0.45rem',borderRadius:'999px',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.45)',whiteSpace:'nowrap'}}>
+                                🎖️ Posse {gestaoDe(balaustre.eleicao_id)}
                               </span>
                             )}
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
@@ -801,13 +913,23 @@ const Balaustres = ({
                           {/* Ações */}
                           <div className="flex gap-1.5" style={{flexShrink:0}}>
                             {balaustre.eleicao_glemt?.ativo && (
+                              <button onClick={() => gerarEdital(balaustre)} disabled={gerandoEdital === balaustre.id}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
+                                title="Edital de convocação (Word)">{gerandoEdital === balaustre.id ? '⏳' : '📢'}</button>
+                            )}
+                            {ehPendente(balaustre) && permissoes?.pode_editar_balaustres && (
+                              <button onClick={() => marcarRealizada(balaustre)}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer',fontWeight:700}}
+                                title="Marcar como realizada (gera o número)">✅</button>
+                            )}
+                            {balaustre.eleicao_glemt?.ativo && (
                               <button onClick={() => gerarListaPresenca(balaustre)} disabled={gerandoLista === balaustre.id}
                                 style={{padding:'0.25rem 0.55rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
                                 title="Lista de presença (Word)">{gerandoLista === balaustre.id ? '⏳' : '📋'}</button>
                             )}
-                            <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id}
-                              style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
-                              title="Gerar ata (Word)">{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
+                            <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id || ehPendente(balaustre)}
+                              style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor: ehPendente(balaustre) ? 'not-allowed' : 'pointer',opacity: ehPendente(balaustre) ? 0.4 : 1}}
+                              title={ehPendente(balaustre) ? 'Pendente: marque como realizada para gerar a ata' : 'Gerar ata (Word)'}>{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
                             <button onClick={() => handleVisualizar(balaustre)}
                               style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
                               title="Visualizar">👁️</button>
@@ -819,9 +941,42 @@ const Balaustres = ({
                             </>)}
                           </div>
                         </div>
-                        ))}
+);
+                    // Pendentes (eleição GLEMT agendada) no topo, fora dos grupos por ano
+                    const pendentes = lista.filter(ehPendente);
+                    const listaNormal = lista.filter(b => !ehPendente(b));
+                    const blocoPendentes = pendentes.length > 0 && (
+                      <div key="pendentes" style={{marginBottom:'0.5rem'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.25rem 0 0.5rem',padding:'0.4rem 0.75rem',borderRadius:'var(--radius-lg)',background:'rgba(245,158,11,0.12)',borderLeft:'3px solid #f59e0b'}}>
+                          <span style={{fontWeight:'700',fontSize:'0.9rem',color:'#d97706'}}>⏳ Sessões pendentes</span>
+                          <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{pendentes.length} agendada(s) — sem número até serem realizadas</span>
+                        </div>
+                        {pendentes.map((b, i) => renderLinha(b, i))}
                       </div>
-                    ));
+                    );
+                    if (lista.length === 0) return (
+                      <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                        Nenhum balaustre cadastrado
+                      </div>
+                    );
+                    // Agrupar por ano
+                    const grupos = listaNormal.reduce((acc, b) => {
+                      const ano = getAnoBal(b);
+                      if (!acc[ano]) acc[ano] = [];
+                      acc[ano].push(b);
+                      return acc;
+                    }, {});
+                    const anosGrupo = Object.keys(grupos).map(Number).sort((a,b) => b-a);
+                    return [blocoPendentes, ...anosGrupo.map(ano => (
+                      <div key={ano} style={{overflow:'hidden',maxWidth:'100%'}}>
+                        {/* Cabeçalho do ano */}
+                        <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.75rem 0 0.5rem',padding:'0.4rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',borderLeft:'3px solid var(--color-accent)'}}>
+                          <span style={{fontWeight:'700',fontSize:'0.9rem',color:'var(--color-accent)'}}>📅 {ano}</span>
+                          <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{grupos[ano].length} balaustre(s)</span>
+                        </div>
+                        {grupos[ano].map((balaustre, idx) => renderLinha(balaustre, idx))}
+                      </div>
+                    ))];
                   })()}
                 </div>
           </div>
