@@ -185,8 +185,13 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     Object.assign(VARS, {
       periodo_glemt: el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '[período]',
       periodo_glemt_barra: el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '[período]',
+      // Uma chapa por bloco (linhas coladas, marcadas com §) e uma linha em branco entre as chapas
       chapas_edital: chapas.length
-        ? chapas.map((c, i) => `*Chapa ${i + 1} – ${c.nome || '[nome]'}:* Grão-Mestre: Ir∴ ${c.gm || '[nome]'}; Grão-Mestre Adjunto: Ir∴ ${c.gm_adjunto || '[nome]'}.`).join('\n')
+        ? chapas.map((c, i) => [
+            `§*Chapa ${i + 1} – ${c.nome || '[nome]'}*`,
+            `§Grão-Mestre: Ir∴ ${c.gm || '[nome]'};`,
+            `§Grão-Mestre Adjunto: Ir∴ ${c.gm_adjunto || '[nome]'}.`,
+          ].join('\n')).join('\n\n')
         : '[chapas]',
       data_edital: (() => {
         let d = el.data_edital;
@@ -236,7 +241,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   const corpoTexto = interp(modelo.corpo || (ehEleicao ? CORPO_ELEICAO_GLEMT_PADRAO : CORPO_ATA_PADRAO));
   const paragrafos = corpoTexto.split('\n').map(l => (l.trim() === ''
     ? par([ar('')], { after: 0 })
-    : par(runs(l), { align: modelo.alinhamento_corpo === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED })));
+    : l.startsWith('§')
+      // linhas de um mesmo bloco (ex.: chapa do edital): sem espaço entre elas
+      ? par(runs(l.slice(1)), { align: AlignmentType.LEFT, after: 0 })
+      : par(runs(l), { align: modelo.alinhamento_corpo === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED })));
 
   const children = [
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
