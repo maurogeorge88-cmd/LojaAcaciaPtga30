@@ -143,7 +143,7 @@ const calcularQuorum = (irmaos, eleicao, presencas, historico = []) => {
   return { totalCalculado, totalMestres, quorumMinimo, presentes, atingido: presentes >= quorumMinimo };
 };
 
-const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = []) => {
+const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = []) => {
 
   const modelos      = await buscarModelos();
   const modelo       = modelos[tipo] || {};
@@ -278,6 +278,16 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     data_fim_gestao:          eleicao.data_fim_gestao ? formatarData(eleicao.data_fim_gestao) : '[fim da gestão]',
     ano_exercicio:            eleicao.ano_exercicio || gestao,
     nome_chapa:               eleicao.nome_chapa || '[nome da chapa]',
+    // Balaustre da sessão (Eleição da Loja → atas de eleição; Posse da Loja → ata de posse)
+    ...(() => {
+      const esp = tipo === 'ata_posse' ? 'posse_loja' : 'eleicao_loja';
+      const b = (balaustresEl || []).find(x => x.sessao_especial === esp);
+      return {
+        numero_balaustre: b?.numero_balaustre ? String(b.numero_balaustre) : '[nº]',
+        ano_balaustre:    b ? String(b.ano_balaustre || String(b.data_sessao || '').substring(0, 4)) : '[ano]',
+        data_sessao:      b?.data_sessao ? String(b.data_sessao).split('-').reverse().join('/') : '[data]',
+      };
+    })(),
     data_atual:               (() => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; })(),
     nome_loja:                nomeLoja,
     num_loja:                 dadosLoja.numero_loja || '30',
@@ -355,10 +365,17 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   const alignFromStr = (s) => s === 'center' ? AlignmentType.CENTER : s === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
 
-  const tituloModelo = (texto) => {
+  // Título: cada linha do campo = uma linha do título
+  const tituloModelo = (texto, afterUltima = 240) => {
     if (!texto) return [];
-    const t = interpolarModelo(texto, VARS);
-    return [pr([ar(t.replace(/\*/g, ''), { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: 240 })];
+    const linhas = interpolarModelo(texto, VARS).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+    return linhas.map((l, i) => pr([ar(l, { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: i === linhas.length - 1 ? afterUltima : 0 }));
+  };
+  // Subtítulo (atas): logo abaixo do título, antes do texto — padrão: número do balaustre
+  const subtituloModelo = () => {
+    const sub = modelo.subtitulo ?? 'Balaústre nº {numero_balaustre}/{ano_balaustre}';
+    const linhas = interpolarModelo(sub, VARS).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+    return linhas.map((l, i) => prC([ar(l)], { before: 0, after: i === linhas.length - 1 ? 240 : 0 }));
   };
 
   const rodapeModelo = (opts = {}) => {
@@ -477,7 +494,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   else if (tipo === 'ata_eleicao_loja') {
     children = [
       ...cabecalhoAta(),
-      ...tituloModelo(modelo.titulo_doc),
+      ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
+      ...subtituloModelo(),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
@@ -492,7 +510,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   else if (tipo === 'ata_eleicao_cartorio') {
     children = [
       ...cabecalhoAta(),
-      ...tituloModelo(modelo.titulo_doc),
+      ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
+      ...subtituloModelo(),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
@@ -538,7 +557,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     children = [
       ...cabecalhoAta(),
       // Título via modelo (editável no banco)
-      ...tituloModelo(modelo.titulo_doc),
+      ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
+      ...subtituloModelo(),
 
       // Corpo via modelo com todas as variáveis interpoladas (instaladores incluídos).
       // Se o modelo salvo no banco ainda tiver o texto antigo ("gestão {gestao}"),
@@ -769,7 +789,7 @@ const STATUS_INFO = {
 // COMPONENTE PRINCIPAL
 // ════════════════════════════════════════════════════════════════════════════
 
-export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showError, podeEditarModelos = false, onAbrirModelos }) {
+export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showError, podeEditarModelos = false, onAbrirModelos, onAbrirBalaustres }) {
   const CHAVE_RETORNO = 'eleicao_posse_retorno';
   const temAcesso = permissoes?.canManageUsers || permissoes?.canEditFinancial || permissoes?.canEdit || false;
 
@@ -778,6 +798,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const [chapas, setChapas] = useState([]);
   const [presencas, setPresencas] = useState([]);
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+  // Balaustres vinculados à eleição (Eleição da Loja / Posse da Loja) — exigidos para gerar as atas
+  const [balaustresEleicao, setBalaustresEleicao] = useState([]);
   const [dadosLoja, setDadosLoja] = useState({});
   const [loading, setLoading] = useState(true);
   const [gerando, setGerando] = useState('');
@@ -913,6 +935,12 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       .from('historico_situacoes')
       .select('membro_id, tipo_situacao, data_inicio, data_fim, status');
     setHistoricoSituacoes(hs || []);
+
+    const { data: bl } = await supabase
+      .from('balaustres')
+      .select('id, numero_balaustre, ano_balaustre, data_sessao, grau_sessao, sessao_especial')
+      .eq('eleicao_id', id);
+    setBalaustresEleicao(bl || []);
   }, []);
 
   useEffect(() => { if (temAcesso) carregar(); }, [carregar, temAcesso]);
@@ -1111,7 +1139,13 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const gerarDoc = async (tipo, nomeArq) => {
     setGerando(tipo);
     try {
-      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes);
+      // Atas exigem o balaustre da sessão registrado em Balaustres
+      const esp = tipo === 'ata_posse' ? 'posse_loja' : (tipo === 'ata_eleicao_loja' || tipo === 'ata_eleicao_cartorio') ? 'eleicao_loja' : null;
+      if (esp && !balaustresEleicao.some(b => b.sessao_especial === esp && b.numero_balaustre)) {
+        showError(`Registre o balaustre da sessão de ${esp === 'posse_loja' ? 'Posse' : 'Eleição'} em Balaustres (Sessão especial) para gerar esta ata.`);
+        return;
+      }
+      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao);
       downloadDocx(buf, nomeArq);
     } catch (e) {
       showError('Erro ao gerar documento: ' + e.message);
@@ -1889,12 +1923,30 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           {/* Grupo: Atas */}
           <div style={S.card}>
             <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>📜 Atas</h3>
+            {(() => {
+              const balEl = balaustresEleicao.find(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre);
+              const balPo = balaustresEleicao.find(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre);
+              const item = (ok, rotulo, b) => (
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: ok ? '#10b981' : '#ef4444' }}>
+                  {ok ? `✅ ${rotulo}: Balaústre nº ${b.numero_balaustre}/${b.ano_balaustre}` : `⛔ ${rotulo}: sem balaustre registrado`}
+                </span>
+              );
+              return (
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+                  {item(!!balEl, 'Sessão de Eleição', balEl)}
+                  {item(!!balPo, 'Sessão de Posse', balPo)}
+                  {(!balEl || !balPo) && onAbrirBalaustres && (
+                    <button onClick={onAbrirBalaustres} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>📜 Ir para Balaustres</button>
+                  )}
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <BotaoDoc emoji="📜" label="Ata de Eleição (Loja)" disabled={chapaEleita.length === 0} gerando={gerando === 'ata_eleicao_loja'}
+              <BotaoDoc emoji="📜" label="Ata de Eleição (Loja)" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_loja'}
                 onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_Loja_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📜" label="Ata de Eleição (Cartório)" disabled={chapaEleita.length === 0} gerando={gerando === 'ata_eleicao_cartorio'}
+              <BotaoDoc emoji="📜" label="Ata de Eleição (Cartório)" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
                 onClick={() => gerarDoc('ata_eleicao_cartorio', `Ata_Eleicao_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📜" label="Ata de Posse" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse} gerando={gerando === 'ata_posse'}
+              <BotaoDoc emoji="📜" label="Ata de Posse" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse'}
                 onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
           </div>
