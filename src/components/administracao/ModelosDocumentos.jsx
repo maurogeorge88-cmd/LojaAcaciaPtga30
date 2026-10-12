@@ -278,7 +278,11 @@ const MODULOS_MODELOS = {
   geral: '📄 Geral',
 };
 
-export default function ModelosDocumentos({ permissoes, showSuccess, showError, onVoltar, rotuloVoltar = 'Eleição e Posse' }) {
+export default function ModelosDocumentos({ permissoes, showSuccess, showError, onVoltar, rotuloVoltar = 'Eleição e Posse', modulo = null }) {
+  // Aberto pela Eleição e Posse ou pelo Balaustre: só os modelos daquele módulo.
+  // Aberto pelo menu: abas para escolher o módulo.
+  const [moduloAba, setModuloAba] = useState(modulo || 'eleicao_posse');
+  const moduloAtivo = modulo || moduloAba;
   const [modelos, setModelos]           = useState([]);
   const [modeloAtivo, setModeloAtivo]   = useState(null);
   const [form, setForm]                 = useState({});
@@ -464,6 +468,18 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
 
       {/* ── Coluna esquerda: lista de modelos ── */}
       <div style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        {!modulo && (
+          <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '0.6rem', flexWrap: 'wrap' }}>
+            {[['eleicao_posse', '🗳️ Eleição e Posse'], ['balaustres', '📜 Balaustres']].map(([k, l]) => (
+              <button key={k} onClick={() => { setModuloAba(k); setModeloAtivo(null); setForm({}); }}
+                style={{ flex: 1, padding: '0.45rem 0.6rem', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
+                  border: `1px solid ${moduloAtivo === k ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                  background: moduloAtivo === k ? 'var(--color-accent-bg)' : 'transparent', color: moduloAtivo === k ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
         {onVoltar && (
           <button onClick={onVoltar}
             style={{ padding: '0.55rem 0.85rem', marginBottom: '0.6rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', textAlign: 'left' }}>
@@ -474,7 +490,8 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           📄 Modelos ({modelos.length})
         </div>
         {Object.entries(
-          modelos.reduce((g, m) => { const k = m.modulo || 'eleicao_posse'; (g[k] = g[k] || []).push(m); return g; }, {})
+          modelos.filter(m => (m.modulo || 'eleicao_posse') === moduloAtivo)
+            .reduce((g, m) => { const k = m.modulo || 'eleicao_posse'; (g[k] = g[k] || []).push(m); return g; }, {})
         ).map(([mod, lista]) => (
           <div key={mod} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
             <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-accent)', textTransform: 'uppercase', padding: '0 0.25rem' }}>
