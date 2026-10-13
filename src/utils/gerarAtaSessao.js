@@ -227,12 +227,15 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   const interp = (t) => Object.entries(VARS).reduce((x, [k, v]) => x.replaceAll(`{${k}}`, v ?? ''), String(t || ''));
 
   // ── Helpers de formatação (Times New Roman 12, como os demais documentos) ──
-  const ar = (txt, o = {}) => new TextRun({ text: String(txt ?? ''), font: 'Times New Roman', size: 24, bold: !!o.bold });
+  // Formatação do modelo: fonte e entrelinha (vazio = 12 pt e 1,15)
+  const FONTE = Number(modelo.fonte_tamanho) > 0 ? Math.round(Number(modelo.fonte_tamanho) * 2) : 24;
+  const ENTRELINHA = Number(modelo.espacamento_linhas) > 0 ? Math.round(Number(modelo.espacamento_linhas) * 240) : 276;
+  const ar = (txt, o = {}) => new TextRun({ text: String(txt ?? ''), font: 'Times New Roman', size: FONTE, bold: !!o.bold });
   const runs = (t) => String(t).split(/(\*[^*]+\*)/g).filter(Boolean)
     .map(p => (p.length > 2 && p.startsWith('*') && p.endsWith('*') ? ar(p.slice(1, -1), { bold: true }) : ar(p)));
   const par = (children, o = {}) => new Paragraph({
     alignment: o.align ?? AlignmentType.JUSTIFIED,
-    spacing: { before: o.before ?? 0, after: o.after ?? 120, line: o.line ?? 276 },
+    spacing: { before: o.before ?? 0, after: o.after ?? 120, line: o.line ?? ENTRELINHA },
     children,
   });
   const LINHA = '_____________________________________';
