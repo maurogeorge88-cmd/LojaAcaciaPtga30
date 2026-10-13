@@ -738,6 +738,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
       vazio({ after: 200 }),
       vazio({ after: 200 }),
+      // Rodapé do modelo (se preenchido), antes da data
+      ...rodapeModelo({ firstLine: true, before: 0, after: 200 }),
       prC([ar(`${VARS.cidade}, ${formatarDataExtenso(ass.dataEmissao)}.`)], { before: 200, after: 0 }),
       vazio({ before: 200 }),
       ...assModelo(ass.irmao?.nome || '[Presidente]', modelo.assinatura_1_cargo || 'Presidente'),
