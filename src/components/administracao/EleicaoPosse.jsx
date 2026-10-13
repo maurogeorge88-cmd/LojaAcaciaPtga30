@@ -147,6 +147,14 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   const modelos      = await buscarModelos();
   const modelo       = modelos[tipo] || {};
+  // Formatação do modelo (Modelos de Documentos): fonte, entrelinha e margens — vazio = padrão
+  const FONTE = Number(modelo.fonte_tamanho) > 0 ? Math.round(Number(modelo.fonte_tamanho) * 2) : 24;   // meio-pontos
+  const LINHA = Number(modelo.espacamento_linhas) > 0 ? Math.round(Number(modelo.espacamento_linhas) * 240) : 276;
+  const cmTw = (v, pad) => (v === null || v === undefined || v === '' || isNaN(Number(v)) ? pad : Math.round(Number(v) * 567));
+  const MARG = {
+    top: cmTw(modelo.margem_sup, DOC_CFG.mTop), bottom: cmTw(modelo.margem_inf, DOC_CFG.mBottom),
+    left: cmTw(modelo.margem_esq, DOC_CFG.mLeft), right: cmTw(modelo.margem_dir, DOC_CFG.mRight),
+  };
 
   const chapaEleita = chapas.filter(c => c.eleita);
   // ── Gestão SAINTE — assina Editais e Atas de Eleição ────────
@@ -347,14 +355,14 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   const ar = (txt, opts = {}) => new TextRun({
     text: String(txt ?? ''),
     font: 'Times New Roman',
-    size: 24, // padrão: Times New Roman 12 em todos os documentos
+    size: FONTE, // Times New Roman; tamanho do modelo (padrão 12)
     bold: opts.bold || false,
     italics: opts.italic || false,
   });
 
   const pr = (runs, opts = {}) => new Paragraph({
     alignment: opts.align ?? AlignmentType.JUSTIFIED,
-    spacing: { before: opts.before ?? 80, after: opts.after ?? 80, line: opts.line ?? 276 },
+    spacing: { before: opts.before ?? 80, after: opts.after ?? 80, line: opts.line ?? LINHA },
     indent: opts.firstLine ? { firstLine: 709 } : undefined,
     children: Array.isArray(runs) ? runs : [runs],
   });
@@ -443,7 +451,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   // Cabeçalho das atas: logo à esquerda + texto da Loja (ou só o texto, se o logo estiver desmarcado no modelo)
   const cabecalhoAta = () => cabecalhoLojaDocx({
     dadosLoja, comLogo: modelo.mostrar_logo !== false,
-    larguraUtil: DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight,
+    larguraUtil: DOC_CFG.W - MARG.left - MARG.right,
   });
 
   // ─── Lista eleitos ─────────────────────────────────────────
@@ -456,7 +464,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   const pageCfg = {
     size:   { width: DOC_CFG.W, height: DOC_CFG.H },
-    margin: { top: DOC_CFG.mTop, right: DOC_CFG.mRight, bottom: DOC_CFG.mBottom, left: DOC_CFG.mLeft },
+    margin: { top: MARG.top, right: MARG.right, bottom: MARG.bottom, left: MARG.left },
   };
 
   let children = [];
@@ -609,7 +617,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       prC([ar(interpolarModelo(modelo.titulo_doc || `Lista de Presença — Sessão de ${sessaoNome}`, VARS), { bold: true })], { before: 0, after: 80 }),
       prC([ar(`Gestão: ${gestao}     Data: ${formatarData(dataDoc)}`)], { before: 0, after: 160 }),
       new Table({
-        width: { size: DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight, type: WidthType.DXA },
+        width: { size: DOC_CFG.W - MARG.left - MARG.right, type: WidthType.DXA },
         columnWidths: CW,
         rows: [
           new TableRow({ tableHeader: true, children: [
@@ -667,7 +675,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
     const semBorda = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
     const sb = { top: semBorda, bottom: semBorda, left: semBorda, right: semBorda };
-    const W = DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight;
+    const W = DOC_CFG.W - MARG.left - MARG.right;
     const tri = (t, size = 32) => new TextRun({ text: t, font: 'Times New Roman', size });
     const cabecalhoApresentacao = new Table({
       width: { size: W, type: WidthType.DXA }, columnWidths: [2300, W - 2300],
