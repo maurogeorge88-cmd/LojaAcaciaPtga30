@@ -338,6 +338,12 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
     supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_ATA_ELEICAO_GLEMT).maybeSingle(),
   ]);
   const { data: modLista } = await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_LISTA_GLEMT).maybeSingle();
+  // Venerável Mestre do ano da sessão (Corpo Administrativo) para a assinatura da lista
+  const anoSes = parseInt(String(balaustre.data_sessao || '').substring(0, 4)) || new Date().getFullYear();
+  const { data: corpoTodos } = await supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id');
+  const regVm = (corpoTodos || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(String(anoSes))
+    && ['veneravel mestre', 'veneravel'].includes(NORM(c.cargo)));
+  const nomeVm = regVm ? (irmaosData || []).find(i => i.id === regVm.irmao_id)?.nome : null;
   const dadosLoja = (lojaData && lojaData[0]) || {};
   const modeloEl = modEl || {};
   // Usa o modelo da lista; sem ele, as opções antigas da ata de eleição (logo da lista e margens)
@@ -359,7 +365,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const periodo = el.ano_inicio && el.ano_fim ? `${el.ano_inicio} a ${el.ano_fim}` : '';
 
   const ar = (t, o = {}) => new TextRun({ text: String(t ?? ''), font: 'Times New Roman', size: o.size || 24, bold: !!o.bold });
-  const par = (children, o = {}) => new Paragraph({ alignment: o.align ?? AlignmentType.CENTER, spacing: { before: 0, after: o.after ?? 0, line: 240 }, children });
+  const par = (children, o = {}) => new Paragraph({ alignment: o.align ?? AlignmentType.CENTER, spacing: { before: o.before ?? 0, after: o.after ?? 0, line: 240 }, children });
   const fino = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
   const bd = { top: fino, bottom: fino, left: fino, right: fino };
   const W = 11906 - margens.left - margens.right;
@@ -402,6 +408,10 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
         })(),
         tabela,
         par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
+        // Assinatura do Venerável Mestre (cargo editável no modelo, aba Assinaturas)
+        par([ar('_____________________________________')], { before: 700, after: 0 }),
+        par([ar(nomeVm ? `Ir∴ ${nomeVm.toUpperCase()}` : '[VENERÁVEL MESTRE]', { bold: true })]),
+        par([ar(modeloLista.assinatura_1_cargo || 'Venerável Mestre')]),
       ],
     }],
   });
