@@ -94,7 +94,7 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
     .filter(m => String(m.grau || m.tipo.replace('ata_sessao_', '')).toLowerCase() === g)
     // Sessão de eleição da GLEMT usa só o modelo de eleição; sessões normais não o mostram
     .filter(m => (eleicao ? m.tipo === TIPO_ATA_ELEICAO_GLEMT : m.tipo !== TIPO_ATA_ELEICAO_GLEMT))
-    .filter(m => m.tipo !== 'edital_eleicao_glemt') // edital não é ata
+    .filter(m => m.tipo !== 'edital_eleicao_glemt' && m.tipo !== 'lista_presenca_glemt') // edital e lista não são atas
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
@@ -325,6 +325,11 @@ export const gerarEditalEleicaoGLEMT = async ({ balaustre }) => gerarAtaSessao({
 // ════════════════════════════════════════════════════════════════════════
 // Lista de presença — Sessão Eleitoral da GLEMT (Mestres regulares na data)
 // ════════════════════════════════════════════════════════════════════════
+// Modelo próprio da lista de presença (Modelos de Documentos → Balaustres)
+export const TIPO_LISTA_GLEMT = 'lista_presenca_glemt';
+export const TITULO_LISTA_GLEMT_PADRAO = 'LISTA DE PRESENÇA — SESSÃO ELEITORAL\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT — Período {periodo_glemt}';
+export const CORPO_LISTA_GLEMT_PADRAO = 'Sessão de {data_sessao}';
+
 export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const { Table, TableRow, TableCell, WidthType, BorderStyle } = await import('docx');
   const [{ data: lojaData }, { data: irmaosData }, { data: modEl }] = await Promise.all([
@@ -332,9 +337,15 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
     supabase.from('irmaos').select('id, nome, cim, data_exaltacao, situacao, data_falecimento'),
     supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_ATA_ELEICAO_GLEMT).maybeSingle(),
   ]);
+  const { data: modLista } = await supabase.from('modelos_documentos').select('*').eq('tipo', TIPO_LISTA_GLEMT).maybeSingle();
   const dadosLoja = (lojaData && lojaData[0]) || {};
   const modeloEl = modEl || {};
-  const margens = margensDoModelo(modeloEl);
+  // Usa o modelo da lista; sem ele, as opções antigas da ata de eleição (logo da lista e margens)
+  const modeloLista = modLista || { titulo_doc: TITULO_LISTA_GLEMT_PADRAO, corpo: CORPO_LISTA_GLEMT_PADRAO,
+    mostrar_logo: !!modeloEl.mostrar_logo_lista,
+    margem_sup: modeloEl.margem_sup, margem_inf: modeloEl.margem_inf, margem_esq: modeloEl.margem_esq, margem_dir: modeloEl.margem_dir };
+  const margens = margensDoModelo(modeloLista);
+  const FONTE_TABELA = Number(modeloLista.fonte_tamanho) > 0 ? Math.round(Number(modeloLista.fonte_tamanho) * 2) : 22; // padrão 11
   const d = String(balaustre.data_sessao || '').substring(0, 10);
   const el = balaustre.eleicao_glemt || {};
   // Presença marcada no balaustre → só os presentes; sem marcação → todos os Mestres aptos
@@ -355,7 +366,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   // Nº e CIM estreitos, nome menor (fonte 11) e mais espaço para a assinatura
   const CW = [500, 3500, 950, W - 4950];
   const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
-    children: [par([ar(t, { ...o, size: 22 })], { align: o.align ?? AlignmentType.LEFT })] }); // tabela em fonte 11
+    children: [par([ar(t, { ...o, size: FONTE_TABELA })], { align: o.align ?? AlignmentType.LEFT })] }); // tabela: fonte do modelo (padrão 11)
 
   const tabela = new Table({
     width: { size: W, type: WidthType.DXA }, columnWidths: CW,
@@ -378,10 +389,17 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
         // Cabeçalho da Loja (logo à esquerda, ou só texto se desmarcado)
-        ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloEl.mostrar_logo_lista, larguraUtil: W, after: 240 }),
-        par([ar('LISTA DE PRESENÇA — SESSÃO ELEITORAL', { bold: true })]),
-        par([ar(`Eleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT${periodo ? ` — Período ${periodo}` : ''}`, { bold: true })]),
-        par([ar(`Sessão de ${dataFmt}`)], { after: 240 }),
+        ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloLista.mostrar_logo, larguraUtil: W, after: 240 }),
+        // Título (negrito) e texto abaixo, ambos do modelo — cada linha vira uma linha
+        ...(() => {
+          const vars = { periodo_glemt: periodo || '[período]', periodo_glemt_barra: el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '[período]',
+            data_sessao: dataFmt || '[data]', nome_loja: `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`, total_presentes: String(mestres.length) };
+          const it = (t) => Object.entries(vars).reduce((x, [k, v]) => x.replaceAll(`{${k}}`, v), String(t || ''));
+          const tit = it(modeloLista.titulo_doc ?? TITULO_LISTA_GLEMT_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim());
+          const txt = it(modeloLista.corpo ?? CORPO_LISTA_GLEMT_PADRAO).replace(/\*/g, '').split('\n').filter(l => l.trim());
+          const todas = [...tit.map(l => ({ l, b: true })), ...txt.map(l => ({ l, b: false }))];
+          return todas.map((x, i) => par([ar(x.l, { bold: x.b })], { after: i === todas.length - 1 ? 240 : 0 }));
+        })(),
         tabela,
         par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
       ],
