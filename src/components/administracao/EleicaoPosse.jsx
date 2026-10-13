@@ -286,6 +286,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
         numero_balaustre: b?.numero_balaustre ? String(b.numero_balaustre) : '[nº]',
         ano_balaustre:    b ? String(b.ano_balaustre || String(b.data_sessao || '').substring(0, 4)) : '[ano]',
         data_sessao:      b?.data_sessao ? String(b.data_sessao).split('-').reverse().join('/') : '[data]',
+        hora_encerramento: b?.hora_encerramento ? String(b.hora_encerramento).substring(0, 5) : '22:00',
       };
     })(),
     data_atual:               (() => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; })(),
@@ -380,7 +381,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   const rodapeModelo = (opts = {}) => {
     if (!modelo.rodape) return [];
-    return [prModelo(modelo.rodape, { firstLine: true, before: 160, after: 0, ...opts })];
+    return [prModelo(modelo.rodape, { before: 160, after: 0, ...opts })];
   };
 
   const assModelo = (nome, cargo) => cargo ? assinatura(nome, cargo) : [];
@@ -451,7 +452,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     .map(c => pr([
       ar(`${c.cargo}: `, { bold: true }),
       ar(dadoIrmao(c.irmao_id) + ';'),
-    ], { firstLine: true, before: 80, after: 80 }));
+    ], { before: 80, after: 80 }));
 
   const pageCfg = {
     size:   { width: DOC_CFG.W, height: DOC_CFG.H },
@@ -496,7 +497,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       ...cabecalhoAta(),
       ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
       ...subtituloModelo(),
-      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
+      prModelo(modelo.corpo, { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
       // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
@@ -512,7 +513,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       ...cabecalhoAta(),
       ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
       ...subtituloModelo(),
-      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
+      prModelo(modelo.corpo, { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
       // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
@@ -938,7 +939,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
     const { data: bl } = await supabase
       .from('balaustres')
-      .select('id, numero_balaustre, ano_balaustre, data_sessao, grau_sessao, sessao_especial')
+      .select('id, numero_balaustre, ano_balaustre, data_sessao, grau_sessao, sessao_especial, hora_encerramento')
       .eq('eleicao_id', id);
     setBalaustresEleicao(bl || []);
   }, []);
@@ -1898,66 +1899,65 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               }} />
           </div>
 
-          {/* Grupo: Editais */}
+          {/* Documentos na ordem do processo: Eleição → Posse → Requerimentos */}
           <div style={S.card}>
-            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>📄 Editais de Convocação</h3>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <BotaoDoc emoji="📄" label="Edital de Eleição" disabled={!eleicaoSelecionada.data_eleicao} gerando={gerando === 'edital_eleicao'}
-                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📄" label="Edital de Posse" disabled={!eleicaoSelecionada.data_posse} gerando={gerando === 'edital_posse'}
-                onClick={() => gerarDoc('edital_posse', `Edital_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-            </div>
-          </div>
-
-          {/* Grupo: Listas de Presença */}
-          <div style={S.card}>
-            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>📋 Listas de Presença</h3>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <BotaoDoc emoji="📋" label={`Presença Eleição (${presEleicao.length})`} disabled={presEleicao.length === 0} gerando={gerando === 'lista_presenca_eleicao'}
-                onClick={() => gerarDoc('lista_presenca_eleicao', `Lista_Presenca_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📋" label={`Presença Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
-                onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-            </div>
-          </div>
-
-          {/* Grupo: Atas */}
-          <div style={S.card}>
-            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>📜 Atas</h3>
+            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>🗳️ Eleição</h3>
             {(() => {
-              const balEl = balaustresEleicao.find(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre);
-              const balPo = balaustresEleicao.find(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre);
-              const item = (ok, rotulo, b) => (
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: ok ? '#10b981' : '#ef4444' }}>
-                  {ok ? `✅ ${rotulo}: Balaústre nº ${b.numero_balaustre}/${b.ano_balaustre}` : `⛔ ${rotulo}: sem balaustre registrado`}
-                </span>
-              );
+              const b = balaustresEleicao.find(x => x.sessao_especial === 'eleicao_loja' && x.numero_balaustre);
               return (
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
-                  {item(!!balEl, 'Sessão de Eleição', balEl)}
-                  {item(!!balPo, 'Sessão de Posse', balPo)}
-                  {(!balEl || !balPo) && onAbrirBalaustres && (
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: b ? '#10b981' : '#ef4444' }}>
+                    {b ? `✅ Sessão de Eleição: Balaústre nº ${b.numero_balaustre}/${b.ano_balaustre}` : '⛔ Sessão de Eleição: sem balaustre registrado — a ata fica bloqueada'}
+                  </span>
+                  {!b && onAbrirBalaustres && (
                     <button onClick={onAbrirBalaustres} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>📜 Ir para Balaustres</button>
                   )}
                 </div>
               );
             })()}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <BotaoDoc emoji="📜" label="Ata de Eleição (Loja)" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_loja'}
+              <BotaoDoc emoji="📄" label="Edital de Convocação para Eleição" disabled={!eleicaoSelecionada.data_eleicao} gerando={gerando === 'edital_eleicao'}
+                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📜" label="Ata para Eleição" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_loja'}
                 onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_Loja_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📜" label="Ata de Eleição (Cartório)" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
+              <BotaoDoc emoji="📜" label="Ata para Eleição Cartório" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
                 onClick={() => gerarDoc('ata_eleicao_cartorio', `Ata_Eleicao_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📜" label="Ata de Posse" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse'}
-                onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📋" label={`Lista de Presença para a Eleição (${presEleicao.length})`} disabled={presEleicao.length === 0} gerando={gerando === 'lista_presenca_eleicao'}
+                onClick={() => gerarDoc('lista_presenca_eleicao', `Lista_Presenca_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
           </div>
 
-          {/* Grupo: Requerimentos */}
+          <div style={S.card}>
+            <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>🎖️ Posse</h3>
+            {(() => {
+              const b = balaustresEleicao.find(x => x.sessao_especial === 'posse_loja' && x.numero_balaustre);
+              return (
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: b ? '#10b981' : '#ef4444' }}>
+                    {b ? `✅ Sessão de Posse: Balaústre nº ${b.numero_balaustre}/${b.ano_balaustre}` : '⛔ Sessão de Posse: sem balaustre registrado — a ata fica bloqueada'}
+                  </span>
+                  {!b && onAbrirBalaustres && (
+                    <button onClick={onAbrirBalaustres} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>📜 Ir para Balaustres</button>
+                  )}
+                </div>
+              );
+            })()}
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <BotaoDoc emoji="📄" label="Edital de Convocação para Posse" disabled={!eleicaoSelecionada.data_posse} gerando={gerando === 'edital_posse'}
+                onClick={() => gerarDoc('edital_posse', `Edital_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📜" label="Ata para Posse" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse'}
+                onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📋" label={`Lista de Presença para a Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
+                onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+            </div>
+          </div>
+
           <div style={S.card}>
             <h3 style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)', marginBottom: '1rem' }}>📩 Requerimentos ao Cartório</h3>
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <BotaoDoc emoji="📩" label="Requerimento — Eleição" disabled={chapaEleita.length === 0} gerando={gerando === 'requerimento_eleicao'}
+              <BotaoDoc emoji="📩" label="Requerimento Ata Eleição" disabled={chapaEleita.length === 0} gerando={gerando === 'requerimento_eleicao'}
                 onClick={() => gerarDoc('requerimento_eleicao', `Requerimento_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📩" label="Requerimento — Posse" disabled={chapaEleita.length === 0} gerando={gerando === 'requerimento_posse'}
+              <BotaoDoc emoji="📩" label="Requerimento Ata Posse" disabled={chapaEleita.length === 0} gerando={gerando === 'requerimento_posse'}
                 onClick={() => gerarDoc('requerimento_posse', `Requerimento_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
           </div>
