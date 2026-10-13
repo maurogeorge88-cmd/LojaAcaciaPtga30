@@ -250,6 +250,8 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   } else {
     VARS.trecho_votacao = '';
   }
+  // Alinhamentos do modelo (título / corpo)
+  const ALINHA = (v, pad) => (v === 'left' ? AlignmentType.LEFT : v === 'center' ? AlignmentType.CENTER : v === 'right' ? AlignmentType.RIGHT : v === 'justify' ? AlignmentType.JUSTIFIED : pad);
   const corpoBase = modelo.corpo || (ehEleicao ? CORPO_ELEICAO_GLEMT_PADRAO : CORPO_ATA_PADRAO);
   const corpoComTrecho = corpoBase.includes('{trecho_votacao}') || !VARS.trecho_votacao
     ? corpoBase
@@ -261,7 +263,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     : l.startsWith('§')
       // linhas de um mesmo bloco (ex.: chapa do edital): sem espaço entre elas
       ? par(runs(l.slice(1)), { align: AlignmentType.LEFT, after: 0 })
-      : par(runs(l), { align: modelo.alinhamento_corpo === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED })));
+      : par(runs(l), { align: ALINHA(modelo.alinhamento_corpo, AlignmentType.JUSTIFIED) })));
 
   const children = [
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
@@ -278,13 +280,17 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       const sub = ehEdital ? '' : (modelo.subtitulo ?? SUBTITULO_ATA_PADRAO);
       const linhasSub = interp(sub).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
       const todas = [...linhasTit.map(l => ({ l, bold: true })), ...linhasSub.map(l => ({ l, bold: false }))];
-      return todas.map((x, i) => par([ar(x.l, { bold: x.bold })], { align: AlignmentType.CENTER, after: i === todas.length - 1 ? 280 : 0 }));
+      return todas.map((x, i) => par([ar(x.l, { bold: x.bold })], { align: ALINHA(modelo.alinhamento_titulo, AlignmentType.CENTER), after: i === todas.length - 1 ? 280 : 0 }));
     })(),
     ...paragrafos,
     // Edital: cidade e data do edital
     ...(ehEdital ? [par([ar(`${VARS.cidade}-${VARS.estado}, ${VARS.data_edital_extenso || ''}.`)], { align: AlignmentType.CENTER, before: 360, after: 0 })] : []),
     // Assinaturas (centralizadas): ata = VM, Orador e Secretário; edital = só o VM
-    ...(ehEdital ? [[VARS.vm_nome, 'Venerável Mestre']] : [[VARS.vm_nome, 'Venerável Mestre'], [VARS.orador_nome, 'Orador'], [VARS.secretario_nome, 'Secretário']]).flatMap(([n, c], i) => [
+    // Cargos das assinaturas vêm do modelo (aba Assinaturas); vazio = padrão
+    ...(ehEdital
+      ? [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre']]
+      : [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre'], [VARS.orador_nome, modelo.assinatura_2_cargo || 'Orador'], [VARS.secretario_nome, modelo.assinatura_3_cargo || 'Secretário']]
+    ).flatMap(([n, c], i) => [
       linhaSimples(LINHA, false, i === 0 ? 700 : 600),
       linhaSimples(`Ir∴ ${String(n).toUpperCase()}`, true),
       linhaSimples(c),
