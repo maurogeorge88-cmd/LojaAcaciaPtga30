@@ -12,7 +12,7 @@ const MODELOS_PADRAO = [
     titulo_doc: "LISTA DE PRESENÇA — SESSÃO ELEITORAL\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT — Período {periodo_glemt}",
     corpo: 'Sessão de {data_sessao}',
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
-    assinatura_1_cargo: '', assinatura_2_cargo: '', assinatura_3_cargo: '',
+    assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
     alinhamento_titulo: 'center', alinhamento_corpo: 'center', alinhamento_assinatura: 'center',
   },
   {
@@ -473,7 +473,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
   // Não mostrar abas que não se aplicam ao tipo
   const temAclamacao = modeloAtivo && (modeloAtivo.tipo.startsWith('ata_eleicao'));
   const temRodape    = modeloAtivo && (modeloAtivo.tipo.startsWith('ata_') || modeloAtivo.tipo.startsWith('requerimento_') || modeloAtivo.tipo === 'apresentacao_chapa');
-  const temAss       = modeloAtivo && !modeloAtivo.tipo.startsWith('lista_presenca');
+  const temAss       = !!modeloAtivo; // inclusive listas de presença (assinatura do Venerável Mestre)
 
   return (
     <div style={{ display: 'flex', gap: '1rem', padding: '1.5rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
