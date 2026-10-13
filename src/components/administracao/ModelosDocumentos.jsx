@@ -6,6 +6,18 @@ const MODELOS_PADRAO = [
   {
     modulo: 'balaustres',
     mostrar_logo: true,
+    tipo: 'lista_presenca_glemt',
+    grau: 'Mestre',
+    nome: 'Lista de Presença Eleição GLEMT',
+    titulo_doc: "LISTA DE PRESENÇA — SESSÃO ELEITORAL\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT — Período {periodo_glemt}",
+    corpo: 'Sessão de {data_sessao}',
+    corpo_aclamacao: '', corpo_disputa: '', rodape: '',
+    assinatura_1_cargo: '', assinatura_2_cargo: '', assinatura_3_cargo: '',
+    alinhamento_titulo: 'center', alinhamento_corpo: 'center', alinhamento_assinatura: 'center',
+  },
+  {
+    modulo: 'balaustres',
+    mostrar_logo: true,
     tipo: 'edital_eleicao_glemt',
     grau: 'Mestre',
     nome: 'Edital Eleição GLEMT',
@@ -384,7 +396,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
   };
 
   // ── Atas de sessão: criar / excluir modelos extras ─────────
-  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre', 'ata_eleicao_glemt', 'edital_eleicao_glemt'];
+  const TIPOS_BASE_ATA = ['ata_sessao_aprendiz', 'ata_sessao_companheiro', 'ata_sessao_mestre', 'ata_eleicao_glemt', 'edital_eleicao_glemt', 'lista_presenca_glemt'];
   const novoModeloAta = async () => {
     const nome = window.prompt('Nome do novo modelo de ata (ex.: Ata Iniciação Aprendiz):');
     if (!nome || !nome.trim()) return;
@@ -663,20 +675,14 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                       Exibir o logo da Loja no topo do documento
                     </label>
                   )}
-                  {form.modulo === 'balaustres' && form.tipo === 'ata_eleicao_glemt' && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
-                      <input type="checkbox" checked={!!form.mostrar_logo_lista} disabled={!podeEditar}
-                        onChange={e => handleChange('mostrar_logo_lista', e.target.checked)} />
-                      Exibir o logo da Loja na lista de presença da eleição
-                    </label>
-                  )}
+
                   {/* Formatação do documento: margens, entrelinha e tamanho da fonte (todos os modelos) */}
                   {(() => {
                     const ehBal = form.modulo === 'balaustres';
                     const pad = ehBal ? { margem_sup: 5, margem_inf: 2.8, margem_esq: 3.5, margem_dir: 2 } : { margem_sup: 1.27, margem_inf: 1.27, margem_esq: 3, margem_dir: 1.52 };
                     return (
                       <div style={{ marginTop: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-                        <label style={S.label}>Formatação do documento{form.tipo === 'ata_eleicao_glemt' ? ' (margens também usadas na lista de presença)' : ''}</label>
+                        <label style={S.label}>Formatação do documento{form.tipo === 'lista_presenca_glemt' ? ' (tamanho da letra = tabela da lista)' : ''}</label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
                           {[['margem_sup', 'Margem superior'], ['margem_inf', 'Margem inferior'], ['margem_esq', 'Margem esquerda'], ['margem_dir', 'Margem direita']].map(([k, l]) => (
                             <div key={k}>
