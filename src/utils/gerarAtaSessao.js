@@ -241,7 +241,21 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   const LINHA = '_____________________________________';
   const linhaSimples = (t, bold = false, before = 0) => par([ar(t, { bold })], { align: AlignmentType.CENTER, before, after: 0, line: 240 });
 
-  const corpoTexto = interp(modelo.corpo || (ehEleicao ? CORPO_ELEICAO_GLEMT_PADRAO : CORPO_ATA_PADRAO));
+  // Trecho da votação (eleição GLEMT): chapa única → "aclamação"; 2+ chapas → "disputa".
+  // Vai no lugar de {trecho_votacao} no corpo; se o corpo não tiver a variável, entra logo após o corpo.
+  // Rodapé (Tronco, Palavra, Encerramento…) entra depois, antes das assinaturas.
+  if (ehEleicao) {
+    const qtdChapas = ((balaustre.eleicao_glemt && balaustre.eleicao_glemt.chapas) || []).filter(c => c && (c.nome || c.gm)).length;
+    VARS.trecho_votacao = interp(qtdChapas <= 1 ? (modelo.corpo_aclamacao || '') : (modelo.corpo_disputa || ''));
+  } else {
+    VARS.trecho_votacao = '';
+  }
+  const corpoBase = modelo.corpo || (ehEleicao ? CORPO_ELEICAO_GLEMT_PADRAO : CORPO_ATA_PADRAO);
+  const corpoComTrecho = corpoBase.includes('{trecho_votacao}') || !VARS.trecho_votacao
+    ? corpoBase
+    : `${corpoBase}\n${VARS.trecho_votacao}`;
+  const corpoTexto = [interp(corpoComTrecho), (!ehEdital && modelo.rodape) ? interp(modelo.rodape) : '']
+    .filter(t => String(t).trim() !== '').join('\n');
   const paragrafos = corpoTexto.split('\n').map(l => (l.trim() === ''
     ? par([ar('')], { after: 0 })
     : l.startsWith('§')
