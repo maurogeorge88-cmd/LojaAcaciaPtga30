@@ -877,7 +877,7 @@ const Balaustres = ({
                           }}
                         >
                           {/* Número/Ano */}
-                          <div style={{flexShrink:0,minWidth:'68px',maxWidth:'200px'}}>
+                          <div style={{flexShrink:0,width:'150px'}}>
                             <p className="font-bold text-sm" style={{color: ehPendente(balaustre) ? '#d97706' : corDoGrau(balaustre.grau_sessao)}}>{ehPendente(balaustre) ? '⏳ Pend.' : `${balaustre.numero_balaustre}/${balaustre.ano_balaustre || new Date().getFullYear()}`}</p>
                             {balaustre.eleicao_glemt?.ativo && (
                               <span style={{display:'inline-block',marginTop:'0.2rem',fontSize:'0.62rem',fontWeight:800,padding:'0.1rem 0.45rem',borderRadius:'999px',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',whiteSpace:'nowrap'}}>
@@ -897,12 +897,12 @@ const Balaustres = ({
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
                           </div>
                           {/* Data */}
-                          <div style={{flexShrink:0,width:'85px'}}>
-                            <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(balaustre.data_sessao)}</p>
+                          <div style={{flexShrink:0,width:'100px'}}>
+                            <p className="text-xs" style={{color:'var(--color-text-muted)',whiteSpace:'nowrap',margin:0}}>📅 {formatarData(balaustre.data_sessao)}</p>
                           </div>
                           {/* Tipo */}
-                          <div style={{flexShrink:0,maxWidth:'120px',overflow:'hidden'}}>
-                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800" style={{display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
+                          <div style={{flexShrink:0,width:'110px',overflow:'hidden'}}>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800" style={{display:"inline-block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
                               {obterNomeTipoSessao(balaustre.tipo_sessao_id)}
                             </span>
                           </div>
