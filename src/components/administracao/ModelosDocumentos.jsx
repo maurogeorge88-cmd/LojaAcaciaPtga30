@@ -492,6 +492,13 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
         </div>
         {Object.entries(
           modelos.filter(m => (m.modulo || 'eleicao_posse') === moduloAtivo)
+            .sort((a, b) => {
+              // Ordem do processo de Eleição e Posse (demais modelos depois, por nome)
+              const ORDEM = ['edital_eleicao', 'ata_eleicao_loja', 'ata_eleicao_cartorio', 'lista_presenca_eleicao',
+                'edital_posse', 'ata_posse', 'lista_presenca_posse', 'requerimento_eleicao', 'requerimento_posse', 'apresentacao_chapa'];
+              const ia = ORDEM.indexOf(a.tipo), ib = ORDEM.indexOf(b.tipo);
+              return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || String(a.nome || '').localeCompare(String(b.nome || ''));
+            })
             .reduce((g, m) => { const k = m.modulo || 'eleicao_posse'; (g[k] = g[k] || []).push(m); return g; }, {})
         ).map(([mod, lista]) => (
           <div key={mod} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
