@@ -638,6 +638,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
         ],
       }),
       prL([ar(`Total de presentes: ${lista.length}`)], { before: 120, after: 0 }),
+      // Assinatura do Venerável Mestre (eleição: VM em exercício; posse: VM Instalador) — cargo editável no modelo
+      ...assModelo(
+        (tipo === 'lista_presenca_posse' ? vmInstalador : vmConvocante)?.nome ? `Ir∴ ${(tipo === 'lista_presenca_posse' ? vmInstalador : vmConvocante).nome.toUpperCase()}` : '[Venerável Mestre]',
+        modelo.assinatura_1_cargo || (tipo === 'lista_presenca_posse' ? 'Venerável Mestre Instalador' : 'Venerável Mestre')
+      ),
     ];
   }
 
