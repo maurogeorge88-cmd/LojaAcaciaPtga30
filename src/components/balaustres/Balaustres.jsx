@@ -182,12 +182,14 @@ const Balaustres = ({
         .select('numero_balaustre, ano_balaustre')
         .eq('grau_sessao', grau)
         .eq('ano_balaustre', ano)
+        // Pendentes (sem número) ficam de fora — no Postgres o NULL viria primeiro na ordem decrescente
+        .not('numero_balaustre', 'is', null)
         .order('numero_balaustre', { ascending: false })
         .limit(1);
 
       if (error) throw error;
 
-      const proximoNumero = data && data.length > 0 ? parseInt(data[0].numero_balaustre) + 1 : 1;
+      const proximoNumero = data && data.length > 0 ? (parseInt(data[0].numero_balaustre) || 0) + 1 : 1;
       setBalaustreForm(prev => ({ ...prev, numero_balaustre: proximoNumero }));
     } catch (error) {
       console.error('Erro ao carregar próximo número:', error);
