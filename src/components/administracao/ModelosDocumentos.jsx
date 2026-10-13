@@ -365,11 +365,10 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           ...(form.modulo === 'balaustres' ? {
             mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
             mostrar_logo_lista: !!form.mostrar_logo_lista,
-            margem_sup: form.margem_sup === '' || form.margem_sup == null ? null : Number(form.margem_sup),
-            margem_inf: form.margem_inf === '' || form.margem_inf == null ? null : Number(form.margem_inf),
-            margem_esq: form.margem_esq === '' || form.margem_esq == null ? null : Number(form.margem_esq),
-            margem_dir: form.margem_dir === '' || form.margem_dir == null ? null : Number(form.margem_dir),
           } : {}),
+          // Formatação (todos os modelos)
+          ...Object.fromEntries(['margem_sup', 'margem_inf', 'margem_esq', 'margem_dir', 'espacamento_linhas', 'fonte_tamanho']
+            .map(k => [k, form[k] === '' || form[k] == null ? null : Number(form[k])])),
         })
         .eq('id', form.id);
 
@@ -671,22 +670,48 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                       Exibir o logo da Loja na lista de presença da eleição
                     </label>
                   )}
-                  {form.modulo === 'balaustres' && (
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <label style={S.label}>Margens da página (cm){form.tipo === 'ata_eleicao_glemt' ? ' — também usadas na lista de presença' : ''}</label>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
-                        {[['margem_sup', 'Superior', 5], ['margem_inf', 'Inferior', 2.8], ['margem_esq', 'Esquerda', 3.5], ['margem_dir', 'Direita', 2]].map(([k, l, pad]) => (
-                          <div key={k}>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{l}</span>
-                            <input type="number" step="0.1" min="0" style={S.input} disabled={!podeEditar}
-                              value={form[k] ?? ''} placeholder={String(pad).replace('.', ',')}
-                              onChange={e => handleChange(k, e.target.value)} />
+                  {/* Formatação do documento: margens, entrelinha e tamanho da fonte (todos os modelos) */}
+                  {(() => {
+                    const ehBal = form.modulo === 'balaustres';
+                    const pad = ehBal ? { margem_sup: 5, margem_inf: 2.8, margem_esq: 3.5, margem_dir: 2 } : { margem_sup: 1.27, margem_inf: 1.27, margem_esq: 3, margem_dir: 1.52 };
+                    return (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+                        <label style={S.label}>Formatação do documento{form.tipo === 'ata_eleicao_glemt' ? ' (margens também usadas na lista de presença)' : ''}</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
+                          {[['margem_sup', 'Margem superior'], ['margem_inf', 'Margem inferior'], ['margem_esq', 'Margem esquerda'], ['margem_dir', 'Margem direita']].map(([k, l]) => (
+                            <div key={k}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{l} (cm)</span>
+                              <input type="number" step="0.1" min="0" style={S.input} disabled={!podeEditar}
+                                value={form[k] ?? ''} placeholder={String(pad[k]).replace('.', ',')}
+                                onChange={e => handleChange(k, e.target.value)} />
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Espaçamento entre linhas</span>
+                            <select style={S.input} disabled={!podeEditar} value={form.espacamento_linhas ?? ''} onChange={e => handleChange('espacamento_linhas', e.target.value)}>
+                              <option value="">Padrão (1,15)</option>
+                              <option value="1">1,0 (simples)</option>
+                              <option value="1.15">1,15</option>
+                              <option value="1.5">1,5</option>
+                              <option value="2">2,0 (duplo)</option>
+                            </select>
                           </div>
-                        ))}
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Tamanho da letra do texto</span>
+                            <select style={S.input} disabled={!podeEditar} value={form.fonte_tamanho ?? ''} onChange={e => handleChange('fonte_tamanho', e.target.value)}>
+                              <option value="">Padrão (12)</option>
+                              {[10, 11, 12, 13, 14].map(n => <option key={n} value={n}>{n}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.35rem 0 0' }}>
+                          Vazio = padrão ({ehBal ? '5 / 2,8 / 3,5 / 2 cm' : '1,27 / 1,27 / 3 / 1,52 cm'}; entrelinha 1,15; letra 12). O cabeçalho da Loja mantém o próprio tamanho.
+                        </p>
                       </div>
-                      <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.3rem 0 0' }}>Vazio = padrão (5 / 2,8 / 3,5 / 2 cm).</p>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 <div>
                   <label style={S.label}>Texto do corpo</label>
