@@ -41,12 +41,12 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
   doc.text(`Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
   y += 5;
-  doc.text(`Critérios: tesouraria sem mais de 3 meses em aberto e presença mínima de 50% (${periodo || ''})`, W / 2, y, { align: 'center' });
+  doc.text('Critérios: estar em dia com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
   y += 6;
 
   doc.autoTable({
     startY: y,
-    margin: { left: M, right: M, bottom: 60 },
+    margin: { left: M, right: M, bottom: 16 },
     head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
     // Nome completo; prerrogativa por idade identificada com a estrela (desenhada em amarelo)
     body: linhas.map((l, i) => [String(i + 1), l.nome || l.nomeCurto, l.cim || '', l.textoTesouraria, l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`]),
@@ -61,7 +61,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
       }
     },
     theme: 'grid',
-    styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 2, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: { top: 1.3, bottom: 1.3, left: 2, right: 2 }, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
     headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [241, 245, 249] },
     columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 36 }, 4: { cellWidth: 30, halign: 'center' } },
@@ -69,23 +69,21 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   y = doc.lastAutoTable.finalY + 6;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
   doc.text(`Total de irmãos aptos: ${linhas.length}`, M, y);
-  if (linhas.some(l => l.isento70)) {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
-    doc.text('Estrela = prerrogativa por idade (70 anos há 6 meses ou mais): presença dispensada.', M, y + 5);
-  }
 
   // Assinaturas: VM, Chanceler e Tesoureiro (lado a lado)
-  if (y > H - 55) { doc.addPage(); y = 30; }
-  y = Math.max(y + 28, H - 50);
+  // Assinaturas logo abaixo da tabela (página nova só se não couber)
+  y += 24;
+  if (y > H - 30) { doc.addPage(); y = 40; }
   const col = (W - 2 * M) / 3;
   [[assinantes.vm, 'Venerável Mestre'], [assinantes.chanceler, 'Chanceler'], [assinantes.tesoureiro, 'Tesoureiro']].forEach(([nome, cargo], i) => {
     const cx = M + col * i + col / 2;
     doc.setDrawColor(...TEXTO); doc.setLineWidth(0.3);
     doc.line(cx - col / 2 + 4, y, cx + col / 2 - 4, y);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TEXTO);
-    doc.text(nome || `[${cargo}]`, cx, y + 4.5, { align: 'center', maxWidth: col - 6 });
+    const linhasNome = doc.splitTextToSize(nome || `[${cargo}]`, col - 6);
+    linhasNome.forEach((ln, k) => doc.text(ln, cx, y + 4.5 + k * 3.8, { align: 'center' }));
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
-    doc.text(cargo, cx, y + 9, { align: 'center' });
+    doc.text(cargo, cx, y + 4.5 + linhasNome.length * 3.8 + 0.8, { align: 'center' });
   });
 
   // Rodapé
