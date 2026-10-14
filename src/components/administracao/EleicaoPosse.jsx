@@ -1485,7 +1485,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const linhas = universo.map(i => {
         const pend = lanc.filter(l => String(l.origem_irmao_id) === String(i.id));
         const meses = [...new Set(pend.map(l => String(l.data_vencimento || '').substring(0, 7)).filter(Boolean))].sort();
-        const finOk = meses.length <= LIMITE_MESES_PENDENTES;
+        // 3 meses em aberto (consecutivos ou não) já torna o irmão inapto; até 2 meses ainda é apto
+        const finOk = meses.length < LIMITE_MESES_PENDENTES;
 
         // Prerrogativa por idade: 70 anos completos há pelo menos 6 meses na data da eleição → isento de presença.
         // Até completar 70 a presença é obrigatória; sessões depois do 70º aniversário não contam.
@@ -1898,7 +1899,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 </button>
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
-                Regras: tesouraria com até {LIMITE_MESES_PENDENTES} meses em aberto (consecutivos ou não) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
+                Regras: tesouraria com no máximo {LIMITE_MESES_PENDENTES - 1} meses em aberto ({LIMITE_MESES_PENDENTES} ou mais, consecutivos ou não, = inapto) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
                 Sessões em licença não contam. <span style={{ color: '#facc15' }}>★</span> = prerrogativa por idade (70 anos há 6 meses ou mais: presença dispensada). Lic = licença no período.
               </p>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
