@@ -48,7 +48,18 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     startY: y,
     margin: { left: M, right: M, bottom: 60 },
     head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
-    body: linhas.map((l, i) => [String(i + 1), l.nomeCurto, l.cim || '', l.textoTesouraria, `${l.pct}% (${l.presentes}/${l.total})`]),
+    // Nome completo; prerrogativa por idade identificada com a estrela (desenhada em amarelo)
+    body: linhas.map((l, i) => [String(i + 1), l.nome || l.nomeCurto, l.cim || '', l.textoTesouraria, l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`]),
+    didDrawCell: (d) => {
+      if (d.section === 'body' && d.column.index === 1 && linhas[d.row.index]?.isento70) {
+        const tw = doc.getTextWidth(String(d.cell.raw || ''));
+        const cx = d.cell.x + d.cell.padding('left') + tw + 3, cy = d.cell.y + d.cell.height / 2;
+        const pts = [];
+        for (let k = 0; k < 10; k++) { const r = k % 2 ? 0.9 : 2.1, a = -Math.PI / 2 + k * Math.PI / 5; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+        doc.setFillColor(250, 204, 21);
+        doc.lines(pts.slice(1).map((p2, k) => [p2[0] - pts[k][0], p2[1] - pts[k][1]]), pts[0][0], pts[0][1], [1, 1], 'F', true);
+      }
+    },
     theme: 'grid',
     styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 2, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
     headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
@@ -58,6 +69,10 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   y = doc.lastAutoTable.finalY + 6;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
   doc.text(`Total de irmãos aptos: ${linhas.length}`, M, y);
+  if (linhas.some(l => l.isento70)) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+    doc.text('Estrela = prerrogativa por idade (70 anos há 6 meses ou mais): presença dispensada.', M, y + 5);
+  }
 
   // Assinaturas: VM, Chanceler e Tesoureiro (lado a lado)
   if (y > H - 55) { doc.addPage(); y = 30; }
