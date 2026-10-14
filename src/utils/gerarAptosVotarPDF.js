@@ -1,0 +1,85 @@
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
+// ════════════════════════════════════════════════════════════════════════
+// Relação de Irmãos Aptos a Votar — eleição da Loja
+// Só os aptos; assinam Venerável Mestre, Chanceler e Tesoureiro.
+// ════════════════════════════════════════════════════════════════════════
+
+const AZUL = [30, 58, 138];
+const DOURADO = [201, 168, 76];
+const CINZA = [100, 116, 139];
+const TEXTO = [30, 41, 59];
+
+export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {} }) => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 18;
+  const fmt = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '');
+
+  // Cabeçalho: logo à esquerda, dados da Loja à direita
+  let y = 12;
+  if (logoB64) {
+    try { doc.addImage(`data:image/jpeg;base64,${logoB64}`, 'JPEG', M, y, 30, 30); } catch (e) { /* sem logo */ }
+  }
+  const xt = M + 34 + (W - M - (M + 34)) / 2;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
+  doc.text(`A.R.L.S. ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`, xt, y + 8, { align: 'center' });
+  doc.setFontSize(10); doc.setTextColor(...TEXTO);
+  doc.text(`Fundada em ${dadosLoja.data_fundacao ? fmt(dadosLoja.data_fundacao) : '20/12/1997'}`, xt, y + 14, { align: 'center' });
+  doc.text('Jurisdicionada à', xt, y + 19, { align: 'center' });
+  doc.text('Grande Loja Maçônica do Estado de Mato Grosso', xt, y + 24, { align: 'center' });
+  y += 36;
+  doc.setDrawColor(...DOURADO); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+
+  // Título
+  y += 9;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
+  doc.text('RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
+  y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
+  doc.text(`Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
+  y += 5;
+  doc.text(`Critérios: tesouraria sem mais de 3 meses em aberto e presença mínima de 50% (${periodo || ''})`, W / 2, y, { align: 'center' });
+  y += 6;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: M, right: M, bottom: 60 },
+    head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
+    body: linhas.map((l, i) => [String(i + 1), l.nomeCurto, l.cim || '', l.textoTesouraria, `${l.pct}% (${l.presentes}/${l.total})`]),
+    theme: 'grid',
+    styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 2, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
+    headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [241, 245, 249] },
+    columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 36 }, 4: { cellWidth: 30, halign: 'center' } },
+  });
+  y = doc.lastAutoTable.finalY + 6;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+  doc.text(`Total de irmãos aptos: ${linhas.length}`, M, y);
+
+  // Assinaturas: VM, Chanceler e Tesoureiro (lado a lado)
+  if (y > H - 55) { doc.addPage(); y = 30; }
+  y = Math.max(y + 28, H - 50);
+  const col = (W - 2 * M) / 3;
+  [[assinantes.vm, 'Venerável Mestre'], [assinantes.chanceler, 'Chanceler'], [assinantes.tesoureiro, 'Tesoureiro']].forEach(([nome, cargo], i) => {
+    const cx = M + col * i + col / 2;
+    doc.setDrawColor(...TEXTO); doc.setLineWidth(0.3);
+    doc.line(cx - col / 2 + 4, y, cx + col / 2 - 4, y);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TEXTO);
+    doc.text(nome || `[${cargo}]`, cx, y + 4.5, { align: 'center', maxWidth: col - 6 });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+    doc.text(cargo, cx, y + 9, { align: 'center' });
+  });
+
+  // Rodapé
+  const total = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
+    doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, M, H - 9);
+    doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
+  }
+  doc.save(`Aptos_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`);
+};
