@@ -6,7 +6,7 @@
  * Gera: Editais, Atas (Loja e Cartório), Listas de Presença, Requerimentos
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   Document, Packer, Paragraph, TextRun, ImageRun,
@@ -16,6 +16,7 @@ import {
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
 import { cabecalhoLojaDocx } from '../../utils/cabecalhoLoja';
+import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
@@ -96,6 +97,15 @@ const resolverAssinanteRequerimento = (qual, eleicao, chapas, irmaos) => {
   }
   const irmao = (irmaos || []).find(i => i.id === id) || null;
   return { dataEmissao, modo, origem, irmao };
+};
+
+// Nome curto: dois primeiros nomes; se o 2º for preposição, inclui o seguinte ("José da Silva")
+const PREPOSICOES = ['da', 'de', 'do', 'das', 'dos', 'e', 'di', 'du', 'del'];
+const nomeCurto = (nome) => {
+  const p = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  if (p.length <= 2) return p.join(' ');
+  if (PREPOSICOES.includes(p[1].toLowerCase())) return p.slice(0, 3).join(' ');
+  return p.slice(0, 2).join(' ');
 };
 
 // ── Situação do irmão NA DATA do ato (usa o histórico de situações) ──
@@ -814,12 +824,24 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const [chapas, setChapas] = useState([]);
   const [presencas, setPresencas] = useState([]);
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+  // ── Aptos a votar: tesouraria (até 3 meses em aberto) + presença (mín. 50%) ──
+  const [aptidao, setAptidao] = useState({ carregando: false, linhas: [], periodo: '', assinantes: {} });
+  const [filtroAptidao, setFiltroAptidao] = useState('todos');
+  const LIMITE_MESES_PENDENTES = 3;
+  const PRESENCA_MINIMA = 50;
+
   // Balaustres vinculados à eleição (Eleição da Loja / Posse da Loja) — exigidos para gerar as atas
   const [balaustresEleicao, setBalaustresEleicao] = useState([]);
   const [dadosLoja, setDadosLoja] = useState({});
   const [loading, setLoading] = useState(true);
   const [gerando, setGerando] = useState('');
   const [etapa, setEtapa] = useState(1); // 1=config 2=eleição 3=posse 4=docs
+  // A função de cálculo é definida mais abaixo; o efeito chama pela referência (hooks ficam no topo)
+  const carregarAptidaoRef = useRef(null);
+  useEffect(() => {
+    if (eleicaoSelecionada && (etapa === 5 || etapa === 2) && carregarAptidaoRef.current) carregarAptidaoRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etapa, eleicaoSelecionada?.id, presencas.length, historicoSituacoes.length]);
   const [modalAberto, setModalAberto] = useState(false); // nova eleição
   const [loadingAcao, setLoadingAcao] = useState(false);
 
@@ -1412,8 +1434,111 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const presPosse = presencas.filter(p => p.sessao === 'posse');
   const chapaEleita = chapas.filter(c => c.eleita);
 
+  // ── Cálculo da aptidão (executado ao abrir as etapas "Aptos a Votar" e "Sessão Eleição") ──
+  const carregarAptidao = async () => {
+    if (!eleicaoSelecionada) return;
+    setAptidao(a => ({ ...a, carregando: true }));
+    try {
+      const ref = eleicaoSelecionada.data_eleicao || new Date().toISOString().substring(0, 10);
+      // Período da presença: desde a última eleição; sem eleição anterior, 12 meses
+      const anterior = eleicoes.filter(e => e.id !== eleicaoSelecionada.id && e.data_eleicao && e.data_eleicao < ref)
+        .sort((a, b) => b.data_eleicao.localeCompare(a.data_eleicao))[0];
+      const ini = anterior ? anterior.data_eleicao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
+      const fmtD = (d) => d.split('-').reverse().join('/');
+      const periodo = `${anterior ? 'desde a última eleição' : 'últimos 12 meses'}: ${fmtD(ini)} a ${fmtD(ref)}`;
+
+      // Universo: Mestres regulares na data da eleição
+      const universo = irmaosAptosParaAto(ref, 'eleicao').filter(i => i.data_exaltacao && i.data_exaltacao <= ref);
+
+      // Tesouraria: lançamentos do irmão em aberto vencidos até a data da eleição
+      let lanc = [], pg = 0;
+      for (;;) {
+        const { data, error } = await supabase.from('lancamentos_loja')
+          .select('origem_irmao_id, data_vencimento, valor, status, descricao')
+          .eq('origem_tipo', 'Irmao').in('status', ['pendente', 'parcial']).lte('data_vencimento', ref)
+          .range(pg * 1000, pg * 1000 + 999);
+        if (error) throw error;
+        lanc = lanc.concat(data || []);
+        if (!data || data.length < 1000) break;
+        pg++;
+      }
+
+      // Presença: sessões no período e registros (em lotes)
+      const { data: sessoes } = await supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', ini).lte('data_sessao', ref);
+      const dataSessao = Object.fromEntries((sessoes || []).map(x => [x.id, x.data_sessao]));
+      let regs = [];
+      const ids = (sessoes || []).map(x => x.id);
+      for (let i = 0; i < ids.length; i += 100) {
+        let pgr = 0;
+        for (;;) {
+          const { data } = await supabase.from('registros_presenca').select('membro_id, presente, sessao_id')
+            .in('sessao_id', ids.slice(i, i + 100)).range(pgr * 1000, pgr * 1000 + 999);
+          regs = regs.concat(data || []);
+          if (!data || data.length < 1000) break;
+          pgr++;
+        }
+      }
+
+      const ajustes = eleicaoSelecionada.aptidao_ajustes || {};
+      const linhas = universo.map(i => {
+        const pend = lanc.filter(l => String(l.origem_irmao_id) === String(i.id));
+        const meses = [...new Set(pend.map(l => String(l.data_vencimento || '').substring(0, 7)).filter(Boolean))].sort();
+        const finOk = meses.length <= LIMITE_MESES_PENDENTES;
+        // Sessões em que o irmão estava licenciado/afastado não contam
+        const meus = regs.filter(r => String(r.membro_id) === String(i.id))
+          .filter(r => situacaoNaData(i, dataSessao[r.sessao_id], historicoSituacoes) === 'regular');
+        const presentes = meus.filter(r => r.presente).length;
+        const total = meus.length;
+        const pct = total ? Math.round((presentes / total) * 100) : 0;
+        const presOk = pct >= PRESENCA_MINIMA;
+        const aptoAuto = finOk && presOk;
+        const ajuste = ajustes[String(i.id)];
+        const motivos = [!finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · ');
+        return {
+          irmao: i, nomeCurto: nomeCurto(i.nome), cim: i.cim, meses, qtdPend: pend.length, finOk,
+          textoTesouraria: meses.length === 0 ? 'Em dia' : `${meses.length} mês(es) em aberto`,
+          presentes, total, pct, presOk, aptoAuto, motivos, ajuste,
+          apto: ajuste ? ajuste.status === 'apto' : aptoAuto,
+        };
+      }).sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
+
+      // Assinantes do PDF: VM, Chanceler e Tesoureiro do Corpo Administrativo do ano da eleição
+      const ano = String(ref).substring(0, 4);
+      const { data: corpo } = await supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id');
+      const norm = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+      const nomeCargo = (...alvos) => {
+        const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
+        return r ? (irmaos || []).find(x => x.id === r.irmao_id)?.nome : null;
+      };
+      setAptidao({ carregando: false, linhas, periodo, assinantes: {
+        vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro'),
+      } });
+    } catch (e) {
+      setAptidao(a => ({ ...a, carregando: false }));
+      showError('Erro ao analisar a aptidão: ' + e.message);
+    }
+  };
+  carregarAptidaoRef.current = carregarAptidao;
+  const aptidaoPorIrmao = Object.fromEntries(aptidao.linhas.map(l => [String(l.irmao.id), l]));
+
+  const ajustarAptidao = async (linha) => {
+    const atuais = { ...(eleicaoSelecionada.aptidao_ajustes || {}) };
+    if (linha.ajuste) {
+      delete atuais[String(linha.irmao.id)];
+    } else {
+      const just = window.prompt(`Tornar ${linha.nomeCurto} APTO a votar.\nInforme a justificativa:`);
+      if (!just || !just.trim()) return;
+      atuais[String(linha.irmao.id)] = { status: 'apto', justificativa: just.trim(), em: new Date().toISOString() };
+    }
+    await atualizarEleicao({ aptidao_ajustes: atuais });
+    setEleicaoSelecionada(e => ({ ...e, aptidao_ajustes: atuais }));
+    setAptidao(a => ({ ...a, linhas: a.linhas.map(l => (l.irmao.id === linha.irmao.id
+      ? { ...l, ajuste: atuais[String(l.irmao.id)], apto: atuais[String(l.irmao.id)] ? true : l.aptoAuto } : l)) }));
+  };
+
   const ETAPAS = [
     { n: 1, label: 'Configuração' },
+    { n: 5, label: 'Aptos a Votar' },
     { n: 2, label: 'Sessão Eleição' },
     { n: 3, label: 'Sessão Posse' },
     { n: 4, label: 'Documentos' },
@@ -1454,7 +1579,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
             }}
             onClick={() => setEtapa(ep.n)}
           >
-            {ep.n}. {ep.label}
+            {idx + 1}. {ep.label}
           </button>
         ))}
       </div>
@@ -1719,13 +1844,103 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
           {podeEditar && chapaEleita.length > 0 && (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button style={S.btn('accent')} onClick={() => setEtapa(2)}>Avançar para Sessão de Eleição →</button>
+              <button style={S.btn('accent')} onClick={() => setEtapa(5)}>Avançar para Aptos a Votar →</button>
             </div>
           )}
         </div>
       )}
 
       {/* ── Etapa 2: Lista de presença — Eleição ── */}
+      {/* ── Etapa: Aptos a Votar (antes da Sessão de Eleição) ── */}
+      {etapa === 5 && (() => {
+        const L = aptidao.linhas;
+        const aptos = L.filter(l => l.apto);
+        const vis = L.filter(l => filtroAptidao === 'todos' ? true : filtroAptidao === 'aptos' ? l.apto : !l.apto);
+        const th = { textAlign: 'left', padding: '0.5rem 0.6rem', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' };
+        const td = { padding: '0.5rem 0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' };
+        const selo = (ok, txt) => (
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.15rem 0.55rem', borderRadius: '999px', whiteSpace: 'nowrap',
+            background: ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: ok ? '#10b981' : '#ef4444' }}>{txt}</span>
+        );
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={S.card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                <h3 style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '0.95rem', margin: 0, flex: 1 }}>
+                  🗳️ Aptos a Votar <span style={{ ...S.badge('blue'), marginLeft: '0.5rem' }}>{aptos.length} de {L.length} Mestres</span>
+                </h3>
+                <button style={S.btn('surface')} onClick={() => carregarAptidao()} disabled={aptidao.carregando}>↻ Recalcular</button>
+                <button style={S.btn('accent')} disabled={!aptos.length}
+                  onClick={() => gerarAptosVotarPDF({ linhas: aptos, eleicao: eleicaoSelecionada, dadosLoja, logoB64: LOGO_LOJA_B64, periodo: aptidao.periodo, assinantes: aptidao.assinantes })}>
+                  📄 PDF dos aptos
+                </button>
+              </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
+                Regras: tesouraria com até {LIMITE_MESES_PENDENTES} meses em aberto (consecutivos ou não) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
+                Sessões em licença não contam.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '0.3rem' }}>
+                  {[['todos', 'Todos'], ['aptos', 'Aptos'], ['inaptos', 'Inaptos']].map(([k, l]) => (
+                    <button key={k} onClick={() => setFiltroAptidao(k)}
+                      style={{ padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                        border: `1px solid ${filtroAptidao === k ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                        background: filtroAptidao === k ? 'var(--color-accent-bg)' : 'transparent', color: filtroAptidao === k ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>{l}</button>
+                  ))}
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                  <input type="checkbox" checked={!!eleicaoSelecionada.bloquear_inaptos} disabled={!podeEditar}
+                    onChange={e => { setEleicaoSelecionada(x => ({ ...x, bloquear_inaptos: e.target.checked })); atualizarEleicao({ bloquear_inaptos: e.target.checked }); }} />
+                  Bloquear a presença dos inaptos na Sessão de Eleição (desmarcado: só mostra o selo)
+                </label>
+              </div>
+              {aptidao.carregando ? (
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>Analisando tesouraria e presença…</p>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead style={{ background: 'var(--color-surface-3)' }}>
+                      <tr><th style={th}>Irmão</th><th style={th}>CIM</th><th style={th}>Tesouraria</th><th style={th}>Presença</th><th style={th}>Situação</th>{podeEditar && <th style={th}></th>}</tr>
+                    </thead>
+                    <tbody>
+                      {vis.map((l, i) => (
+                        <tr key={l.irmao.id} style={{ background: i % 2 ? 'var(--color-surface-2)' : 'var(--color-surface)' }}>
+                          <td style={{ ...td, fontWeight: 600 }} title={l.irmao.nome}>{l.nomeCurto}</td>
+                          <td style={td}>{l.cim || '—'}</td>
+                          <td style={td} title={l.meses.length ? `Meses em aberto: ${l.meses.map(m => m.split('-').reverse().join('/')).join(', ')}` : ''}>
+                            {selo(l.finOk, l.textoTesouraria)}
+                          </td>
+                          <td style={td}>{selo(l.presOk, `${l.pct}% (${l.presentes}/${l.total})`)}</td>
+                          <td style={td} title={l.ajuste ? `Justificativa: ${l.ajuste.justificativa}` : l.motivos}>
+                            {selo(l.apto, l.apto ? '✅ Apto' : '⛔ Inapto')}
+                            {!l.apto && l.motivos && <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>{l.motivos}</div>}
+                          </td>
+                          {podeEditar && (
+                            <td style={{ ...td, textAlign: 'right' }}>
+                              {(l.ajuste || !l.aptoAuto) && (
+                                <button onClick={() => ajustarAptidao(l)} title={l.ajuste ? 'Voltar à situação calculada' : 'Tornar apto (com justificativa)'}
+                                  style={{ padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                                    border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
+                                  {l.ajuste ? '↺' : '✏️ Tornar apto'}
+                                </button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <button style={S.btn('surface')} onClick={() => setEtapa(1)}>← Voltar</button>
+              <button style={S.btn('accent')} onClick={() => setEtapa(2)}>Avançar para Sessão de Eleição →</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {etapa === 2 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={S.card}>
@@ -1747,9 +1962,12 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 })
                 .map(i => {
                   const marcado = presEleicao.some(p => p.irmao_id === i.id);
+                  const apt = aptidaoPorIrmao[String(i.id)];
+                  const bloqueado = !!eleicaoSelecionada.bloquear_inaptos && apt && !apt.apto && !marcado;
                   return (
                     <div key={i.id}
-                      onClick={() => podeEditar && togglePresenca(i.id, 'eleicao')}
+                      onClick={() => podeEditar && !bloqueado && togglePresenca(i.id, 'eleicao')}
+                      title={bloqueado ? 'Inapto a votar (bloqueado em "Aptos a Votar")' : undefined}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '0.75rem',
                         padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: podeEditar ? 'pointer' : 'default',
@@ -1766,8 +1984,15 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                         {marcado && <span style={{ color: 'white', fontSize: '0.7rem', fontWeight: '700' }}>✓</span>}
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.875rem', fontWeight: marcado ? '600' : '400', color: 'var(--color-text)' }}>{i.nome}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>CIM {i.cim}</div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: marcado ? '600' : '400', color: 'var(--color-text)', opacity: bloqueado ? 0.5 : 1 }}>{i.nome}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                          CIM {i.cim}
+                          {apt && (
+                            <span style={{ marginLeft: '0.4rem', fontWeight: 700, color: apt.apto ? '#10b981' : '#ef4444' }}>
+                              {apt.apto ? '· ✅ Apto' : '· ⛔ Inapto'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1777,7 +2002,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
           {podeEditar && (
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <button style={S.btn('surface')} onClick={() => setEtapa(1)}>← Voltar</button>
+              <button style={S.btn('surface')} onClick={() => setEtapa(5)}>← Voltar</button>
               <button style={S.btn('success')} onClick={confirmarEleicao} disabled={presEleicao.length === 0}>
                 ✅ Confirmar Eleição ({presEleicao.length} presentes)
               </button>
