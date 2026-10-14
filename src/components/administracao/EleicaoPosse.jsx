@@ -1447,8 +1447,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const fmtD = (d) => d.split('-').reverse().join('/');
       const periodo = `${anterior ? 'desde a última eleição' : 'últimos 12 meses'}: ${fmtD(ini)} a ${fmtD(ref)}`;
 
-      // Universo: Mestres regulares na data da eleição
-      const universo = irmaosAptosParaAto(ref, 'eleicao').filter(i => i.data_exaltacao && i.data_exaltacao <= ref);
+      // Universo: Mestres regulares OU licenciados na data da eleição
+      // (irregulares, desligados e falecidos ficam fora da lista)
+      const universo = (irmaos || []).filter(i => i.data_exaltacao && i.data_exaltacao <= ref
+        && ['regular', 'licenciado'].includes(situacaoNaData(i, ref, historicoSituacoes)));
 
       // Tesouraria: lançamentos do irmão em aberto vencidos até a data da eleição
       let lanc = [], pg = 0;
@@ -1484,20 +1486,40 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         const pend = lanc.filter(l => String(l.origem_irmao_id) === String(i.id));
         const meses = [...new Set(pend.map(l => String(l.data_vencimento || '').substring(0, 7)).filter(Boolean))].sort();
         const finOk = meses.length <= LIMITE_MESES_PENDENTES;
-        // Sessões em que o irmão estava licenciado/afastado não contam
+
+        // Prerrogativa por idade: 70 anos completos há pelo menos 6 meses na data da eleição → isento de presença.
+        // Até completar 70 a presença é obrigatória; sessões depois do 70º aniversário não contam.
+        let data70 = null, isento70 = false;
+        if (i.data_nascimento) {
+          const n = new Date(String(i.data_nascimento).substring(0, 10) + 'T00:00:00');
+          const d70 = new Date(n); d70.setFullYear(n.getFullYear() + 70);
+          data70 = d70.toISOString().substring(0, 10);
+          const lim = new Date(d70); lim.setMonth(lim.getMonth() + 6);
+          isento70 = lim.toISOString().substring(0, 10) <= ref;
+        }
+
+        // Licença em qualquer parte do período analisado → "Lic" (inapto, por enquanto)
+        const licenca = (historicoSituacoes || []).some(h => String(h.membro_id) === String(i.id) && h.status !== 'cancelada'
+          && String(h.tipo_situacao || '').toLowerCase().includes('licen')
+          && h.data_inicio && h.data_inicio <= ref && (!h.data_fim || h.data_fim >= ini))
+          || situacaoNaData(i, ref, historicoSituacoes) === 'licenciado';
+
+        // Presença: sessões em que estava regular, antes de completar 70 anos
         const meus = regs.filter(r => String(r.membro_id) === String(i.id))
-          .filter(r => situacaoNaData(i, dataSessao[r.sessao_id], historicoSituacoes) === 'regular');
+          .filter(r => situacaoNaData(i, dataSessao[r.sessao_id], historicoSituacoes) === 'regular')
+          .filter(r => !data70 || String(dataSessao[r.sessao_id]) < data70);
         const presentes = meus.filter(r => r.presente).length;
         const total = meus.length;
         const pct = total ? Math.round((presentes / total) * 100) : 0;
-        const presOk = pct >= PRESENCA_MINIMA;
-        const aptoAuto = finOk && presOk;
+        const presOk = isento70 || pct >= PRESENCA_MINIMA;
+        const aptoAuto = finOk && presOk && !licenca;
         const ajuste = ajustes[String(i.id)];
-        const motivos = [!finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · ');
+        const motivos = [licenca && 'licença no período', !finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · ');
         return {
-          irmao: i, nomeCurto: nomeCurto(i.nome), cim: i.cim, meses, qtdPend: pend.length, finOk,
+          irmao: i, nome: i.nome, nomeCurto: nomeCurto(i.nome), cim: i.cim, meses, qtdPend: pend.length, finOk,
           textoTesouraria: meses.length === 0 ? 'Em dia' : `${meses.length} mês(es) em aberto`,
-          presentes, total, pct, presOk, aptoAuto, motivos, ajuste,
+          presentes, total, pct, presOk, isento70, licenca, aptoAuto, motivos, ajuste,
+          textoPresenca: isento70 ? `Dispensada (${pct}%)` : `${pct}% (${presentes}/${total})`,
           apto: ajuste ? ajuste.status === 'apto' : aptoAuto,
         };
       }).sort((a, b) => a.nomeCurto.localeCompare(b.nomeCurto));
@@ -1877,7 +1899,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
                 Regras: tesouraria com até {LIMITE_MESES_PENDENTES} meses em aberto (consecutivos ou não) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
-                Sessões em licença não contam.
+                Sessões em licença não contam. <span style={{ color: '#facc15' }}>★</span> = prerrogativa por idade (70 anos há 6 meses ou mais: presença dispensada). Lic = licença no período.
               </p>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
@@ -1905,12 +1927,16 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                     <tbody>
                       {vis.map((l, i) => (
                         <tr key={l.irmao.id} style={{ background: i % 2 ? 'var(--color-surface-2)' : 'var(--color-surface)' }}>
-                          <td style={{ ...td, fontWeight: 600 }} title={l.irmao.nome}>{l.nomeCurto}</td>
+                          <td style={{ ...td, fontWeight: 600 }} title={l.irmao.nome}>
+                            {l.nomeCurto}
+                            {l.isento70 && <span title="Prerrogativa por idade (70 anos há 6 meses ou mais): presença dispensada" style={{ marginLeft: '0.35rem', color: '#facc15' }}>★</span>}
+                            {l.licenca && <span title="Licença no período analisado" style={{ marginLeft: '0.35rem', fontSize: '0.65rem', fontWeight: 800, padding: '0.05rem 0.35rem', borderRadius: '4px', background: 'rgba(245,158,11,0.15)', color: '#d97706', border: '1px solid rgba(245,158,11,0.4)' }}>Lic</span>}
+                          </td>
                           <td style={td}>{l.cim || '—'}</td>
                           <td style={td} title={l.meses.length ? `Meses em aberto: ${l.meses.map(m => m.split('-').reverse().join('/')).join(', ')}` : ''}>
                             {selo(l.finOk, l.textoTesouraria)}
                           </td>
-                          <td style={td}>{selo(l.presOk, `${l.pct}% (${l.presentes}/${l.total})`)}</td>
+                          <td style={td}>{selo(l.presOk, l.textoPresenca)}</td>
                           <td style={td} title={l.ajuste ? `Justificativa: ${l.ajuste.justificativa}` : l.motivos}>
                             {selo(l.apto, l.apto ? '✅ Apto' : '⛔ Inapto')}
                             {!l.apto && l.motivos && <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>{l.motivos}</div>}
