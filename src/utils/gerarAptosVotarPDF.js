@@ -11,7 +11,7 @@ const DOURADO = [201, 168, 76];
 const CINZA = [100, 116, 139];
 const TEXTO = [30, 41, 59];
 
-// tipo: 'aptos' (Tesouraria = "Quite") | 'inaptos' (Tesouraria = "Pendência" quando houver)
+// tipo: 'aptos' (Tesouraria = "Regular") | 'inaptos' (Tesouraria = "Pendência" quando houver)
 export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
   const inaptos = tipo === 'inaptos';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -43,7 +43,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
   doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
   y += 5;
-  doc.text('Critérios: estar em dia com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
+  doc.text('Critérios: estar regular com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
   y += 6;
 
   doc.autoTable({
@@ -55,7 +55,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
       String(i + 1),
       `${l.nome || l.nomeCurto}${inaptos && l.licenca ? ' (Lic)' : ''}`,
       l.cim || '',
-      inaptos ? (l.finOk === false ? 'Pendência' : 'Quite') : 'Quite',
+      inaptos ? (l.finOk === false ? 'Pendência' : 'Regular') : 'Regular', // "Regular" (não "Quite"): pode haver até 2 meses em aberto
       l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`,
     ]),
     didDrawCell: (d) => {
