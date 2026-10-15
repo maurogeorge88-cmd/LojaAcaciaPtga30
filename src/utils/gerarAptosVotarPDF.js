@@ -11,7 +11,7 @@ const DOURADO = [201, 168, 76];
 const CINZA = [100, 116, 139];
 const TEXTO = [30, 41, 59];
 
-// tipo: 'aptos' (Tesouraria = "Regular") | 'inaptos' (Tesouraria = "Pendência" quando houver)
+// tipo: 'aptos' (Tesouraria = "Regular") | 'inaptos' (Tesouraria = "Pendência")
 export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
   const inaptos = tipo === 'inaptos';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -55,7 +55,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
       String(i + 1),
       `${l.nome || l.nomeCurto}${inaptos && l.licenca ? ' (Lic)' : ''}`,
       l.cim || '',
-      inaptos ? (l.finOk === false ? 'Pendência' : 'Regular') : 'Regular', // "Regular" (não "Quite"): pode haver até 2 meses em aberto
+      inaptos ? 'Pendência' : 'Regular', // apto = "Regular"; inapto = "Pendência" (nunca "Quite")
       l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`,
     ]),
     didDrawCell: (d) => {
