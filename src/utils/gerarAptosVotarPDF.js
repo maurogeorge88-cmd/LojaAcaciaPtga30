@@ -104,14 +104,13 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, M, H - 9);
     doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
-  // Abre o PDF numa aba nova (dali dá para salvar/imprimir). O navegador costuma bloquear
-  // downloads automáticos repetidos do mesmo site; a aba nova, aberta no clique, não é bloqueada.
+  // Baixa o arquivo direto (o clique gera o PDF na hora, sem esperar o banco)
   const nomeFinal = nomeArquivo || `${inaptos ? 'Inaptos' : 'Aptos'}_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`;
-  try {
-    const url = doc.output('bloburl');
-    const aba = window.open(url, '_blank');
-    if (!aba) doc.save(nomeFinal); // pop-up bloqueado → baixa o arquivo
-  } catch (e) {
-    doc.save(nomeFinal);
-  }
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nomeFinal; a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
 };
