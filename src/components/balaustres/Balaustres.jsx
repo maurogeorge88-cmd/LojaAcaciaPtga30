@@ -182,7 +182,21 @@ const Balaustres = ({
         const ini = anterior ? anterior.data_sessao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
         const fmt = (d) => d.split('-').reverse().join('/');
         const linhas = await calcularAptidaoVoto({ ref, ini, irmaos: irmaosAptidao, ajustes: {} });
-        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(ref)}`, chave });
+        // Dados do PDF já carregados aqui: o download precisa acontecer direto no clique
+        // (se o clique aguardar o banco, o navegador segura o download)
+        const ano = String(ref).substring(0, 4);
+        const [{ data: lojaData }, { data: corpo }] = await Promise.all([
+          supabaseEleicao.from('dados_loja').select('*').limit(1),
+          supabaseEleicao.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id'),
+        ]);
+        const norm = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const nomeCargo = (...alvos) => {
+          const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
+          return r ? irmaosAptidao.find(x => x.id === r.irmao_id)?.nome : null;
+        };
+        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(ref)}`, chave,
+          dadosLoja: (lojaData && lojaData[0]) || {},
+          assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') } });
       } catch (err) {
         setAptGLEMT(a => ({ ...a, carregando: false }));
         showError('Erro ao analisar a aptidão: ' + err.message);
@@ -211,24 +225,15 @@ const Balaustres = ({
     setEl({ aptidao_ajustes: atuais });
   };
   // tipo: 'aptos' | 'inaptos'
-  const pdfAptosGLEMT = async (tipo = 'aptos') => {
+  const pdfAptosGLEMT = (tipo = 'aptos') => {
     const aptos = linhasApt.filter(l => (tipo === 'inaptos' ? !l.apto : l.apto));
     if (!aptos.length) { showError(tipo === 'inaptos' ? 'Nenhum irmão inapto para listar.' : 'Nenhum irmão apto para listar.'); return; }
     const ref = balaustreForm.data_sessao;
     const ano = String(ref || '').substring(0, 4);
-    const [{ data: lojaData }, { data: corpo }] = await Promise.all([
-      supabaseEleicao.from('dados_loja').select('*').limit(1),
-      supabaseEleicao.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id'),
-    ]);
-    const norm = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    const nomeCargo = (...alvos) => {
-      const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
-      return r ? irmaosAptidao.find(x => x.id === r.irmao_id)?.nome : null;
-    };
     const periodoTxt = el?.ano_inicio && el?.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '';
     gerarAptosVotarPDF({
-      linhas: aptos, eleicao: {}, dadosLoja: (lojaData && lojaData[0]) || {}, logoB64: LOGO_LOJA_B64, periodo: aptGLEMT.periodo,
-      assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') },
+      linhas: aptos, eleicao: {}, dadosLoja: aptGLEMT.dadosLoja || {}, logoB64: LOGO_LOJA_B64, periodo: aptGLEMT.periodo,
+      assinantes: aptGLEMT.assinantes || {},
       subtitulo: `Eleição da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT${periodoTxt ? ` — Período ${periodoTxt}` : ''}${ref ? ` — sessão de ${ref.split('-').reverse().join('/')}` : ''}`,
       nomeArquivo: `${tipo === 'inaptos' ? 'Inaptos' : 'Aptos'}_a_Votar_GLEMT_${periodoTxt.replace('/', '-') || ano}.pdf`,
       tipo,
