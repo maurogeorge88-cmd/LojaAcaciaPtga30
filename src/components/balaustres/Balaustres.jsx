@@ -3,6 +3,9 @@ import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 import { gerarAtaSessao, listarModelosAta, gerarListaPresencaEleicaoGLEMT, gerarEditalEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { supabase as supabaseEleicao } from '../../supabaseClient';
+import { calcularAptidaoVoto } from '../../utils/calcularAptidaoVoto';
+import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
+import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 
 const Balaustres = ({ 
   balaustres, 
@@ -25,9 +28,13 @@ const Balaustres = ({
 
   // ── Eleição da GLEMT (a cada 3 anos) ──
   const [mestresRegulares, setMestresRegulares] = useState([]);
+  const [irmaosAptidao, setIrmaosAptidao] = useState([]);
+  // Aptidão para votar na eleição GLEMT (mesma regra da eleição da Loja)
+  const [aptGLEMT, setAptGLEMT] = useState({ carregando: false, linhas: [], periodo: '', chave: '' });
   useEffect(() => {
     (async () => {
-      const { data } = await supabaseEleicao.from('irmaos').select('id, nome, situacao, data_exaltacao, data_falecimento');
+      const { data } = await supabaseEleicao.from('irmaos').select('id, nome, cim, situacao, data_exaltacao, data_falecimento, data_nascimento, data_desligamento');
+      setIrmaosAptidao(data || []);
       setMestresRegulares((data || [])
         .filter(i => String(i.situacao || 'regular').toLowerCase() === 'regular' && i.data_exaltacao && !i.data_falecimento)
         .sort((a, b) => a.nome.localeCompare(b.nome)));
@@ -159,9 +166,72 @@ const Balaustres = ({
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
 
   // Eleição GLEMT: atalhos do formulário (depois do estado balaustreForm)
+  // Aptidão: período desde a última eleição GLEMT (ou 12 meses), referência = data da sessão
+  useEffect(() => {
+    const e = balaustreForm.eleicao_glemt;
+    const ref = balaustreForm.data_sessao;
+    if (!modalAberto || !e?.ativo || !ref || !irmaosAptidao.length) return;
+    const chave = `${ref}|${balaustreEditando?.id || 'novo'}`;
+    if (aptGLEMT.chave === chave) return;
+    (async () => {
+      setAptGLEMT(a => ({ ...a, carregando: true, chave }));
+      try {
+        const { data: ant } = await supabaseEleicao.from('balaustres').select('id, data_sessao, eleicao_glemt')
+          .lt('data_sessao', ref).not('eleicao_glemt', 'is', null).order('data_sessao', { ascending: false });
+        const anterior = (ant || []).find(b => b.eleicao_glemt?.ativo && b.id !== balaustreEditando?.id);
+        const ini = anterior ? anterior.data_sessao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
+        const fmt = (d) => d.split('-').reverse().join('/');
+        const linhas = await calcularAptidaoVoto({ ref, ini, irmaos: irmaosAptidao, ajustes: {} });
+        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(ref)}`, chave });
+      } catch (err) {
+        setAptGLEMT(a => ({ ...a, carregando: false }));
+        showError('Erro ao analisar a aptidão: ' + err.message);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalAberto, balaustreForm.eleicao_glemt?.ativo, balaustreForm.data_sessao, irmaosAptidao.length]);
+
   const el = balaustreForm.eleicao_glemt;
   const setEl = (campos) => setBalaustreForm(f => ({ ...f, eleicao_glemt: { ...(f.eleicao_glemt || ELEICAO_VAZIA()), ...campos } }));
   const setChapa = (idx, campos) => setEl({ chapas: (el?.chapas || []).map((c, i) => (i === idx ? { ...c, ...campos } : c)) });
+  // Aptidão com os ajustes manuais gravados no próprio balaustre (eleicao_glemt.aptidao_ajustes)
+  const linhasApt = aptGLEMT.linhas.map(l => {
+    const aj = (el?.aptidao_ajustes || {})[String(l.irmao.id)];
+    return { ...l, ajuste: aj, apto: aj ? aj.status === 'apto' : l.aptoAuto };
+  });
+  const aptPorIrmao = Object.fromEntries(linhasApt.map(l => [String(l.irmao.id), l]));
+  const ajustarAptGLEMT = (l) => {
+    const atuais = { ...(el?.aptidao_ajustes || {}) };
+    if (l.ajuste) delete atuais[String(l.irmao.id)];
+    else {
+      const just = window.prompt(`Tornar ${l.nomeCurto} APTO a votar.\nInforme a justificativa:`);
+      if (!just || !just.trim()) return;
+      atuais[String(l.irmao.id)] = { status: 'apto', justificativa: just.trim(), em: new Date().toISOString() };
+    }
+    setEl({ aptidao_ajustes: atuais });
+  };
+  const pdfAptosGLEMT = async () => {
+    const aptos = linhasApt.filter(l => l.apto);
+    if (!aptos.length) { showError('Nenhum irmão apto para listar.'); return; }
+    const ref = balaustreForm.data_sessao;
+    const ano = String(ref || '').substring(0, 4);
+    const [{ data: lojaData }, { data: corpo }] = await Promise.all([
+      supabaseEleicao.from('dados_loja').select('*').limit(1),
+      supabaseEleicao.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id'),
+    ]);
+    const norm = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const nomeCargo = (...alvos) => {
+      const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
+      return r ? irmaosAptidao.find(x => x.id === r.irmao_id)?.nome : null;
+    };
+    const periodoTxt = el?.ano_inicio && el?.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '';
+    gerarAptosVotarPDF({
+      linhas: aptos, eleicao: {}, dadosLoja: (lojaData && lojaData[0]) || {}, logoB64: LOGO_LOJA_B64, periodo: aptGLEMT.periodo,
+      assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') },
+      subtitulo: `Eleição da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT${periodoTxt ? ` — Período ${periodoTxt}` : ''}${ref ? ` — sessão de ${ref.split('-').reverse().join('/')}` : ''}`,
+      nomeArquivo: `Aptos_a_Votar_GLEMT_${periodoTxt.replace('/', '-') || ano}.pdf`,
+    });
+  };
   const [anoSelecionado, setAnoSelecionado] = useState(null); // null = todos os anos
   const [balaustreVisualizando, setBalaustreVisualizando] = useState(null);
   const [modalVisualizar, setModalVisualizar] = useState(false);
@@ -599,12 +669,19 @@ const Balaustres = ({
                         return (
                           <div style={{border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.6rem',background:'var(--color-surface)'}}>
                             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.5rem',flexWrap:'wrap',marginBottom:'0.5rem'}}>
-                              <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>✅ Presentes: {pres.length} de {aptos.length} Mestres</strong>
+                              <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>
+                                ✅ Presentes: {pres.length} de {aptos.length} Mestres
+                                <span style={{marginLeft:'0.5rem',fontWeight:600,color:'var(--color-text-muted)'}}>
+                                  · {aptGLEMT.carregando ? 'analisando aptidão…' : `${linhasApt.filter(l => l.apto).length} aptos a votar`}
+                                </span>
+                              </strong>
                               <div style={{display:'flex',gap:'0.4rem'}}>
                                 <button type="button" onClick={() => setEl({ presentes: aptos.map(m => String(m.id)) })}
                                   style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Marcar todos</button>
                                 <button type="button" onClick={() => setEl({ presentes: [] })}
                                   style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Limpar</button>
+                                <button type="button" onClick={pdfAptosGLEMT} disabled={aptGLEMT.carregando}
+                                  style={{padding:'0.2rem 0.6rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.5)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>📄 PDF dos aptos</button>
                               </div>
                             </div>
                             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'0.25rem',maxHeight:'220px',overflowY:'auto'}}>
@@ -614,7 +691,21 @@ const Balaustres = ({
                                   <label key={m.id} style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.8rem',padding:'0.25rem 0.4rem',borderRadius:'var(--radius-md)',cursor:'pointer',
                                     background: marcado ? 'rgba(16,185,129,0.12)' : 'transparent', color: marcado ? 'var(--color-text)' : 'var(--color-text-muted)'}}>
                                     <input type="checkbox" checked={marcado} onChange={() => toggle(m.id)} />
-                                    {m.nome}
+                                    <span style={{flex:1,minWidth:0}}>
+                                      {m.nome}
+                                      {aptPorIrmao[String(m.id)]?.isento70 && <span title="Prerrogativa por idade: presença dispensada" style={{marginLeft:'0.25rem',color:'#facc15'}}>★</span>}
+                                      {aptPorIrmao[String(m.id)]?.licenca && <span style={{marginLeft:'0.25rem',fontSize:'0.6rem',fontWeight:800,color:'#d97706'}}>Lic</span>}
+                                    </span>
+                                    {aptPorIrmao[String(m.id)] && (
+                                      <span
+                                        title={aptPorIrmao[String(m.id)].ajuste ? `Ajustado: ${aptPorIrmao[String(m.id)].ajuste.justificativa} (clique para desfazer)` : (aptPorIrmao[String(m.id)].apto ? 'Apto a votar' : `${aptPorIrmao[String(m.id)].motivos} — clique para tornar apto`)}
+                                        onClick={e => { e.preventDefault(); e.stopPropagation(); const l = aptPorIrmao[String(m.id)]; if (l.ajuste || !l.aptoAuto) ajustarAptGLEMT(l); }}
+                                        style={{flexShrink:0,fontSize:'0.62rem',fontWeight:800,padding:'0.05rem 0.4rem',borderRadius:'999px',cursor:'pointer',
+                                          background: aptPorIrmao[String(m.id)].apto ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                                          color: aptPorIrmao[String(m.id)].apto ? '#10b981' : '#ef4444'}}>
+                                        {aptPorIrmao[String(m.id)].apto ? 'Apto' : 'Inapto'}
+                                      </span>
+                                    )}
                                   </label>
                                 );
                               })}
