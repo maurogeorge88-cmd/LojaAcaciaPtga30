@@ -11,7 +11,9 @@ const DOURADO = [201, 168, 76];
 const CINZA = [100, 116, 139];
 const TEXTO = [30, 41, 59];
 
-export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null }) => {
+// tipo: 'aptos' (Tesouraria = "Quite") | 'inaptos' (Tesouraria = "Pendência" quando houver)
+export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
+  const inaptos = tipo === 'inaptos';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -36,7 +38,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   // Título
   y += 9;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
-  doc.text('RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
+  doc.text(inaptos ? 'RELAÇÃO DE IRMÃOS INAPTOS A VOTAR' : 'RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
   y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
   doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
@@ -49,7 +51,13 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     margin: { left: M, right: M, bottom: 16 },
     head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
     // Nome completo; prerrogativa por idade identificada com a estrela (desenhada em amarelo)
-    body: linhas.map((l, i) => [String(i + 1), l.nome || l.nomeCurto, l.cim || '', l.textoTesouraria, l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`]),
+    body: linhas.map((l, i) => [
+      String(i + 1),
+      `${l.nome || l.nomeCurto}${inaptos && l.licenca ? ' (Lic)' : ''}`,
+      l.cim || '',
+      inaptos ? (l.finOk === false ? 'Pendência' : 'Quite') : 'Quite',
+      l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`,
+    ]),
     didDrawCell: (d) => {
       if (d.section === 'body' && d.column.index === 1 && linhas[d.row.index]?.isento70) {
         const tw = doc.getTextWidth(String(d.cell.raw || ''));
@@ -68,7 +76,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   });
   y = doc.lastAutoTable.finalY + 6;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
-  doc.text(`Total de irmãos aptos: ${linhas.length}`, M, y);
+  doc.text(`Total de irmãos ${inaptos ? 'inaptos' : 'aptos'}: ${linhas.length}`, M, y);
 
   // Assinaturas: VM, Chanceler e Tesoureiro (lado a lado)
   // Assinaturas logo abaixo da tabela (página nova só se não couber)
@@ -94,5 +102,5 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, M, H - 9);
     doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
-  doc.save(nomeArquivo || `Aptos_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`);
+  doc.save(nomeArquivo || `${inaptos ? 'Inaptos' : 'Aptos'}_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`);
 };
