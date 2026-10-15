@@ -11,7 +11,7 @@ const DOURADO = [201, 168, 76];
 const CINZA = [100, 116, 139];
 const TEXTO = [30, 41, 59];
 
-export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {} }) => {
+export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null }) => {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -39,7 +39,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   doc.text('RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
   y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
-  doc.text(`Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
+  doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
   y += 5;
   doc.text('Critérios: estar em dia com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
   y += 6;
@@ -94,5 +94,5 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, M, H - 9);
     doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
-  doc.save(`Aptos_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`);
+  doc.save(nomeArquivo || `Aptos_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`);
 };
