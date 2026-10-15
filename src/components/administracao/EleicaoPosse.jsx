@@ -1897,6 +1897,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   onClick={() => gerarAptosVotarPDF({ linhas: aptos, eleicao: eleicaoSelecionada, dadosLoja, logoB64: LOGO_LOJA_B64, periodo: aptidao.periodo, assinantes: aptidao.assinantes })}>
                   📄 PDF dos aptos
                 </button>
+                <button style={S.btn('surface')} disabled={!L.some(l => !l.apto)}
+                  onClick={() => gerarAptosVotarPDF({ tipo: 'inaptos', linhas: L.filter(l => !l.apto), eleicao: eleicaoSelecionada, dadosLoja, logoB64: LOGO_LOJA_B64, periodo: aptidao.periodo, assinantes: aptidao.assinantes })}>
+                  📄 PDF dos inaptos
+                </button>
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
                 Regras: tesouraria com no máximo {LIMITE_MESES_PENDENTES - 1} meses em aberto ({LIMITE_MESES_PENDENTES} ou mais, consecutivos ou não, = inapto) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
