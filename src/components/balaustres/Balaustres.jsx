@@ -210,9 +210,10 @@ const Balaustres = ({
     }
     setEl({ aptidao_ajustes: atuais });
   };
-  const pdfAptosGLEMT = async () => {
-    const aptos = linhasApt.filter(l => l.apto);
-    if (!aptos.length) { showError('Nenhum irmão apto para listar.'); return; }
+  // tipo: 'aptos' | 'inaptos'
+  const pdfAptosGLEMT = async (tipo = 'aptos') => {
+    const aptos = linhasApt.filter(l => (tipo === 'inaptos' ? !l.apto : l.apto));
+    if (!aptos.length) { showError(tipo === 'inaptos' ? 'Nenhum irmão inapto para listar.' : 'Nenhum irmão apto para listar.'); return; }
     const ref = balaustreForm.data_sessao;
     const ano = String(ref || '').substring(0, 4);
     const [{ data: lojaData }, { data: corpo }] = await Promise.all([
@@ -229,7 +230,8 @@ const Balaustres = ({
       linhas: aptos, eleicao: {}, dadosLoja: (lojaData && lojaData[0]) || {}, logoB64: LOGO_LOJA_B64, periodo: aptGLEMT.periodo,
       assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') },
       subtitulo: `Eleição da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT${periodoTxt ? ` — Período ${periodoTxt}` : ''}${ref ? ` — sessão de ${ref.split('-').reverse().join('/')}` : ''}`,
-      nomeArquivo: `Aptos_a_Votar_GLEMT_${periodoTxt.replace('/', '-') || ano}.pdf`,
+      nomeArquivo: `${tipo === 'inaptos' ? 'Inaptos' : 'Aptos'}_a_Votar_GLEMT_${periodoTxt.replace('/', '-') || ano}.pdf`,
+      tipo,
     });
   };
   const [anoSelecionado, setAnoSelecionado] = useState(null); // null = todos os anos
@@ -680,8 +682,10 @@ const Balaustres = ({
                                   style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Marcar todos</button>
                                 <button type="button" onClick={() => setEl({ presentes: [] })}
                                   style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Limpar</button>
-                                <button type="button" onClick={pdfAptosGLEMT} disabled={aptGLEMT.carregando}
+                                <button type="button" onClick={() => pdfAptosGLEMT('aptos')} disabled={aptGLEMT.carregando}
                                   style={{padding:'0.2rem 0.6rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.5)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>📄 PDF dos aptos</button>
+                                <button type="button" onClick={() => pdfAptosGLEMT('inaptos')} disabled={aptGLEMT.carregando}
+                                  style={{padding:'0.2rem 0.6rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.45)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>📄 PDF dos inaptos</button>
                               </div>
                             </div>
                             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'0.25rem',maxHeight:'220px',overflowY:'auto'}}>
