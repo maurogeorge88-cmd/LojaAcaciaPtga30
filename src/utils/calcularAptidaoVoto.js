@@ -36,6 +36,11 @@ const situacaoNaData = (i, dataISO, historico) => {
     return 'irregular';
   }
   if (atual === 'regular') return 'regular';
+  // Licença já encerrada antes da data (cadastro ainda marcado como licenciado) → regular
+  if (atual.includes('licen')) {
+    const lics = hist.filter(h => String(h.tipo_situacao || '').toLowerCase().includes('licen'));
+    if (lics.length && lics.every(h => h.data_fim && h.data_fim < d)) return 'regular';
+  }
   if (hist.some(h => h.data_inicio && h.data_inicio > d)) return 'regular';
   if (i.data_desligamento && i.data_desligamento > d) return 'regular';
   return atual;
@@ -90,10 +95,8 @@ export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) =>
       const lim = new Date(d70); lim.setMonth(lim.getMonth() + 6);
       isento70 = lim.toISOString().substring(0, 10) <= ref;
     }
-    const licenca = (historico || []).some(h => String(h.membro_id) === String(i.id) && h.status !== 'cancelada'
-      && String(h.tipo_situacao || '').toLowerCase().includes('licen')
-      && h.data_inicio && h.data_inicio <= ref && (!h.data_fim || h.data_fim >= ini))
-      || situacaoNaData(i, ref, historico) === 'licenciado';
+    // Licença: só deixa inapto se ainda estiver licenciado na data da eleição (licença encerrada = regular)
+        const licenca = situacaoNaData(i, ref, historico) === 'licenciado';
 
     const meus = regs.filter(r => String(r.membro_id) === String(i.id))
       .filter(r => situacaoNaData(i, dataSessao[r.sessao_id], historico) === 'regular')
@@ -108,7 +111,7 @@ export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) =>
       irmao: i, nome: i.nome, nomeCurto: nomeCurto(i.nome), cim: i.cim, meses, finOk,
       textoTesouraria: meses.length === 0 ? 'Em dia' : `${meses.length} mês(es) em aberto`,
       presentes, total, pct, presOk, isento70, licenca, aptoAuto, ajuste,
-      motivos: [licenca && 'licença no período', !finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · '),
+      motivos: [licenca && 'licenciado', !finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · '),
       textoPresenca: isento70 ? `Dispensada (${pct}%)` : `${pct}% (${presentes}/${total})`,
       apto: ajuste ? ajuste.status === 'apto' : aptoAuto,
     };
