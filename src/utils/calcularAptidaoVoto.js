@@ -42,6 +42,9 @@ const situacaoNaData = (i, dataISO, historico) => {
 };
 
 export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) => {
+  // Presença: até a última sessão já realizada (nunca além de hoje), mesmo que a eleição seja futura
+  const hoje = new Date().toISOString().substring(0, 10);
+  const refPresenca = ref < hoje ? ref : hoje;
   const { data: historico } = await supabase.from('historico_situacoes').select('membro_id, tipo_situacao, data_inicio, data_fim, status');
 
   // Universo: Mestres regulares ou licenciados na data (irregulares, desligados e falecidos ficam fora)
@@ -61,7 +64,7 @@ export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) =>
   }
 
   // Presença
-  const { data: sessoes } = await supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', ini).lte('data_sessao', ref);
+  const { data: sessoes } = await supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', ini).lte('data_sessao', refPresenca);
   const dataSessao = Object.fromEntries((sessoes || []).map(x => [x.id, x.data_sessao]));
   const ids = (sessoes || []).map(x => x.id);
   let regs = [];
