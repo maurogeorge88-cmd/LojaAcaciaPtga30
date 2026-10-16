@@ -27,7 +27,11 @@ const situacaoNaData = (i, dataISO, historico) => {
   const d = String(dataISO).substring(0, 10);
   if (i.data_falecimento && i.data_falecimento <= d) return 'falecido';
   const hist = (historico || []).filter(h => h.membro_id === i.id && h.status !== 'cancelada');
-  const cobre = hist.find(h => h.data_inicio && h.data_inicio <= d && (!h.data_fim || h.data_fim >= d));
+  // Situação sem data de fim: vale até hoje se o cadastro já voltou a "regular"
+  // (licença resolvida sem lançar a data de fim no histórico); senão, continua em aberto.
+  const hojeSit = new Date().toISOString().substring(0, 10);
+  const fimEfetivo = (h) => h.data_fim || (atual === 'regular' ? hojeSit : null);
+  const cobre = hist.find(h => h.data_inicio && h.data_inicio <= d && (!fimEfetivo(h) || (h.data_fim ? h.data_fim >= d : d < fimEfetivo(h))));
   if (cobre) {
     const t = String(cobre.tipo_situacao || '').toLowerCase();
     if (t.includes('licen')) return 'licenciado';
