@@ -126,6 +126,11 @@ const situacaoNaData = (i, dataISO, historico) => {
     return 'irregular';
   }
   if (atual === 'regular') return 'regular';
+  // Licença já encerrada antes da data (cadastro ainda marcado como licenciado) → regular
+  if (atual.includes('licen')) {
+    const lics = hist.filter(h => String(h.tipo_situacao || '').toLowerCase().includes('licen'));
+    if (lics.length && lics.every(h => h.data_fim && h.data_fim < d)) return 'regular';
+  }
   // Situação atual não-regular que começou DEPOIS da data → era regular na data
   if (hist.some(h => h.data_inicio && h.data_inicio > d)) return 'regular';
   if (i.data_desligamento && i.data_desligamento > d) return 'regular';
@@ -1521,10 +1526,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         }
 
         // Licença em qualquer parte do período analisado → "Lic" (inapto, por enquanto)
-        const licenca = (historicoSituacoes || []).some(h => String(h.membro_id) === String(i.id) && h.status !== 'cancelada'
-          && String(h.tipo_situacao || '').toLowerCase().includes('licen')
-          && h.data_inicio && h.data_inicio <= ref && (!h.data_fim || h.data_fim >= ini))
-          || situacaoNaData(i, ref, historicoSituacoes) === 'licenciado';
+        // Licença: só deixa inapto se ainda estiver licenciado na data da eleição (licença encerrada = regular)
+        const licenca = situacaoNaData(i, ref, historicoSituacoes) === 'licenciado';
 
         // Presença: sessões em que estava regular, antes de completar 70 anos
         const meus = regs.filter(r => String(r.membro_id) === String(i.id))
@@ -1536,7 +1539,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         const presOk = isento70 || pct >= PRESENCA_MINIMA;
         const aptoAuto = finOk && presOk && !licenca;
         const ajuste = ajustes[String(i.id)];
-        const motivos = [licenca && 'licença no período', !finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · ');
+        const motivos = [licenca && 'licenciado', !finOk && `tesouraria: ${meses.length} meses em aberto`, !presOk && `presença ${pct}%`].filter(Boolean).join(' · ');
         return {
           irmao: i, nome: i.nome, nomeCurto: nomeCurto(i.nome), cim: i.cim, meses, qtdPend: pend.length, finOk,
           textoTesouraria: meses.length === 0 ? 'Em dia' : `${meses.length} mês(es) em aberto`,
@@ -1925,7 +1928,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
                 Regras: tesouraria com no máximo {LIMITE_MESES_PENDENTES - 1} meses em aberto ({LIMITE_MESES_PENDENTES} ou mais, consecutivos ou não, = inapto) e presença mínima de {PRESENCA_MINIMA}% — período {aptidao.periodo || '…'}.
-                Sessões em licença não contam. <span style={{ color: '#facc15' }}>★</span> = prerrogativa por idade (70 anos há 6 meses ou mais: presença dispensada). Lic = licença no período.
+                Sessões em licença não contam. <span style={{ color: '#facc15' }}>★</span> = prerrogativa por idade (70 anos há 6 meses ou mais: presença dispensada). Lic = licenciado na data da eleição (licença já encerrada não conta).
               </p>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', gap: '0.3rem' }}>
