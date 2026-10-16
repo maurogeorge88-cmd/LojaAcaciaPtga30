@@ -372,7 +372,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_titulo:    form.alinhamento_titulo,
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
-          ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
+          ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo_base || form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
           ...(String(form.tipo || '').startsWith('ata_') ? { subtitulo: form.subtitulo ?? '' } : {}),
           ...(form.modulo === 'balaustres' ? {
             mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
@@ -418,6 +418,41 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
     selecionarModelo(data);
     showSuccess('Modelo criado a partir da ata de ' + grau + '. Edite o texto e salve.');
   };
+  // Eleição e Posse: novo modelo a partir de um existente (ex.: outra versão da Ata para Eleição)
+  const BASES_EP = [
+    ['edital_eleicao', 'Edital de Convocação para Eleição'], ['ata_eleicao_loja', 'Ata para Eleição'],
+    ['ata_eleicao_cartorio', 'Ata para Eleição Cartório'], ['lista_presenca_eleicao', 'Lista de Presença para a Eleição'],
+    ['edital_posse', 'Edital de Convocação para Posse'], ['ata_posse', 'Ata para Posse'],
+    ['lista_presenca_posse', 'Lista de Presença para a Posse'], ['requerimento_eleicao', 'Requerimento Ata Eleição'],
+    ['requerimento_posse', 'Requerimento Ata Posse'], ['apresentacao_chapa', 'Apresentação da Chapa'],
+  ];
+  const novoModeloEleicao = async () => {
+    const lista = BASES_EP.map(([, n], i) => `${i + 1} - ${n}`).join('\n');
+    const esc = window.prompt(`Novo modelo baseado em qual documento?\n\n${lista}\n\nDigite o número:`);
+    const idx = parseInt(esc) - 1;
+    if (!(idx >= 0 && idx < BASES_EP.length)) return;
+    const [baseTipo, baseNome] = BASES_EP[idx];
+    const nome = window.prompt('Nome do novo modelo:', `${baseNome} (2)`);
+    if (!nome || !nome.trim()) return;
+    const base = modelos.find(m => m.tipo === baseTipo) || MODELOS_PADRAO.find(m => m.tipo === baseTipo) || {};
+    const { id, created_at, updated_at, ...copia } = base; // eslint-disable-line no-unused-vars
+    const novo = { ...copia, modulo: 'eleicao_posse', tipo: `${baseTipo}__${Date.now()}`, tipo_base: baseTipo, nome: nome.trim() };
+    const { data, error } = await supabase.from('modelos_documentos').insert(novo).select().single();
+    if (error) { showError('Erro ao criar modelo: ' + error.message); return; }
+    setModelos(prev => [...prev, data]);
+    selecionarModelo(data);
+    showSuccess(`Modelo criado a partir de "${baseNome}". Edite e salve — ao gerar o documento, o sistema pergunta qual modelo usar.`);
+  };
+  const excluirModeloEleicao = async () => {
+    if (!modeloAtivo || !modeloAtivo.tipo_base) return;
+    if (!window.confirm(`Excluir o modelo "${modeloAtivo.nome}"?`)) return;
+    const { data, error } = await supabase.from('modelos_documentos').delete().eq('id', modeloAtivo.id).select();
+    if (error || !data?.length) { showError('Não foi possível excluir o modelo.'); return; }
+    setModelos(prev => prev.filter(m => m.id !== modeloAtivo.id));
+    setModeloAtivo(null); setForm({});
+    showSuccess('Modelo excluído.');
+  };
+
   const excluirModeloAta = async () => {
     if (!modeloAtivo || TIPOS_BASE_ATA.includes(modeloAtivo.tipo)) return;
     if (!window.confirm(`Excluir o modelo "${modeloAtivo.nome}"?`)) return;
@@ -507,7 +542,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
               // Ordem do processo de Eleição e Posse (demais modelos depois, por nome)
               const ORDEM = ['edital_eleicao', 'ata_eleicao_loja', 'ata_eleicao_cartorio', 'lista_presenca_eleicao',
                 'edital_posse', 'ata_posse', 'lista_presenca_posse', 'requerimento_eleicao', 'requerimento_posse', 'apresentacao_chapa'];
-              const ia = ORDEM.indexOf(a.tipo), ib = ORDEM.indexOf(b.tipo);
+              const ia = ORDEM.indexOf(a.tipo_base || a.tipo), ib = ORDEM.indexOf(b.tipo_base || b.tipo);
               return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || String(a.nome || '').localeCompare(String(b.nome || ''));
             })
             .reduce((g, m) => { const k = m.modulo || 'eleicao_posse'; (g[k] = g[k] || []).push(m); return g; }, {})
@@ -516,6 +551,12 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
             <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-accent)', textTransform: 'uppercase', padding: '0 0.25rem' }}>
               {MODULOS_MODELOS[mod] || mod}
             </div>
+            {mod === 'eleicao_posse' && podeEditar && (
+              <button onClick={novoModeloEleicao}
+                style={{ padding: '0.45rem 0.7rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px dashed var(--color-accent)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
+                ➕ Novo modelo
+              </button>
+            )}
             {mod === 'balaustres' && podeEditar && (
               <button onClick={novoModeloAta}
                 style={{ padding: '0.45rem 0.7rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px dashed var(--color-accent)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
@@ -646,6 +687,13 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                     Suporta variáveis como {'{nome_loja}'}, {'{gestao}'}
                   </p>
+                  {form.modulo !== 'balaustres' && form.tipo_base && podeEditar && (
+                    <div style={{ marginTop: '0.6rem' }}>
+                      <button onClick={excluirModeloEleicao} style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                        🗑️ Excluir modelo
+                      </button>
+                    </div>
+                  )}
                   {form.modulo === 'balaustres' && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
                       <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Grau da sessão:</label>
@@ -661,7 +709,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                       )}
                     </div>
                   )}
-                  {['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo) && (
+                  {['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo_base || form.tipo) && (
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
                       <input type="checkbox" checked={form.mostrar_logo !== false} disabled={!podeEditar}
                         onChange={e => handleChange('mostrar_logo', e.target.checked)} />
