@@ -35,6 +35,15 @@ export default function GestaoSituacoes({ irmaId }) {
         .order('data_inicio', { ascending: false });
 
       if (error) throw error;
+
+      // Situação com data de fim já passada e ainda "ativa" → encerra automaticamente
+      const hojeStr = new Date().toISOString().split('T')[0];
+      const vencidas = (data || []).filter(x => x.status === 'ativa' && x.data_fim && x.data_fim < hojeStr);
+      if (vencidas.length) {
+        await supabase.from('historico_situacoes').update({ status: 'vencida' }).in('id', vencidas.map(x => x.id));
+        vencidas.forEach(x => { x.status = 'vencida'; });
+        await atualizarSituacaoCadastro(data);
+      }
       setSituacoes(data || []);
     } catch (error) {
       console.error('Erro ao carregar situações:', error);
@@ -133,22 +142,40 @@ export default function GestaoSituacoes({ irmaId }) {
     }
   };
 
-  const encerrar = async (situacaoId) => {
-    if (!window.confirm('Deseja encerrar esta situação hoje?')) return;
+  // Sem licença em vigor → cadastro do irmão volta a "Regular" (só se estava como licenciado)
+  const atualizarSituacaoCadastro = async (lista) => {
+    const hojeStr = new Date().toISOString().split('T')[0];
+    const emVigor = (lista || []).some(x => x.status === 'ativa' && String(x.tipo_situacao || '').toLowerCase().includes('licen')
+      && x.data_inicio <= hojeStr && (!x.data_fim || x.data_fim >= hojeStr));
+    if (emVigor) return;
+    const { data: ir } = await supabase.from('irmaos').select('situacao').eq('id', irmaId).maybeSingle();
+    if (ir && String(ir.situacao || '').toLowerCase().includes('licen')) {
+      await supabase.from('irmaos').update({ situacao: 'Regular' }).eq('id', irmaId);
+    }
+  };
+
+  // Encerrar: termina a situação (no fim previsto ou antecipadamente) — o irmão volta a ficar regular
+  const encerrar = async (situacao) => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const antecipado = situacao.data_fim && situacao.data_fim > hoje;
+    if (!window.confirm(antecipado
+      ? `Encerrar esta situação ANTECIPADAMENTE hoje (${hoje.split('-').reverse().join('/')})?\nO fim previsto era ${situacao.data_fim.split('-').reverse().join('/')}.`
+      : 'Deseja encerrar esta situação hoje?')) return;
 
     try {
-      const hoje = new Date().toISOString().split('T')[0];
       const { error } = await supabase
         .from('historico_situacoes')
         .update({ 
           data_fim: hoje,
-          status: 'vencida'
+          status: 'vencida',
+          observacoes: antecipado ? `${situacao.observacoes ? situacao.observacoes + ' · ' : ''}Encerrada antecipadamente em ${hoje.split('-').reverse().join('/')} (fim previsto ${situacao.data_fim.split('-').reverse().join('/')})` : situacao.observacoes
         })
-        .eq('id', situacaoId);
+        .eq('id', situacao.id);
 
       if (error) throw error;
+      await atualizarSituacaoCadastro(situacoes.map(x => (x.id === situacao.id ? { ...x, data_fim: hoje, status: 'vencida' } : x)));
 
-      setMensagem({ tipo: 'sucesso', texto: 'Situação encerrada!' });
+      setMensagem({ tipo: 'sucesso', texto: 'Situação encerrada! O irmão volta a ficar regular.' });
       carregar();
       setTimeout(() => setMensagem({ tipo: '', texto: '' }), 3000);
     } catch (error) {
@@ -167,6 +194,7 @@ export default function GestaoSituacoes({ irmaId }) {
         .eq('id', situacaoId);
 
       if (error) throw error;
+      await atualizarSituacaoCadastro(situacoes.map(x => (x.id === situacaoId ? { ...x, status: 'cancelada' } : x)));
 
       setMensagem({ tipo: 'sucesso', texto: 'Situação cancelada!' });
       carregar();
@@ -211,10 +239,10 @@ export default function GestaoSituacoes({ irmaId }) {
     const fim = situacao.data_fim ? new Date(situacao.data_fim + 'T00:00:00') : null;
 
     if (situacao.status === 'cancelada') return 'CANCELADA';
-    if (situacao.status === 'vencida') return 'VENCIDA';
+    if (situacao.status === 'vencida') return 'ENCERRADA';
     if (hoje < inicio) return 'AGENDADA';
     if (!fim || hoje <= fim) return 'ATIVA';
-    return 'VENCIDA';
+    return 'ENCERRADA';
   };
 
   if (loading) {
@@ -305,18 +333,20 @@ export default function GestaoSituacoes({ irmaId }) {
                     >
                       Editar
                     </button>
-                    {sit.status === 'ativa' && sit.data_fim === null && getStatusTexto(sit) === 'ATIVA' && (
+                    {sit.status === 'ativa' && getStatusTexto(sit) === 'ATIVA' && (
                       <button
                         type="button"
-                        onClick={() => encerrar(sit.id)}
+                        title={sit.data_fim ? 'Encerrar antes do fim previsto' : 'Encerrar hoje'}
+                        onClick={() => encerrar(sit)}
                         style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                       >
-                        Encerrar
+                        {sit.data_fim ? 'Encerrar antecipado' : 'Encerrar'}
                       </button>
                     )}
                     {sit.status === 'ativa' && (
                       <button
                         type="button"
+                        title="Cancelar = lançada por engano: a situação é desconsiderada como se não tivesse existido"
                         onClick={() => cancelar(sit.id)}
                         style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                       >
