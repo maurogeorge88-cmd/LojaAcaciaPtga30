@@ -178,7 +178,11 @@ const Balaustres = ({
       try {
         const { data: ant } = await supabaseEleicao.from('balaustres').select('id, data_sessao, eleicao_glemt')
           .lt('data_sessao', ref).not('eleicao_glemt', 'is', null).order('data_sessao', { ascending: false });
-        const anterior = (ant || []).find(b => b.eleicao_glemt?.ativo && b.id !== balaustreEditando?.id);
+        // Última eleição GLEMT = de OUTRO mandato (período diferente) e já realizada.
+        // Sessões do mesmo período (agendada/teste) não contam como "eleição anterior".
+        const anterior = (ant || []).find(b => b.eleicao_glemt?.ativo && b.id !== balaustreEditando?.id
+          && b.eleicao_glemt.status !== 'pendente'
+          && String(b.eleicao_glemt.ano_inicio || '') !== String(e.ano_inicio || ''));
         const ini = anterior ? anterior.data_sessao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
         const fmt = (d) => d.split('-').reverse().join('/');
         const linhas = await calcularAptidaoVoto({ ref, ini, irmaos: irmaosAptidao, ajustes: {} });
@@ -194,7 +198,9 @@ const Balaustres = ({
           const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
           return r ? irmaosAptidao.find(x => x.id === r.irmao_id)?.nome : null;
         };
-        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(ref)}`, chave,
+        const hojeIso = new Date().toISOString().substring(0, 10);
+        const fimPres = ref < hojeIso ? ref : hojeIso;
+        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(fimPres)}`, chave,
           dadosLoja: (lojaData && lojaData[0]) || {},
           assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') } });
       } catch (err) {
