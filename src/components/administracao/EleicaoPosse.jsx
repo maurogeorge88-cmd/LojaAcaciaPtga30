@@ -153,10 +153,10 @@ const calcularQuorum = (irmaos, eleicao, presencas, historico = []) => {
   return { totalCalculado, totalMestres, quorumMinimo, presentes, atingido: presentes >= quorumMinimo };
 };
 
-const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = []) => {
+const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = [], modeloEscolhido = null) => {
 
   const modelos      = await buscarModelos();
-  const modelo       = modelos[tipo] || {};
+  const modelo       = modeloEscolhido || modelos[tipo] || {};
   // Formatação do modelo (Modelos de Documentos): fonte, entrelinha e margens — vazio = padrão
   const FONTE = Number(modelo.fonte_tamanho) > 0 ? Math.round(Number(modelo.fonte_tamanho) * 2) : 24;   // meio-pontos
   const LINHA = Number(modelo.espacamento_linhas) > 0 ? Math.round(Number(modelo.espacamento_linhas) * 240) : 276;
@@ -1174,16 +1174,33 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
   // ── Geração de documento ─────────────────────────────────
 
-  const gerarDoc = async (tipo, nomeArq) => {
+  // Vários modelos para o mesmo documento (ex.: duas versões da Ata para Eleição) → escolher qual usar
+  const [escolhaModeloEP, setEscolhaModeloEP] = useState(null); // { tipo, nomeArq, opcoes }
+  const gerarDoc = async (tipo, nomeArq, modeloId = null) => {
+    if (!modeloId) {
+      const { data: opcoes } = await supabase.from('modelos_documentos').select('id, tipo, nome, tipo_base')
+        .or(`tipo.eq.${tipo},tipo_base.eq.${tipo}`);
+      if ((opcoes || []).length > 1) {
+        setEscolhaModeloEP({ tipo, nomeArq, opcoes: [...opcoes].sort((a, b) => (a.tipo === tipo ? -1 : b.tipo === tipo ? 1 : a.nome.localeCompare(b.nome))) });
+        return;
+      }
+    }
+    setEscolhaModeloEP(null);
     setGerando(tipo);
     try {
+      _modelosCache = null; // sempre com o texto mais recente dos modelos
+      let modeloEscolhido = null;
+      if (modeloId) {
+        const { data: m } = await supabase.from('modelos_documentos').select('*').eq('id', modeloId).maybeSingle();
+        modeloEscolhido = m || null;
+      }
       // Atas exigem o balaustre da sessão registrado em Balaustres
       const esp = tipo === 'ata_posse' ? 'posse_loja' : (tipo === 'ata_eleicao_loja' || tipo === 'ata_eleicao_cartorio') ? 'eleicao_loja' : null;
       if (esp && !balaustresEleicao.some(b => b.sessao_especial === esp && b.numero_balaustre)) {
         showError(`Registre o balaustre da sessão de ${esp === 'posse_loja' ? 'Posse' : 'Eleição'} em Balaustres (Sessão especial) para gerar esta ata.`);
         return;
       }
-      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao);
+      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
       downloadDocx(buf, nomeArq);
     } catch (e) {
       showError('Erro ao gerar documento: ' + e.message);
@@ -2131,6 +2148,26 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           {!dadosLoja.cnpj && (
             <div style={{ padding: '0.75rem 1rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: 'var(--color-text)' }}>
               ⚠️ CNPJ da loja não cadastrado. Preencha em <strong>Sistema → Dados da Loja</strong> para que os requerimentos fiquem completos.
+            </div>
+          )}
+
+          {/* Escolha do modelo (quando há mais de um para o mesmo documento) */}
+          {escolhaModeloEP && (
+            <div onClick={() => setEscolhaModeloEP(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', maxWidth: '420px', width: '100%' }}>
+                <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>📄 Qual modelo usar?</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {escolhaModeloEP.opcoes.map(m => (
+                    <button key={m.id} onClick={() => gerarDoc(escolhaModeloEP.tipo, escolhaModeloEP.nomeArq, m.id)}
+                      style={{ padding: '0.65rem 0.9rem', textAlign: 'left', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
+                      📄 {m.nome}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                  <button onClick={() => setEscolhaModeloEP(null)} style={S.btn('surface')}>Cancelar</button>
+                </div>
+              </div>
             </div>
           )}
 
