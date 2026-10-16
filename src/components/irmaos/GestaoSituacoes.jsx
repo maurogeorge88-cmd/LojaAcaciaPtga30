@@ -184,6 +184,24 @@ export default function GestaoSituacoes({ irmaId }) {
     }
   };
 
+  // Reativar uma situação cancelada por engano: volta como encerrada (fim já passou) ou em vigor
+  const reativar = async (situacao) => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const novoStatus = situacao.data_fim && situacao.data_fim < hoje ? 'vencida' : 'ativa';
+    if (!window.confirm(`Reativar esta situação?\nEla volta como ${novoStatus === 'vencida' ? 'ENCERRADA (o período continua registrado)' : 'ATIVA'}.`)) return;
+    try {
+      const { error } = await supabase.from('historico_situacoes').update({ status: novoStatus }).eq('id', situacao.id);
+      if (error) throw error;
+      if (novoStatus === 'vencida') await atualizarSituacaoCadastro(situacoes.map(x => (x.id === situacao.id ? { ...x, status: novoStatus } : x)));
+      setMensagem({ tipo: 'sucesso', texto: 'Situação reativada!' });
+      carregar();
+      setTimeout(() => setMensagem({ tipo: '', texto: '' }), 3000);
+    } catch (error) {
+      console.error('Erro ao reativar:', error);
+      setMensagem({ tipo: 'erro', texto: 'Erro ao reativar situação' });
+    }
+  };
+
   const cancelar = async (situacaoId) => {
     if (!window.confirm('Deseja cancelar esta situação?')) return;
 
@@ -323,7 +341,20 @@ export default function GestaoSituacoes({ irmaId }) {
                   </div>
                 </div>
 
-                {/* Ações */}
+                {/* Ações — situação cancelada pode ser editada ou reativada (cancelamento feito por engano) */}
+                {sit.status === 'cancelada' && (
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => reativar(sit)}
+                      title="Desfazer o cancelamento"
+                      style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}>
+                      ↺ Reativar
+                    </button>
+                    <button type="button" onClick={() => abrirModal(sit)}
+                      style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}>
+                      Editar
+                    </button>
+                  </div>
+                )}
                 {sit.status !== 'cancelada' && (
                   <div className="flex gap-2">
                     <button
