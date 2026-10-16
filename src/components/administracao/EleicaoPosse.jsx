@@ -1462,7 +1462,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         .sort((a, b) => b.data_eleicao.localeCompare(a.data_eleicao))[0];
       const ini = anterior ? anterior.data_eleicao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
       const fmtD = (d) => d.split('-').reverse().join('/');
-      const periodo = `${anterior ? 'desde a última eleição' : 'últimos 12 meses'}: ${fmtD(ini)} a ${fmtD(ref)}`;
+      const _hj = new Date().toISOString().substring(0, 10);
+      const periodo = `${anterior ? 'desde a última eleição' : 'últimos 12 meses'}: ${fmtD(ini)} a ${fmtD(ref < _hj ? ref : _hj)}`;
 
       // Universo: Mestres regulares OU licenciados na data da eleição
       // (irregulares, desligados e falecidos ficam fora da lista)
@@ -1483,7 +1484,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       }
 
       // Presença: sessões no período e registros (em lotes)
-      const { data: sessoes } = await supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', ini).lte('data_sessao', ref);
+      // Presença até a última sessão realizada (nunca além de hoje), mesmo com eleição futura
+      const hojeIso = new Date().toISOString().substring(0, 10);
+      const fimPres = ref < hojeIso ? ref : hojeIso;
+      const { data: sessoes } = await supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', ini).lte('data_sessao', fimPres);
       const dataSessao = Object.fromEntries((sessoes || []).map(x => [x.id, x.data_sessao]));
       let regs = [];
       const ids = (sessoes || []).map(x => x.id);
