@@ -11,9 +11,11 @@ const DOURADO = [201, 168, 76];
 const CINZA = [100, 116, 139];
 const TEXTO = [30, 41, 59];
 
-// tipo: 'aptos' | 'inaptos' — coluna Tesouraria: "Regular" (até 2 meses em aberto) ou "Pendência" (3+)
-export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
+// tipo: 'aptos' | 'inaptos' | 'ambos' (aptos e inaptos no mesmo PDF, em quadros separados)
+// Coluna Tesouraria: "Regular" (até 2 meses em aberto) ou "Pendência" (3+)
+export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
   const inaptos = tipo === 'inaptos';
+  const ambos = tipo === 'ambos';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -38,7 +40,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   // Título
   y += 9;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
-  doc.text(inaptos ? 'RELAÇÃO DE IRMÃOS INAPTOS A VOTAR' : 'RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
+  doc.text(ambos ? 'RELAÇÃO DE IRMÃOS APTOS E INAPTOS A VOTAR' : inaptos ? 'RELAÇÃO DE IRMÃOS INAPTOS A VOTAR' : 'RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
   y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
   doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
@@ -46,39 +48,57 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
   doc.text('Critérios: estar regular com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
   y += 6;
 
-  doc.autoTable({
-    startY: y,
-    margin: { left: M, right: M, bottom: 16 },
-    head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
-    // Nome completo; prerrogativa por idade identificada com a estrela (desenhada em amarelo)
-    body: linhas.map((l, i) => [
-      String(i + 1),
-      `${l.nome || l.nomeCurto}${inaptos && l.licenca ? ' (Lic)' : ''}`,
-      l.cim || '',
-      // Tesouraria pela regra própria: até 2 meses em aberto = "Regular"; 3 ou mais = "Pendência"
-      // (vale para aptos e inaptos — o inapto pode estar Regular e ter caído só pela presença)
-      l.finOk === false ? 'Pendência' : 'Regular',
-      l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`,
-    ]),
-    didDrawCell: (d) => {
-      if (d.section === 'body' && d.column.index === 1 && linhas[d.row.index]?.isento70) {
-        const tw = doc.getTextWidth(String(d.cell.raw || ''));
-        const cx = d.cell.x + d.cell.padding('left') + tw + 3, cy = d.cell.y + d.cell.height / 2;
-        const pts = [];
-        for (let k = 0; k < 10; k++) { const r = k % 2 ? 0.9 : 2.1, a = -Math.PI / 2 + k * Math.PI / 5; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
-        doc.setFillColor(250, 204, 21);
-        doc.lines(pts.slice(1).map((p2, k) => [p2[0] - pts[k][0], p2[1] - pts[k][1]]), pts[0][0], pts[0][1], [1, 1], 'F', true);
-      }
-    },
-    theme: 'grid',
-    styles: { font: 'helvetica', fontSize: 9, cellPadding: { top: 1.3, bottom: 1.3, left: 2, right: 2 }, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
-    headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [241, 245, 249] },
-    columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 36 }, 4: { cellWidth: 30, halign: 'center' } },
-  });
-  y = doc.lastAutoTable.finalY + 6;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
-  doc.text(`Total de irmãos ${inaptos ? 'inaptos' : 'aptos'}: ${linhas.length}`, M, y);
+  // Desenha a tabela de uma lista (com total abaixo); comLic = mostra "(Lic)" no nome
+  const tabela = (lista, comLic, rotuloTotal) => {
+    doc.autoTable({
+      startY: y,
+      margin: { left: M, right: M, bottom: 16 },
+      head: [['Nº', 'Irmão', 'CIM', 'Tesouraria', 'Presença']],
+      // Nome completo; prerrogativa por idade identificada com a estrela (desenhada em amarelo)
+      body: lista.map((l, i) => [
+        String(i + 1),
+        `${l.nome || l.nomeCurto}${comLic && l.licenca ? ' (Lic)' : ''}`,
+        l.cim || '',
+        // Tesouraria pela regra própria: até 2 meses em aberto = "Regular"; 3 ou mais = "Pendência"
+        l.finOk === false ? 'Pendência' : 'Regular',
+        l.isento70 ? 'Dispensada' : `${l.pct}% (${l.presentes}/${l.total})`,
+      ]),
+      didDrawCell: (d) => {
+        if (d.section === 'body' && d.column.index === 1 && lista[d.row.index]?.isento70) {
+          const tw = doc.getTextWidth(String(d.cell.raw || ''));
+          const cx = d.cell.x + d.cell.padding('left') + tw + 3, cy = d.cell.y + d.cell.height / 2;
+          const pts = [];
+          for (let k = 0; k < 10; k++) { const r = k % 2 ? 0.9 : 2.1, an = -Math.PI / 2 + k * Math.PI / 5; pts.push([cx + r * Math.cos(an), cy + r * Math.sin(an)]); }
+          doc.setFillColor(250, 204, 21);
+          doc.lines(pts.slice(1).map((p2, k) => [p2[0] - pts[k][0], p2[1] - pts[k][1]]), pts[0][0], pts[0][1], [1, 1], 'F', true);
+        }
+      },
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: { top: 1.3, bottom: 1.3, left: 2, right: 2 }, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
+      headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+      columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 36 }, 4: { cellWidth: 30, halign: 'center' } },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+    doc.text(`${rotuloTotal}: ${lista.length}`, M, y);
+  };
+  const secao = (titulo, cor) => {
+    if (y > H - 40) { doc.addPage(); y = 20; }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...cor);
+    doc.text(titulo, M, y);
+    y += 3;
+  };
+
+  if (ambos) {
+    secao(`IRMÃOS APTOS (${linhas.length})`, [16, 120, 80]);
+    tabela(linhas, false, 'Total de irmãos aptos');
+    y += 10;
+    secao(`IRMÃOS INAPTOS (${linhasInaptos.length})`, [185, 28, 28]);
+    tabela(linhasInaptos, true, 'Total de irmãos inaptos');
+  } else {
+    tabela(linhas, inaptos, `Total de irmãos ${inaptos ? 'inaptos' : 'aptos'}`);
+  }
 
   // Assinaturas: VM, Chanceler e Tesoureiro (lado a lado)
   // Assinaturas logo abaixo da tabela (página nova só se não couber)
@@ -105,7 +125,7 @@ export const gerarAptosVotarPDF = ({ linhas, eleicao, dadosLoja = {}, logoB64, p
     doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
   // Baixa o arquivo direto (o clique gera o PDF na hora, sem esperar o banco)
-  const nomeFinal = nomeArquivo || `${inaptos ? 'Inaptos' : 'Aptos'}_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`;
+  const nomeFinal = nomeArquivo || `${ambos ? 'Aptos_e_Inaptos' : inaptos ? 'Inaptos' : 'Aptos'}_a_Votar_${String(eleicao?.ano_exercicio || eleicao?.gestao || '').replace('/', '-')}.pdf`;
   const blob = doc.output('blob');
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
