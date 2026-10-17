@@ -1972,6 +1972,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             permissoes={permissoes}
             podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
             onAbrirModelos={() => { setRetornoModelos('balaustres'); setCurrentPage('modelos-documentos'); }}
+            onAbrirEleicaoPosse={() => setCurrentPage('eleicao-posse')}
             grauUsuario={grauUsuarioLogado}
           />
         )}
