@@ -155,27 +155,30 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const totalVotos = (el.chapas || []).reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos);
   const vencedora = [...(el.chapas || [])].map((c, i) => ({ ...c, i })).filter(c => c.nome || c.gm).sort((a, b) => num(b.votos) - num(a.votos))[0];
 
+  // Cartão compacto (2 linhas):
+  //  1) ☐ presença · Nome (dois nomes) · ★ · Lic
+  //  2) Tesouraria: OK/Pendência | Presença: %   — o selo Apto/Inapto vai na cor da borda (clique no cartão inapto/ajustado para ajustar)
   const cardIrmao = (l) => {
     const presente = pres.includes(String(l.irmao.id));
+    const podeAjustar = podeEditar && (l.ajuste || !l.aptoAuto);
+    const corBorda = presente ? 'rgba(16,185,129,0.7)' : l.apto ? 'var(--color-border)' : 'rgba(239,68,68,0.45)';
     return (
-      <div key={l.irmao.id} style={{ border: `1px solid ${presente ? 'rgba(16,185,129,0.6)' : 'var(--color-border)'}`, borderRadius: 'var(--radius-md)', padding: '0.5rem 0.6rem',
-        background: presente ? 'rgba(16,185,129,0.08)' : 'var(--color-surface-2)', display: 'flex', flexDirection: 'column', gap: '0.25rem', minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <input type="checkbox" checked={presente} disabled={!podeEditar} onChange={() => togglePresente(l)} title="Presente na sessão" />
-          <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }} title={l.nome}>
-            {l.nomeCurto}{l.isento70 && <span style={{ color: '#facc15' }}> ★</span>}{l.licenca && <span style={{ fontSize: '0.6rem', color: '#d97706', fontWeight: 800 }}> Lic</span>}
-          </span>
+      <div key={l.irmao.id} style={{ border: `1px solid ${corBorda}`, borderRadius: 'var(--radius-md)', padding: '0.3rem 0.5rem',
+        background: presente ? 'rgba(16,185,129,0.08)' : 'var(--color-surface-2)', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', minWidth: 0 }}>
+          <input type="checkbox" checked={presente} disabled={!podeEditar} onChange={() => togglePresente(l)} title="Presente na sessão" style={{ flexShrink: 0 }} />
+          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }} title={l.nome}>{l.nomeCurto}</span>
+          {l.isento70 && <span title="Prerrogativa por idade: presença dispensada" style={{ color: '#facc15', fontSize: '0.8rem', flexShrink: 0 }}>★</span>}
+          {l.licenca && <span title="Licenciado na data da eleição" style={{ fontSize: '0.58rem', color: '#d97706', fontWeight: 800, flexShrink: 0 }}>Lic</span>}
+          {l.ajuste && <span title={`Tornado apto: ${l.ajuste.justificativa}`} style={{ fontSize: '0.7rem', flexShrink: 0 }}>✏️</span>}
         </div>
-        <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
-          CIM {l.cim || '—'} · {l.finOk ? 'Regular' : 'Pendência'} · {l.isento70 ? 'Dispensada' : `${l.pct}%`}
+        <div onClick={() => podeAjustar && ajustar(l)}
+          title={l.ajuste ? `Ajustado: ${l.ajuste.justificativa} (clique para desfazer)` : l.apto ? `CIM ${l.cim || '—'}` : `${l.motivos} — clique para tornar apto`}
+          style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginTop: '0.1rem', paddingLeft: '1.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: podeAjustar ? 'pointer' : 'default' }}>
+          <span style={{ color: l.finOk ? '#10b981' : '#ef4444', fontWeight: 700 }}>Tesouraria: {l.finOk ? 'OK' : 'Pendência'}</span>
+          {' | '}
+          <span style={{ color: l.presOk ? '#10b981' : '#ef4444', fontWeight: 700 }}>Presença: {l.isento70 ? 'Disp.' : `${l.pct}%`}</span>
         </div>
-        <span onClick={() => podeEditar && (l.ajuste || !l.aptoAuto) && ajustar(l)}
-          title={l.ajuste ? `Ajustado: ${l.ajuste.justificativa} (clique para desfazer)` : l.apto ? 'Apto a votar' : `${l.motivos} — clique para tornar apto`}
-          style={{ alignSelf: 'flex-start', fontSize: '0.65rem', fontWeight: 800, padding: '0.08rem 0.5rem', borderRadius: '999px',
-            cursor: podeEditar && (l.ajuste || !l.aptoAuto) ? 'pointer' : 'default',
-            background: l.apto ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: l.apto ? '#10b981' : '#ef4444' }}>
-          {l.apto ? 'Apto' : 'Inapto'}
-        </span>
       </div>
     );
   };
@@ -262,9 +265,13 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                       </div>
                       <label style={lab}>Nome da chapa</label>
                       <input style={inp} value={c.nome || ''} onChange={e => setChapa(i, { nome: e.target.value })} />
-                      <div style={{ ...g2, marginTop: '0.4rem' }}>
-                        <div><label style={lab}>Grão-Mestre</label><input style={inp} value={c.gm || ''} onChange={e => setChapa(i, { gm: e.target.value })} /></div>
-                        <div><label style={lab}>Grão-Mestre Adjunto</label><input style={inp} value={c.gm_adjunto || ''} onChange={e => setChapa(i, { gm_adjunto: e.target.value })} /></div>
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <label style={lab}>Grão-Mestre</label>
+                        <input style={inp} value={c.gm || ''} onChange={e => setChapa(i, { gm: e.target.value })} />
+                      </div>
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <label style={lab}>Grão-Mestre Adjunto</label>
+                        <input style={inp} value={c.gm_adjunto || ''} onChange={e => setChapa(i, { gm_adjunto: e.target.value })} />
                       </div>
                     </div>
                   ))}
@@ -313,7 +320,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
               </p>
               {apt.carregando ? <p style={{ color: 'var(--color-text-muted)' }}>Analisando tesouraria e presença…</p> : (() => {
                 const vis = filtro === 'aptos' ? aptos : filtro === 'inaptos' ? inaptos : filtro === 'presentes' ? linhas.filter(l => pres.includes(String(l.irmao.id))) : null;
-                const grade = (lista) => <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: '0.5rem' }}>{lista.map(cardIrmao)}</div>;
+                const grade = (lista) => <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: '0.35rem' }}>{lista.map(cardIrmao)}</div>;
                 if (vis) return grade(vis);
                 return (
                   <>
