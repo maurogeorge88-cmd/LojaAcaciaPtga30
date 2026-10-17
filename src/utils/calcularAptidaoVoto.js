@@ -69,7 +69,7 @@ export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) =>
       .range(pg * 1000, pg * 1000 + 999);
     if (error) throw error;
     lanc = lanc.concat(data || []);
-    if (!data || data.length < 1000) break;
+    if (!data || data.length < 1000 || pg >= 50) break;
   }
 
   // Presença
@@ -82,7 +82,7 @@ export const calcularAptidaoVoto = async ({ ref, ini, irmaos, ajustes = {} }) =>
       const { data } = await supabase.from('registros_presenca').select('membro_id, presente, sessao_id')
         .in('sessao_id', ids.slice(i, i + 100)).range(pg * 1000, pg * 1000 + 999);
       regs = regs.concat(data || []);
-      if (!data || data.length < 1000) break;
+      if (!data || data.length < 1000 || pg >= 50) break;
     }
   }
 
