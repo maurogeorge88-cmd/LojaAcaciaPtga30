@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 import { gerarAtaSessao, listarModelosAta, gerarListaPresencaEleicaoGLEMT, gerarEditalEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { supabase as supabaseEleicao } from '../../supabaseClient';
-import { calcularAptidaoVoto } from '../../utils/calcularAptidaoVoto';
+import EleicaoGLEMTModal from './EleicaoGLEMTModal';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 
@@ -17,8 +17,10 @@ const Balaustres = ({
   permissoes,
   grauUsuario,
   podeEditarModelos = false,
-  onAbrirModelos
+  onAbrirModelos,
+  onAbrirEleicaoPosse
 }) => {
+  const [modalGLEMT, setModalGLEMT] = useState(null); // balaustre da eleição GLEMT aberto no modal
   // ── Ata da sessão (Word) ──
   const [gerandoAta, setGerandoAta] = useState(null);
   const [avisoSemBalaustre, setAvisoSemBalaustre] = useState(false);
@@ -82,6 +84,7 @@ const Balaustres = ({
       if (error) throw error;
       if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
       showSuccess(`✅ Sessão realizada — Balaustre nº ${numero}/${ano}.`);
+      setModalGLEMT(null);
       onUpdate();
     } catch (e) { showError('Erro: ' + e.message); }
   };
@@ -135,7 +138,7 @@ const Balaustres = ({
 
   // "Ata de hoje": gera se houver balaustre com a data de hoje; senão avisa para cadastrar
   const gerarAtaDeHoje = () => {
-    const doDia = balaustres.filter(b => b.data_sessao === hojeISO);
+    const doDia = balaustres.filter(b => b.data_sessao === hojeISO && !b.sessao_especial);
     const alvo = doDia.find(b => (b.grau_sessao || '').toLowerCase() === grauSelecionado.toLowerCase()) || doDia[0];
     if (alvo) gerarAta(alvo); else setAvisoSemBalaustre(true);
   };
@@ -166,50 +169,6 @@ const Balaustres = ({
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
 
   // Eleição GLEMT: atalhos do formulário (depois do estado balaustreForm)
-  // Aptidão: período desde a última eleição GLEMT (ou 12 meses), referência = data da sessão
-  useEffect(() => {
-    const e = balaustreForm.eleicao_glemt;
-    const ref = balaustreForm.data_sessao;
-    if (!modalAberto || !e?.ativo || !ref || !irmaosAptidao.length) return;
-    const chave = `${ref}|${balaustreEditando?.id || 'novo'}`;
-    if (aptGLEMT.chave === chave) return;
-    (async () => {
-      setAptGLEMT(a => ({ ...a, carregando: true, chave }));
-      try {
-        const { data: ant } = await supabaseEleicao.from('balaustres').select('id, data_sessao, eleicao_glemt')
-          .lt('data_sessao', ref).not('eleicao_glemt', 'is', null).order('data_sessao', { ascending: false });
-        // Última eleição GLEMT = de OUTRO mandato (período diferente) e já realizada.
-        // Sessões do mesmo período (agendada/teste) não contam como "eleição anterior".
-        const anterior = (ant || []).find(b => b.eleicao_glemt?.ativo && b.id !== balaustreEditando?.id
-          && b.eleicao_glemt.status !== 'pendente'
-          && String(b.eleicao_glemt.ano_inicio || '') !== String(e.ano_inicio || ''));
-        const ini = anterior ? anterior.data_sessao : (() => { const d = new Date(ref + 'T00:00:00'); d.setFullYear(d.getFullYear() - 1); return d.toISOString().substring(0, 10); })();
-        const fmt = (d) => d.split('-').reverse().join('/');
-        const linhas = await calcularAptidaoVoto({ ref, ini, irmaos: irmaosAptidao, ajustes: {} });
-        // Dados do PDF já carregados aqui: o download precisa acontecer direto no clique
-        // (se o clique aguardar o banco, o navegador segura o download)
-        const ano = String(ref).substring(0, 4);
-        const [{ data: lojaData }, { data: corpo }] = await Promise.all([
-          supabaseEleicao.from('dados_loja').select('*').limit(1),
-          supabaseEleicao.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id'),
-        ]);
-        const norm = (c) => String(c || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-        const nomeCargo = (...alvos) => {
-          const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
-          return r ? irmaosAptidao.find(x => x.id === r.irmao_id)?.nome : null;
-        };
-        const hojeIso = new Date().toISOString().substring(0, 10);
-        const fimPres = ref < hojeIso ? ref : hojeIso;
-        setAptGLEMT({ carregando: false, linhas, periodo: `${anterior ? 'desde a última eleição GLEMT' : 'últimos 12 meses'}: ${fmt(ini)} a ${fmt(fimPres)}`, chave,
-          dadosLoja: (lojaData && lojaData[0]) || {},
-          assinantes: { vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro') } });
-      } catch (err) {
-        setAptGLEMT(a => ({ ...a, carregando: false }));
-        showError('Erro ao analisar a aptidão: ' + err.message);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modalAberto, balaustreForm.eleicao_glemt?.ativo, balaustreForm.data_sessao, irmaosAptidao.length]);
 
   const el = balaustreForm.eleicao_glemt;
   const setEl = (campos) => setBalaustreForm(f => ({ ...f, eleicao_glemt: { ...(f.eleicao_glemt || ELEICAO_VAZIA()), ...campos } }));
@@ -606,137 +565,11 @@ const Balaustres = ({
                     🗳️ Sessão de Eleição da GLEMT (Grão-Mestre e Adjunto)
                   </label>
                   {el?.ativo && (
-                    <div style={{display:'flex',flexDirection:'column',gap:'0.75rem',marginTop:'0.75rem'}}>
-                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem',alignItems:'end'}}>
-                        <label style={{display:'flex',alignItems:'center',gap:'0.45rem',fontSize:'0.82rem',fontWeight:700,color:'var(--color-text)',cursor:'pointer'}}>
-                          <input type="checkbox" checked={el.status === 'pendente'} disabled={modoEdicao && el.status !== 'pendente'}
-                            onChange={e => setEl({ status: e.target.checked ? 'pendente' : 'realizada' })} />
-                          ⏳ Sessão agendada (pendente, sem número)
-                        </label>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Data do edital</label>
-                          <input type="date" value={el.data_edital || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
-                            placeholder={menos15(balaustreForm.data_sessao)} onChange={e => setEl({ data_edital: e.target.value })} />
-                        </div>
-                      </div>
-                      {(() => {
-                        const de = el.data_edital || menos15(balaustreForm.data_sessao);
-                        if (!de || !balaustreForm.data_sessao) return null;
-                        const dias = Math.round((new Date(balaustreForm.data_sessao + 'T00:00:00') - new Date(de + 'T00:00:00')) / 86400000);
-                        return (
-                          <p style={{margin:0,fontSize:'0.75rem',color: dias < 15 ? '#ef4444' : 'var(--color-text-muted)',fontWeight: dias < 15 ? 700 : 400}}>
-                            {el.data_edital ? '' : `Sem data informada: o edital usa ${de.split('-').reverse().join('/')} (15 dias antes). `}
-                            {dias < 15 ? `⚠️ O edital está a ${dias} dia(s) da sessão — o mínimo é 15.` : `Edital ${dias} dias antes da sessão.`}
-                          </p>
-                        );
-                      })()}
-                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem'}}>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Período — de</label>
-                          <input type="number" value={el.ano_inicio || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}}
-                            onChange={e => { const v = parseInt(e.target.value) || ''; setEl({ ano_inicio: v, ano_fim: v ? v + 3 : el.ano_fim }); }} /></div>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>até</label>
-                          <input type="number" value={el.ano_fim || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ ano_fim: parseInt(e.target.value) || '' })} /></div>
-                        </div>
-                      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.6rem'}}>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Escrutinador 1</label>
-                          <select value={el.escrutinador1_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ escrutinador1_id: e.target.value })}>
-                            <option value="">Selecione...</option>
-                            {mestresRegulares.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                          </select></div>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Escrutinador 2</label>
-                          <select value={el.escrutinador2_id || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ escrutinador2_id: e.target.value })}>
-                            <option value="">Selecione...</option>
-                            {mestresRegulares.filter(m => String(m.id) !== String(el.escrutinador1_id)).map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
-                          </select></div>
-                      </div>
-
-                      {(el.chapas || []).map((c, idx) => (
-                        <div key={idx} style={{border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.6rem',background:'var(--color-surface)'}}>
-                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.4rem'}}>
-                            <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>Chapa {idx + 1}</strong>
-                            {idx >= 2 && (
-                              <button type="button" onClick={() => setEl({ chapas: el.chapas.filter((_, i) => i !== idx) })}
-                                style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',fontSize:'0.78rem',fontWeight:700}}>✕ Remover</button>
-                            )}
-                          </div>
-                          <div style={{display:'grid',gridTemplateColumns:'minmax(0,3fr) minmax(0,1fr)',gap:'0.5rem',marginBottom:'0.5rem'}}>
-                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Nome da chapa</label><input value={c.nome || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { nome: e.target.value })} /></div>
-                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos</label><input type="number" min="0" value={c.votos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { votos: e.target.value })} /></div>
-                          </div>
-                          <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(0,1fr)',gap:'0.5rem'}}>
-                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre</label><input value={c.gm || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm: e.target.value })} /></div>
-                            <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Grão-Mestre Adjunto</label><input value={c.gm_adjunto || ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setChapa(idx, { gm_adjunto: e.target.value })} /></div>
-                          </div>
-                        </div>
-                      ))}
-                      <button type="button" onClick={() => setEl({ chapas: [...(el.chapas || []), { nome: '', gm: '', gm_adjunto: '', votos: '' }] })}
-                        style={{alignSelf:'flex-start',padding:'0.35rem 0.8rem',background:'transparent',color:'#8b5cf6',border:'1px dashed #8b5cf6',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.78rem',cursor:'pointer'}}>
-                        ➕ Adicionar chapa
-                      </button>
-
-                      {/* PRESENÇA: Mestres presentes à sessão eleitoral */}
-                      {(() => {
-                        const pres = (el.presentes || []).map(String);
-                        const dataSes = balaustreForm.data_sessao || '';
-                        const aptos = mestresRegulares.filter(m => !dataSes || m.data_exaltacao <= dataSes);
-                        const toggle = (id) => setEl({ presentes: pres.includes(String(id)) ? pres.filter(x => x !== String(id)) : [...pres, String(id)] });
-                        return (
-                          <div style={{border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.6rem',background:'var(--color-surface)'}}>
-                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.5rem',flexWrap:'wrap',marginBottom:'0.5rem'}}>
-                              <strong style={{fontSize:'0.8rem',color:'#8b5cf6'}}>
-                                ✅ Presentes: {pres.length} de {aptos.length} Mestres
-                                <span style={{marginLeft:'0.5rem',fontWeight:600,color:'var(--color-text-muted)'}}>
-                                  · {aptGLEMT.carregando ? 'analisando aptidão…' : `${linhasApt.filter(l => l.apto).length} aptos a votar`}
-                                </span>
-                              </strong>
-                              <div style={{display:'flex',gap:'0.4rem'}}>
-                                <button type="button" onClick={() => setEl({ presentes: aptos.map(m => String(m.id)) })}
-                                  style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Marcar todos</button>
-                                <button type="button" onClick={() => setEl({ presentes: [] })}
-                                  style={{padding:'0.2rem 0.6rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',cursor:'pointer'}}>Limpar</button>
-                                <button type="button" onClick={() => pdfAptosGLEMT('aptos')} disabled={aptGLEMT.carregando}
-                                  style={{padding:'0.2rem 0.6rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.5)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>📄 PDF dos aptos</button>
-                                <button type="button" onClick={() => pdfAptosGLEMT('inaptos')} disabled={aptGLEMT.carregando}
-                                  style={{padding:'0.2rem 0.6rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.45)',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:700,cursor:'pointer'}}>📄 PDF dos inaptos</button>
-                              </div>
-                            </div>
-                            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))',gap:'0.25rem',maxHeight:'220px',overflowY:'auto'}}>
-                              {aptos.map(m => {
-                                const marcado = pres.includes(String(m.id));
-                                return (
-                                  <label key={m.id} style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.8rem',padding:'0.25rem 0.4rem',borderRadius:'var(--radius-md)',cursor:'pointer',
-                                    background: marcado ? 'rgba(16,185,129,0.12)' : 'transparent', color: marcado ? 'var(--color-text)' : 'var(--color-text-muted)'}}>
-                                    <input type="checkbox" checked={marcado} onChange={() => toggle(m.id)} />
-                                    <span style={{flex:1,minWidth:0}}>
-                                      {m.nome}
-                                      {aptPorIrmao[String(m.id)]?.isento70 && <span title="Prerrogativa por idade: presença dispensada" style={{marginLeft:'0.25rem',color:'#facc15'}}>★</span>}
-                                      {aptPorIrmao[String(m.id)]?.licenca && <span style={{marginLeft:'0.25rem',fontSize:'0.6rem',fontWeight:800,color:'#d97706'}}>Lic</span>}
-                                    </span>
-                                    {aptPorIrmao[String(m.id)] && (
-                                      <span
-                                        title={aptPorIrmao[String(m.id)].ajuste ? `Ajustado: ${aptPorIrmao[String(m.id)].ajuste.justificativa} (clique para desfazer)` : (aptPorIrmao[String(m.id)].apto ? 'Apto a votar' : `${aptPorIrmao[String(m.id)].motivos} — clique para tornar apto`)}
-                                        onClick={e => { e.preventDefault(); e.stopPropagation(); const l = aptPorIrmao[String(m.id)]; if (l.ajuste || !l.aptoAuto) ajustarAptGLEMT(l); }}
-                                        style={{flexShrink:0,fontSize:'0.62rem',fontWeight:800,padding:'0.05rem 0.4rem',borderRadius:'999px',cursor:'pointer',
-                                          background: aptPorIrmao[String(m.id)].apto ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                                          color: aptPorIrmao[String(m.id)].apto ? '#10b981' : '#ef4444'}}>
-                                        {aptPorIrmao[String(m.id)].apto ? 'Apto' : 'Inapto'}
-                                      </span>
-                                    )}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:'0.6rem'}}>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos em branco</label><input type="number" min="0" value={el.brancos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ brancos: e.target.value })} /></div>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Votos nulos</label><input type="number" min="0" value={el.nulos ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ nulos: e.target.value })} /></div>
-                        <div><label style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',display:'block',marginBottom:'0.25rem'}}>Total de votantes</label>
-                          <input type="number" min="0" value={el.votantes ?? ''} style={{width:'100%',padding:'0.55rem 0.7rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.85rem',outline:'none',boxSizing:'border-box'}} onChange={e => setEl({ votantes: e.target.value })}
-                            placeholder={String((el.chapas || []).reduce((t, c) => t + (Number(c.votos) || 0), 0) + (Number(el.brancos) || 0) + (Number(el.nulos) || 0) || (el.presentes || []).length)} /></div>
-                      </div>
-                    </div>
+                    <p style={{margin:'0.6rem 0 0',fontSize:'0.8rem',color:'var(--color-text-muted)'}}>
+                      {el.status === 'pendente' ? '⏳ Sessão agendada (pendente, sem número). ' : ''}
+                      Depois de salvar, use o botão <strong style={{color:'#8b5cf6'}}>🗳️ Eleição GLEMT</strong> na linha do balaustre para configurar
+                      período, edital, chapas, escrutinadores, aptos e presença, apuração e documentos.
+                    </p>
                   )}
                 </div>
               )}
@@ -1020,24 +853,21 @@ const Balaustres = ({
                           </div>
                           {/* Ações */}
                           <div className="flex gap-1.5" style={{flexShrink:0}}>
-                            {balaustre.eleicao_glemt?.ativo && (
-                              <button onClick={() => gerarEdital(balaustre)} disabled={gerandoEdital === balaustre.id}
-                                style={{padding:'0.25rem 0.55rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
-                                title="Edital de convocação (Word)">{gerandoEdital === balaustre.id ? '⏳' : '📢'}</button>
+                            {balaustre.eleicao_glemt?.ativo ? (
+                              // Eleição GLEMT: tudo no modal (configuração, aptos e presença, apuração, documentos)
+                              <button onClick={() => setModalGLEMT(balaustre)}
+                                style={{padding:'0.25rem 0.7rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.5)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Abrir a Eleição GLEMT">🗳️ Eleição GLEMT</button>
+                            ) : balaustre.sessao_especial ? (
+                              // Eleição/Posse da Loja: a ata é gerada na tela Eleição e Posse
+                              <button onClick={() => onAbrirEleicaoPosse && onAbrirEleicaoPosse()}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
+                                title="A ata desta sessão é gerada em Eleição e Posse — abrir">⚖️</button>
+                            ) : (
+                              <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
+                                title="Gerar ata (Word)">{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
                             )}
-                            {ehPendente(balaustre) && permissoes?.pode_editar_balaustres && (
-                              <button onClick={() => marcarRealizada(balaustre)}
-                                style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer',fontWeight:700}}
-                                title="Marcar como realizada (gera o número)">✅</button>
-                            )}
-                            {balaustre.eleicao_glemt?.ativo && (
-                              <button onClick={() => gerarListaPresenca(balaustre)} disabled={gerandoLista === balaustre.id}
-                                style={{padding:'0.25rem 0.55rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor:'pointer'}}
-                                title="Lista de presença (Word)">{gerandoLista === balaustre.id ? '⏳' : '📋'}</button>
-                            )}
-                            <button onClick={() => gerarAta(balaustre)} disabled={gerandoAta === balaustre.id || ehPendente(balaustre)}
-                              style={{padding:'0.25rem 0.55rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.8rem',cursor: ehPendente(balaustre) ? 'not-allowed' : 'pointer',opacity: ehPendente(balaustre) ? 0.4 : 1}}
-                              title={ehPendente(balaustre) ? 'Pendente: marque como realizada para gerar a ata' : 'Gerar ata (Word)'}>{gerandoAta === balaustre.id ? '⏳' : '📄'}</button>
                             <button onClick={() => handleVisualizar(balaustre)}
                               style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
                               title="Visualizar">👁️</button>
@@ -1090,6 +920,19 @@ const Balaustres = ({
           </div>
         );
       })()}
+
+      {/* ELEIÇÃO GLEMT — modal com as 4 abas */}
+      {modalGLEMT && (
+        <EleicaoGLEMTModal
+          balaustre={modalGLEMT}
+          podeEditar={!!permissoes?.pode_editar_balaustres}
+          onClose={() => setModalGLEMT(null)}
+          onSaved={onUpdate}
+          onMarcarRealizada={marcarRealizada}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      )}
 
       {/* ESCOLHA DO MODELO DE ATA */}
       {escolhaModelo && (
