@@ -13,7 +13,8 @@ const TEXTO = [30, 41, 59];
 
 // tipo: 'aptos' | 'inaptos' | 'ambos' (aptos e inaptos no mesmo PDF, em quadros separados)
 // Coluna Tesouraria: "Regular" (até 2 meses em aberto) ou "Pendência" (3+)
-export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos' }) => {
+// glemt: { periodo: '2027/2030', dataSessao: 'AAAA-MM-DD' } → cabeçalho de destaque da Eleição da Grande Loja
+export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos', glemt = null }) => {
   const inaptos = tipo === 'inaptos';
   const ambos = tipo === 'ambos';
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -37,16 +38,54 @@ export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosL
   y += 36;
   doc.setDrawColor(...DOURADO); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
 
-  // Título
-  y += 9;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
-  doc.text(ambos ? 'RELAÇÃO DE IRMÃOS APTOS E INAPTOS A VOTAR' : inaptos ? 'RELAÇÃO DE IRMÃOS INAPTOS A VOTAR' : 'RELAÇÃO DE IRMÃOS APTOS A VOTAR', W / 2, y, { align: 'center' });
-  y += 6;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
-  doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
-  y += 5;
-  doc.text('Critérios: estar regular com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
-  y += 6;
+  const tituloRelacao = ambos ? 'RELAÇÃO DE IRMÃOS APTOS E INAPTOS A VOTAR' : inaptos ? 'RELAÇÃO DE IRMÃOS INAPTOS A VOTAR' : 'RELAÇÃO DE IRMÃOS APTOS A VOTAR';
+
+  if (glemt) {
+    // ── Eleição da Grande Loja: destaque + critérios (à esquerda) + título da relação ──
+    y += 6;
+    const alturaBox = 17;
+    doc.setFillColor(250, 246, 234); doc.setDrawColor(...DOURADO); doc.setLineWidth(0.5);
+    doc.roundedRect(M, y, W - 2 * M, alturaBox, 2.5, 2.5, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(...AZUL);
+    doc.text('ELEIÇÃO DA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – GLEMT', W / 2, y + 7, { align: 'center', maxWidth: W - 2 * M - 6 });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+    doc.text(`Período ${glemt.periodo || ''}${glemt.dataSessao ? ` — sessão de ${fmt(glemt.dataSessao)}` : ''}`, W / 2, y + 13, { align: 'center' });
+    y += alturaBox + 6;
+
+    // Critérios (margem esquerda)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TEXTO);
+    doc.text('Critérios:', M, y);
+    y += 4.5;
+    const crit = [
+      ['Tesouraria: ', 'a) Pecúlio e Mensalidade em dias; b) Com 1 Pecúlio ou até 2 Mensalidades em aberto;'],
+      ['Assiduidade: ', 'a) Frequência superior a 50% nas sessões; b) Dispensados por prerrogativa de idade.'],
+    ];
+    crit.forEach(([rot, txt]) => {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text(rot, M, y);
+      const wRot = doc.getTextWidth(rot);
+      doc.setFont('helvetica', 'normal');
+      const ls = doc.splitTextToSize(txt, W - 2 * M - wRot);
+      ls.forEach((ln, k) => doc.text(ln, M + wRot, y + k * 4));
+      y += ls.length * 4 + 0.8;
+    });
+
+    y += 5;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
+    doc.text(tituloRelacao, W / 2, y, { align: 'center' });
+    y += 6;
+  } else {
+    // ── Eleição da Loja (como antes) ──
+    y += 9;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
+    doc.text(tituloRelacao, W / 2, y, { align: 'center' });
+    y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(...CINZA);
+    doc.text(subtitulo || `Eleição da Gestão ${eleicao?.ano_exercicio || eleicao?.gestao || ''}${eleicao?.data_eleicao ? ` — sessão de ${fmt(eleicao.data_eleicao)}` : ''}`, W / 2, y, { align: 'center' });
+    y += 5;
+    doc.text('Critérios: estar regular com a Tesouraria e ter pelo menos 50% de presença desde a última eleição.', W / 2, y, { align: 'center' });
+    y += 6;
+  }
 
   // Desenha a tabela de uma lista (com total abaixo); comLic = mostra "(Lic)" no nome
   const tabela = (lista, comLic, rotuloTotal) => {
