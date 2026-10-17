@@ -119,7 +119,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
     if (tipo !== 'ambos' && !lista.length) { showError(tipo === 'inaptos' ? 'Nenhum irmão inapto.' : 'Nenhum irmão apto.'); return; }
     gerarAptosVotarPDF({
       tipo, linhas: lista, linhasInaptos: inaptos, eleicao: {}, dadosLoja: apt.dadosLoja, logoB64: LOGO_LOJA_B64, periodo: apt.periodo, assinantes: apt.assinantes,
-      subtitulo: `Eleição da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT${periodoTxt ? ` — Período ${periodoTxt}` : ''}${ref ? ` — sessão de ${fmt(ref)}` : ''}`,
+      glemt: { periodo: periodoTxt, dataSessao: ref },
       nomeArquivo: `${tipo === 'ambos' ? 'Aptos_e_Inaptos' : tipo === 'inaptos' ? 'Inaptos' : 'Aptos'}_a_Votar_GLEMT_${periodoTxt.replace('/', '-')}.pdf`,
     });
   };
