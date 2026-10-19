@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { calcularPresencaIrmao } from '../../utils/calcularPresencaIrmao';
 import { supabase } from '../../supabaseClient';
-import QuadrosComendas from './QuadrosComendas';
 
 const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [irmao, setIrmao]                           = useState(null);
@@ -66,50 +66,15 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
 
   const carregarPresenca = async (irmaoData) => {
     try {
-      let q = supabase.from('sessoes_presenca').select('id, data_sessao, grau_sessao_id');
-      if (anoPresenca !== 'todos') q = q.gte('data_sessao',`${anoPresenca}-01-01`).lte('data_sessao',`${anoPresenca}-12-31`);
-      const { data: sessoes } = await q.order('data_sessao', { ascending: false });
-      const ids = sessoes?.map(s=>s.id) || [];
-      const { data: registros } = await supabase.from('registros_presenca').select('*').eq('membro_id',irmaoId).in('sessao_id',ids);
-      const { data: historico } = await supabase.from('historico_situacoes').select('*').eq('membro_id',irmaoId);
-
-      let total=0, pres=0, just=0, ause=0;
-      const ultimas = [];
-
-      const grauNaData = (d) => {
-        const dt = new Date(d+'T12:00:00');
-        if (irmaoData.data_exaltacao && dt>=new Date(irmaoData.data_exaltacao+'T12:00:00')) return 3;
-        if (irmaoData.data_elevacao  && dt>=new Date(irmaoData.data_elevacao+'T12:00:00'))  return 2;
-        if (irmaoData.data_iniciacao && dt>=new Date(irmaoData.data_iniciacao+'T12:00:00')) return 1;
-        return 0;
-      };
-
-      sessoes?.forEach((s, idx) => {
-        let gs = s.grau_sessao_id || 1; if (gs===4) gs=1;
-        const gi = grauNaData(s.data_sessao);
-        const ds = new Date(s.data_sessao+'T12:00:00');
-        if (gi < gs) return;
-        const di = irmaoData.data_ingresso_loja ? new Date(irmaoData.data_ingresso_loja+'T12:00:00') : irmaoData.data_iniciacao ? new Date(irmaoData.data_iniciacao+'T12:00:00') : null;
-        if (di && ds < di) return;
-        const bloq = historico?.find(sit => {
-          const tn = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'') || '';
-          const ex = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido (revertido)
-          if (!ex.includes(tn) && !ex.some(e=>tn.includes(e))) return false;
-          const di2 = new Date(sit.data_inicio+'T00:00:00'); di2.setHours(0,0,0,0);
-          const dsn = new Date(ds); dsn.setHours(0,0,0,0);
-          if (dsn < di2) return false;
-          if (sit.data_fim) { const df = new Date(sit.data_fim+'T00:00:00'); df.setHours(0,0,0,0); return dsn>=di2 && dsn<=df; }
-          return dsn >= di2;
-        });
-        if (bloq) return;
-        total++;
-        const reg = registros?.find(r=>r.sessao_id===s.id);
-        let status = 'F';
-        if (reg) { if (reg.presente) { pres++; status='P'; } else if (reg.justificativa) { just++; status='J'; } else { ause++; } } else { ause++; }
-        if (idx < 10) ultimas.push({ data: s.data_sessao, status });
+      // Mesmo cálculo do Dashboard de Presença e de "Minhas Presenças"
+      const inicio = anoPresenca === 'todos' ? '1900-01-01' : `${anoPresenca}-01-01`;
+      const fim    = anoPresenca === 'todos' ? undefined : `${anoPresenca}-12-31`;
+      const r = await calcularPresencaIrmao({ irmao: { ...irmaoData, id: irmaoId }, inicio, fim });
+      const ultimas = r.validas.slice(0, 10).map(s => {
+        const reg = r.registros[s.id];
+        return { data: s.data_sessao, status: reg.presente ? 'P' : reg.justificativa ? 'J' : 'F' };
       });
-
-      setDadosPresenca({ totalSessoes:total, presencas:pres, ausenciasJustificadas:just, ausenciasInjustificadas:ause, taxa: total>0?Math.round(pres/total*100):0, ultimasSessoes:ultimas });
+      setDadosPresenca({ totalSessoes: r.stats.total, presencas: r.stats.presencas, ausenciasJustificadas: r.stats.justificadas, ausenciasInjustificadas: r.stats.ausencias, taxa: r.stats.taxa, ultimasSessoes: ultimas });
     } catch(e) { console.error(e); }
   };
 
@@ -337,12 +302,6 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
                 </div>
               );
             })() : <p style={{color:'var(--color-text-muted)',textAlign:'center',padding:'1rem'}}>Nenhum cargo registrado no histórico</p>}
-          </section>
-
-          {/* ── Comendas ──────────────────────────────────────────────────── */}
-          <section style={sSection}>
-            <h3 style={sSecTitle}>🎖️ Comendas</h3>
-            <QuadrosComendas irmaoId={irmao.id} />
           </section>
 
           {/* ── Comissões ─────────────────────────────────────────────────── */}
