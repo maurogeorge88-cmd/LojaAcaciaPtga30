@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { calcularPresencaIrmao } from '../utils/calcularPresencaIrmao';
 import { supabase } from '../supabaseClient';
 
 const formatarDataBR = (d) => {
@@ -79,88 +80,11 @@ export default function MinhaPresenca({ userData }) {
       if (!irmao) return;
       setIrmaoData(irmao);
 
-      const hoje = new Date().toISOString().split('T')[0];
-      const { data: sessoesData } = await supabase.from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome, grau_minimo_requerido)')
-        .gte('data_sessao', p.inicio).lte('data_sessao', p.fim).lte('data_sessao', hoje)
-        .order('data_sessao', { ascending: false });
-
-      // Histórico de situações (paginado, blocos de 1000) — só as bloqueadoras
-      // (desligado/irregular/suspenso/excluído/ex-ofício) excluem sessão da
-      // conta; licença e prerrogativa NÃO excluem mais (mesmo padrão usado em
-      // todo o resto do sistema).
-      let historicoSituacoes = [];
-      {
-        let inicioHist = 0;
-        const tamanhoPaginaHist = 1000;
-        let continuarHist = true;
-        while (continuarHist) {
-          const { data: loteHist } = await supabase
-            .from('historico_situacoes')
-            .select('membro_id, tipo_situacao, data_inicio, data_fim, status')
-            .eq('status', 'ativa')
-            .eq('membro_id', irmao.id)
-            .range(inicioHist, inicioHist + tamanhoPaginaHist - 1);
-          if (loteHist && loteHist.length > 0) {
-            historicoSituacoes = [...historicoSituacoes, ...loteHist];
-            inicioHist += tamanhoPaginaHist;
-            if (loteHist.length < tamanhoPaginaHist) continuarHist = false;
-          } else {
-            continuarHist = false;
-          }
-        }
-      }
-
-      const dataEntrada = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) :
-                           (irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null);
-      const dataFalecimento = irmao.data_falecimento ? new Date(irmao.data_falecimento) : null;
-      const unaccentLower = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const bloqueadoNaData = (d) => historicoSituacoes.some(sit => {
-        const tipo = unaccentLower(sit.tipo_situacao);
-        const tipos = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
-        const ehBloq = tipos.includes(tipo) || tipos.some(t => tipo.includes(t));
-        if (!ehBloq) return false;
-        const di = new Date(sit.data_inicio + 'T00:00:00');
-        if (d < di) return false;
-        if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return d <= df; }
-        return true;
-      });
-
-      // Filtrar elegíveis por grau, entrada, falecimento e situação bloqueadora na data
-      const elegiveis = (sessoesData || []).filter(s => {
-        const d = new Date(s.data_sessao);
-        let gs = s.grau_sessao_id || 1;
-        if (gs === 4) gs = 1;
-        let gi = 0;
-        if (irmao.data_exaltacao && d >= new Date(irmao.data_exaltacao)) gi = 3;
-        else if (irmao.data_elevacao && d >= new Date(irmao.data_elevacao)) gi = 2;
-        else if (irmao.data_iniciacao && d >= new Date(irmao.data_iniciacao)) gi = 1;
-        if (gi < gs) return false;
-
-        if (!dataEntrada || d < dataEntrada) return false;
-        if (dataFalecimento && d >= dataFalecimento) return false;
-        if (bloqueadoNaData(d)) return false;
-
-        return true;
-      });
-      setSessoes(elegiveis);
-
-      const ids = elegiveis.map(s => s.id);
-      if (ids.length > 0) {
-        const { data: regs } = await supabase.from('registros_presenca')
-          .select('sessao_id, presente, justificativa')
-          .eq('membro_id', irmao.id).in('sessao_id', ids);
-        const mapa = {};
-        (regs || []).forEach(r => { mapa[r.sessao_id] = r; });
-        setPresencas(mapa);
-        const total = elegiveis.length;
-        const pres  = (regs || []).filter(r => r.presente).length;
-        const just  = (regs || []).filter(r => !r.presente && r.justificativa).length;
-        const ause  = total - pres - just;
-        setEstatisticas({ total, presencas: pres, ausencias: ause < 0 ? 0 : ause, justificadas: just, taxa: total > 0 ? Math.round(pres/total*100) : 0 });
-      } else {
-        setEstatisticas({ total: 0, presencas: 0, ausencias: 0, justificadas: 0, taxa: 0 });
-      }
+      // Mesmo cálculo do Dashboard de Presença (só conta sessões com registro do irmão)
+      const r = await calcularPresencaIrmao({ irmao, inicio: p.inicio, fim: p.fim });
+      setSessoes(r.sessoes);
+      setPresencas(r.registros);
+      setEstatisticas({ total: r.stats.total, presencas: r.stats.presencas, ausencias: r.stats.ausencias, justificadas: r.stats.justificadas, taxa: r.stats.taxa });
     } finally {
       setLoading(false);
     }
@@ -253,7 +177,8 @@ export default function MinhaPresenca({ userData }) {
             const pres    = sessMes.filter(s => presencas[s.id]?.presente).length;
             const ause    = sessMes.filter(s => presencas[s.id] && !presencas[s.id].presente && !presencas[s.id].justificativa).length;
             const just    = sessMes.filter(s => presencas[s.id] && !presencas[s.id].presente && presencas[s.id].justificativa).length;
-            const taxa    = sessMes.length > 0 ? Math.round(pres/sessMes.length*100) : 0;
+            const comReg  = sessMes.filter(s => presencas[s.id]).length; // só sessões com registro entram no %
+            const taxa    = comReg > 0 ? Math.round(pres/comReg*100) : 0;
             return (
               <div key={mesAno} style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
                 {/* Cabeçalho do mês */}
@@ -310,6 +235,9 @@ export default function MinhaPresenca({ userData }) {
             <span key={txt}><span style={{ color: cor, fontWeight: '700' }}>{txt.split(' ')[0]}</span> {txt.split(' ').slice(1).join(' ')}</span>
           ))}
         </div>
+        <p style={{ margin: '0.5rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+          O percentual considera apenas as sessões com registro de presença — o mesmo critério do Dashboard de Presença.
+        </p>
       </div>
     </div>
   );
