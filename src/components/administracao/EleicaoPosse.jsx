@@ -17,6 +17,7 @@ import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
 import { cabecalhoLojaDocx, linhasCabecalho } from '../../utils/cabecalhoLoja';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
+import { emitirEdital } from '../../utils/editais';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
@@ -873,6 +874,18 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   // Balaustres vinculados à eleição (Eleição da Loja / Posse da Loja) — exigidos para gerar as atas
   const [balaustresEleicao, setBalaustresEleicao] = useState([]);
   const [dadosLoja, setDadosLoja] = useState({});
+  // Editais vinculados à eleição selecionada (id → registro da tabela editais)
+  const [editaisLoja, setEditaisLoja] = useState({});
+  const [emitindoEdital, setEmitindoEdital] = useState('');
+  const recarregarEditaisLoja = useCallback(async (el) => {
+    const ids = [el?.edital_eleicao_id, el?.edital_posse_id].filter(Boolean);
+    if (!ids.length) { setEditaisLoja({}); return; }
+    const { data } = await supabase.from('editais').select('*').in('id', ids);
+    setEditaisLoja(Object.fromEntries((data || []).map(e => [e.id, e])));
+  }, []);
+  useEffect(() => {
+    recarregarEditaisLoja(eleicaoSelecionada);
+  }, [eleicaoSelecionada?.id, eleicaoSelecionada?.edital_eleicao_id, eleicaoSelecionada?.edital_posse_id, recarregarEditaisLoja]);
   const [loading, setLoading] = useState(true);
   const [gerando, setGerando] = useState('');
   const [etapa, setEtapa] = useState(1); // 1=config 2=eleição 3=posse 4=docs
@@ -1220,51 +1233,68 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
   // Vários modelos para o mesmo documento (ex.: duas versões da Ata para Eleição) → escolher qual usar
   const [escolhaModeloEP, setEscolhaModeloEP] = useState(null); // { tipo, nomeArq, opcoes }
-  // Numeração dos editais: sequência POR ANO (reinicia a cada ano), compartilhada entre eleição e posse
-  const editaisDoAno = (ano) => eleicoes.flatMap(e => [
-    { n: Number(e.edital_eleicao_numero), a: anoDoEdital(e, false), id: e.id, t: 'eleicao' },
-    { n: Number(e.edital_posse_numero),   a: anoDoEdital(e, true),  id: e.id, t: 'posse' },
-  ]).filter(x => x.n > 0 && x.a === Number(ano));
-  const proximoNumeroEdital = (ano) => {
-    const ns = editaisDoAno(ano).map(x => x.n);
-    return (ns.length ? Math.max(...ns) : 0) + 1;
+  // Editais: fonte única = tabela editais (Expedientes → Editais; numeração por ano).
+  // Aqui só se emite (próximo nº automático, com descrição) e se consulta o número.
+  const edDe = (posse) => editaisLoja[posse ? eleicaoSelecionada?.edital_posse_id : eleicaoSelecionada?.edital_eleicao_id] || null;
+  const emitirEditalLoja = async (posse, dataEdital) => {
+    if (!eleicaoSelecionada) return;
+    if (!dataEdital) { showError('Preencha a Data do edital na Configuração antes de emitir.'); return; }
+    const chave = posse ? 'posse' : 'eleicao';
+    setEmitindoEdital(chave);
+    let reg = null;
+    try {
+      const dataSessao = posse ? eleicaoSelecionada.data_posse : eleicaoSelecionada.data_eleicao;
+      reg = await emitirEdital({
+        tipo: posse ? 'posse_loja' : 'eleicao_loja', dataEdital, origemId: eleicaoSelecionada.id,
+        descricao: `Edital de Convocação para ${posse ? 'Posse' : 'Eleição'} da Loja – Gestão ${eleicaoSelecionada.gestao || ''}${dataSessao ? ` – sessão de ${formatarData(dataSessao)}` : ''}`,
+      });
+      const { data, error } = await supabase.from('eleicoes')
+        .update({ [posse ? 'edital_posse_id' : 'edital_eleicao_id']: reg.id })
+        .eq('id', eleicaoSelecionada.id).select().single();
+      if (error) throw error;
+      setEleicaoSelecionada(data);
+      setEleicoes(prev => prev.map(e => e.id === data.id ? data : e));
+      showSuccess(`📢 Edital nº ${formatarNumeroEdital(reg.numero, reg.ano)} emitido.`);
+    } catch (e) {
+      if (reg) await supabase.from('editais').delete().eq('id', reg.id); // não deixa número órfão
+      showError('Erro ao emitir o edital: ' + e.message);
+    } finally {
+      setEmitindoEdital('');
+    }
   };
-  const numeroEmUso = (n, ano, posse) => !!n && editaisDoAno(ano).some(x => x.n === Number(n) && !(x.id === eleicaoSelecionada?.id && x.t === (posse ? 'posse' : 'eleicao')));
   const controleEdital = (campo, dataEdital) => {
     const posse = campo === 'edital_posse_numero';
-    const campoAno = posse ? 'edital_posse_ano' : 'edital_eleicao_ano';
-    const atual = eleicaoSelecionada?.[campo] ?? '';
-    const ano = anoDoEdital(eleicaoSelecionada, posse);
-    const emUso = numeroEmUso(atual, ano, posse);
-    const estiloCampo = { ...S.input, padding: '0.3rem 0.5rem', borderColor: emUso ? '#ef4444' : undefined };
+    const ed = edDe(posse);
+    const temId = !!(posse ? eleicaoSelecionada?.edital_posse_id : eleicaoSelecionada?.edital_eleicao_id);
     return (
       <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
         <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text)' }}>📌 Edital nº</label>
-        <input type="number" min="1" disabled={!podeEditar} value={atual} title="Número do edital"
-          onChange={e => setEleicaoSelecionada(p => ({ ...p, [campo]: e.target.value }))}
-          onBlur={e => podeEditar && atualizarEleicao({ [campo]: e.target.value ? parseInt(e.target.value) : null })}
-          style={{ ...estiloCampo, width: '70px' }} />
-        <span style={{ fontWeight: 700, color: 'var(--color-text-muted)' }}>/</span>
-        <input type="number" min="2000" max="2100" disabled={!podeEditar} value={ano} title="Ano do edital (padrão: ano da eleição/posse)"
-          onChange={e => setEleicaoSelecionada(p => ({ ...p, [campoAno]: e.target.value }))}
-          onBlur={e => podeEditar && atualizarEleicao({ [campoAno]: e.target.value ? parseInt(e.target.value) : null })}
-          style={{ ...estiloCampo, width: '90px' }} />
-        {!atual && podeEditar && (
-          <button onClick={() => atualizarEleicao({ [campo]: proximoNumeroEdital(ano), [campoAno]: ano })} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
-            Numerar (próximo: {formatarNumeroEdital(proximoNumeroEdital(ano), ano)})
-          </button>
-        )}
-        {atual && <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-accent)' }}>{formatarNumeroEdital(atual, ano)}</span>}
+        {ed ? (<>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10b981' }}>{formatarNumeroEdital(ed.numero, ed.ano)}</span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{ed.descricao} (consulte/edite em Expedientes → Editais)</span>
+        </>) : temId ? (
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Carregando edital…</span>
+        ) : (<>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f59e0b' }}>⛔ Edital não emitido — o documento fica bloqueado</span>
+          {podeEditar && (
+            <button disabled={!!emitindoEdital || !dataEdital} onClick={() => emitirEditalLoja(posse, dataEdital)} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+              {emitindoEdital ? '⏳ Emitindo…' : '📢 Emitir edital (próximo nº automático)'}
+            </button>
+          )}
+        </>)}
         <span style={{ fontSize: '0.75rem', color: dataEdital ? 'var(--color-text-muted)' : '#f59e0b', fontWeight: dataEdital ? 400 : 700 }}>
           {dataEdital ? `Data do edital: ${formatarData(dataEdital)}` : '⚠️ Sem data do edital — preencha na Configuração'}
         </span>
-        {emUso && <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700 }}>⚠️ Número já usado em {ano}</span>}
-        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Sequência por ano (eleição e posse); reinicia a cada ano.</span>
       </div>
     );
   };
 
   const gerarDoc = async (tipo, nomeArq, modeloId = null) => {
+    // Edital só é gerado com número emitido (tela Editais)
+    if ((tipo === 'edital_eleicao' || tipo === 'edital_posse') && !edDe(tipo === 'edital_posse')) {
+      showError('Emita o edital (número) antes de gerar o documento.');
+      return;
+    }
     if (!modeloId) {
       const { data: opcoes } = await supabase.from('modelos_documentos').select('id, tipo, nome, tipo_base')
         .or(`tipo.eq.${tipo},tipo_base.eq.${tipo}`);
@@ -1288,19 +1318,20 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         showError(`Registre o balaustre da sessão de ${esp === 'posse_loja' ? 'Posse' : 'Eleição'} em Balaustres (Sessão especial) para gerar esta ata.`);
         return;
       }
-      // Edital sem número: numera automaticamente com o próximo da sequência
+      // Edital: número e ano vêm do registro em Editais (fonte única)
       let eleicaoDoc = eleicaoSelecionada;
       if (tipo === 'edital_eleicao' || tipo === 'edital_posse') {
-        const campo = tipo === 'edital_posse' ? 'edital_posse_numero' : 'edital_eleicao_numero';
-        if (!eleicaoSelecionada[campo]) {
-          const posse = tipo === 'edital_posse';
-          const campoAno = posse ? 'edital_posse_ano' : 'edital_eleicao_ano';
-          const ano = anoDoEdital(eleicaoSelecionada, posse);
-          const n = proximoNumeroEdital(ano);
-          await atualizarEleicao({ [campo]: n, [campoAno]: ano });
-          eleicaoDoc = { ...eleicaoSelecionada, [campo]: n, [campoAno]: ano };
-          showSuccess(`Edital numerado automaticamente: nº ${formatarNumeroEdital(n, ano)}`);
+        const posse = tipo === 'edital_posse';
+        const ed = edDe(posse);
+        // Mantém a data do edital em Editais igual à da Configuração
+        const dCfg = posse ? eleicaoSelecionada.data_edital_posse : eleicaoSelecionada.data_edital_eleicao;
+        if (dCfg && ed.data_edital !== dCfg) {
+          await supabase.from('editais').update({ data_edital: dCfg }).eq('id', ed.id);
+          recarregarEditaisLoja(eleicaoSelecionada);
         }
+        eleicaoDoc = { ...eleicaoSelecionada,
+          [posse ? 'edital_posse_numero' : 'edital_eleicao_numero']: ed.numero,
+          [posse ? 'edital_posse_ano' : 'edital_eleicao_ano']: ed.ano };
       }
       const buf = await gerarDocx(tipo, eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
       downloadDocx(buf, nomeArq);
