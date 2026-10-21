@@ -4,6 +4,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { LOGO_LOJA_B64 } from './logoLoja';
 import { cabecalhoLojaDocx } from './cabecalhoLoja';
+import { formatarNumeroEdital } from './editais';
 
 // ════════════════════════════════════════════════════════════════════════
 // Ata (Balaústre) das sessões normais — Aprendiz, Companheiro e Mestre
@@ -42,7 +43,7 @@ export const SUBTITULO_ATA_PADRAO = 'Balaústre nº {numero_balaustre}/{ano_bala
 
 // Edital de convocação — eleição da GLEMT (dirigido aos Mestres)
 export const TIPO_EDITAL_GLEMT = 'edital_eleicao_glemt';
-export const TITULO_EDITAL_GLEMT_PADRAO = 'EDITAL DE CONVOCAÇÃO\nELEIÇÃO DA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – PERÍODO {periodo_glemt_barra}';
+export const TITULO_EDITAL_GLEMT_PADRAO = 'EDITAL DE CONVOCAÇÃO Nº {numero_edital}\nELEIÇÃO DA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO – PERÍODO {periodo_glemt_barra}';
 export const CORPO_EDITAL_GLEMT_PADRAO = [
   'O Venerável Mestre da Augusta e Respeitável Loja Simbólica {nome_loja}, no uso de suas atribuições e em cumprimento ao que determinam a Constituição, o Regulamento Geral da Ordem e o Código Eleitoral Maçônico da GLEMT, *CONVOCA* os Irmãos *Mestres Maçons* do quadro desta Oficina, regulares e quites com suas obrigações, para a Sessão Ordinária de Eleição do Sereníssimo Grão-Mestre e do Eminente Grão-Mestre Adjunto da Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, para o período maçônico de {periodo_glemt}, a realizar-se no dia {data_sessao}, às {hora_abertura} horas, no Templo da Loja, situado na {endereco_loja}, cidade de {cidade}/{estado}.',
   '',
@@ -100,6 +101,15 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
 
 export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata' }) => {
   const ehEdital = documento === 'edital';
+  // Edital: exige o número emitido (tela Editais) — fonte única da numeração
+  let editalReg = null;
+  if (ehEdital) {
+    const idEdital = balaustre.eleicao_glemt && balaustre.eleicao_glemt.edital_id;
+    if (!idEdital) throw new Error('emita o edital (número) na aba Configuração antes de gerar o documento.');
+    const { data: ed } = await supabase.from('editais').select('*').eq('id', idEdital).maybeSingle();
+    if (!ed) throw new Error('o edital vinculado não foi encontrado em Editais. Emita um novo na aba Configuração.');
+    editalReg = ed;
+  }
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
@@ -224,6 +234,16 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       VARS[`votos_chapa${i + 1}`] = String(num(c.votos));
     });
   }
+  // Número e data do edital vêm do registro em Editais
+  if (editalReg) {
+    VARS.numero_edital = formatarNumeroEdital(editalReg.numero, editalReg.ano);
+    VARS.ano_edital = String(editalReg.ano);
+    if (editalReg.data_edital) {
+      const [a, m, di] = String(editalReg.data_edital).substring(0, 10).split('-').map(Number);
+      VARS.data_edital = `${String(di).padStart(2, '0')}/${String(m).padStart(2, '0')}/${a}`;
+      VARS.data_edital_extenso = `${String(di).padStart(2, '0')} de ${MESES[m - 1]} de ${a}`;
+    }
+  }
   const interp = (t) => Object.entries(VARS).reduce((x, [k, v]) => x.replaceAll(`{${k}}`, v ?? ''), String(t || ''));
 
   // ── Helpers de formatação (Times New Roman 12, como os demais documentos) ──
@@ -274,7 +294,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
         children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8), height: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8) } })] })] : [])),
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
-      const linhasTit = interp(modelo.titulo_doc || (ehEdital ? TITULO_EDITAL_GLEMT_PADRAO : ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO)).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
+      const tituloBase = modelo.titulo_doc || (ehEdital ? TITULO_EDITAL_GLEMT_PADRAO : ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO);
+      // Modelo salvo sem {numero_edital}: o número entra no fim da 1ª linha do título
+      const tituloFinal = (ehEdital && !tituloBase.includes('{numero_edital}')) ? tituloBase.replace(/^[^\n]*/, (l) => `${l.trimEnd()} Nº {numero_edital}`) : tituloBase;
+      const linhasTit = interp(tituloFinal).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
       if (linhasTit.length === 1 && !ehEleicao && !ehEdital) linhasTit.push(`Sessão de ${VARS.grau_extenso}`);
       // Subtítulo (ex.: "Balaústre nº 12/2026") logo abaixo do título, antes do texto — não se aplica ao edital
       const sub = ehEdital ? '' : (modelo.subtitulo ?? SUBTITULO_ATA_PADRAO);
@@ -310,7 +333,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   });
   const blob = await Packer.toBlob(doc);
   const nome = ehEdital
-    ? `Edital_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}.docx`
+    ? `Edital_${String(VARS.numero_edital || '').replace('/', '-')}_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}.docx`
     : `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}.docx`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
