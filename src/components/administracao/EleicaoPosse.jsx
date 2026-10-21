@@ -18,6 +18,7 @@ import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
 import { cabecalhoLojaDocx, linhasCabecalho } from '../../utils/cabecalhoLoja';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { emitirEdital } from '../../utils/editais';
+import VincularEdital from '../editais/VincularEdital';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
@@ -877,6 +878,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   // Editais vinculados à eleição selecionada (id → registro da tabela editais)
   const [editaisLoja, setEditaisLoja] = useState({});
   const [emitindoEdital, setEmitindoEdital] = useState('');
+  const [vinculandoEdital, setVinculandoEdital] = useState(''); // '' | 'eleicao' | 'posse'
   const recarregarEditaisLoja = useCallback(async (el) => {
     const ids = [el?.edital_eleicao_id, el?.edital_posse_id].filter(Boolean);
     if (!ids.length) { setEditaisLoja({}); return; }
@@ -1262,6 +1264,48 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       setEmitindoEdital('');
     }
   };
+  // Vincula um edital já cadastrado (em vez de emitir outro)
+  const vincularEditalLoja = async (posse, ed) => {
+    if (!eleicaoSelecionada || emitindoEdital) return;
+    setEmitindoEdital(posse ? 'posse' : 'eleicao');
+    try {
+      const { data: e1, error: er1 } = await supabase.from('editais')
+        .update({ origem_id: String(eleicaoSelecionada.id), tipo: posse ? 'posse_loja' : 'eleicao_loja' }).eq('id', ed.id).is('origem_id', null).select();
+      if (er1) throw er1;
+      if (!e1?.length) throw new Error('este edital já foi vinculado a outra situação (ou sem permissão).');
+      const campos = { [posse ? 'edital_posse_id' : 'edital_eleicao_id']: ed.id };
+      if (ed.data_edital) campos[posse ? 'data_edital_posse' : 'data_edital_eleicao'] = ed.data_edital;
+      const { data, error } = await supabase.from('eleicoes').update(campos).eq('id', eleicaoSelecionada.id).select().single();
+      if (error) { await supabase.from('editais').update({ origem_id: null }).eq('id', ed.id); throw error; }
+      setEleicaoSelecionada(data);
+      setEleicoes(prev => prev.map(e => e.id === data.id ? data : e));
+      setVinculandoEdital('');
+      showSuccess(`🔗 Edital nº ${formatarNumeroEdital(ed.numero, ed.ano)} vinculado.`);
+    } catch (e) {
+      showError('Erro ao vincular o edital: ' + e.message);
+    } finally {
+      setEmitindoEdital('');
+    }
+  };
+  // Desfaz o vínculo (o edital continua cadastrado e fica livre para outro uso)
+  const desvincularEditalLoja = async (posse) => {
+    const ed = edDe(posse);
+    if (!ed || emitindoEdital) return;
+    if (!window.confirm(`Desvincular o edital nº ${formatarNumeroEdital(ed.numero, ed.ano)}?\nEle continua em Editais e o documento fica bloqueado até vincular/emitir outro.`)) return;
+    setEmitindoEdital(posse ? 'posse' : 'eleicao');
+    try {
+      const { data, error } = await supabase.from('eleicoes')
+        .update({ [posse ? 'edital_posse_id' : 'edital_eleicao_id']: null }).eq('id', eleicaoSelecionada.id).select().single();
+      if (error) throw error;
+      await supabase.from('editais').update({ origem_id: null }).eq('id', ed.id);
+      setEleicaoSelecionada(data);
+      setEleicoes(prev => prev.map(e => e.id === data.id ? data : e));
+    } catch (e) {
+      showError('Erro ao desvincular: ' + e.message);
+    } finally {
+      setEmitindoEdital('');
+    }
+  };
   const controleEdital = (campo, dataEdital) => {
     const posse = campo === 'edital_posse_numero';
     const ed = edDe(posse);
@@ -1272,6 +1316,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         {ed ? (<>
           <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10b981' }}>{formatarNumeroEdital(ed.numero, ed.ano)}</span>
           <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{ed.descricao} (consulte/edite em Expedientes → Editais)</span>
+          {podeEditar && <button disabled={!!emitindoEdital} onClick={() => desvincularEditalLoja(posse)} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>↩️ Desvincular</button>}
         </>) : temId ? (
           <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Carregando edital…</span>
         ) : (<>
@@ -1280,6 +1325,14 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
             <button disabled={!!emitindoEdital || !dataEdital} onClick={() => emitirEditalLoja(posse, dataEdital)} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
               {emitindoEdital ? '⏳ Emitindo…' : '📢 Emitir edital (próximo nº automático)'}
             </button>
+          )}
+          {podeEditar && (
+            <button disabled={!!emitindoEdital} onClick={() => setVinculandoEdital(v => (v === (posse ? 'posse' : 'eleicao') ? '' : (posse ? 'posse' : 'eleicao')))} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+              🔗 Vincular edital existente
+            </button>
+          )}
+          {podeEditar && vinculandoEdital === (posse ? 'posse' : 'eleicao') && (
+            <VincularEdital tipo={posse ? 'posse_loja' : 'eleicao_loja'} ocupado={!!emitindoEdital} onEscolher={(e) => vincularEditalLoja(posse, e)} onFechar={() => setVinculandoEdital('')} />
           )}
         </>)}
         <span style={{ fontSize: '0.75rem', color: dataEdital ? 'var(--color-text-muted)' : '#f59e0b', fontWeight: dataEdital ? 400 : 700 }}>
