@@ -20,6 +20,15 @@ import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
 
+// ── Edital: ano e número (sequência por ano, compartilhada entre eleição e posse) ──
+// Ano padrão = ano da eleição (edital de eleição) ou da posse (edital de posse); editável.
+const anoPadraoEdital = (eleicao, posse) => {
+  const d = posse ? (eleicao?.data_posse || eleicao?.data_edital_posse) : (eleicao?.data_eleicao || eleicao?.data_edital_eleicao);
+  return parseInt(String(d || '').substring(0, 4)) || new Date().getFullYear();
+};
+const anoDoEdital = (eleicao, posse) => Number(posse ? eleicao?.edital_posse_ano : eleicao?.edital_eleicao_ano) || anoPadraoEdital(eleicao, posse);
+const formatarNumeroEdital = (n, ano) => (n ? `${String(n).padStart(2, '0')}/${ano}` : '');
+
 const formatarData = (d) => {
   if (!d) return '';
   const [ano, mes, dia] = d.split('-');
@@ -308,7 +317,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     ano_exercicio:            eleicao.ano_exercicio || gestao,
     nome_chapa:               eleicao.nome_chapa || '[nome da chapa]',
     // Edital: número sequencial contínuo (eleição e posse compartilham a mesma sequência)
-    numero_edital:            (() => { const n = tipo === 'edital_posse' ? eleicao.edital_posse_numero : eleicao.edital_eleicao_numero; return n ? String(n) : '[nº]'; })(),
+    numero_edital:            (() => { const posse = tipo === 'edital_posse'; const n = posse ? eleicao.edital_posse_numero : eleicao.edital_eleicao_numero; return n ? formatarNumeroEdital(n, anoDoEdital(eleicao, posse)) : '[nº]'; })(),
+    ano_edital:               String(anoDoEdital(eleicao, tipo === 'edital_posse')),
     // Balaustre da sessão (Eleição da Loja → atas de eleição; Posse da Loja → ata de posse)
     ...(() => {
       const esp = tipo === 'ata_posse' ? 'posse_loja' : 'eleicao_loja';
@@ -1210,32 +1220,46 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
   // Vários modelos para o mesmo documento (ex.: duas versões da Ata para Eleição) → escolher qual usar
   const [escolhaModeloEP, setEscolhaModeloEP] = useState(null); // { tipo, nomeArq, opcoes }
-  // Numeração dos editais: sequência contínua compartilhada entre eleição e posse
-  const numerosEditais = () => eleicoes.flatMap(e => [e.edital_eleicao_numero, e.edital_posse_numero]).map(Number).filter(n => n > 0);
-  const proximoNumeroEdital = () => (numerosEditais().length ? Math.max(...numerosEditais()) : 0) + 1;
-  const numeroEmUso = (n, campo) => !!n && (
-    eleicoes.some(e => e.id !== eleicaoSelecionada?.id && [e.edital_eleicao_numero, e.edital_posse_numero].map(Number).includes(Number(n)))
-    || Number((campo === 'edital_eleicao_numero' ? eleicaoSelecionada?.edital_posse_numero : eleicaoSelecionada?.edital_eleicao_numero)) === Number(n));
+  // Numeração dos editais: sequência POR ANO (reinicia a cada ano), compartilhada entre eleição e posse
+  const editaisDoAno = (ano) => eleicoes.flatMap(e => [
+    { n: Number(e.edital_eleicao_numero), a: anoDoEdital(e, false), id: e.id, t: 'eleicao' },
+    { n: Number(e.edital_posse_numero),   a: anoDoEdital(e, true),  id: e.id, t: 'posse' },
+  ]).filter(x => x.n > 0 && x.a === Number(ano));
+  const proximoNumeroEdital = (ano) => {
+    const ns = editaisDoAno(ano).map(x => x.n);
+    return (ns.length ? Math.max(...ns) : 0) + 1;
+  };
+  const numeroEmUso = (n, ano, posse) => !!n && editaisDoAno(ano).some(x => x.n === Number(n) && !(x.id === eleicaoSelecionada?.id && x.t === (posse ? 'posse' : 'eleicao')));
   const controleEdital = (campo, dataEdital) => {
+    const posse = campo === 'edital_posse_numero';
+    const campoAno = posse ? 'edital_posse_ano' : 'edital_eleicao_ano';
     const atual = eleicaoSelecionada?.[campo] ?? '';
-    const emUso = numeroEmUso(atual, campo);
+    const ano = anoDoEdital(eleicaoSelecionada, posse);
+    const emUso = numeroEmUso(atual, ano, posse);
+    const estiloCampo = { ...S.input, padding: '0.3rem 0.5rem', borderColor: emUso ? '#ef4444' : undefined };
     return (
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
-        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text)' }}>📌 Nº do edital</label>
-        <input type="number" min="1" disabled={!podeEditar} value={atual}
+      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text)' }}>📌 Edital nº</label>
+        <input type="number" min="1" disabled={!podeEditar} value={atual} title="Número do edital"
           onChange={e => setEleicaoSelecionada(p => ({ ...p, [campo]: e.target.value }))}
           onBlur={e => podeEditar && atualizarEleicao({ [campo]: e.target.value ? parseInt(e.target.value) : null })}
-          style={{ ...S.input, width: '90px', padding: '0.3rem 0.5rem', borderColor: emUso ? '#ef4444' : undefined }} />
+          style={{ ...estiloCampo, width: '70px' }} />
+        <span style={{ fontWeight: 700, color: 'var(--color-text-muted)' }}>/</span>
+        <input type="number" min="2000" max="2100" disabled={!podeEditar} value={ano} title="Ano do edital (padrão: ano da eleição/posse)"
+          onChange={e => setEleicaoSelecionada(p => ({ ...p, [campoAno]: e.target.value }))}
+          onBlur={e => podeEditar && atualizarEleicao({ [campoAno]: e.target.value ? parseInt(e.target.value) : null })}
+          style={{ ...estiloCampo, width: '90px' }} />
         {!atual && podeEditar && (
-          <button onClick={() => atualizarEleicao({ [campo]: proximoNumeroEdital() })} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
-            Numerar (próximo: {proximoNumeroEdital()})
+          <button onClick={() => atualizarEleicao({ [campo]: proximoNumeroEdital(ano), [campoAno]: ano })} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+            Numerar (próximo: {formatarNumeroEdital(proximoNumeroEdital(ano), ano)})
           </button>
         )}
+        {atual && <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-accent)' }}>{formatarNumeroEdital(atual, ano)}</span>}
         <span style={{ fontSize: '0.75rem', color: dataEdital ? 'var(--color-text-muted)' : '#f59e0b', fontWeight: dataEdital ? 400 : 700 }}>
           {dataEdital ? `Data do edital: ${formatarData(dataEdital)}` : '⚠️ Sem data do edital — preencha na Configuração'}
         </span>
-        {emUso && <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700 }}>⚠️ Número já usado em outro edital</span>}
-        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Sequência contínua (eleição e posse).</span>
+        {emUso && <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700 }}>⚠️ Número já usado em {ano}</span>}
+        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Sequência por ano (eleição e posse); reinicia a cada ano.</span>
       </div>
     );
   };
@@ -1269,10 +1293,13 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       if (tipo === 'edital_eleicao' || tipo === 'edital_posse') {
         const campo = tipo === 'edital_posse' ? 'edital_posse_numero' : 'edital_eleicao_numero';
         if (!eleicaoSelecionada[campo]) {
-          const n = proximoNumeroEdital();
-          await atualizarEleicao({ [campo]: n });
-          eleicaoDoc = { ...eleicaoSelecionada, [campo]: n };
-          showSuccess(`Edital numerado automaticamente: nº ${n}`);
+          const posse = tipo === 'edital_posse';
+          const campoAno = posse ? 'edital_posse_ano' : 'edital_eleicao_ano';
+          const ano = anoDoEdital(eleicaoSelecionada, posse);
+          const n = proximoNumeroEdital(ano);
+          await atualizarEleicao({ [campo]: n, [campoAno]: ano });
+          eleicaoDoc = { ...eleicaoSelecionada, [campo]: n, [campoAno]: ano };
+          showSuccess(`Edital numerado automaticamente: nº ${formatarNumeroEdital(n, ano)}`);
         }
       }
       const buf = await gerarDocx(tipo, eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
