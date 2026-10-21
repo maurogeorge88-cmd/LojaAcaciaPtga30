@@ -269,9 +269,9 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
     // atas de sessão simples mantêm o logo opcional centralizado
     ...((ehEleicao || ehEdital)
-      ? cabecalhoLojaDocx({ dadosLoja, comLogo: !!modelo.mostrar_logo, larguraUtil: 11906 - margensDoModelo(modelo).left - margensDoModelo(modelo).right, after: 240 })
+      ? cabecalhoLojaDocx({ dadosLoja, comLogo: !!modelo.mostrar_logo, larguraUtil: 11906 - margensDoModelo(modelo).left - margensDoModelo(modelo).right, after: 240, texto: modelo.cabecalho_texto, logoCm: modelo.logo_tamanho })
       : (modelo.mostrar_logo ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 },
-        children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] })] : [])),
+        children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8), height: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8) } })] })] : [])),
     // Título: cada linha do modelo = uma linha (título de 1 linha ganha "Sessão de <grau>")
     ...(() => {
       const linhasTit = interp(modelo.titulo_doc || (ehEdital ? TITULO_EDITAL_GLEMT_PADRAO : ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO)).replace(/\*/g, '').split('\n').filter(l => l.trim() !== '');
@@ -395,7 +395,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
       children: [
         // Cabeçalho da Loja (logo à esquerda, ou só texto se desmarcado)
-        ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloLista.mostrar_logo, larguraUtil: W, after: 240 }),
+        ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloLista.mostrar_logo, larguraUtil: W, after: 240, texto: modeloLista.cabecalho_texto, logoCm: modeloLista.logo_tamanho }),
         // Título (negrito) e texto abaixo, ambos do modelo — cada linha vira uma linha
         ...(() => {
           const vars = { periodo_glemt: periodo || '[período]', periodo_glemt_barra: el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '[período]',
