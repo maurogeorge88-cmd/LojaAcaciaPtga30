@@ -23,6 +23,7 @@ import EmailIrmaos from './components/irmaos/EmailIrmaos';
 import RelatorioFinanceiro from './components/financeiro/RelatorioFinanceiro';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
+import Editais from './components/editais/Editais';
 import Comissoes from './components/comissoes/Comissoes';
 import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
@@ -179,6 +180,7 @@ function App() {
     'modelos-documentos': '📝 Modelos de Documentos',
     'balaustres': '📜 Balaustres',
     'pranchas': '📄 Pranchas Expedidas',
+    'editais': '📢 Editais',
     'corpo-admin': '👔 Corpo Administrativo',
     'eleicao-posse': '🗳️ Eleição e Posse',
     'projetos': '📊 Projetos',
@@ -287,6 +289,8 @@ function App() {
 
   // Estados para Pranchas Expedidas
   const [pranchas, setPranchas] = useState([]);
+  // Editais (controle único, numeração por ano)
+  const [editais, setEditais] = useState([]);
 
   // Estados para Corpo Administrativo
   const [corpoAdmin, setCorpoAdmin] = useState([]);
@@ -404,6 +408,7 @@ function App() {
         loadUsuarios();
         loadPermissoes();
         loadPranchas();
+        loadEditais();
         loadCorpoAdmin();
         loadComissoes();
         loadLivros();
@@ -437,6 +442,9 @@ function App() {
   useEffect(() => {
     if (currentPage === 'balaustres') {
       loadBalaustres();
+    }
+    if (currentPage === 'editais') {
+      loadEditais(); // emissões feitas nas telas de Eleição/Posse/GLEMT aparecem aqui
     }
   }, [currentPage]);  // Removido grauSelecionado - não precisa recarregar ao mudar grau
 
@@ -739,6 +747,23 @@ function App() {
       }
     } catch (err) {
       console.error('❌ Exceção ao carregar pranchas:', err);
+    }
+  };
+
+  const loadEditais = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('editais')
+        .select('*')
+        .order('ano', { ascending: false })
+        .order('numero', { ascending: false });
+      if (error) {
+        console.error('❌ Erro ao carregar editais:', error);
+        return;
+      }
+      if (data) setEditais(data);
+    } catch (err) {
+      console.error('❌ Exceção ao carregar editais:', err);
     }
   };
 
@@ -1797,6 +1822,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'comendas' && '🎖️ Comendas'}
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
+                  {currentPage === 'editais' && '📢 Editais'}
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
                   {currentPage === 'eleicao-posse' && '🗳️ Eleição e Posse'}
                   {currentPage === 'projetos' && '📊 Projetos'}
@@ -2042,6 +2068,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Pranchas
             pranchas={pranchas}
             onUpdate={loadPranchas}
+            showSuccess={showSuccess}
+            showError={showError}
+            permissoes={permissoes}
+            grauUsuario={grauUsuarioLogado}
+          />
+        )}
+
+        {/* EDITAIS */}
+        {currentPage === 'editais' && (
+          <Editais
+            editais={editais}
+            onUpdate={loadEditais}
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
