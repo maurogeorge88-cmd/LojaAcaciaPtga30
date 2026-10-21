@@ -273,6 +273,13 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     ].filter(Boolean).join(', ');
   };
 
+  // Atas da Loja (eleição e posse): só CIM e nome (a qualificação completa fica na ata do Cartório)
+  const dadoIrmaoLoja = (irmaoId) => {
+    const i = irmaos.find(x => x.id === irmaoId);
+    if (!i) return '[Irmão não encontrado]';
+    return `${i.nome}, CIM nº ${i.cim || '[CIM não informado]'}`;
+  };
+
   // Qualificação para requerimentos (sem naturalidade/filiação), no formato do cartório:
   // "brasileiro, casado, contador, portador do RG nº X e inscrito no CPF/MF sob nº Y,
   //  residente e domiciliado na Rua..., nº ..., Centro, Paranatinga – MT"
@@ -504,11 +511,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   });
 
   // ─── Lista eleitos ─────────────────────────────────────────
-  const listaEleitos = () => chapaEleita
+  // simples = true → só CIM e nome (Loja); false → qualificação completa (Cartório)
+  const listaEleitos = (simples = false) => chapaEleita
     .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
     .map(c => pr([
       ar(`${c.cargo}: `, { bold: true }),
-      ar(dadoIrmao(c.irmao_id) + ';'),
+      ar((simples ? dadoIrmaoLoja(c.irmao_id) : dadoIrmao(c.irmao_id)) + ';'),
     ], { before: 80, after: 80 }));
 
   const pageCfg = {
@@ -555,7 +563,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
       ...subtituloModelo(),
       prModelo(modelo.corpo, { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
-      ...listaEleitos(),
+      ...listaEleitos(true), // Loja: só CIM e nome
       ...rodapeModelo(),
       // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
       ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre'),
@@ -632,14 +640,14 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       // "Foram empossados os Irmãos:" — texto fixo introdutório
       pr([ar('Foram empossados os Irmãos:')], { before: 80, after: 80 }),
 
-      // Lista dos eleitos com qualificação completa (gerada do banco de dados)
+      // Lista dos eleitos: só CIM e nome (qualificação completa só na ata do Cartório)
       ...chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
         .map(ch => {
           const irmao = irmaos.find(i => i.id === ch.irmao_id);
           return pr([
             ar(`${ch.cargo}: `, { bold: true }),
-            ar(irmao ? dadoIrmao(ch.irmao_id) : '[Irmão não encontrado]'),
+            ar(irmao ? dadoIrmaoLoja(ch.irmao_id) : '[Irmão não encontrado]'),
           ], { before: 60, after: 60 });
         }),
 
