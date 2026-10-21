@@ -182,6 +182,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   const secretarioSainte = irmaos.find(i => i.id === eleicao.secretario_sainte_id);
 
   // Substitutos para ata de eleição (quando orador/secretário sainte concorrem)
+  const primeiroVigilanteSainte = irmaos.find(i => i.id === eleicao.primeiro_vigilante_sainte_id) || null;
+  const segundoVigilanteSainte  = irmaos.find(i => i.id === eleicao.segundo_vigilante_sainte_id)  || null;
   const oradorAta        = irmaos.find(i => i.id === eleicao.orador_substituto_ata_id) || oradorSainte;
   const secretarioAta    = irmaos.find(i => i.id === eleicao.secretario_substituto_ata_id) || secretarioSainte;
 
@@ -331,6 +333,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     data_fundacao:            dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997',
     // Instaladores
     vm_instalador_nome:                 vmInstalador?.nome || '[VM Instalador]',
+    // Gestão Sainte (atas de eleição): 1º e 2º Vigilantes
+    primeiro_vigilante_nome:  primeiroVigilanteSainte?.nome || '[1º Vigilante]',
+    segundo_vigilante_nome:   segundoVigilanteSainte?.nome  || '[2º Vigilante]',
     primeiro_vigilante_instalador_nome: primeiroVigilanteInstalador?.nome || '[1º Vigilante]',
     segundo_vigilante_instalador_nome:  segundoVigilanteInstalador?.nome  || '[2º Vigilante]',
     // Sainte (edital eleição, atas de eleição)
@@ -867,6 +872,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     vm_convocante_id: '',
     orador_sainte_id: '',
     secretario_sainte_id: '',
+    primeiro_vigilante_sainte_id: '',
+    segundo_vigilante_sainte_id: '',
     orador_substituto_ata_id: '',
     secretario_substituto_ata_id: '',
     vm_instalador_id: '',
@@ -1011,6 +1018,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         vm_convocante_id:             form.vm_convocante_id             || null,
         orador_sainte_id:            form.orador_sainte_id            || null,
         secretario_sainte_id:        form.secretario_sainte_id        || null,
+        primeiro_vigilante_sainte_id: form.primeiro_vigilante_sainte_id || null,
+        segundo_vigilante_sainte_id:  form.segundo_vigilante_sainte_id  || null,
         orador_substituto_ata_id:    form.orador_substituto_ata_id    || null,
         secretario_substituto_ata_id:form.secretario_substituto_ata_id|| null,
         vm_instalador_id:                     form.vm_instalador_id                     || null,
@@ -1034,7 +1043,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       if (error) throw error;
       showSuccess('Eleição criada com sucesso!');
       setModalAberto(false);
-      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', orador_substituto_ata_id: '', secretario_substituto_ata_id: '', vm_instalador_id: '', primeiro_vigilante_instalador_id: '', segundo_vigilante_instalador_id: '', orador_instalador_id: '', secretario_instalador_id: '', presidente_eleito_id: '', observacoes: '' });
+      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', primeiro_vigilante_sainte_id: '', segundo_vigilante_sainte_id: '', orador_substituto_ata_id: '', secretario_substituto_ata_id: '', vm_instalador_id: '', primeiro_vigilante_instalador_id: '', segundo_vigilante_instalador_id: '', orador_instalador_id: '', secretario_instalador_id: '', presidente_eleito_id: '', observacoes: '' });
       await carregar();
       setEleicaoSelecionada(data);
       setEtapa(1);
@@ -1361,6 +1370,22 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                     <div>
                       <label style={S.label}>Secretário Sainte</label>
                       <select style={S.select} value={form.secretario_sainte_id} onChange={e => setForm(p => ({ ...p, secretario_sainte_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div>
+                      <label style={S.label}>1º Vigilante Sainte</label>
+                      <select style={S.select} value={form.primeiro_vigilante_sainte_id} onChange={e => setForm(p => ({ ...p, primeiro_vigilante_sainte_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>2º Vigilante Sainte</label>
+                      <select style={S.select} value={form.segundo_vigilante_sainte_id} onChange={e => setForm(p => ({ ...p, segundo_vigilante_sainte_id: e.target.value }))}>
                         <option value="">Selecione...</option>
                         {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
                       </select>
@@ -1737,6 +1762,23 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                     { key: 'vm_convocante_id',    label: 'VM Sainte' },
                     { key: 'orador_sainte_id',    label: 'Orador Sainte' },
                     { key: 'secretario_sainte_id',label: 'Secretário Sainte' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={S.label}>{f.label}</label>
+                      <select style={S.select} disabled={!podeEditar}
+                        value={eleicaoSelecionada[f.key] || ''}
+                        onChange={e => { setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value })); podeEditar && atualizarEleicao({ [f.key]: e.target.value || null }); }}
+                      >
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  {[
+                    { key: 'primeiro_vigilante_sainte_id', label: '1º Vigilante Sainte' },
+                    { key: 'segundo_vigilante_sainte_id',  label: '2º Vigilante Sainte' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={S.label}>{f.label}</label>
