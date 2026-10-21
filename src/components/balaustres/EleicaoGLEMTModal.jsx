@@ -5,6 +5,7 @@ import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { gerarAtaSessao, gerarEditalEleicaoGLEMT, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 import { emitirEdital, buscarEdital, formatarNumeroEdital } from '../../utils/editais';
+import VincularEdital from '../editais/VincularEdital';
 
 // ════════════════════════════════════════════════════════════════════════
 // Eleição da GLEMT — modal do balaustre
@@ -34,6 +35,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   // Edital emitido (fonte única: tabela editais) — obrigatório para gerar o documento
   const [edital, setEdital] = useState(null);
   const [emitindo, setEmitindo] = useState(false);
+  const [vinculando, setVinculando] = useState(false);
   useEffect(() => {
     let vivo = true;
     (async () => {
@@ -133,6 +135,50 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
     } catch (e) {
       if (reg) await supabase.from('editais').delete().eq('id', reg.id); // não deixa número órfão
       showError('Erro ao emitir o edital: ' + e.message);
+    } finally {
+      setEmitindo(false);
+    }
+  };
+
+  // Vincula um edital já cadastrado (em vez de emitir outro)
+  const vincular = async (ed) => {
+    if (!podeEditar || emitindo) return;
+    setEmitindo(true);
+    try {
+      const { data: e1, error: er1 } = await supabase.from('editais')
+        .update({ origem_id: String(balaustre.id), tipo: 'eleicao_glemt' }).eq('id', ed.id).is('origem_id', null).select();
+      if (er1) throw er1;
+      if (!e1?.length) throw new Error('este edital já foi vinculado a outra situação (ou sem permissão).');
+      const novo = { ...el, edital_id: ed.id, data_edital: ed.data_edital || el.data_edital };
+      const { data, error } = await supabase.from('balaustres').update({ eleicao_glemt: novo }).eq('id', balaustre.id).select();
+      if (error || !data?.length) {
+        await supabase.from('editais').update({ origem_id: null }).eq('id', ed.id);
+        throw error || new Error('o banco não permitiu a alteração (sem permissão).');
+      }
+      setElState(novo); setEdital(e1[0]); setAlterado(false); setVinculando(false);
+      showSuccess(`🔗 Edital nº ${formatarNumeroEdital(ed.numero, ed.ano)} vinculado.`);
+      onSaved?.();
+    } catch (e) {
+      showError('Erro ao vincular o edital: ' + e.message);
+    } finally {
+      setEmitindo(false);
+    }
+  };
+  // Desfaz o vínculo (o edital continua cadastrado e fica livre para outro uso)
+  const desvincular = async () => {
+    if (!podeEditar || !edital || emitindo) return;
+    if (!window.confirm(`Desvincular o edital nº ${formatarNumeroEdital(edital.numero, edital.ano)} desta eleição?\nEle continua em Editais e o documento fica bloqueado até vincular/emitir outro.`)) return;
+    setEmitindo(true);
+    try {
+      const novo = { ...el, edital_id: null };
+      const { data, error } = await supabase.from('balaustres').update({ eleicao_glemt: novo }).eq('id', balaustre.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      await supabase.from('editais').update({ origem_id: null }).eq('id', edital.id);
+      setElState(novo); setEdital(null); setAlterado(false);
+      onSaved?.();
+    } catch (e) {
+      showError('Erro ao desvincular: ' + e.message);
     } finally {
       setEmitindo(false);
     }
@@ -286,6 +332,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                   {edital ? (<>
                     <span style={{ fontWeight: 800, color: '#10b981' }}>{formatarNumeroEdital(edital.numero, edital.ano)}</span>
                     <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{edital.descricao} (consulte/edite em Expedientes → Editais)</span>
+                    {podeEditar && <button type="button" disabled={emitindo} onClick={desvincular} style={btn('#94a3b8')}>↩️ Desvincular</button>}
                   </>) : (<>
                     <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f59e0b' }}>⛔ Não emitido — o documento fica bloqueado</span>
                     {podeEditar && (
@@ -293,6 +340,10 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                         {emitindo ? '⏳ Emitindo…' : '📢 Emitir edital (próximo nº automático)'}
                       </button>
                     )}
+                    {podeEditar && (
+                      <button type="button" disabled={emitindo} onClick={() => setVinculando(v => !v)} style={btn('#8b5cf6', 'rgba(139,92,246,0.12)')}>🔗 Vincular edital existente</button>
+                    )}
+                    {podeEditar && vinculando && <VincularEdital tipo="eleicao_glemt" ocupado={emitindo} onEscolher={vincular} onFechar={() => setVinculando(false)} />}
                   </>)}
                 </div>
               </div>
