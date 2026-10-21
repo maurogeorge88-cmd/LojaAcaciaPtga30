@@ -190,6 +190,9 @@ const MODELOS_PADRAO = [
     alinhamento_titulo: 'center', alinhamento_corpo: 'center', alinhamento_assinatura: 'center',
   },
 ];
+// Ata de Posse (Cartório): mesmo texto da Ata de Posse; a diferença é a lista dos empossados
+// (qualificação completa, só V.M., Vigilantes, Orador, Secretário, Tesoureiro e Chanceler)
+MODELOS_PADRAO.push({ ...MODELOS_PADRAO.find(m => m.tipo === 'ata_posse'), tipo: 'ata_posse_cartorio', nome: 'Ata de Posse (Cartório)' });
 
 const VARIAVEIS_DISPONIVEIS = [
   { var: '{vm_nome}',                  desc: 'Nome do VM convocante' },
@@ -375,7 +378,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_titulo:    form.alinhamento_titulo,
           alinhamento_corpo:     form.alinhamento_corpo,
           alinhamento_assinatura:form.alinhamento_assinatura,
-          ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo_base || form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
+          ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'ata_posse_cartorio'].includes(form.tipo_base || form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
           ...(String(form.tipo || '').startsWith('ata_') ? { subtitulo: form.subtitulo ?? '' } : {}),
           ...(form.modulo === 'balaustres' ? {
             mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
@@ -427,7 +430,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
   const BASES_EP = [
     ['edital_eleicao', 'Edital de Convocação para Eleição'], ['ata_eleicao_loja', 'Ata para Eleição'],
     ['ata_eleicao_cartorio', 'Ata para Eleição Cartório'], ['lista_presenca_eleicao', 'Lista de Presença para a Eleição'],
-    ['edital_posse', 'Edital de Convocação para Posse'], ['ata_posse', 'Ata para Posse'],
+    ['edital_posse', 'Edital de Convocação para Posse'], ['ata_posse', 'Ata para Posse'], ['ata_posse_cartorio', 'Ata para Posse Cartório'],
     ['lista_presenca_posse', 'Lista de Presença para a Posse'], ['requerimento_eleicao', 'Requerimento Ata Eleição'],
     ['requerimento_posse', 'Requerimento Ata Posse'], ['apresentacao_chapa', 'Apresentação da Chapa'],
   ];
@@ -546,7 +549,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
             .sort((a, b) => {
               // Ordem do processo de Eleição e Posse (demais modelos depois, por nome)
               const ORDEM = ['edital_eleicao', 'ata_eleicao_loja', 'ata_eleicao_cartorio', 'lista_presenca_eleicao',
-                'edital_posse', 'ata_posse', 'lista_presenca_posse', 'requerimento_eleicao', 'requerimento_posse', 'apresentacao_chapa'];
+                'edital_posse', 'ata_posse', 'ata_posse_cartorio', 'lista_presenca_posse', 'requerimento_eleicao', 'requerimento_posse', 'apresentacao_chapa'];
               const ia = ORDEM.indexOf(a.tipo_base || a.tipo), ib = ORDEM.indexOf(b.tipo_base || b.tipo);
               return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || String(a.nome || '').localeCompare(String(b.nome || ''));
             })
@@ -766,10 +769,10 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
             {abaSelecionada === 'layout' && (() => {
               const baseTipo = form.tipo_base || form.tipo;
               const ehBal = form.modulo === 'balaustres';
-              const TIPOS_CABECALHO = ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'edital_eleicao', 'edital_posse', 'apresentacao_chapa', 'ata_eleicao_glemt', 'edital_eleicao_glemt', 'lista_presenca_glemt'];
+              const TIPOS_CABECALHO = ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'ata_posse_cartorio', 'edital_eleicao', 'edital_posse', 'apresentacao_chapa', 'ata_eleicao_glemt', 'edital_eleicao_glemt', 'lista_presenca_glemt'];
               const temCabTexto = TIPOS_CABECALHO.includes(baseTipo);
               const temLogo = temCabTexto || String(form.tipo || '').startsWith('ata_sessao');
-              const temToggleLogo = ehBal || ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(baseTipo);
+              const temToggleLogo = ehBal || ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'ata_posse_cartorio'].includes(baseTipo);
               const logoLigado = ehBal ? !!form.mostrar_logo : form.mostrar_logo !== false;
               const cabPadrao = ['edital_eleicao', 'edital_posse'].includes(baseTipo)
                 ? 'AUG∴ E RESP∴ LOJA SIMB∴ {nome_loja}\nFundado em {data_fundacao}\nSOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO'
