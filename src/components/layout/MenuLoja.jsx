@@ -42,6 +42,7 @@ export default function MenuLoja({
     { tipo: 'grupo', chave: 'expedientes', icone: '📑', label: 'Expedientes', itens: [
       { pagina: 'balaustres', icone: '📜', label: 'Balaustres', mostrar: ver('balaustres') },
       { pagina: 'pranchas', icone: '📄', label: 'Pranchas', mostrar: ver('pranchas') },
+      { pagina: 'editais', icone: '📢', label: 'Editais', mostrar: ver('balaustres') },
     ]},
 
     { tipo: 'grupo', chave: 'financeiro', icone: '💰', label: 'Controle Financeiro', itens: [
