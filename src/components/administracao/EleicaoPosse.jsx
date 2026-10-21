@@ -45,6 +45,16 @@ const formatarDataExtenso = (d) => {
 };
 
 const ORDEM_CARGOS = CARGOS_ADMINISTRATIVOS;
+// Atas do Cartório (eleição e posse): só estes cargos entram, com qualificação completa
+const CARGOS_ATA_CARTORIO = [
+  'Veneravel Mestre', 'Venerável Mestre',
+  'Primeiro Vigilante', '1º Vigilante',
+  'Segundo Vigilante', '2º Vigilante',
+  'Orador',
+  'Secretario', 'Secretário',
+  'Tesoureiro',
+  'Chanceler',
+];
 
 // ─── Geração de DOCX ────────────────────────────────────────────────────────
 
@@ -176,7 +186,8 @@ const calcularQuorum = (irmaos, eleicao, presencas, historico = []) => {
 const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = [], modeloEscolhido = null) => {
 
   const modelos      = await buscarModelos();
-  const modelo       = modeloEscolhido || modelos[tipo] || {};
+  // Ata de Posse (Cartório) sem modelo próprio ainda: usa o texto do modelo de Ata de Posse
+  const modelo       = modeloEscolhido || modelos[tipo] || (tipo === 'ata_posse_cartorio' ? modelos['ata_posse'] : null) || {};
   // Formatação do modelo (Modelos de Documentos): fonte, entrelinha e margens — vazio = padrão
   const FONTE = Number(modelo.fonte_tamanho) > 0 ? Math.round(Number(modelo.fonte_tamanho) * 2) : 24;   // meio-pontos
   const LINHA = Number(modelo.espacamento_linhas) > 0 ? Math.round(Number(modelo.espacamento_linhas) * 240) : 276;
@@ -330,7 +341,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     ano_edital:               String(anoDoEdital(eleicao, tipo === 'edital_posse')),
     // Balaustre da sessão (Eleição da Loja → atas de eleição; Posse da Loja → ata de posse)
     ...(() => {
-      const esp = tipo === 'ata_posse' ? 'posse_loja' : 'eleicao_loja';
+      const esp = (tipo === 'ata_posse' || tipo === 'ata_posse_cartorio') ? 'posse_loja' : 'eleicao_loja';
       const b = (balaustresEl || []).find(x => x.sessao_especial === esp);
       return {
         numero_balaustre: b?.numero_balaustre ? String(b.numero_balaustre) : '[nº]',
@@ -512,7 +523,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
 
   // ─── Lista eleitos ─────────────────────────────────────────
   // simples = true → só CIM e nome (Loja); false → qualificação completa (Cartório)
-  const listaEleitos = (simples = false) => chapaEleita
+  // soCartorio = true → apenas os cargos exigidos pelo Cartório
+  const listaEleitos = (simples = false, soCartorio = false) => chapaEleita
+    .filter(c => !soCartorio || CARGOS_ATA_CARTORIO.includes(c.cargo))
     .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
     .map(c => pr([
       ar(`${c.cargo}: `, { bold: true }),
@@ -579,7 +592,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
       ...subtituloModelo(),
       prModelo(modelo.corpo, { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
-      ...listaEleitos(),
+      ...listaEleitos(false, true), // Cartório: qualificação completa, só dos 7 cargos
       ...rodapeModelo(),
       // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
       ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre'),
@@ -589,7 +602,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   }
 
     // ══════════════════════════════════════════════════════════
-  else if (tipo === 'ata_posse') {
+  else if (tipo === 'ata_posse' || tipo === 'ata_posse_cartorio') {
+    const posseCartorio = tipo === 'ata_posse_cartorio'; // Cartório: qualificação completa, só dos 7 cargos
     // ── Cargos que assinam: eleitos até Chanceler ─────────────
     const CARGOS_ASSINAM_POSSE = [
       'Veneravel Mestre', 'Venerável Mestre',
@@ -640,14 +654,15 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       // "Foram empossados os Irmãos:" — texto fixo introdutório
       pr([ar('Foram empossados os Irmãos:')], { before: 80, after: 80 }),
 
-      // Lista dos eleitos: só CIM e nome (qualificação completa só na ata do Cartório)
+      // Lista dos eleitos: Loja = só CIM e nome; Cartório = qualificação completa dos 7 cargos
       ...chapaEleita
+        .filter(ch => !posseCartorio || CARGOS_ATA_CARTORIO.includes(ch.cargo))
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
         .map(ch => {
           const irmao = irmaos.find(i => i.id === ch.irmao_id);
           return pr([
             ar(`${ch.cargo}: `, { bold: true }),
-            ar(irmao ? dadoIrmaoLoja(ch.irmao_id) : '[Irmão não encontrado]'),
+            ar(irmao ? (posseCartorio ? dadoIrmao(ch.irmao_id) : dadoIrmaoLoja(ch.irmao_id)) : '[Irmão não encontrado]'),
           ], { before: 60, after: 60 });
         }),
 
@@ -1374,7 +1389,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         modeloEscolhido = m || null;
       }
       // Atas exigem o balaustre da sessão registrado em Balaustres
-      const esp = tipo === 'ata_posse' ? 'posse_loja' : (tipo === 'ata_eleicao_loja' || tipo === 'ata_eleicao_cartorio') ? 'eleicao_loja' : null;
+      const esp = (tipo === 'ata_posse' || tipo === 'ata_posse_cartorio') ? 'posse_loja' : (tipo === 'ata_eleicao_loja' || tipo === 'ata_eleicao_cartorio') ? 'eleicao_loja' : null;
       if (esp && !balaustresEleicao.some(b => b.sessao_especial === esp && b.numero_balaustre)) {
         showError(`Registre o balaustre da sessão de ${esp === 'posse_loja' ? 'Posse' : 'Eleição'} em Balaustres (Sessão especial) para gerar esta ata.`);
         return;
@@ -2486,6 +2501,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('edital_posse', `Edital_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Posse" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse'}
                 onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📜" label="Ata para Posse Cartório" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse_cartorio'}
+                onClick={() => gerarDoc('ata_posse_cartorio', `Ata_Posse_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
                 onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
