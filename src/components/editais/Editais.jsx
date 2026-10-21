@@ -274,7 +274,7 @@ const Editais = ({ editais = [], onUpdate, showSuccess, showError, permissoes, g
                 ['Tipo', TIPOS_EDITAL[visualizando.tipo] || visualizando.tipo],
                 ['Data do edital', visualizando.data_edital ? formatarData(visualizando.data_edital) : '—'],
                 ['Descrição', visualizando.descricao],
-                ['Origem', visualizando.origem_id ? 'Emitido automaticamente pela tela de Eleição/Posse ou Balaustres' : 'Cadastro manual'],
+                ['Origem', visualizando.origem_id ? 'Vinculado a uma Eleição/Posse da Loja ou Eleição GLEMT' : 'Livre (ainda não vinculado a nenhuma eleição/posse)'],
               ].map(([k, v]) => (
                 <div key={k} className="p-3 rounded-lg" style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
                   <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--color-text-muted)' }}>{k}</label>
