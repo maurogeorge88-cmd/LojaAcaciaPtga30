@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
+import { CABECALHO_PADRAO } from '../../utils/cabecalhoLoja';
 
 // ── Modelos padrão — usados para popular o banco na primeira abertura ──────
 const MODELOS_PADRAO = [
@@ -94,7 +95,7 @@ const MODELOS_PADRAO = [
     modulo: 'eleicao_posse',
     tipo: 'edital_eleicao',
     nome: 'Edital de Convocação para Eleição',
-    titulo_doc: 'Edital de Convocação para Eleição',
+    titulo_doc: 'Edital de Convocação para Eleição nº {numero_edital}',
     corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_eleicao}, às {hora_eleicao} horas nas dependências do Templo situado a {endereco_loja}, conforme estabelece o Artigo 187 do Regulamento Geral.',
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
@@ -104,7 +105,7 @@ const MODELOS_PADRAO = [
     modulo: 'eleicao_posse',
     tipo: 'edital_posse',
     nome: 'Edital de Convocação para Posse',
-    titulo_doc: 'Edital de Convocação para Posse',
+    titulo_doc: 'Edital de Convocação para Posse nº {numero_edital}',
     corpo: 'Na qualidade de Venerável Mestre, Sr. {vm_nome}, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica {nome_loja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica {nome_loja} – Gestão {gestao}, a realizar-se no dia {data_posse}, às {hora_posse} horas nas dependências do Templo situado a {endereco_loja}, conforme estabelece o Artigo 187 do Regulamento Geral.',
     corpo_aclamacao: '', corpo_disputa: '', rodape: '',
     assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: '', assinatura_3_cargo: '',
@@ -219,6 +220,7 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{secretario_dados}',         desc: 'Qualificação completa do Secretário' },
   { var: '{num_votantes}',             desc: 'Número de votantes presentes' },
   { var: '{data_atual}',               desc: 'Data de hoje (ex: 09/10/2026)' },
+  { var: '{numero_edital}',            desc: 'Editais da Loja: nº do edital (sequência contínua de eleição e posse)' },
   { var: '{numero_balaustre}',         desc: 'Atas de sessão: número do balaustre' },
   { var: '{balaustre_anterior}',       desc: 'Atas de sessão: balaustre anterior do mesmo grau (ex: 11/2026)' },
   { var: '{periodo_glemt}',            desc: 'Eleição GLEMT: período (ex: 2027 a 2030)' },
@@ -379,8 +381,10 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
             mostrar_logo_lista: !!form.mostrar_logo_lista,
           } : {}),
           // Formatação (todos os modelos)
-          ...Object.fromEntries(['margem_sup', 'margem_inf', 'margem_esq', 'margem_dir', 'espacamento_linhas', 'fonte_tamanho']
+          ...Object.fromEntries(['margem_sup', 'margem_inf', 'margem_esq', 'margem_dir', 'espacamento_linhas', 'fonte_tamanho', 'logo_tamanho']
             .map(k => [k, form[k] === '' || form[k] == null ? null : Number(form[k])])),
+          // Cabeçalho: vazio = texto padrão do sistema
+          cabecalho_texto: form.cabecalho_texto && String(form.cabecalho_texto).trim() ? form.cabecalho_texto : null,
         })
         .eq('id', form.id);
 
@@ -665,118 +669,37 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           {/* Conteúdo das abas */}
           <div style={{ flex: 1 }}>
 
-            {/* ABA: Texto Principal */}
+            {/* ABA: Texto Principal — apenas o texto do modelo (título, cabeçalho e formatação ficam em Layout) */}
             {abaSelecionada === 'corpo' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <label style={S.label}>Nome do modelo</label>
-                  <input name="nome" style={S.input} value={form.nome || ''} disabled={!podeEditar}
-                    onChange={e => handleChange('nome', e.target.value)} />
-                </div>
-                <div>
-                  <label style={S.label}>Título no documento</label>
-                  <textarea name="titulo_doc" rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.titulo_doc || ''} disabled={!podeEditar}
-                    onChange={e => handleChange('titulo_doc', e.target.value)} placeholder="Cada linha = uma linha do título (vazio = sem título)" />
-                  {String(form.tipo || '').startsWith('ata_') && (
-                    <div style={{ marginTop: '0.6rem' }}>
-                      <label style={S.label}>Subtítulo (abaixo do título, antes do texto)</label>
-                      <textarea rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.subtitulo ?? ''} disabled={!podeEditar}
-                        onChange={e => handleChange('subtitulo', e.target.value)} placeholder="Ex.: Balaústre nº {numero_balaustre}/{ano_balaustre}" />
-                    </div>
-                  )}
-                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                    Suporta variáveis como {'{nome_loja}'}, {'{gestao}'}
-                  </p>
-                  {form.modulo !== 'balaustres' && form.tipo_base && podeEditar && (
-                    <div style={{ marginTop: '0.6rem' }}>
-                      <button onClick={excluirModeloEleicao} style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input name="nome" style={{ ...S.input, flex: 1 }} value={form.nome || ''} disabled={!podeEditar}
+                      onChange={e => handleChange('nome', e.target.value)} />
+                    {podeEditar && form.modulo !== 'balaustres' && form.tipo_base && (
+                      <button onClick={excluirModeloEleicao} style={{ padding: '0.45rem 0.8rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         🗑️ Excluir modelo
                       </button>
-                    </div>
-                  )}
-                  {form.modulo === 'balaustres' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.6rem', flexWrap: 'wrap' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Grau da sessão:</label>
-                      <select style={{ ...S.input, width: 'auto' }} value={form.grau || ''} disabled={!podeEditar || TIPOS_BASE_ATA.includes(form.tipo)}
-                        onChange={e => handleChange('grau', e.target.value)}>
-                        <option value="">—</option>
-                        {['Aprendiz', 'Companheiro', 'Mestre'].map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
-                      {podeEditar && !TIPOS_BASE_ATA.includes(form.tipo) && (
-                        <button onClick={excluirModeloAta} style={{ padding: '0.35rem 0.75rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
-                          🗑️ Excluir modelo
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(form.tipo_base || form.tipo) && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
-                      <input type="checkbox" checked={form.mostrar_logo !== false} disabled={!podeEditar}
-                        onChange={e => handleChange('mostrar_logo', e.target.checked)} />
-                      Exibir o logo da Loja no cabeçalho (desmarcado: só o texto, centralizado)
-                    </label>
-                  )}
-                  {form.modulo === 'balaustres' && (
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.6rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
-                      <input type="checkbox" checked={!!form.mostrar_logo} disabled={!podeEditar}
-                        onChange={e => handleChange('mostrar_logo', e.target.checked)} />
-                      Exibir o logo da Loja no topo do documento
-                    </label>
-                  )}
-
-                  {/* Formatação do documento: margens, entrelinha e tamanho da fonte (todos os modelos) */}
-                  {(() => {
-                    const ehBal = form.modulo === 'balaustres';
-                    const pad = ehBal ? { margem_sup: 5, margem_inf: 2.8, margem_esq: 3.5, margem_dir: 2 } : { margem_sup: 1.27, margem_inf: 1.27, margem_esq: 3, margem_dir: 1.52 };
-                    return (
-                      <div style={{ marginTop: '0.75rem', padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
-                        <label style={S.label}>Formatação do documento{form.tipo === 'lista_presenca_glemt' ? ' (tamanho da letra = tabela da lista)' : ''}</label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
-                          {[['margem_sup', 'Margem superior'], ['margem_inf', 'Margem inferior'], ['margem_esq', 'Margem esquerda'], ['margem_dir', 'Margem direita']].map(([k, l]) => (
-                            <div key={k}>
-                              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{l} (cm)</span>
-                              <input type="number" step="0.1" min="0" style={S.input} disabled={!podeEditar}
-                                value={form[k] ?? ''} placeholder={String(pad[k]).replace('.', ',')}
-                                onChange={e => handleChange(k, e.target.value)} />
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <div>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Espaçamento entre linhas</span>
-                            <select style={S.input} disabled={!podeEditar} value={form.espacamento_linhas ?? ''} onChange={e => handleChange('espacamento_linhas', e.target.value)}>
-                              <option value="">Padrão (1,15)</option>
-                              <option value="1">1,0 (simples)</option>
-                              <option value="1.15">1,15</option>
-                              <option value="1.5">1,5</option>
-                              <option value="2">2,0 (duplo)</option>
-                            </select>
-                          </div>
-                          <div>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Tamanho da letra do texto</span>
-                            <select style={S.input} disabled={!podeEditar} value={form.fonte_tamanho ?? ''} onChange={e => handleChange('fonte_tamanho', e.target.value)}>
-                              <option value="">Padrão (12)</option>
-                              {[10, 11, 12, 13, 14].map(n => <option key={n} value={n}>{n}</option>)}
-                            </select>
-                          </div>
-                        </div>
-                        <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.35rem 0 0' }}>
-                          Vazio = padrão ({ehBal ? '5 / 2,8 / 3,5 / 2 cm' : '1,27 / 1,27 / 3 / 1,52 cm'}; entrelinha 1,15; letra 12). O cabeçalho da Loja mantém o próprio tamanho.
-                        </p>
-                      </div>
-                    );
-                  })()}
+                    )}
+                    {podeEditar && form.modulo === 'balaustres' && !TIPOS_BASE_ATA.includes(form.tipo) && (
+                      <button onClick={excluirModeloAta} style={{ padding: '0.45rem 0.8rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        🗑️ Excluir modelo
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label style={S.label}>Texto do corpo</label>
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.35rem' }}>
                     ↵ Enter = novo parágrafo · linha vazia = espaço entre parágrafos · <strong>*texto*</strong> = negrito
                   </p>
-                  <textarea name="corpo" style={{ ...S.textarea, minHeight: '260px' }}
+                  <textarea name="corpo" style={{ ...S.textarea, minHeight: '320px' }}
                     value={form.corpo || ''} disabled={!podeEditar}
                     onChange={e => handleChange('corpo', e.target.value)} />
                   <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                     Use variáveis entre chaves: {'{vm_nome}'}, {'{data_eleicao}'}, etc. Clique em "{'{}'}  Variáveis" para ver todas.
+                    Título, subtítulo, cabeçalho, logo, margens e letra ficam na aba <strong>🎨 Layout</strong>.
                   </p>
                 </div>
               </div>
@@ -838,23 +761,157 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
               </div>
             )}
 
-            {/* ABA: Layout */}
-            {abaSelecionada === 'layout' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {[
-                  { campo: 'alinhamento_titulo',    label: 'Alinhamento do Título' },
-                  { campo: 'alinhamento_corpo',     label: 'Alinhamento do Corpo' },
-                  { campo: 'alinhamento_assinatura',label: 'Alinhamento das Assinaturas' },
-                ].map(a => (
-                  <div key={a.campo}>
-                    <label style={S.label}>{a.label}</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {['left','center','justify'].map(op => (
-                        <button key={op}
-                          disabled={!podeEditar}
-                          onClick={() => handleChange(a.campo, op)}
+            {/* ABA: Layout — título, cabeçalho, logo, margens, letra e alinhamentos */}
+            {abaSelecionada === 'layout' && (() => {
+              const baseTipo = form.tipo_base || form.tipo;
+              const ehBal = form.modulo === 'balaustres';
+              const TIPOS_CABECALHO = ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'edital_eleicao', 'edital_posse', 'apresentacao_chapa', 'ata_eleicao_glemt', 'edital_eleicao_glemt', 'lista_presenca_glemt'];
+              const temCabTexto = TIPOS_CABECALHO.includes(baseTipo);
+              const temLogo = temCabTexto || String(form.tipo || '').startsWith('ata_sessao');
+              const temToggleLogo = ehBal || ['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse'].includes(baseTipo);
+              const logoLigado = ehBal ? !!form.mostrar_logo : form.mostrar_logo !== false;
+              const cabPadrao = ['edital_eleicao', 'edital_posse'].includes(baseTipo)
+                ? 'AUG∴ E RESP∴ LOJA SIMB∴ {nome_loja}\nFundado em {data_fundacao}\nSOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO'
+                : baseTipo === 'apresentacao_chapa'
+                  ? 'Grande Loja do Estado de Mato Grosso – GLEMT\nA∴R∴L∴S∴ Acácia de Paranatinga nº {numero_loja}'
+                  : CABECALHO_PADRAO;
+              const pad = ehBal ? { margem_sup: 5, margem_inf: 2.8, margem_esq: 3.5, margem_dir: 2 } : { margem_sup: 1.27, margem_inf: 1.27, margem_esq: 3, margem_dir: 1.52 };
+              const secao = { ...S.card, display: 'flex', flexDirection: 'column', gap: '0.6rem' };
+              const tit = { fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.04em' };
+              const dica = { fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: 0 };
+              const cabPrev = String(form.cabecalho_texto || '').trim() ? form.cabecalho_texto : cabPadrao;
+              const prevVars = { numero_loja: '30', data_fundacao: '20/12/1997', nome_loja: 'ACÁCIA DE PARANATINGA Nº 30', cidade: 'Paranatinga', estado: 'MT' };
+              return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                {/* 1. Título e subtítulo */}
+                <div style={secao}>
+                  <div style={tit}>📝 Título do documento</div>
+                  <div>
+                    <label style={S.label}>Título (nome do documento)</label>
+                    <textarea name="titulo_doc" rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.titulo_doc || ''} disabled={!podeEditar}
+                      onChange={e => handleChange('titulo_doc', e.target.value)} placeholder="Cada linha = uma linha do título (vazio = sem título)" />
+                  </div>
+                  {String(form.tipo || '').startsWith('ata_') && (
+                    <div>
+                      <label style={S.label}>Subtítulo (abaixo do título, antes do texto)</label>
+                      <textarea rows={2} style={{ ...S.textarea, minHeight: 'auto' }} value={form.subtitulo ?? ''} disabled={!podeEditar}
+                        onChange={e => handleChange('subtitulo', e.target.value)} placeholder="Ex.: Balaústre nº {numero_balaustre}/{ano_balaustre}" />
+                    </div>
+                  )}
+                  <p style={dica}>
+                    Aceita variáveis como {'{nome_loja}'}, {'{gestao}'}, {'{numero_balaustre}'}{['edital_eleicao', 'edital_posse'].includes(baseTipo) ? ', {numero_edital}' : ''}. Cada linha vira uma linha do documento.
+                  </p>
+                </div>
+
+                {/* 2. Cabeçalho */}
+                {temLogo && (
+                  <div style={secao}>
+                    <div style={tit}>🏛️ Cabeçalho (logo e dados da Loja)</div>
+                    {temToggleLogo && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                        <input type="checkbox" checked={logoLigado} disabled={!podeEditar} onChange={e => handleChange('mostrar_logo', e.target.checked)} />
+                        Exibir o logo da Loja {temCabTexto ? '(desmarcado: só o texto, centralizado)' : 'no topo do documento'}
+                      </label>
+                    )}
+                    <div style={{ maxWidth: '220px' }}>
+                      <label style={S.label}>Tamanho do logo (cm)</label>
+                      <input type="number" step="0.1" min="1" max="8" style={S.input} disabled={!podeEditar}
+                        value={form.logo_tamanho ?? ''} placeholder="3,5" onChange={e => handleChange('logo_tamanho', e.target.value)} />
+                    </div>
+                    {temCabTexto && (
+                      <div>
+                        <label style={S.label}>Texto do cabeçalho</label>
+                        <textarea rows={4} style={{ ...S.textarea, minHeight: '96px' }} disabled={!podeEditar}
+                          value={form.cabecalho_texto || ''} placeholder={cabPadrao}
+                          onChange={e => handleChange('cabecalho_texto', e.target.value)} />
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.35rem' }}>
+                          {podeEditar && (
+                            <>
+                              <button type="button" onClick={() => handleChange('cabecalho_texto', cabPadrao)}
+                                style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
+                                ✏️ Carregar o texto padrão para editar
+                              </button>
+                              <button type="button" onClick={() => handleChange('cabecalho_texto', '')}
+                                style={{ padding: '0.3rem 0.7rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)' }}>
+                                ↺ Voltar ao padrão do sistema
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <p style={{ ...dica, marginTop: '0.35rem' }}>
+                          Cada linha vira uma linha do cabeçalho. Vazio = texto padrão (em cinza acima). Variáveis: {'{numero_loja}'}, {'{data_fundacao}'}, {'{nome_loja}'}, {'{cidade}'}, {'{estado}'}.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. Balaustre: grau da sessão */}
+                {ehBal && (
+                  <div style={secao}>
+                    <div style={tit}>📜 Balaustre</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <label style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Grau da sessão:</label>
+                      <select style={{ ...S.input, width: 'auto' }} value={form.grau || ''} disabled={!podeEditar || TIPOS_BASE_ATA.includes(form.tipo)}
+                        onChange={e => handleChange('grau', e.target.value)}>
+                        <option value="">—</option>
+                        {['Aprendiz', 'Companheiro', 'Mestre'].map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      {TIPOS_BASE_ATA.includes(form.tipo) && <span style={dica}>(fixo nos modelos originais)</span>}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Página e texto */}
+                <div style={secao}>
+                  <div style={tit}>📐 Página e texto{form.tipo === 'lista_presenca_glemt' ? ' (letra = tabela da lista)' : ''}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '0.5rem' }}>
+                    {[['margem_sup', 'Margem superior'], ['margem_inf', 'Margem inferior'], ['margem_esq', 'Margem esquerda'], ['margem_dir', 'Margem direita']].map(([k, l]) => (
+                      <div key={k}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{l} (cm)</span>
+                        <input type="number" step="0.1" min="0" style={S.input} disabled={!podeEditar}
+                          value={form[k] ?? ''} placeholder={String(pad[k]).replace('.', ',')}
+                          onChange={e => handleChange(k, e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.5rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Espaçamento entre linhas</span>
+                      <select style={S.input} disabled={!podeEditar} value={form.espacamento_linhas ?? ''} onChange={e => handleChange('espacamento_linhas', e.target.value)}>
+                        <option value="">Padrão (1,15)</option>
+                        <option value="1">1,0 (simples)</option>
+                        <option value="1.15">1,15</option>
+                        <option value="1.5">1,5</option>
+                        <option value="2">2,0 (duplo)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Tamanho da letra do texto</span>
+                      <select style={S.input} disabled={!podeEditar} value={form.fonte_tamanho ?? ''} onChange={e => handleChange('fonte_tamanho', e.target.value)}>
+                        <option value="">Padrão (12)</option>
+                        {[10, 11, 12, 13, 14].map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <p style={dica}>Vazio = padrão ({ehBal ? '5 / 2,8 / 3,5 / 2 cm' : '1,27 / 1,27 / 3 / 1,52 cm'}; entrelinha 1,15; letra 12). O cabeçalho da Loja mantém o próprio tamanho.</p>
+                </div>
+
+                {/* 5. Alinhamentos */}
+                <div style={secao}>
+                  <div style={tit}>↔️ Alinhamento</div>
+                  {[
+                    { campo: 'alinhamento_titulo',    label: 'Título' },
+                    { campo: 'alinhamento_corpo',     label: 'Corpo' },
+                    { campo: 'alinhamento_assinatura',label: 'Assinaturas' },
+                  ].map(a => (
+                    <div key={a.campo} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ width: '90px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>{a.label}</span>
+                      {['left', 'center', 'justify'].map(op => (
+                        <button key={op} disabled={!podeEditar} onClick={() => handleChange(a.campo, op)}
                           style={{
-                            padding: '0.4rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: podeEditar ? 'pointer' : 'default',
+                            padding: '0.35rem 0.9rem', fontSize: '0.78rem', fontWeight: 600, cursor: podeEditar ? 'pointer' : 'default',
                             borderRadius: 'var(--radius-md)', border: `1px solid ${form[a.campo] === op ? 'var(--color-accent)' : 'var(--color-border)'}`,
                             background: form[a.campo] === op ? 'var(--color-accent-bg)' : 'var(--color-surface-2)',
                             color: form[a.campo] === op ? 'var(--color-accent)' : 'var(--color-text-muted)',
@@ -863,22 +920,28 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                         </button>
                       ))}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
-                {/* Preview visual do layout */}
-                <div style={{ ...S.card, marginTop: '0.5rem' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-                    Preview do layout
-                  </div>
+                {/* 6. Preview */}
+                <div style={S.card}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>Preview do layout</div>
                   <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-md)', color: '#000', fontFamily: '"Times New Roman", Times, serif', fontSize: '0.8rem', lineHeight: '1.6' }}>
+                    {temCabTexto && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                        {logoLigado && <div style={{ width: `${Math.max(1, Number(form.logo_tamanho) || 3.5) * 14}px`, height: `${Math.max(1, Number(form.logo_tamanho) || 3.5) * 14}px`, borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }} />}
+                        <div style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '0.72rem' }}>
+                          {Object.entries(prevVars).reduce((t, [k, v]) => t.replaceAll(`{${k}}`, v), cabPrev).split('\n').filter(l => l.trim()).map((l, i) => <div key={i}>{l}</div>)}
+                        </div>
+                      </div>
+                    )}
                     {form.titulo_doc && (
                       <div style={{ textAlign: form.alinhamento_titulo, fontWeight: 'bold', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
-                        {form.titulo_doc.replace(/\{[^}]+\}/g, m => `[${m.slice(1,-1)}]`)}
+                        {form.titulo_doc.replace(/\{[^}]+\}/g, m => `[${m.slice(1, -1)}]`)}
                       </div>
                     )}
                     <div style={{ textAlign: form.alinhamento_corpo, marginBottom: '0.75rem', textIndent: form.alinhamento_corpo === 'justify' ? '1.25cm' : 0 }}>
-                      {(form.corpo || '').substring(0, 200).replace(/\{[^}]+\}/g, m => `[${m.slice(1,-1)}]`)}
+                      {(form.corpo || '').substring(0, 200).replace(/\{[^}]+\}/g, m => `[${m.slice(1, -1)}]`)}
                       {(form.corpo || '').length > 200 ? '...' : ''}
                     </div>
                     {form.assinatura_1_cargo && (
@@ -891,7 +954,8 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
           </div>
         </div>
