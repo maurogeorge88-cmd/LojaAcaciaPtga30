@@ -15,7 +15,7 @@ import {
 } from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
-import { cabecalhoLojaDocx } from '../../utils/cabecalhoLoja';
+import { cabecalhoLojaDocx, linhasCabecalho } from '../../utils/cabecalhoLoja';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
@@ -307,6 +307,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     data_fim_gestao:          eleicao.data_fim_gestao ? formatarData(eleicao.data_fim_gestao) : '[fim da gestão]',
     ano_exercicio:            eleicao.ano_exercicio || gestao,
     nome_chapa:               eleicao.nome_chapa || '[nome da chapa]',
+    // Edital: número sequencial contínuo (eleição e posse compartilham a mesma sequência)
+    numero_edital:            (() => { const n = tipo === 'edital_posse' ? eleicao.edital_posse_numero : eleicao.edital_eleicao_numero; return n ? String(n) : '[nº]'; })(),
     // Balaustre da sessão (Eleição da Loja → atas de eleição; Posse da Loja → ata de posse)
     ...(() => {
       const esp = tipo === 'ata_posse' ? 'posse_loja' : 'eleicao_loja';
@@ -452,30 +454,41 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       new ImageRun({
         type: 'jpg',
         data: b64ToBuffer(LOGO_LOJA_B64),
-        transformation: { width: 132, height: 132 }, // 3,5 cm
+        transformation: { width: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8), height: Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8) }, // padrão 3,5 cm
       }),
     ],
   });
 
-  const cabecalho = () => [
-    logoImg(),
-    prC([
-      ar('AUG', { bold: true, size: 26 }),
-      ar('∴', { size: 26 }),
-      ar(' E RESP', { bold: true, size: 26 }),
-      ar('∴', { size: 26 }),
-      ar(' LOJA SIMB', { bold: true, size: 26 }),
-      ar('∴', { size: 26 }),
-      ar(` ${nomeLoja}`, { bold: true, size: 26 }),
-    ], { before: 0, after: 40, line: 276 }),
-    prC([ar(`Fundado em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}`, { bold: true, size: 22 })], { before: 0, after: 40 }),
-    prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 280 }),
-  ];
+  const cabecalho = () => {
+    // Texto personalizado no modelo (Layout → Cabeçalho): 1ª linha em destaque, demais menores
+    const custom = modelo.cabecalho_texto && modelo.cabecalho_texto.trim() ? linhasCabecalho(modelo.cabecalho_texto, dadosLoja) : null;
+    if (custom) {
+      return [
+        logoImg(),
+        ...custom.map((t, i) => prC([ar(t, { bold: true, size: i === 0 ? 26 : 22 })], { before: 0, after: i === custom.length - 1 ? 280 : 40, line: 276 })),
+      ];
+    }
+    return [
+      logoImg(),
+      prC([
+        ar('AUG', { bold: true, size: 26 }),
+        ar('∴', { size: 26 }),
+        ar(' E RESP', { bold: true, size: 26 }),
+        ar('∴', { size: 26 }),
+        ar(' LOJA SIMB', { bold: true, size: 26 }),
+        ar('∴', { size: 26 }),
+        ar(` ${nomeLoja}`, { bold: true, size: 26 }),
+      ], { before: 0, after: 40, line: 276 }),
+      prC([ar(`Fundado em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}`, { bold: true, size: 22 })], { before: 0, after: 40 }),
+      prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 280 }),
+    ];
+  };
 
   // Cabeçalho das atas: logo à esquerda + texto da Loja (ou só o texto, se o logo estiver desmarcado no modelo)
   const cabecalhoAta = () => cabecalhoLojaDocx({
     dadosLoja, comLogo: modelo.mostrar_logo !== false,
     larguraUtil: DOC_CFG.W - MARG.left - MARG.right,
+    texto: modelo.cabecalho_texto, logoCm: modelo.logo_tamanho,
   });
 
   // ─── Lista eleitos ─────────────────────────────────────────
@@ -706,16 +719,19 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
     const sb = { top: semBorda, bottom: semBorda, left: semBorda, right: semBorda };
     const W = DOC_CFG.W - MARG.left - MARG.right;
     const tri = (t, size = 32) => new TextRun({ text: t, font: 'Times New Roman', size });
+    const linhasApres = modelo.cabecalho_texto && modelo.cabecalho_texto.trim()
+      ? linhasCabecalho(modelo.cabecalho_texto, dadosLoja)
+      : ['Grande Loja do Estado de Mato Grosso – GLEMT', `A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`];
+    const pxLogoApres = Math.round((Number(modelo.logo_tamanho) > 0 ? Number(modelo.logo_tamanho) : 3.5) * 37.8);
+    const colLogoApres = pxLogoApres * 15 + 340;
     const cabecalhoApresentacao = new Table({
-      width: { size: W, type: WidthType.DXA }, columnWidths: [2300, W - 2300],
+      width: { size: W, type: WidthType.DXA }, columnWidths: [colLogoApres, W - colLogoApres],
       rows: [new TableRow({ children: [
-        new TableCell({ borders: sb, width: { size: 2300, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
-          new Paragraph({ alignment: AlignmentType.LEFT, children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: 132, height: 132 } })] }), // 3,5 cm
+        new TableCell({ borders: sb, width: { size: colLogoApres, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
+          new Paragraph({ alignment: AlignmentType.LEFT, children: [new ImageRun({ type: 'jpg', data: b64ToBuffer(LOGO_LOJA_B64), transformation: { width: pxLogoApres, height: pxLogoApres } })] }),
         ]}),
-        new TableCell({ borders: sb, width: { size: W - 2300, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER, children: [
-          new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [tri('Grande Loja do Estado de Mato Grosso – GLEMT')] }),
-          new Paragraph({ alignment: AlignmentType.CENTER, children: [tri(`A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`)] }),
-        ]}),
+        new TableCell({ borders: sb, width: { size: W - colLogoApres, type: WidthType.DXA }, verticalAlign: VerticalAlign.CENTER,
+          children: linhasApres.map((t, i) => new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: i === linhasApres.length - 1 ? 0 : 40 }, children: [tri(t)] })) }),
       ]})],
     });
 
@@ -1194,6 +1210,36 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
   // Vários modelos para o mesmo documento (ex.: duas versões da Ata para Eleição) → escolher qual usar
   const [escolhaModeloEP, setEscolhaModeloEP] = useState(null); // { tipo, nomeArq, opcoes }
+  // Numeração dos editais: sequência contínua compartilhada entre eleição e posse
+  const numerosEditais = () => eleicoes.flatMap(e => [e.edital_eleicao_numero, e.edital_posse_numero]).map(Number).filter(n => n > 0);
+  const proximoNumeroEdital = () => (numerosEditais().length ? Math.max(...numerosEditais()) : 0) + 1;
+  const numeroEmUso = (n, campo) => !!n && (
+    eleicoes.some(e => e.id !== eleicaoSelecionada?.id && [e.edital_eleicao_numero, e.edital_posse_numero].map(Number).includes(Number(n)))
+    || Number((campo === 'edital_eleicao_numero' ? eleicaoSelecionada?.edital_posse_numero : eleicaoSelecionada?.edital_eleicao_numero)) === Number(n));
+  const controleEdital = (campo, dataEdital) => {
+    const atual = eleicaoSelecionada?.[campo] ?? '';
+    const emUso = numeroEmUso(atual, campo);
+    return (
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.85rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text)' }}>📌 Nº do edital</label>
+        <input type="number" min="1" disabled={!podeEditar} value={atual}
+          onChange={e => setEleicaoSelecionada(p => ({ ...p, [campo]: e.target.value }))}
+          onBlur={e => podeEditar && atualizarEleicao({ [campo]: e.target.value ? parseInt(e.target.value) : null })}
+          style={{ ...S.input, width: '90px', padding: '0.3rem 0.5rem', borderColor: emUso ? '#ef4444' : undefined }} />
+        {!atual && podeEditar && (
+          <button onClick={() => atualizarEleicao({ [campo]: proximoNumeroEdital() })} style={{ ...S.btn('surface'), padding: '0.3rem 0.75rem', fontSize: '0.78rem' }}>
+            Numerar (próximo: {proximoNumeroEdital()})
+          </button>
+        )}
+        <span style={{ fontSize: '0.75rem', color: dataEdital ? 'var(--color-text-muted)' : '#f59e0b', fontWeight: dataEdital ? 400 : 700 }}>
+          {dataEdital ? `Data do edital: ${formatarData(dataEdital)}` : '⚠️ Sem data do edital — preencha na Configuração'}
+        </span>
+        {emUso && <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700 }}>⚠️ Número já usado em outro edital</span>}
+        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Sequência contínua (eleição e posse).</span>
+      </div>
+    );
+  };
+
   const gerarDoc = async (tipo, nomeArq, modeloId = null) => {
     if (!modeloId) {
       const { data: opcoes } = await supabase.from('modelos_documentos').select('id, tipo, nome, tipo_base')
@@ -1218,7 +1264,18 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         showError(`Registre o balaustre da sessão de ${esp === 'posse_loja' ? 'Posse' : 'Eleição'} em Balaustres (Sessão especial) para gerar esta ata.`);
         return;
       }
-      const buf = await gerarDocx(tipo, eleicaoSelecionada, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
+      // Edital sem número: numera automaticamente com o próximo da sequência
+      let eleicaoDoc = eleicaoSelecionada;
+      if (tipo === 'edital_eleicao' || tipo === 'edital_posse') {
+        const campo = tipo === 'edital_posse' ? 'edital_posse_numero' : 'edital_eleicao_numero';
+        if (!eleicaoSelecionada[campo]) {
+          const n = proximoNumeroEdital();
+          await atualizarEleicao({ [campo]: n });
+          eleicaoDoc = { ...eleicaoSelecionada, [campo]: n };
+          showSuccess(`Edital numerado automaticamente: nº ${n}`);
+        }
+      }
+      const buf = await gerarDocx(tipo, eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
       downloadDocx(buf, nomeArq);
     } catch (e) {
       showError('Erro ao gerar documento: ' + e.message);
@@ -2276,6 +2333,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 </div>
               );
             })()}
+            {controleEdital('edital_eleicao_numero', eleicaoSelecionada.data_edital_eleicao)}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <BotaoDoc emoji="📄" label="Edital de Convocação para Eleição" disabled={!eleicaoSelecionada.data_eleicao} gerando={gerando === 'edital_eleicao'}
                 onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
@@ -2303,6 +2361,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 </div>
               );
             })()}
+            {controleEdital('edital_posse_numero', eleicaoSelecionada.data_edital_posse)}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
               <BotaoDoc emoji="📄" label="Edital de Convocação para Posse" disabled={!eleicaoSelecionada.data_posse} gerando={gerando === 'edital_posse'}
                 onClick={() => gerarDoc('edital_posse', `Edital_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
