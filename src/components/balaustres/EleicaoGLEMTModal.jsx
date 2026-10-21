@@ -4,6 +4,7 @@ import { calcularAptidaoVoto } from '../../utils/calcularAptidaoVoto';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { gerarAtaSessao, gerarEditalEleicaoGLEMT, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
+import { emitirEdital, buscarEdital, formatarNumeroEdital } from '../../utils/editais';
 
 // ════════════════════════════════════════════════════════════════════════
 // Eleição da GLEMT — modal do balaustre
@@ -30,6 +31,17 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const [apt, setApt] = useState({ carregando: true, linhas: [], periodo: '', dadosLoja: {}, assinantes: {} });
   const [filtro, setFiltro] = useState('todos');
   const [gerando, setGerando] = useState('');
+  // Edital emitido (fonte única: tabela editais) — obrigatório para gerar o documento
+  const [edital, setEdital] = useState(null);
+  const [emitindo, setEmitindo] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      if (!el.edital_id) { setEdital(null); return; }
+      try { const e = await buscarEdital(el.edital_id); if (vivo) setEdital(e); } catch { if (vivo) setEdital(null); }
+    })();
+    return () => { vivo = false; };
+  }, [el.edital_id]);
 
   const setEl = (campos) => { setElState(e => ({ ...e, ...campos })); setAlterado(true); };
   const setChapa = (i, campos) => setEl({ chapas: el.chapas.map((c, k) => (k === i ? { ...c, ...campos } : c)) });
@@ -86,6 +98,8 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
       const { data, error } = await supabase.from('balaustres').update({ eleicao_glemt: el }).eq('id', balaustre.id).select();
       if (error) throw error;
       if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      // Mantém a data do edital em Editais igual à da Configuração
+      if (el.edital_id && el.data_edital) await supabase.from('editais').update({ data_edital: el.data_edital }).eq('id', el.edital_id);
       setAlterado(false);
       if (!silencioso) showSuccess('✅ Eleição GLEMT salva.');
       onSaved?.();
@@ -93,6 +107,34 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
       showError('Erro ao salvar: ' + e.message);
     } finally {
       setSalvando(false);
+    }
+  };
+
+  // Emite o edital (próximo nº do ano) já com a descrição e vincula a esta eleição
+  const emitir = async () => {
+    if (!podeEditar || emitindo) return;
+    if (!ref) { showError('Sessão sem data: informe a data da sessão antes de emitir o edital.'); return; }
+    setEmitindo(true);
+    let reg = null;
+    try {
+      const dataEd = el.data_edital || menos15(ref);
+      const per = el.ano_inicio && el.ano_fim ? `${el.ano_inicio}/${el.ano_fim}` : '';
+      reg = await emitirEdital({
+        tipo: 'eleicao_glemt', dataEdital: dataEd, origemId: balaustre.id,
+        descricao: `Edital de Convocação – Eleição da GLEMT${per ? `, período ${per}` : ''} – sessão de ${fmt(ref)}`,
+      });
+      const novo = { ...el, edital_id: reg.id, data_edital: dataEd };
+      const { data, error } = await supabase.from('balaustres').update({ eleicao_glemt: novo }).eq('id', balaustre.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      setElState(novo); setEdital(reg); setAlterado(false);
+      showSuccess(`📢 Edital nº ${formatarNumeroEdital(reg.numero, reg.ano)} emitido.`);
+      onSaved?.();
+    } catch (e) {
+      if (reg) await supabase.from('editais').delete().eq('id', reg.id); // não deixa número órfão
+      showError('Erro ao emitir o edital: ' + e.message);
+    } finally {
+      setEmitindo(false);
     }
   };
 
@@ -127,6 +169,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const word = async (qual) => {
     setGerando(qual);
     try {
+      if (qual === 'edital' && !edital) { showError('Emita o edital (número) na aba Configuração antes de gerar o documento.'); return; }
       if (qual === 'edital') { const r = await gerarEditalEleicaoGLEMT({ balaustre: balaustreAtual }); if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`); }
       if (qual === 'lista') await gerarListaPresencaEleicaoGLEMT({ balaustre: balaustreAtual });
       if (qual === 'ata') {
@@ -238,6 +281,20 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                     {dias < 15 ? `⚠️ O edital está a ${dias} dia(s) da sessão — o mínimo é 15.` : `Edital ${dias} dias antes da sessão.`}
                   </p>;
                 })()}
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.6rem', padding: '0.5rem 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)' }}>
+                  <strong style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>📢 Edital nº</strong>
+                  {edital ? (<>
+                    <span style={{ fontWeight: 800, color: '#10b981' }}>{formatarNumeroEdital(edital.numero, edital.ano)}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{edital.descricao} (consulte/edite em Expedientes → Editais)</span>
+                  </>) : (<>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f59e0b' }}>⛔ Não emitido — o documento fica bloqueado</span>
+                    {podeEditar && (
+                      <button type="button" disabled={emitindo} onClick={emitir} style={btn('#10b981', 'rgba(16,185,129,0.12)')}>
+                        {emitindo ? '⏳ Emitindo…' : '📢 Emitir edital (próximo nº automático)'}
+                      </button>
+                    )}
+                  </>)}
+                </div>
               </div>
 
               <div style={card}>
@@ -373,7 +430,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
           {aba === 'docs' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
               {[
-                ['edital', '📢 Edital de Convocação', 'Word — aos Mestres, com as chapas', false],
+                ['edital', '📢 Edital de Convocação', edital ? `Edital nº ${formatarNumeroEdital(edital.numero, edital.ano)} — Word, aos Mestres, com as chapas` : 'Bloqueado: emita o edital na aba Configuração', !edital],
                 ['lista', '📋 Lista de Presença', 'Word — presentes marcados (ou todos os aptos)', false],
                 ['ata', '📜 Ata da Eleição', pendente ? 'Bloqueada: sessão pendente' : 'Word — modelo "Ata Eleição GLEMT"', pendente],
               ].map(([k, t, d, bloq]) => (
