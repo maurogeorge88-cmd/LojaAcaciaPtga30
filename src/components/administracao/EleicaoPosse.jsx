@@ -634,20 +634,30 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       ),
     ];
 
+    // Marcador do modelo (aba Layout): mostrar os instaladores (VM e Vigilantes) na ata. Padrão: desmarcado.
+    const mostrarInstaladores = modelo.mostrar_instaladores === true;
+    // Desmarcado: tira do corpo o trecho "sob a presidência do ... {segundo_vigilante_instalador_nome}"
+    const semInstaladores = (t) => String(t || '')
+      .replace(/,?\s*sob a presid[êe]ncia[^.]*?\{segundo_vigilante_instalador_nome\}/i, '')
+      .replace(/\{(vm|primeiro_vigilante|segundo_vigilante)_instalador_nome\}/g, '');
+
     children = [
       ...cabecalhoAta(),
       // Título via modelo (editável no banco)
       ...tituloModelo(modelo.titulo_doc, (modelo.subtitulo ?? 'x') ? 60 : 240),
       ...subtituloModelo(),
 
-      // Corpo via modelo com todas as variáveis interpoladas (instaladores incluídos).
+      // Corpo via modelo com todas as variáveis interpoladas (instaladores só se o modelo marcar).
       // Se o modelo salvo no banco ainda tiver o texto antigo ("gestão {gestao}"),
       // troca pelo período da gestão.
       prModelo(
-        String(modelo.corpo || '').includes('{data_inicio_gestao}')
-          ? modelo.corpo
-          : String(modelo.corpo || '').replace(/,\s*gest[ãa]o\s*(de\s*)?\{gestao\}\s*\.?/i,
-              ', com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}.'),
+        (() => {
+          const corpoPosse = String(modelo.corpo || '').includes('{data_inicio_gestao}')
+            ? modelo.corpo
+            : String(modelo.corpo || '').replace(/,\s*gest[ãa]o\s*(de\s*)?\{gestao\}\s*\.?/i,
+                ', com início em {data_inicio_gestao} até {data_fim_gestao}, para a gestão de {ano_exercicio}.');
+          return mostrarInstaladores ? corpoPosse : semInstaladores(corpoPosse);
+        })(),
         { before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) } // sem recuo: parágrafos na margem
       ),
 
@@ -669,8 +679,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       // Rodapé via modelo (editável no banco), sem recuo
       ...rodapeModelo({ firstLine: false }),
 
-      // Assinaturas: comissão instaladora e, abaixo, os eleitos empossados até Chanceler
-      ...assinaturasInstaladores,
+      // Assinaturas: comissão instaladora (só se o modelo marcar) e, abaixo, os eleitos empossados até Chanceler
+      ...(mostrarInstaladores ? assinaturasInstaladores : []),
       ...assinaturasEleitos,
     ];
   }
