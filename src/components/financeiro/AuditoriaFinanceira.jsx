@@ -104,6 +104,14 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
     () => [...new Set(registros.map(r => r.usuario_nome || r.usuario_email).filter(Boolean))].sort(),
     [registros]
   );
+  // Linha de corte: até onde está conferido (aparece no meio da lista, pela data da conferência)
+  const linhaCorte = (idx) => {
+    if (!ultimo) return false;
+    const corte = new Date(ultimo.conferido_em);
+    const atual = new Date(visiveis[idx].em);
+    const anterior = idx === 0 ? null : new Date(visiveis[idx - 1].em);
+    return atual <= corte && (idx === 0 || anterior > corte);
+  };
 
   const visiveis = registros.filter(r => {
     if (usuario && (r.usuario_nome || r.usuario_email) !== usuario) return false;
@@ -243,15 +251,26 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
             Nenhum registro no filtro. A auditoria grava a partir da data em que foi ativada.
           </p>
         )}
-        {visiveis.map(r => {
+        {visiveis.map((r, idx) => {
           const op = OPERACOES[r.operacao] || { rotulo: r.operacao, cor: '#94a3b8' };
           const base = r.depois || r.antes || {};
           const flag = aposConferencia(r);
           const alterados = r.operacao === 'UPDATE' ? mudancas(r) : [];
           const soObs = r.operacao === 'UPDATE' && alterados.length === 0; // mexeu só em texto
           return (
-            <div key={r.id} style={{ padding: '0.45rem 1rem', borderTop: '1px solid var(--color-border)', borderLeft: `4px solid ${op.cor}`, background: flag ? 'rgba(245,158,11,0.08)' : 'transparent', display: 'flex', alignItems: 'baseline', gap: '0.55rem', flexWrap: 'wrap', fontSize: '0.8rem' }}>
+            <div key={r.id}>
+            {linhaCorte(idx) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 1rem', background: 'rgba(16,185,129,0.12)', borderTop: '2px solid #10b981', borderBottom: '1px solid rgba(16,185,129,0.35)', fontSize: '0.75rem', fontWeight: 700, color: '#10b981' }}>
+                <span>✔ Conferido até {dataBR(ultimo.data_corte)}</span>
+                <span style={{ fontWeight: 500 }}>
+                  Banco {formatarMoeda(ultimo.saldo_bancario)} · Caixa {formatarMoeda(ultimo.caixa_fisico)} · Tronco {formatarMoeda(Number(ultimo.tronco_banco || 0) + Number(ultimo.tronco_especie || 0))}
+                </span>
+                <span style={{ fontWeight: 500, color: 'var(--color-text-muted)' }}>— daqui para baixo está conferido</span>
+              </div>
+            )}
+            <div style={{ padding: '0.45rem 1rem', borderTop: '1px solid var(--color-border)', borderLeft: `4px solid ${op.cor}`, background: flag ? 'rgba(245,158,11,0.08)' : 'transparent', display: 'flex', alignItems: 'baseline', gap: '0.55rem', flexWrap: 'wrap', fontSize: '0.8rem' }}>
               <strong style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>{dataHora(r.em)}</strong>
+              <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{r.usuario_nome || r.usuario_email || '—'}</span>
               <span style={{ fontWeight: 700, color: op.cor, border: `1px solid ${op.cor}`, borderRadius: '999px', padding: '0 0.5rem', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>{op.rotulo}</span>
               <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>#{r.lancamento_id}</span>
 
@@ -268,10 +287,11 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
                 </span>
               ))}
 
-              <span style={{ flex: 1, minWidth: '120px', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${base.descricao || ''} · ${r.usuario_nome || r.usuario_email || ''}`}>
+              <span style={{ flex: 1, minWidth: '120px', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={base.descricao || ''}>
                 {base.descricao || ''}
               </span>
               {flag && <span title={`Alterado após a conferência de ${dataBR(ultimo.data_corte)}`} style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>⚠ após conferência</span>}
+            </div>
             </div>
           );
         })}
