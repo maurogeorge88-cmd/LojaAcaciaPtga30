@@ -27,6 +27,7 @@ import ModalQuitacaoLote from './ModalQuitacaoLote';
 import { gerarReciboPagamentoPDF } from '../../utils/gerarReciboPagamentoPDF';
 import ModalEdicaoLote from './components/ModalEdicaoLote';
 import { ehAjusteInternoTronco } from './utils/ajusteTronco';
+import MarcoConferencia from './components/MarcoConferencia';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -36,7 +37,7 @@ import { ehAjusteInternoTronco } from './utils/ajusteTronco';
 const STATUS_PERMITIDOS = ['regular', 'Regular', 'licenciado', 'Licenciado'];
 const STATUS_BLOQUEADOS = ['irregular', 'Irregular', 'suspenso', 'Suspenso', 'desligado', 'Desligado', 'excluído', 'Excluído', 'falecido', 'Falecido', 'ex-ofício', 'Ex-Ofício'];
 
-export default function FinancasLoja({ showSuccess, showError, userEmail, userData, permissoes }) {
+export default function FinancasLoja({ showSuccess, showError, userEmail, userData, permissoes, irParaAuditoria }) {
   // Somente leitura: verdadeiro pra quem NÃO tem permissão explícita de
   // editar financeiro (admin/cargo com acesso total continuam liberados,
   // já que canEditFinancial vem true pra eles desde o App.jsx).
@@ -111,6 +112,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   });
   const [expandedLista, setExpandedLista] = useState({ origens: new Set(), datas: new Set() });
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [idsAlteradosConf, setIdsAlteradosConf] = useState(new Set()); // lançamentos alterados após a conferência
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [arcoRealTotal, setArcoRealTotal] = useState({ receita: 0, despesa: 0, saldo: 0 });
@@ -2302,6 +2304,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   ? `Antes de ${filtros.ano}`
                   : 'Período base'}
               </p>
+              <MarcoConferencia
+                userData={userData}
+                filtros={filtros}
+                refreshKey={lancamentos}
+                onAlterados={setIdsAlteradosConf}
+                onIrAuditoria={irParaAuditoria}
+                showSuccess={showSuccess}
+                showError={showError}
+              />
             </div>
             </div>{/* fim card saldo anterior */}
             </div>{/* fim sub-grupo Saldo Anterior */}
@@ -3444,6 +3455,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                 {/* Descrição */}
                                 <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
                                   <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                      {idsAlteradosConf.has(String(lanc.id)) && (<span title="Alterado após a conferência — veja em Auditoria Financeira" style={{flexShrink:0,fontSize:'0.75rem'}}>⚠️</span>)}
                                   {lanc.evento_comemorativo_id && (
                                     <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.6rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.3rem',lineHeight:'1.5',fontWeight:700}}>🎉</span>
                                   )}
@@ -3799,6 +3811,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     {/* Descrição */}
                     <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
                       <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                      {idsAlteradosConf.has(String(lanc.id)) && (<span title="Alterado após a conferência — veja em Auditoria Financeira" style={{flexShrink:0,fontSize:'0.75rem'}}>⚠️</span>)}
                       {lanc.evento_comemorativo_id && (
                         <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.65rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.35rem',lineHeight:'1.4',fontWeight:700}}>🎉</span>
                       )}
