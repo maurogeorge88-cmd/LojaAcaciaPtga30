@@ -2304,15 +2304,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   ? `Antes de ${filtros.ano}`
                   : 'Período base'}
               </p>
-              <MarcoConferencia
-                userData={userData}
-                filtros={filtros}
-                refreshKey={lancamentos}
-                onAlterados={setIdsAlteradosConf}
-                onIrAuditoria={irParaAuditoria}
-                showSuccess={showSuccess}
-                showError={showError}
-              />
             </div>
             </div>{/* fim card saldo anterior */}
             </div>{/* fim sub-grupo Saldo Anterior */}
@@ -2372,6 +2363,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <p className="text-[10px] mt-0.5">
               PIX, Transf., Cartão
             </p>
+            <MarcoConferencia
+              userData={userData}
+              filtros={filtros}
+              refreshKey={lancamentos}
+              onAlterados={setIdsAlteradosConf}
+              onIrAuditoria={irParaAuditoria}
+              showSuccess={showSuccess}
+              showError={showError}
+            />
           </div>
 
           <div className="border-2 border-emerald-300 rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
