@@ -71,6 +71,8 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
   };
 
   const carregarRegistros = async () => {
+    // Campo de data vazio/incompleto (limpou ou está digitando): não consulta
+    if (!de || !ate || de.length !== 10 || ate.length !== 10) return;
     setLoading(true);
     try {
       let q = supabase.from('auditoria_lancamentos').select('*')
