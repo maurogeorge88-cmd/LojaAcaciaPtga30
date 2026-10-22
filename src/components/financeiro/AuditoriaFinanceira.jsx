@@ -19,17 +19,15 @@ const OPERACOES = {
   DELETE: { rotulo: 'Exclusão', cor: '#ef4444' },
 };
 
+// Só o que muda dinheiro ou data: descrição, observações e afins ficam de fora (poluem a leitura)
 const CAMPOS = {
-  valor: 'Valor', status: 'Status', descricao: 'Descrição', categoria_id: 'Categoria',
-  data_pagamento: 'Data de pagamento', data_vencimento: 'Vencimento', data_lancamento: 'Data do lançamento',
-  tipo_pagamento: 'Forma de pagamento', observacoes: 'Observações',
-  eh_transferencia_interna: 'Transferência interna', eh_pagamento_parcial: 'Pagamento parcial',
-  lancamento_principal_id: 'Lançamento principal', origem_tipo: 'Origem', origem_irmao_id: 'Irmão (origem)',
-  parcela_numero: 'Parcela', parcela_total: 'Total de parcelas',
+  valor: 'Valor', status: 'Status', categoria_id: 'Categoria',
+  data_pagamento: 'Pagamento', data_vencimento: 'Vencimento', data_lancamento: 'Lançamento',
+  tipo_pagamento: 'Forma',
 };
 const CAMPOS_DATA = ['data_pagamento', 'data_vencimento', 'data_lancamento'];
-const CAMPOS_IGNORADOS = ['id', 'created_at', 'updated_at'];
-const CAMPOS_RESUMO = ['descricao', 'categoria_id', 'valor', 'data_pagamento', 'status', 'tipo_pagamento'];
+const CAMPOS_RELEVANTES = Object.keys(CAMPOS);
+const CAMPOS_RESUMO = ['valor', 'data_pagamento', 'status'];
 
 const hoje = () => new Date().toISOString().substring(0, 10);
 const diasAtras = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().substring(0, 10); };
@@ -125,8 +123,8 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
   const mudancas = (r) => {
     const antes = r.antes || {}; const depois = r.depois || {};
     if (r.operacao === 'UPDATE') {
-      return Object.keys({ ...antes, ...depois })
-        .filter(k => !CAMPOS_IGNORADOS.includes(k) && JSON.stringify(antes[k]) !== JSON.stringify(depois[k]))
+      return CAMPOS_RELEVANTES
+        .filter(k => JSON.stringify(antes[k]) !== JSON.stringify(depois[k]))
         .map(k => ({ campo: k, antes: antes[k], depois: depois[k] }));
     }
     return [];
@@ -249,35 +247,31 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
           const op = OPERACOES[r.operacao] || { rotulo: r.operacao, cor: '#94a3b8' };
           const base = r.depois || r.antes || {};
           const flag = aposConferencia(r);
-          const lista = r.operacao === 'UPDATE' ? mudancas(r) : CAMPOS_RESUMO.map(k => ({ campo: k, valor: base[k] }));
+          const alterados = r.operacao === 'UPDATE' ? mudancas(r) : [];
+          const soObs = r.operacao === 'UPDATE' && alterados.length === 0; // mexeu só em texto
           return (
-            <div key={r.id} style={{ padding: '0.6rem 1rem', borderTop: '1px solid var(--color-border)', borderLeft: `4px solid ${op.cor}`, background: flag ? 'rgba(245,158,11,0.08)' : 'transparent' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', fontSize: '0.78rem' }}>
-                <strong style={{ color: 'var(--color-text)' }}>{dataHora(r.em)}</strong>
-                <span style={{ color: 'var(--color-text-muted)' }}>{r.usuario_nome || r.usuario_email || '—'}</span>
-                <span style={{ fontWeight: 700, color: op.cor, border: `1px solid ${op.cor}`, borderRadius: '999px', padding: '0 0.5rem', fontSize: '0.68rem' }}>{op.rotulo}</span>
-                <span style={{ color: 'var(--color-text-muted)' }}>Lançamento #{r.lancamento_id}{base.descricao ? ` — ${base.descricao}` : ''}</span>
-                {flag && (
-                  <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.7rem' }}>
-                    ⚠ após a conferência de {dataBR(ultimo.data_corte)}
-                  </span>
-                )}
-              </div>
-              <div style={{ marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: '0.1rem', fontSize: '0.8rem' }}>
-                {lista.length === 0 && <span style={{ color: 'var(--color-text-muted)' }}>Sem diferença de campos.</span>}
-                {r.operacao === 'UPDATE'
-                  ? lista.map(m => (
-                    <span key={m.campo} style={{ color: 'var(--color-text)' }}>
-                      <strong>{CAMPOS[m.campo] || m.campo}:</strong>{' '}
-                      <span style={{ color: '#ef4444' }}>{fmtValor(m.campo, m.antes)}</span> → <span style={{ color: '#10b981' }}>{fmtValor(m.campo, m.depois)}</span>
-                    </span>
-                  ))
-                  : lista.map(m => (
-                    <span key={m.campo} style={{ color: 'var(--color-text)' }}>
-                      <strong>{CAMPOS[m.campo] || m.campo}:</strong> {fmtValor(m.campo, m.valor)}
-                    </span>
-                  ))}
-              </div>
+            <div key={r.id} style={{ padding: '0.45rem 1rem', borderTop: '1px solid var(--color-border)', borderLeft: `4px solid ${op.cor}`, background: flag ? 'rgba(245,158,11,0.08)' : 'transparent', display: 'flex', alignItems: 'baseline', gap: '0.55rem', flexWrap: 'wrap', fontSize: '0.8rem' }}>
+              <strong style={{ color: 'var(--color-text)', whiteSpace: 'nowrap' }}>{dataHora(r.em)}</strong>
+              <span style={{ fontWeight: 700, color: op.cor, border: `1px solid ${op.cor}`, borderRadius: '999px', padding: '0 0.5rem', fontSize: '0.68rem', whiteSpace: 'nowrap' }}>{op.rotulo}</span>
+              <span style={{ color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>#{r.lancamento_id}</span>
+
+              {r.operacao === 'UPDATE' && alterados.map(m => (
+                <span key={m.campo} style={{ color: 'var(--color-text)' }}>
+                  <strong>{CAMPOS[m.campo]}:</strong>{' '}
+                  <span style={{ color: '#ef4444' }}>{fmtValor(m.campo, m.antes)}</span> → <span style={{ color: '#10b981' }}>{fmtValor(m.campo, m.depois)}</span>
+                </span>
+              ))}
+              {soObs && <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>só texto (sem efeito no saldo)</span>}
+              {r.operacao !== 'UPDATE' && CAMPOS_RESUMO.map(c => (
+                <span key={c} style={{ color: 'var(--color-text)' }}>
+                  <strong>{CAMPOS[c]}:</strong> {fmtValor(c, base[c])}
+                </span>
+              ))}
+
+              <span style={{ flex: 1, minWidth: '120px', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${base.descricao || ''} · ${r.usuario_nome || r.usuario_email || ''}`}>
+                {base.descricao || ''}
+              </span>
+              {flag && <span title={`Alterado após a conferência de ${dataBR(ultimo.data_corte)}`} style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>⚠ após conferência</span>}
             </div>
           );
         })}
