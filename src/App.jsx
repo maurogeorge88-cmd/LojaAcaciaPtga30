@@ -24,6 +24,7 @@ import RelatorioFinanceiro from './components/financeiro/RelatorioFinanceiro';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Editais from './components/editais/Editais';
+import AuditoriaFinanceira from './components/financeiro/AuditoriaFinanceira';
 import Comissoes from './components/comissoes/Comissoes';
 import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
@@ -195,6 +196,7 @@ function App() {
     'eventos-comemorativos': '🍽️ Ágape & Festas',
     'email-irmaos': '📧 Central E-Mail',
     'relatorio-financeiro': '📊 Conferir Finanças',
+    'auditoria-financeira': '🔍 Auditoria Financeira',
     'caridade': '❤️ Caridade',
     'eventos': '🎉 Eventos',
     'aniversariantes': '🎉 Festividades',
@@ -1837,6 +1839,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'eventos-comemorativos' && '🍽️ Ágape & Festas'}
                   {currentPage === 'email-irmaos' && '📧 Central E-Mail'}
                   {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
+                  {currentPage === 'auditoria-financeira' && '🔍 Auditoria Financeira'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2193,6 +2196,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             userEmail={userData?.email}
             userData={userData}
             permissoes={permissoes}
+            irParaAuditoria={() => setCurrentPage('auditoria-financeira')}
           />
         )}
 
@@ -2241,6 +2245,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'relatorio-financeiro' && (
           <RelatorioFinanceiro
+            showError={showError}
+          />
+        )}
+
+        {currentPage === 'auditoria-financeira' && (
+          <AuditoriaFinanceira
+            userData={userData}
+            showSuccess={showSuccess}
             showError={showError}
           />
         )}
