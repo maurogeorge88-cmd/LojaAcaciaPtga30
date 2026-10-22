@@ -26,6 +26,7 @@ import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
 import { gerarReciboPagamentoPDF } from '../../utils/gerarReciboPagamentoPDF';
 import ModalEdicaoLote from './components/ModalEdicaoLote';
+import { ehAjusteInternoTronco } from './utils/ajusteTronco';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -1724,6 +1725,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
         const isDinheiro = l.tipo_pagamento === 'dinheiro';
         if (isTronco && isDinheiro) return false;
+        if (ehAjusteInternoTronco(l)) return false; // Ajuste Interno Tronco: só abate o Tronco, não o saldo da Loja
         return l.categorias_financeiras?.tipo === 'despesa' &&
           l.status === 'pago' &&
           l.tipo_pagamento !== 'compensacao' &&
@@ -1851,7 +1853,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const { data, error } = await (async () => {
         const query = supabase
           .from('lancamentos_loja')
-          .select('*, categorias_financeiras(tipo)')
+          .select('*, categorias_financeiras(tipo, nome)')
           .eq('status', 'pago')
           .lt('data_pagamento', dataLimite);
 
@@ -1893,6 +1895,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       const despesasAnteriores = (data || [])
         .filter(l => 
+          !ehAjusteInternoTronco(l) && // Ajuste Interno Tronco não abate o saldo da Loja
           l.categorias_financeiras?.tipo === 'despesa' &&
           l.tipo_pagamento !== 'compensacao' &&
           l.tipo_pagamento !== 'dinheiro' &&
