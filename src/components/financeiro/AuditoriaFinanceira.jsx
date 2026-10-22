@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarMoeda } from './utils/formatadores';
+import MarcoConferencia from './components/MarcoConferencia';
 import {
   podeConferirFinanceiro, dataBR, buscarFechamentos, snapshotFinanceiro,
   compararComFechamento,
@@ -182,7 +183,10 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
 
       {/* CONFERÊNCIAS */}
       <div style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: '0.75rem 1rem' }}>
-        <p style={{ margin: '0 0 0.4rem', fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-text)' }}>✔ Conferências</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.4rem' }}>
+          <p style={{ margin: 0, fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-text)' }}>✔ Conferências</p>
+          <MarcoConferencia modo="botao" userData={userData} onConferido={carregarFechamentos} showSuccess={showSuccess} showError={showError} />
+        </div>
         {fechamentos.length === 0 ? (
           <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             Nenhuma conferência registrada. Marque em Finanças – Loja, no card Saldo Anterior (“Conferir até…”).
