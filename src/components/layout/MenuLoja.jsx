@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { pode, ehAdminTotal } from '../../config/permissoes';
+import { pode, ehAdminTotal, ehTesoureiro } from '../../config/permissoes';
 
 // ════════════════════════════════════════════════════════════════════════
 // Menu do portal dos irmãos — gerado pelas permissões por módulo.
@@ -19,6 +19,7 @@ export default function MenuLoja({
   const ehIrmao = userData?.nivel_acesso === 'irmao';
   const ver = (m) => pode(mapa, m, 'ver');
   const editar = (m) => pode(mapa, m, 'editar');
+  const podeAuditoria = ehAdminTotal(userData) || ehTesoureiro(userData); // Admin, Venerável e Tesoureiro
 
   // ── Definição do menu (ordem de exibição) ──
   const MENU = [
@@ -52,6 +53,7 @@ export default function MenuLoja({
       { pagina: 'categorias-financeiras', icone: '🏷️', label: 'Categorias', mostrar: ver('financeiro') },
       { pagina: 'eventos-comemorativos', icone: '🍽️', label: 'Ágape & Festas', mostrar: ver('financeiro') },
       { pagina: 'relatorio-financeiro', icone: '📊', label: 'Conferir Finanças', mostrar: ver('financeiro') },
+      { pagina: 'auditoria-financeira', icone: '🔍', label: 'Auditoria Financeira', mostrar: podeAuditoria },
     ]},
     // Sem acesso ao financeiro: Ágape continua visível (somente consulta)
     { tipo: 'item', pagina: 'eventos-comemorativos', icone: '🍽️', label: 'Ágape & Festas', mostrar: !ver('financeiro') },
