@@ -12,7 +12,7 @@ import {
 //  • "Atenção!" aparece se os valores daquela data mudaram depois de conferidos (detalhes na Auditoria)
 //  • avisa o pai (onAlterados) quais lançamentos foram alterados após a conferência (ícone na lista)
 export default function MarcoConferencia({
-  userData, filtros, refreshKey, onAlterados, onIrAuditoria, showSuccess, showError,
+  userData, filtros, refreshKey, onAlterados, onIrAuditoria, onConferido, modo = 'completo', showSuccess, showError,
 }) {
   const [fechamento, setFechamento] = useState(null);
   const [divergencia, setDivergencia] = useState({ mudou: false, itens: [] });
@@ -33,6 +33,7 @@ export default function MarcoConferencia({
 
   // Reconfere sempre que a lista de lançamentos recarrega (baixa, edição, exclusão…)
   useEffect(() => {
+    if (modo === 'botao') return; // na Auditoria a conferência é só o botão
     const minha = ++seq.current;
     (async () => {
       if (!fechamento) { setDivergencia({ mudou: false, itens: [] }); onAlterados?.(new Set()); return; }
@@ -52,8 +53,9 @@ export default function MarcoConferencia({
 
   // Data sugerida: último dia do mês anterior ao filtro (ou 31/12 do ano anterior)
   const dataSugerida = () => {
-    const mes = filtros?.mes > 0 ? filtros.mes : 1;
-    const ano = filtros?.ano > 0 ? filtros.ano : new Date().getFullYear();
+    const hojeD = new Date();
+    const mes = filtros?.mes > 0 ? filtros.mes : (filtros ? 1 : hojeD.getMonth() + 1);
+    const ano = filtros?.ano > 0 ? filtros.ano : hojeD.getFullYear();
     const ultimo = new Date(ano, mes - 1, 0); // dia 0 do mês do filtro = último dia do mês anterior
     return `${ultimo.getFullYear()}-${String(ultimo.getMonth() + 1).padStart(2, '0')}-${String(ultimo.getDate()).padStart(2, '0')}`;
   };
@@ -95,6 +97,7 @@ export default function MarcoConferencia({
       showSuccess?.(`✔ Conferido até ${dataBR(dataCorte)}`);
       setModalAberto(false);
       await carregarFechamento();
+      onConferido?.();
     } catch (e) {
       showError?.('Erro ao registrar a conferência: ' + e.message);
     } finally {
@@ -111,15 +114,15 @@ export default function MarcoConferencia({
 
   return (
     <>
-      <div style={{ marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-        {fechamento ? (
+      <div style={{ marginTop: modo === 'botao' ? 0 : '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+        {modo !== 'botao' && (fechamento ? (
           <span title={`Conferido até ${dataBR(fechamento.data_corte)}`} style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap' }}>
             ✔ - {dataBR(fechamento.data_corte)}
           </span>
         ) : (
           <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>Sem conferência</span>
-        )}
-        {divergencia.mudou && (
+        ))}
+        {modo !== 'botao' && divergencia.mudou && (
           <button type="button" onClick={onIrAuditoria}
             title="O saldo da data conferida mudou depois da conferência. Clique para ver na Auditoria."
             style={{ fontSize: '0.68rem', fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: '999px', padding: '0 0.5rem', cursor: onIrAuditoria ? 'pointer' : 'default' }}>
