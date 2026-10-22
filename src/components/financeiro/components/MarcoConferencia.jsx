@@ -131,8 +131,8 @@ export default function MarcoConferencia({
         )}
         {podeConferir && (
           <button type="button" onClick={abrirModal}
-            style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-accent)', background: 'transparent', border: '1px solid var(--color-accent)', borderRadius: '999px', padding: '0 0.5rem', cursor: 'pointer' }}>
-            Conferir até…
+            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fff', background: 'var(--color-accent)', border: 'none', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            ✔ Conferir até…
           </button>
         )}
       </div>
