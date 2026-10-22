@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarMoeda } from './utils/formatadores';
+import { ehAjusteInternoTronco } from './utils/ajusteTronco';
 import { gerarPDFRelatorioFinanceiro } from './utils/pdfRelatorioFinanceiro';
 
 const MESES = [
@@ -112,6 +113,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
 
     const despBanco = d
       .filter(l => l.categorias_financeiras?.tipo === 'despesa'
+        && !ehAjusteInternoTronco(l) // Ajuste Interno Tronco: só abate o Tronco, não o saldo da Loja
         && l.tipo_pagamento !== 'compensacao'
         && l.tipo_pagamento !== 'dinheiro'
         && !l.eh_transferencia_interna)
@@ -373,6 +375,8 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
     const isTransfInterna = l.eh_transferencia_interna === true;
 
     if (isCompensacao) return null;
+    // Ajuste Interno Tronco: só abate o Tronco, fora do saldo da Loja
+    if (l.cat_tipo === 'despesa' && ehAjusteInternoTronco(l)) return null;
 
     if (l.cat_tipo === 'receita') {
       // Depósito de tronco (transf. interna + tronco receita) → banco (como receitasBancarias)
