@@ -380,6 +380,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           alinhamento_assinatura:form.alinhamento_assinatura,
           ...(['ata_eleicao_loja', 'ata_eleicao_cartorio', 'ata_posse', 'ata_posse_cartorio'].includes(form.tipo_base || form.tipo) ? { mostrar_logo: form.mostrar_logo !== false } : {}),
           ...(String(form.tipo || '').startsWith('ata_') ? { subtitulo: form.subtitulo ?? '' } : {}),
+          ...(['ata_posse', 'ata_posse_cartorio'].includes(form.tipo_base || form.tipo) ? { mostrar_instaladores: form.mostrar_instaladores === true } : {}),
           ...(form.modulo === 'balaustres' ? {
             mostrar_logo: !!form.mostrar_logo, grau: form.grau || null,
             mostrar_logo_lista: !!form.mostrar_logo_lista,
@@ -807,6 +808,20 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                     Aceita variáveis como {'{nome_loja}'}, {'{gestao}'}, {'{numero_balaustre}'}{['edital_eleicao', 'edital_posse'].includes(baseTipo) ? ', {numero_edital}' : ''}. Cada linha vira uma linha do documento.
                   </p>
                 </div>
+
+                {/* Instaladores (só nas atas de posse) */}
+                {['ata_posse', 'ata_posse_cartorio'].includes(baseTipo) && (
+                  <div style={secao}>
+                    <div style={tit}>🎖️ Instaladores da posse</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                      <input type="checkbox" checked={form.mostrar_instaladores === true} disabled={!podeEditar} onChange={e => handleChange('mostrar_instaladores', e.target.checked)} />
+                      Mostrar os instaladores (Venerável Mestre e Vigilantes) na ata
+                    </label>
+                    <p style={dica}>
+                      Desmarcado (padrão): a ata não cita a presidência da sessão nem traz as assinaturas dos instaladores — saem só os nomes de quem está sendo empossado.
+                    </p>
+                  </div>
+                )}
 
                 {/* 2. Cabeçalho */}
                 {temLogo && (
