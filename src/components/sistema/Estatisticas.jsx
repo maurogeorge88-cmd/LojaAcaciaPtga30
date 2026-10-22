@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { ehAjusteInternoTronco } from '../financeiro/utils/ajusteTronco';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
@@ -146,7 +147,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       const despesasBancarias = todos
         .filter(l => {
           const isTroncoDinheiro = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') && l.tipo_pagamento === 'dinheiro';
-          if (isTroncoDinheiro) return false;
+          if (isTroncoDinheiro || ehAjusteInternoTronco(l)) return false; // Ajuste Interno Tronco não abate o banco da Loja
           return l.categorias_financeiras?.tipo === 'despesa' &&
             l.tipo_pagamento !== 'compensacao' &&
             l.tipo_pagamento !== 'dinheiro' &&
