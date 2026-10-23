@@ -236,6 +236,7 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{chapas_edital}',            desc: 'Edital GLEMT: uma linha por chapa com Grão-Mestre e Adjunto' },
   { var: '{chapas_apresentadas}',      desc: 'Eleição GLEMT: "a Chapa X, para a qual o Ir∴ ... é candidato..."' },
   { var: '{chanceler_nome}',           desc: 'Atas de sessão: Chanceler (Corpo Adm. do ano)' },
+  { var: '{apuracao_urnas}',           desc: 'Eleição GLEMT: apuração separada — nossa Loja e cada loja em trânsito, com os votos de cada chapa' },
   { var: '{apuracao_chapas}',          desc: 'Eleição GLEMT: bloco da apuração — uma entrada por chapa cadastrada, com os votos (use em parágrafo próprio)' },
   { var: '{chapas_lista}',             desc: 'Eleição GLEMT: todas as chapas — nome em negrito e uma linha por cargo (use em parágrafo próprio)' },
   { var: '{chapas_lista_corrida}',     desc: 'Eleição GLEMT: todas as chapas em uma linha só (formato corrido)' },
