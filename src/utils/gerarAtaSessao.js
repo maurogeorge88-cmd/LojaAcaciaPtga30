@@ -230,7 +230,15 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
         : '[chapas].',
       escrutinador1_nome: nomeIr(el.escrutinador1_id) || '[Escrutinador 1]',
       escrutinador2_nome: nomeIr(el.escrutinador2_id) || '[Escrutinador 2]',
-      chapas_lista: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: Grão-Mestre Ir∴ ${c.gm || '[nome]'} e Grão-Mestre Adjunto Ir∴ ${c.gm_adjunto || '[nome]'}`).join('; ') + '.',
+      // Nome da chapa em negrito, e abaixo uma linha por cargo (▪ = linhas coladas, sem espaço entre elas)
+      chapas_lista: chapas.map((c, i, arr) => [
+        `▪*Chapa ${c.nome || '[nome]'}*`,
+        `▪Grão Mestre - Ir∴ ${c.gm || '[nome]'} - Grão-Mestre;`,
+        `▪Grão Mestre Adjunto - Ir∴ ${c.gm_adjunto || '[nome]'} - Grão-Mestre Adjunto${i === arr.length - 1 ? '.' : ';'}`,
+        ...(i === arr.length - 1 ? [] : ['']),
+      ].join('\n')).join('\n'),
+      // Mesma lista em uma linha só, para quem preferir o formato corrido
+      chapas_lista_corrida: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: Grão-Mestre Ir∴ ${c.gm || '[nome]'} e Grão-Mestre Adjunto Ir∴ ${c.gm_adjunto || '[nome]'}`).join('; ') + '.',
       resultado_apuracao: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${num(c.votos)} voto(s)`).join('; ') + '.',
       votos_brancos: String(num(el.brancos)),
       votos_nulos: String(num(el.nulos)),
