@@ -14,10 +14,11 @@ const TEXTO = [30, 41, 59];
 // tipo: 'aptos' | 'inaptos' | 'ambos' (aptos e inaptos no mesmo PDF, em quadros separados)
 // Coluna Tesouraria: "Regular" (até 2 meses em aberto) ou "Pendência" (3+)
 // glemt: { periodo: '2027/2030', dataSessao: 'AAAA-MM-DD' } → cabeçalho de destaque da Eleição da Grande Loja
-export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos', glemt = null }) => {
+export const gerarAptosVotarPDF = ({ linhas, linhasInaptos = [], eleicao, dadosLoja = {}, logoB64, periodo, assinantes = {}, subtitulo = null, nomeArquivo = null, tipo = 'aptos', glemt = null , docExistente = null}) => {
   const inaptos = tipo === 'inaptos';
   const ambos = tipo === 'ambos';
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const doc = docExistente || new jsPDF({ unit: 'mm', format: 'a4' });
+  if (docExistente) doc.addPage(); // a relação começa em página nova (ex.: após o edital)
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 18;
