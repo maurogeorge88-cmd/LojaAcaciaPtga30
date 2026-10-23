@@ -371,6 +371,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
           corpo:                 form.corpo,
           corpo_aclamacao:       form.corpo_aclamacao,
           corpo_disputa:         form.corpo_disputa,
+          ...(( form.tipo_base || form.tipo) === 'ata_eleicao_glemt' ? { corpo_voto_transito: form.corpo_voto_transito || '' } : {}),
           rodape:                form.rodape,
           assinatura_1_cargo:    form.assinatura_1_cargo,
           assinatura_2_cargo:    form.assinatura_2_cargo,
@@ -728,6 +729,18 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
                     value={form.corpo_disputa || ''} disabled={!podeEditar}
                     onChange={e => handleChange('corpo_disputa', e.target.value)} />
                 </div>
+                {(form.tipo_base || form.tipo) === 'ata_eleicao_glemt' && (
+                  <div>
+                    <label style={S.label}>Trecho — Voto em trânsito (Irmãos de outras Lojas)</label>
+                    <textarea name="corpo_voto_transito" style={{ ...S.textarea, minHeight: '120px' }}
+                      value={form.corpo_voto_transito || ''} disabled={!podeEditar}
+                      onChange={e => handleChange('corpo_voto_transito', e.target.value)} />
+                    <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                      Só entra na ata quando houver votantes em trânsito cadastrados na eleição. Vai no lugar de {'{trecho_voto_transito}'}; sem a variável, entra após o corpo.
+                      Variáveis: {'{votantes_transito}'}, {'{qtd_votantes_transito}'}, {'{qtd_votantes_transito_extenso}'}, {'{palavra_irmao_transito}'}, {'{plural_transito}'}.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
