@@ -104,12 +104,14 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   const ehEdital = documento === 'edital';
   // Edital: exige o número emitido (tela Editais) — fonte única da numeração
   let editalReg = null;
-  if (ehEdital) {
+  {
     const idEdital = balaustre.eleicao_glemt && balaustre.eleicao_glemt.edital_id;
-    if (!idEdital) throw new Error('emita o edital (número) na aba Configuração antes de gerar o documento.');
-    const { data: ed } = await supabase.from('editais').select('*').eq('id', idEdital).maybeSingle();
-    if (!ed) throw new Error('o edital vinculado não foi encontrado em Editais. Emita um novo na aba Configuração.');
-    editalReg = ed;
+    if (ehEdital && !idEdital) throw new Error('emita o edital (número) na aba Configuração antes de gerar o documento.');
+    if (idEdital) {
+      const { data: ed } = await supabase.from('editais').select('*').eq('id', idEdital).maybeSingle();
+      if (ehEdital && !ed) throw new Error('o edital vinculado não foi encontrado em Editais. Emita um novo na aba Configuração.');
+      editalReg = ed || null; // na ata o número é só informativo: sem edital, a variável fica vazia
+    }
   }
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
