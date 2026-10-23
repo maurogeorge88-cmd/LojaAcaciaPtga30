@@ -100,7 +100,7 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
-export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false }) => {
+export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false, aptos = null }) => {
   const ehEdital = documento === 'edital';
   // Edital: exige o número emitido (tela Editais) — fonte única da numeração
   let editalReg = null;
@@ -448,12 +448,45 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     ]),
   ];
 
-  // Lista de presença a partir da página seguinte (mesmo padrão do documento solto)
+  // Relação de Aptos a Votar a partir da página seguinte
   let filhos = children;
-  if (comLista) {
-    const { PageBreak } = await import('docx');
-    const lista = await conteudoListaPresencaGLEMT({ balaustre });
-    filhos = [...children, new Paragraph({ children: [new PageBreak()] }), ...lista.children];
+  if (comLista && Array.isArray(aptos)) {
+    const { PageBreak, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import('docx');
+    const W = 11906 - (margensDoModelo(modelo).left || 1134) - (margensDoModelo(modelo).right || 1134);
+    const CW = [600, Math.round(W * 0.42), 1100, Math.round(W * 0.2)];
+    CW.push(W - CW[0] - CW[1] - CW[2] - CW[3] > 0 ? W - CW[0] - CW[1] - CW[2] : 2000);
+    const b = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+    const bordas = { top: b, bottom: b, left: b, right: b };
+    const pad = { top: 60, bottom: 60, left: 100, right: 100 };
+    const celA = (txt, w, { bold = false, align = AlignmentType.LEFT, head = false } = {}) => new TableCell({
+      borders: bordas, width: { size: w, type: WidthType.DXA }, margins: pad,
+      ...(head ? { shading: { fill: 'D9D9D9', type: ShadingType.CLEAR } } : {}),
+      children: [par([ar(txt, { bold })], { align, after: 0 })],
+    });
+    const colunas = [CW[0], CW[1], CW[2], CW[3]];
+    filhos = [
+      ...children,
+      new Paragraph({ children: [new PageBreak()] }),
+      par([ar('RELAÇÃO DE IRMÃOS APTOS A VOTAR', { bold: true })], { align: AlignmentType.CENTER, after: 160 }),
+      new Table({
+        width: { size: W, type: WidthType.DXA }, columnWidths: colunas,
+        rows: [
+          new TableRow({ tableHeader: true, children: [
+            celA('Nº', colunas[0], { bold: true, align: AlignmentType.CENTER, head: true }),
+            celA('Irmão', colunas[1], { bold: true, head: true }),
+            celA('CIM', colunas[2], { bold: true, align: AlignmentType.CENTER, head: true }),
+            celA('Assinatura', colunas[3], { bold: true, align: AlignmentType.CENTER, head: true }),
+          ] }),
+          ...aptos.map((a, i) => new TableRow({ children: [
+            celA(String(i + 1), colunas[0], { align: AlignmentType.CENTER }),
+            celA(a.nome || '', colunas[1]),
+            celA(a.cim || '', colunas[2], { align: AlignmentType.CENTER }),
+            celA('', colunas[3]),
+          ] })),
+        ],
+      }),
+      par([ar(`Total de Irmãos aptos a votar: ${aptos.length}`)], { align: AlignmentType.LEFT, before: 120, after: 0 }),
+    ];
   }
 
   const doc = new Document({
@@ -468,7 +501,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     }],
   });
   const blob = await Packer.toBlob(doc);
-  const sufixo = comLista ? '_com_Lista' : '';
+  const sufixo = comLista ? '_com_Aptos' : '';
   const nome = ehEdital
     ? `Edital_${String(VARS.numero_edital || '').replace('/', '-')}_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}${sufixo}.docx`
     : `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}${sufixo}.docx`;
@@ -480,7 +513,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
 };
 
 // Edital de convocação da eleição GLEMT (assinado só pelo VM)
-export const gerarEditalEleicaoGLEMT = async ({ balaustre, comLista = false }) => gerarAtaSessao({ balaustre, documento: 'edital', comLista });
+export const gerarEditalEleicaoGLEMT = async ({ balaustre, comLista = false, aptos = null }) => gerarAtaSessao({ balaustre, documento: 'edital', comLista, aptos });
 
 // ════════════════════════════════════════════════════════════════════════
 // Lista de presença — Sessão Eleitoral da GLEMT (Mestres regulares na data)
