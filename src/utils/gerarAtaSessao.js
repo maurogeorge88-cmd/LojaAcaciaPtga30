@@ -112,6 +112,13 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       if (ehEdital && !ed) throw new Error('o edital vinculado não foi encontrado em Editais. Emita um novo na aba Configuração.');
       editalReg = ed || null; // na ata o número é só informativo: sem edital, a variável fica vazia
     }
+    // Sem o vínculo no balaustre (ex.: emitido antes do vínculo ser gravado), procura pela origem
+    if (!editalReg && balaustre.id) {
+      const { data: porOrigem } = await supabase.from('editais').select('*')
+        .eq('origem_id', String(balaustre.id)).eq('tipo', 'eleicao_glemt')
+        .order('ano', { ascending: false }).order('numero', { ascending: false }).limit(1);
+      editalReg = (porOrigem && porOrigem[0]) || null;
+    }
   }
   // Dados da Loja e nomes dos irmãos (busca própria: o componente não precisa passar nada)
   const [{ data: lojaData }, { data: irmaosData }] = await Promise.all([
