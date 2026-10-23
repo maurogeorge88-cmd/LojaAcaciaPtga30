@@ -423,7 +423,15 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const CW = [500, 3500, 950, W - 4950];
   // Votantes em trânsito (Irmãos de outras Lojas): tabela própria, no fim da lista
   const transitoLista = el.voto_transito ? (el.votantes_transito || []).filter(v => v && (v.nome || '').trim()) : [];
-  const CW_T = [500, 3000, 900, 2600, W - 9000];
+  const CW_T = [500, 3500, 950, W - 4950];
+  // Uma tabela por Oriente/Oficina, na ordem em que foram cadastrados
+  const gruposTransito = transitoLista.reduce((acc, v) => {
+    const chave = `${(v.oriente || '').trim()}||${(v.loja || '').trim()}`;
+    let g = acc.find(x => x.chave === chave);
+    if (!g) { g = { chave, oriente: (v.oriente || '').trim(), loja: (v.loja || '').trim(), irmaos: [] }; acc.push(g); }
+    g.irmaos.push(v);
+    return acc;
+  }, []);
   const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
     children: [par([ar(t, { ...o, size: FONTE_TABELA })], { align: o.align ?? AlignmentType.LEFT })] }); // tabela: fonte do modelo (padrão 11)
 
@@ -461,25 +469,27 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
         })(),
         tabela,
         par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
-        // Votantes em trânsito: só aparece se houver algum cadastrado
+        // Votantes em trânsito: título, e uma tabela por Oriente/Oficina (só se houver algum cadastrado)
         ...(transitoLista.length ? [
-          par([ar('VOTANTES EM TRÂNSITO', { bold: true })], { align: AlignmentType.LEFT, before: 400, after: 120 }),
-          new Table({
-            width: { size: W, type: WidthType.DXA }, columnWidths: CW_T,
-            rows: [
-              new TableRow({ tableHeader: true, children: [
-                cel('Nº', CW_T[0], { bold: true, align: AlignmentType.CENTER }), cel('Irmão', CW_T[1], { bold: true }),
-                cel('CIM', CW_T[2], { bold: true, align: AlignmentType.CENTER }), cel('Loja de origem', CW_T[3], { bold: true }),
-                cel('Assinatura', CW_T[4], { bold: true }),
-              ] }),
-              ...transitoLista.map((v, i) => new TableRow({ children: [
-                cel(String(i + 1), CW_T[0], { align: AlignmentType.CENTER }), cel(v.nome || '', CW_T[1]),
-                cel(v.cim || '', CW_T[2], { align: AlignmentType.CENTER }),
-                cel([v.loja, v.oriente ? `Oriente de ${v.oriente}` : ''].filter(Boolean).join(' – '), CW_T[3]),
-                cel('', CW_T[4]),
-              ] })),
-            ],
-          }),
+          par([ar('VOTANTES EM TRÂNSITO', { bold: true })], { align: AlignmentType.CENTER, before: 500, after: 160 }),
+          ...gruposTransito.flatMap(g => [
+            par([ar('Oriente: ', { bold: true }), ar(g.oriente || '[oriente]', { bold: true })], { align: AlignmentType.LEFT, after: 0 }),
+            par([ar('Oficina: ', { bold: true }), ar(g.loja || '[oficina]', { bold: true })], { align: AlignmentType.LEFT, after: 120 }),
+            new Table({
+              width: { size: W, type: WidthType.DXA }, columnWidths: CW_T,
+              rows: [
+                new TableRow({ tableHeader: true, children: [
+                  cel('Nº', CW_T[0], { bold: true, align: AlignmentType.CENTER }), cel('Irmão', CW_T[1], { bold: true }),
+                  cel('CIM', CW_T[2], { bold: true, align: AlignmentType.CENTER }), cel('Assinatura', CW_T[3], { bold: true, align: AlignmentType.CENTER }),
+                ] }),
+                ...g.irmaos.map((v, i) => new TableRow({ children: [
+                  cel(String(i + 1), CW_T[0], { align: AlignmentType.CENTER }), cel(v.nome || '', CW_T[1]),
+                  cel(v.cim || '', CW_T[2], { align: AlignmentType.CENTER }), cel('', CW_T[3]),
+                ] })),
+              ],
+            }),
+            par([ar('')], { after: 160 }),
+          ]),
           par([ar(`Total de votantes em trânsito: ${transitoLista.length}`)], { align: AlignmentType.LEFT, after: 0 }),
         ] : []),
         // Assinatura do Venerável Mestre (cargo editável no modelo, aba Assinaturas)
