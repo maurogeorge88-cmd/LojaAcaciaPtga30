@@ -234,6 +234,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   // ── estilos ──
   const inp = { width: '100%', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.85rem', boxSizing: 'border-box' };
   const lab = { fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' };
+  const INP_T = { padding: '0.35rem 0.6rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.78rem', outline: 'none', minWidth: 0 };
   const card = { border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.85rem', background: 'var(--color-surface)' };
   const btn = (cor, fundo) => ({ padding: '0.45rem 0.9rem', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', border: `1px solid ${cor}`, background: fundo || 'transparent', color: cor });
   const g2 = { display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '0.6rem' };
@@ -421,6 +422,37 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                 <button type="button" disabled={apt.carregando} onClick={() => pdf('inaptos')} style={btn('#ef4444', 'rgba(239,68,68,0.1)')}>📄 PDF Inaptos</button>
                 <button type="button" disabled={apt.carregando} onClick={() => pdf('ambos')} style={btn(ROXO, 'rgba(139,92,246,0.1)')}>📄 PDF Aptos e Inaptos</button>
                 <button type="button" disabled={!!gerando} onClick={() => word('lista')} style={btn('var(--color-text)')}>{gerando === 'lista' ? '⏳' : '📋'} Lista de Presença (Word)</button>
+              </div>
+              {/* Voto em trânsito: Irmãos de outras Lojas (raro) — contados à parte dos votantes da Loja */}
+              <div style={{ ...card, borderLeft: '4px solid #f59e0b' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text)' }}>
+                  <input type="checkbox" disabled={!podeEditar} checked={!!el.voto_transito}
+                    onChange={e => setEl({ voto_transito: e.target.checked })} />
+                  🧳 Haverá votantes em trânsito (Irmãos de outras Lojas)
+                </label>
+                {el.voto_transito && (<>
+                  <p style={{ margin: '0.4rem 0 0.5rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                    Entram no parágrafo próprio da ata e numa seção ao final da lista de presença. Não somam aos votantes da Loja.
+                  </p>
+                  {(el.votantes_transito || []).map((v, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 1.4fr 1fr auto', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                      {[['nome', 'Nome do Irmão'], ['cim', 'CIM'], ['loja', 'Loja de origem (nome e nº)'], ['oriente', 'Oriente']].map(([k, ph]) => (
+                        <input key={k} type="text" placeholder={ph} disabled={!podeEditar} value={v[k] || ''}
+                          onChange={e => setEl({ votantes_transito: (el.votantes_transito || []).map((x, j) => (j === i ? { ...x, [k]: e.target.value } : x)) })}
+                          style={INP_T} />
+                      ))}
+                      <button type="button" disabled={!podeEditar} title="Remover"
+                        onClick={() => setEl({ votantes_transito: (el.votantes_transito || []).filter((x, j) => j !== i) })}
+                        style={btn('#ef4444', 'rgba(239,68,68,0.1)')}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" disabled={!podeEditar}
+                    onClick={() => setEl({ votantes_transito: [...(el.votantes_transito || []), { nome: '', cim: '', loja: '', oriente: '' }] })}
+                    style={btn('#f59e0b', 'rgba(245,158,11,0.12)')}>➕ Adicionar Irmão em trânsito</button>
+                  <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', fontWeight: 700, color: '#f59e0b' }}>
+                    Votantes em trânsito: {(el.votantes_transito || []).filter(v => (v.nome || '').trim()).length}
+                  </p>
+                </>)}
               </div>
               <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
                 Regras: tesouraria com no máximo 2 meses em aberto e presença mínima de 50% — período {apt.periodo || '…'}.
