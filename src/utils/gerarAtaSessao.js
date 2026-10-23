@@ -328,6 +328,12 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       });
       chapas.forEach((c, i) => { VARS[`votos_chapa${i + 1}`] = String(totalChapaG(i)); });
     }
+    // Bloco de apuração: uma entrada por chapa cadastrada (serve para a apuração e para a proclamação).
+    // Com apuração separada por loja, os votos já são os do consolidado.
+    VARS.apuracao_chapas = !chapas.length ? '[chapas].' : chapas.map((c, i) => [
+      `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}* para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente,`,
+      `§${(c.gm || '[nome]').toUpperCase()} - GRÃO MESTRE e ${(c.gm_adjunto || '[nome]').toUpperCase()} - GRÃO MESTRE ADJUNTO com ${VARS[`votos_chapa${i + 1}`] ?? num(c.votos)} votos válidos.`,
+    ].join('\n')).join('\n');
     chapas.forEach((c, i) => {
       VARS[`chapa${i + 1}_nome`] = c.nome || '';
       VARS[`chapa${i + 1}_gm`] = c.gm || '';
