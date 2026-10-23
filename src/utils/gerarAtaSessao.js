@@ -225,16 +225,24 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
         const [a, m, di] = d.split('-').map(Number);
         return `${String(di).padStart(2, '0')} de ${MESES[m - 1]} de ${a}`;
       })(),
-      chapas_apresentadas: chapas.length
+      // Nome da chapa em negrito e uma linha por cargo (§ = linhas coladas, sem espaço entre elas)
+      chapas_apresentadas: !chapas.length ? '[chapas].' : chapas.map((c, i, arr) => [
+        `§*Chapa ${c.nome || '[nome]'}*`,
+        `§Grão Mestre - Ir∴ ${c.gm || '[nome]'} - Grão-Mestre;`,
+        `§Grão Mestre Adjunto - Ir∴ ${c.gm_adjunto || '[nome]'} - Grão-Mestre Adjunto${i === arr.length - 1 ? '.' : ';'}`,
+        ...(i === arr.length - 1 ? [] : ['']),
+      ].join('\n')).join('\n'),
+      // Formato corrido antigo, caso algum modelo ainda precise
+      chapas_apresentadas_corrida: chapas.length
         ? chapas.map(c => `a Chapa ${c.nome || '[nome]'}, para a qual o Ir∴ ${c.gm || '[nome]'} é candidato para o cargo de Grão-Mestre e o Ir∴ ${c.gm_adjunto || '[nome]'}, para o cargo de Grão-Mestre Adjunto`).join('; e, ') + '.'
         : '[chapas].',
       escrutinador1_nome: nomeIr(el.escrutinador1_id) || '[Escrutinador 1]',
       escrutinador2_nome: nomeIr(el.escrutinador2_id) || '[Escrutinador 2]',
-      // Nome da chapa em negrito, e abaixo uma linha por cargo (▪ = linhas coladas, sem espaço entre elas)
+      // Nome da chapa em negrito, e abaixo uma linha por cargo (§ = linhas coladas, sem espaço entre elas)
       chapas_lista: chapas.map((c, i, arr) => [
-        `▪*Chapa ${c.nome || '[nome]'}*`,
-        `▪Grão Mestre - Ir∴ ${c.gm || '[nome]'} - Grão-Mestre;`,
-        `▪Grão Mestre Adjunto - Ir∴ ${c.gm_adjunto || '[nome]'} - Grão-Mestre Adjunto${i === arr.length - 1 ? '.' : ';'}`,
+        `§*Chapa ${c.nome || '[nome]'}*`,
+        `§Grão Mestre - Ir∴ ${c.gm || '[nome]'} - Grão-Mestre;`,
+        `§Grão Mestre Adjunto - Ir∴ ${c.gm_adjunto || '[nome]'} - Grão-Mestre Adjunto${i === arr.length - 1 ? '.' : ';'}`,
         ...(i === arr.length - 1 ? [] : ['']),
       ].join('\n')).join('\n'),
       // Mesma lista em uma linha só, para quem preferir o formato corrido
@@ -262,8 +270,8 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
           return acc;
         }, [])
         .map((g, gi, todas) => [
-          `▪Oficina: ${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}:`,
-          ...g.irmaos.map((v, i) => `▪Ir∴ ${v.nome}${v.cim ? `, CIM nº ${v.cim}` : ''}${gi === todas.length - 1 && i === g.irmaos.length - 1 ? '.' : ';'}`),
+          `§Oficina: ${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}:`,
+          ...g.irmaos.map((v, i) => `§Ir∴ ${v.nome}${v.cim ? `, CIM nº ${v.cim}` : ''}${gi === todas.length - 1 && i === g.irmaos.length - 1 ? '.' : ';'}`),
           ...(gi === todas.length - 1 ? [] : ['']),
         ].join('\n')).join('\n'),
       total_votantes_loja: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
@@ -294,7 +302,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       apuracao_transito_todas: separada
         ? lojasTr.map(g => {
             const u = urnaDe(g.chave);
-            return `▪${descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd)}`;
+            return `§${descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd)}`;
           }).join('\n')
         : '',
       apuracao_total: descreveUrna('Resultado geral', chapas.map((c, i) => totalChapaG(i)), brancosG, nulosG, votantesG),
