@@ -252,15 +252,20 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       qtd_votantes_transito_extenso: numeroExtenso(transito.length),
       palavra_irmao_transito: transito.length === 1 ? 'Irmão' : 'Irmãos',
       plural_transito: transito.length === 1 ? '' : 's',
-      votantes_transito: transito.length
-        ? transito.map(v => {
-            const partes = [`Ir∴ ${v.nome}`];
-            if (v.cim) partes.push(`CIM nº ${v.cim}`);
-            if (v.loja) partes.push(`da ${v.loja}`);
-            if (v.oriente) partes.push(`Oriente de ${v.oriente}`);
-            return `▪${partes.join(', ')};`;
-          }).join('\n')
-        : '',
+      // Agrupado por Oficina: cabeçalho da loja e, abaixo, um Irmão por linha
+      votantes_transito: !transito.length ? '' : transito
+        .reduce((acc, v) => {
+          const chave = `${(v.oriente || '').trim()}||${(v.loja || '').trim()}`;
+          let g = acc.find(x => x.chave === chave);
+          if (!g) { g = { chave, oriente: (v.oriente || '').trim(), loja: (v.loja || '').trim(), irmaos: [] }; acc.push(g); }
+          g.irmaos.push(v);
+          return acc;
+        }, [])
+        .map((g, gi, todas) => [
+          `▪Oficina: ${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}:`,
+          ...g.irmaos.map((v, i) => `▪Ir∴ ${v.nome}${v.cim ? `, CIM nº ${v.cim}` : ''}${gi === todas.length - 1 && i === g.irmaos.length - 1 ? '.' : ';'}`),
+          ...(gi === todas.length - 1 ? [] : ['']),
+        ].join('\n')).join('\n'),
       total_votantes_loja: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
     });
 
