@@ -215,12 +215,19 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const word = async (qual) => {
     setGerando(qual);
     try {
-      if ((qual === 'edital' || qual === 'edital_lista') && !edital) { showError('Emita o edital (número) na aba Configuração antes de gerar o documento.'); return; }
-      if (qual === 'edital' || qual === 'edital_lista') { const r = await gerarEditalEleicaoGLEMT({ balaustre: balaustreAtual, comLista: qual === 'edital_lista' }); if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`); }
+      if ((qual === 'edital' || qual === 'edital_aptos') && !edital) { showError('Emita o edital (número) na aba Configuração antes de gerar o documento.'); return; }
+      if (qual === 'edital' || qual === 'edital_aptos') {
+        if (qual === 'edital_aptos' && !aptos.length) { showError('Nenhum Irmão apto a votar.'); return; }
+        const r = await gerarEditalEleicaoGLEMT({
+          balaustre: balaustreAtual, comLista: qual === 'edital_aptos',
+          aptos: qual === 'edital_aptos' ? aptos.map(l => ({ nome: l.irmao?.nome || l.nomeCurto || '', cim: l.irmao?.cim || '' })) : null,
+        });
+        if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
+      }
       if (qual === 'lista') await gerarListaPresencaEleicaoGLEMT({ balaustre: balaustreAtual });
-      if (qual === 'ata' || qual === 'ata_lista') {
+      if (qual === 'ata') {
         if (pendente) { showError('Sessão pendente: marque como realizada para numerar o balaustre e gerar a ata.'); return; }
-        const r = await gerarAtaSessao({ balaustre: balaustreAtual, comLista: qual === 'ata_lista' });
+        const r = await gerarAtaSessao({ balaustre: balaustreAtual });
         if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
       }
       if (alterado && podeEditar) salvar(true);
@@ -604,10 +611,9 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
               {[
                 ['edital', '📢 Edital de Convocação', edital ? `Edital nº ${formatarNumeroEdital(edital.numero, edital.ano)} — Word, aos Mestres, com as chapas` : 'Bloqueado: emita o edital na aba Configuração', !edital],
-                ['edital_lista', '📢 Edital + Lista de Presença', edital ? 'Um só arquivo: edital e, a partir da 2ª página, a lista' : 'Bloqueado: emita o edital na aba Configuração', !edital],
+                ['edital_aptos', '📎 Edital + Relação de Aptos a Votar', edital ? 'Um só arquivo: edital e, a partir da 2ª página, os Irmãos aptos' : 'Bloqueado: emita o edital na aba Configuração', !edital],
                 ['lista', '📋 Lista de Presença', 'Word — presentes marcados (ou todos os aptos)', false],
                 ['ata', '📜 Ata da Eleição', pendente ? 'Bloqueada: sessão pendente' : 'Word — modelo "Ata Eleição GLEMT"', pendente],
-                ['ata_lista', '📜 Ata + Lista de Presença', pendente ? 'Bloqueada: sessão pendente' : 'Um só arquivo: ata e, a partir da 2ª página, a lista', pendente],
               ].map(([k, t, d, bloq]) => (
                 <button key={k} type="button" disabled={!!gerando || bloq} onClick={() => word(k)}
                   style={{ ...card, textAlign: 'left', cursor: bloq ? 'not-allowed' : 'pointer', opacity: bloq ? 0.5 : 1 }}>
