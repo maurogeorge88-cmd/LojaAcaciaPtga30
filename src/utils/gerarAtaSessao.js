@@ -246,6 +246,58 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
         : '',
       total_votantes_loja: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
     });
+
+    // ── Apuração separada por urna (Loja + cada loja em trânsito) ──────────
+    const lojasTr = transito.reduce((acc, v) => {
+      const chave = `${(v.oriente || '').trim()}||${(v.loja || '').trim()}`;
+      let g = acc.find(x => x.chave === chave);
+      if (!g) { g = { chave, oriente: (v.oriente || '').trim(), loja: (v.loja || '').trim(), qtd: 0 }; acc.push(g); }
+      g.qtd += 1;
+      return acc;
+    }, []);
+    const separada = !!el.apuracao_separada && lojasTr.length > 0;
+    const urnaDe = (chave) => (el.urnas_transito || {})[chave] || {};
+    const descreveUrna = (nome, votos, brancos, nulos, votantes) =>
+      `${nome}: ${chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${votos[i]} voto(s)`).join('; ')}; `
+      + `votos em branco: ${brancos}; votos nulos: ${nulos}; total de votantes: ${votantes}.`;
+    const totalChapaG = (i) => num(chapas[i]?.votos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) : 0);
+    const brancosG = num(el.brancos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).brancos), 0) : 0);
+    const nulosG = num(el.nulos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).nulos), 0) : 0);
+    const votantesLoja = num(el.votantes) || (el.presentes || []).length;
+    const votantesG = votantesLoja + (separada ? lojasTr.reduce((t, g) => t + (num(urnaDe(g.chave).votantes) || g.qtd), 0) : 0);
+    const nomeNossaLoja = `A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`;
+
+    Object.assign(VARS, {
+      apuracao_loja: descreveUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), num(el.brancos), num(el.nulos), votantesLoja),
+      apuracao_transito_todas: separada
+        ? lojasTr.map(g => {
+            const u = urnaDe(g.chave);
+            return `▪${descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd)}`;
+          }).join('\n')
+        : '',
+      apuracao_total: descreveUrna('Resultado geral', chapas.map((c, i) => totalChapaG(i)), brancosG, nulosG, votantesG),
+      total_votantes_geral: String(votantesG),
+      qtd_lojas_transito: String(lojasTr.length),
+    });
+    lojasTr.forEach((g, k) => {
+      const u = urnaDe(g.chave);
+      VARS[`apuracao_transito${k + 1}`] = descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd);
+      VARS[`loja_transito${k + 1}`] = g.loja || '';
+      VARS[`oriente_transito${k + 1}`] = g.oriente || '';
+    });
+    // Com urnas separadas, o resultado e a chapa vencedora passam a ser os do consolidado
+    if (separada) {
+      const vencG = chapas.map((c, i) => ({ ...c, i, v: totalChapaG(i) })).sort((a, b) => b.v - a.v)[0];
+      const empateG = chapas.filter((c, i) => totalChapaG(i) === (vencG ? vencG.v : 0)).length > 1;
+      Object.assign(VARS, {
+        resultado_apuracao: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${totalChapaG(i)} voto(s)`).join('; ') + '.',
+        votos_brancos: String(brancosG),
+        votos_nulos: String(nulosG),
+        total_votantes: String(votantesG),
+        chapa_vencedora: !vencG ? '[chapa]' : empateG ? 'votação empatada entre as chapas' : `Chapa ${vencG.i + 1} – ${vencG.nome}`,
+      });
+      chapas.forEach((c, i) => { VARS[`votos_chapa${i + 1}`] = String(totalChapaG(i)); });
+    }
     chapas.forEach((c, i) => {
       VARS[`chapa${i + 1}_nome`] = c.nome || '';
       VARS[`chapa${i + 1}_gm`] = c.gm || '';
