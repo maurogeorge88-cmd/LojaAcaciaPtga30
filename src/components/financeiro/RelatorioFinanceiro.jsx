@@ -37,10 +37,19 @@ export default function RelatorioFinanceiro({ showError }) {
 
   const carregarConf = async () => {
     try {
-      const { data, error } = await supabase
-        .from('relatorio_financeiro_conferencia')
-        .select('lancamento_id, status_conf, observacao');
-      if (error) throw error;
+      // Paginado: o Supabase devolve no máximo 1000 linhas por consulta — sem isso,
+      // as marcas além da 1000ª sumiam da tela ao recarregar
+      const data = [];
+      for (let de = 0; ; de += 1000) {
+        const { data: pagina, error } = await supabase
+          .from('relatorio_financeiro_conferencia')
+          .select('lancamento_id, status_conf, observacao')
+          .order('lancamento_id', { ascending: true })
+          .range(de, de + 999);
+        if (error) throw error;
+        data.push(...(pagina || []));
+        if (!pagina || pagina.length < 1000) break;
+      }
       const mapa = {};
       (data || []).forEach(r => {
         mapa[r.lancamento_id] = { status: r.status_conf, obs: r.observacao || '' };
@@ -55,6 +64,7 @@ export default function RelatorioFinanceiro({ showError }) {
       }
     } catch (e) {
       console.error('Erro ao carregar conferências:', e.message);
+      showError?.('Erro ao carregar as conferências: ' + e.message);
     }
   };
 
@@ -141,20 +151,31 @@ export default function RelatorioFinanceiro({ showError }) {
         // Remover registro se ambos nulos
         const obsAtual = atual.obs || '';
         if (!obsAtual) {
-          await supabase.from('relatorio_financeiro_conferencia').delete().eq('lancamento_id', Number(id));
+          const { error } = await supabase.from('relatorio_financeiro_conferencia').delete().eq('lancamento_id', Number(id));
+          if (error) throw error;
         } else {
-          await supabase.from('relatorio_financeiro_conferencia')
+          const { error } = await supabase.from('relatorio_financeiro_conferencia')
             .update({ status_conf: 'ok', observacao: obsAtual })
-            .eq('lancamento_id', id);
+            .eq('lancamento_id', Number(id));
+          if (error) throw error;
           // Mantém com status 'ok' se tinha obs — não deletar
         }
       } else {
-        await supabase.from('relatorio_financeiro_conferencia')
-          .upsert({ lancamento_id: id, status_conf: statusFinal, observacao: atual.obs || '' },
-                  { onConflict: 'lancamento_id' });
+        // .select() confirma que o banco gravou: sem permissão (RLS) volta vazio e a marca sumiria ao recarregar
+        const { data, error } = await supabase.from('relatorio_financeiro_conferencia')
+          .upsert({ lancamento_id: Number(id), status_conf: statusFinal, observacao: atual.obs || '' },
+                  { onConflict: 'lancamento_id' })
+          .select();
+        if (error) throw error;
+        if (!data?.length) throw new Error('o banco não permitiu gravar a marcação (sem permissão).');
       }
     } catch (e) {
       console.error('Erro ao salvar conferência:', e.message);
+      showError?.('Erro ao salvar a conferência: ' + e.message);
+      // Desfaz a marca na tela para não mostrar algo que o banco não guardou
+      const desfeito = { ...confRef.current, [id]: atual };
+      setConf(desfeito);
+      confRef.current = desfeito;
     } finally {
       setSalvando(s => { const n = { ...s }; delete n[id]; return n; });
     }
@@ -168,11 +189,15 @@ export default function RelatorioFinanceiro({ showError }) {
     confRef.current = novoConf;
     setModalObs(null);
     try {
-      await supabase.from('relatorio_financeiro_conferencia')
+      const { data, error } = await supabase.from('relatorio_financeiro_conferencia')
         .upsert({ lancamento_id: Number(id), status_conf: atual.status || 'ver', observacao: texto },
-                { onConflict: 'lancamento_id' });
+                { onConflict: 'lancamento_id' })
+        .select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu gravar (sem permissão).');
     } catch (e) {
       console.error('Erro ao salvar observação:', e.message);
+      showError?.('Erro ao salvar a observação: ' + e.message);
     }
   };
 
