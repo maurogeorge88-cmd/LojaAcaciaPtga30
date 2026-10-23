@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { calcularAptidaoVoto } from '../../utils/calcularAptidaoVoto';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
+import { gerarEditalAptosPDF } from '../../utils/gerarEditalAptosPDF';
 import { gerarAtaSessao, gerarEditalEleicaoGLEMT, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
 import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 import { emitirEdital, buscarEdital, formatarNumeroEdital } from '../../utils/editais';
@@ -216,13 +217,17 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
     setGerando(qual);
     try {
       if ((qual === 'edital' || qual === 'edital_aptos') && !edital) { showError('Emita o edital (número) na aba Configuração antes de gerar o documento.'); return; }
-      if (qual === 'edital' || qual === 'edital_aptos') {
-        if (qual === 'edital_aptos' && !aptos.length) { showError('Nenhum Irmão apto a votar.'); return; }
-        const r = await gerarEditalEleicaoGLEMT({
-          balaustre: balaustreAtual, comLista: qual === 'edital_aptos',
-          aptos: qual === 'edital_aptos' ? aptos.map(l => ({ nome: l.irmao?.nome || l.nomeCurto || '', cim: l.irmao?.cim || '' })) : null,
-        });
+      if (qual === 'edital') {
+        const r = await gerarEditalEleicaoGLEMT({ balaustre: balaustreAtual });
         if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
+      }
+      // PDF único: edital + relação de aptos (padrão dos dois documentos)
+      if (qual === 'edital_aptos') {
+        if (!aptos.length) { showError('Nenhum Irmão apto a votar.'); return; }
+        await gerarEditalAptosPDF({
+          balaustre: balaustreAtual, aptos, dadosLojaPDF: apt.dadosLoja, logoB64: LOGO_LOJA_B64,
+          periodo: apt.periodo, assinantes: apt.assinantes, glemt: { periodo: periodoTxt, dataSessao: ref },
+        });
       }
       if (qual === 'lista') await gerarListaPresencaEleicaoGLEMT({ balaustre: balaustreAtual });
       if (qual === 'ata') {
@@ -611,7 +616,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
               {[
                 ['edital', '📢 Edital de Convocação', edital ? `Edital nº ${formatarNumeroEdital(edital.numero, edital.ano)} — Word, aos Mestres, com as chapas` : 'Bloqueado: emita o edital na aba Configuração', !edital],
-                ['edital_aptos', '📎 Edital + Relação de Aptos a Votar', edital ? 'Um só arquivo: edital e, a partir da 2ª página, os Irmãos aptos' : 'Bloqueado: emita o edital na aba Configuração', !edital],
+                ['edital_aptos', '📎 Edital + Aptos a Votar (PDF)', edital ? 'PDF único: edital e, nas páginas seguintes, a relação de aptos' : 'Bloqueado: emita o edital na aba Configuração', !edital],
                 ['lista', '📋 Lista de Presença', 'Word — presentes marcados (ou todos os aptos)', false],
                 ['ata', '📜 Ata da Eleição', pendente ? 'Bloqueada: sessão pendente' : 'Word — modelo "Ata Eleição GLEMT"', pendente],
               ].map(([k, t, d, bloq]) => (
