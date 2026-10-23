@@ -100,7 +100,7 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
-export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false, aptos = null }) => {
+export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false, aptos = null, retornarTexto = false }) => {
   const ehEdital = documento === 'edital';
   // Edital: exige o número emitido (tela Editais) — fonte única da numeração
   let editalReg = null;
@@ -412,6 +412,25 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       // linhas de um mesmo bloco (ex.: chapa do edital): sem espaço entre elas
       ? par(runs(l.slice(1)), { align: AlignmentType.LEFT, after: 0 })
       : par(runs(l), { align: ALINHA(modelo.alinhamento_corpo, AlignmentType.JUSTIFIED) })));
+
+  // Conteúdo em texto puro (usado pelo PDF que junta edital + relação de aptos)
+  if (retornarTexto) {
+    const tituloBaseT = modelo.titulo_doc || (ehEdital ? TITULO_EDITAL_GLEMT_PADRAO : ehEleicao ? TITULO_ELEICAO_GLEMT_PADRAO : TITULO_ATA_PADRAO);
+    const tituloFinalT = (ehEdital && !tituloBaseT.includes('{numero_edital}'))
+      ? tituloBaseT.replace(/^[^\n]*/, (l) => `${l.trimEnd()} Nº {numero_edital}`) : tituloBaseT;
+    return {
+      titulo: interp(tituloFinalT).replace(/\*/g, '').split('\n').filter(l => l.trim() !== ''),
+      subtitulo: interp(modelo.subtitulo || '').replace(/\*/g, '').split('\n').filter(l => l.trim() !== ''),
+      // cada parágrafo já interpolado; § marca linha colada à anterior
+      paragrafos: corpoTexto.split('\n'),
+      assinaturas: (ehEdital
+        ? [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre']]
+        : [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre'], [VARS.orador_nome, modelo.assinatura_2_cargo || 'Orador'], [VARS.secretario_nome, modelo.assinatura_3_cargo || 'Secretário']]
+      ).map(([nome, cargo]) => ({ nome, cargo })),
+      dadosLoja, numeroEdital: VARS.numero_edital || '', periodo: VARS.periodo_glemt_barra || '',
+      mostrarLogo: !!modelo.mostrar_logo, cabecalhoTexto: modelo.cabecalho_texto,
+    };
+  }
 
   const children = [
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
