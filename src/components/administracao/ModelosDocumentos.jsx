@@ -238,6 +238,7 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{chanceler_nome}',           desc: 'Atas de sessão: Chanceler (Corpo Adm. do ano)' },
   { var: '{chapas_lista}',             desc: 'Eleição GLEMT: todas as chapas — nome em negrito e uma linha por cargo (use em parágrafo próprio)' },
   { var: '{chapas_lista_corrida}',     desc: 'Eleição GLEMT: todas as chapas em uma linha só (formato corrido)' },
+  { var: '{chapas_apresentadas_corrida}', desc: 'Eleição GLEMT: chapas apresentadas em texto corrido (formato antigo)' },
   { var: '{resultado_apuracao}',       desc: 'Eleição GLEMT: votos de cada chapa' },
   { var: '{chapa1_nome}',              desc: 'Eleição GLEMT: nome da Chapa 1 (chapa2_..., chapa3_...)' },
   { var: '{chapa1_gm}',                desc: 'Eleição GLEMT: Grão-Mestre da Chapa 1' },
