@@ -243,7 +243,28 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const ABAS = [['config', '⚙️ Configuração'], ['aptos', '🗳️ Aptos e Presença'], ['apuracao', '📊 Apuração'], ['docs', '📄 Documentos']];
   const num = (v) => Number(v) || 0;
   const totalVotos = (el.chapas || []).reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos);
-  const vencedora = [...(el.chapas || [])].map((c, i) => ({ ...c, i })).filter(c => c.nome || c.gm).sort((a, b) => num(b.votos) - num(a.votos))[0];
+  // ── Apuração separada por loja (urnas) ──────────────────────────────────
+  // Lojas dos votantes em trânsito, na ordem de cadastro
+  const lojasTransito = !el.voto_transito ? [] : (el.votantes_transito || [])
+    .filter(v => v && (v.nome || '').trim())
+    .reduce((acc, v) => {
+      const chave = `${(v.oriente || '').trim()}||${(v.loja || '').trim()}`;
+      let g = acc.find(x => x.chave === chave);
+      if (!g) { g = { chave, oriente: (v.oriente || '').trim(), loja: (v.loja || '').trim(), qtd: 0 }; acc.push(g); }
+      g.qtd += 1;
+      return acc;
+    }, []);
+  const separada = !!el.apuracao_separada && lojasTransito.length > 0;
+  // Urna de cada loja em trânsito (votos por chapa, brancos, nulos e votantes)
+  const urna = (chave) => (el.urnas_transito || {})[chave] || {};
+  const setUrna = (chave, campos) => setEl({ urnas_transito: { ...(el.urnas_transito || {}), [chave]: { ...urna(chave), ...campos } } });
+  const votosUrna = (u) => (el.chapas || []).reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos);
+  // Totais: a soma da nossa Loja com todas as urnas em trânsito
+  const totalChapa = (i) => num((el.chapas || [])[i]?.votos) + (separada ? lojasTransito.reduce((t, g) => t + num(urna(g.chave)[`chapa${i + 1}`]), 0) : 0);
+  const totalBrancos = num(el.brancos) + (separada ? lojasTransito.reduce((t, g) => t + num(urna(g.chave).brancos), 0) : 0);
+  const totalNulos = num(el.nulos) + (separada ? lojasTransito.reduce((t, g) => t + num(urna(g.chave).nulos), 0) : 0);
+  const totalGeral = (el.chapas || []).reduce((t, c, i) => t + totalChapa(i), 0) + totalBrancos + totalNulos;
+  const vencedora = [...(el.chapas || [])].map((c, i) => ({ ...c, i, votos: totalChapa(i) })).filter(c => c.nome || c.gm).sort((a, b) => num(b.votos) - num(a.votos))[0];
 
   // Cartão compacto (2 linhas):
   //  1) ☐ presença · Nome (dois nomes) · ★ · Lic
@@ -505,6 +526,75 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                   <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>⚠️ A soma dos votos difere do total de votantes — confira as cédulas.</p>
                 )}
               </div>
+
+              {/* Voto em trânsito: urna junto (padrão) ou urna separada por loja */}
+              {lojasTransito.length > 0 && (
+                <div style={{ ...card, borderLeft: '4px solid #f59e0b' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text)' }}>
+                    <input type="checkbox" checked={!!el.apuracao_separada} onChange={e => setEl({ apuracao_separada: e.target.checked })} />
+                    🗳️ Apuração separada por loja ({lojasTransito.length} loja(s) em trânsito)
+                  </label>
+                  <p style={{ margin: '0.35rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                    Desmarcado: os votantes em trânsito votam na mesma urna da Loja e entram nos campos acima.
+                    Marcado: cada loja tem a sua urna, apurada à parte, e a ata traz o resultado de cada uma e o consolidado.
+                  </p>
+                </div>
+              )}
+
+              {separada && lojasTransito.map(g => {
+                const u = urna(g.chave);
+                return (
+                  <div key={g.chave} style={{ ...card, borderLeft: `4px solid ${ROXO}` }}>
+                    <strong style={{ fontSize: '0.85rem', color: ROXO }}>🗳️ Urna — {g.loja || '[oficina]'}</strong>
+                    <p style={{ margin: '0.1rem 0 0.5rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                      Oriente de {g.oriente || '[oriente]'} · {g.qtd} votante(s) em trânsito
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.6rem' }}>
+                      {(el.chapas || []).map((c, i) => (
+                        <div key={i}>
+                          <label style={lab}>Chapa {i + 1}{c.nome ? ` – ${c.nome}` : ''}</label>
+                          <input type="number" min="0" style={inp} value={u[`chapa${i + 1}`] ?? ''}
+                            onChange={e => setUrna(g.chave, { [`chapa${i + 1}`]: e.target.value })} />
+                        </div>
+                      ))}
+                      <div><label style={lab}>Votos em branco</label>
+                        <input type="number" min="0" style={inp} value={u.brancos ?? ''} onChange={e => setUrna(g.chave, { brancos: e.target.value })} /></div>
+                      <div><label style={lab}>Votos nulos</label>
+                        <input type="number" min="0" style={inp} value={u.nulos ?? ''} onChange={e => setUrna(g.chave, { nulos: e.target.value })} /></div>
+                      <div><label style={lab}>Total de votantes</label>
+                        <input type="number" min="0" style={inp} value={u.votantes ?? ''} placeholder={String(g.qtd)} onChange={e => setUrna(g.chave, { votantes: e.target.value })} /></div>
+                    </div>
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: 'var(--color-text)' }}>
+                      Soma desta urna: <strong>{votosUrna(u)}</strong> · Votantes em trânsito desta loja: <strong>{g.qtd}</strong>
+                    </p>
+                    {votosUrna(u) > 0 && votosUrna(u) !== (num(u.votantes) || g.qtd) && (
+                      <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>⚠️ A soma desta urna difere do total de votantes.</p>
+                    )}
+                  </div>
+                );
+              })}
+
+              {separada && (
+                <div style={{ ...card, borderLeft: '4px solid #10b981' }}>
+                  <strong style={{ fontSize: '0.85rem', color: '#10b981' }}>Σ Resultado consolidado (Loja + trânsito)</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    {(el.chapas || []).map((c, i) => (
+                      <div key={i}>
+                        <div style={lab}>Chapa {i + 1}{c.nome ? ` – ${c.nome}` : ''}</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalChapa(i)}</div>
+                      </div>
+                    ))}
+                    <div><div style={lab}>Brancos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalBrancos}</div></div>
+                    <div><div style={lab}>Nulos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalNulos}</div></div>
+                    <div><div style={lab}>Total geral</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{totalGeral}</div></div>
+                  </div>
+                  {vencedora && num(vencedora.votos) > 0 && (
+                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
+                      Mais votada no consolidado: <strong style={{ color: '#10b981' }}>Chapa {vencedora.i + 1} – {vencedora.nome}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             </fieldset>
           )}
