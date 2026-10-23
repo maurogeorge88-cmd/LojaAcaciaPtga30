@@ -287,9 +287,12 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     }, []);
     const separada = !!el.apuracao_separada && lojasTr.length > 0;
     const urnaDe = (chave) => (el.urnas_transito || {})[chave] || {};
-    const descreveUrna = (nome, votos, brancos, nulos, votantes) =>
-      `${nome}: ${chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${votos[i]} voto(s)`).join('; ')}; `
-      + `votos em branco: ${brancos}; votos nulos: ${nulos}; total de votantes: ${votantes}.`;
+    const descreveUrna = (nome, votos, brancos, nulos, votantes, ultima = true) => [
+      `§${nome}:`,
+      ...chapas.map((c, i) => `§Chapa ${i + 1} – ${c.nome || '[nome]'}: ${votos[i]} voto(s);`),
+      `§votos em branco: ${brancos}; votos nulos: ${nulos}; total de votantes: ${votantes}.`,
+      ...(ultima ? [] : ['']),
+    ].join('\n');
     const totalChapaG = (i) => num(chapas[i]?.votos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) : 0);
     const brancosG = num(el.brancos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).brancos), 0) : 0);
     const nulosG = num(el.nulos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).nulos), 0) : 0);
@@ -298,14 +301,22 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     const nomeNossaLoja = `A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`;
 
     Object.assign(VARS, {
-      apuracao_loja: descreveUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), num(el.brancos), num(el.nulos), votantesLoja),
+      apuracao_loja: descreveUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), num(el.brancos), num(el.nulos), votantesLoja, !separada),
       apuracao_transito_todas: separada
-        ? lojasTr.map(g => {
+        ? lojasTr.map((g, k) => {
             const u = urnaDe(g.chave);
-            return `§${descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd)}`;
+            return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd, k === lojasTr.length - 1);
           }).join('\n')
         : '',
       apuracao_total: descreveUrna('Resultado geral', chapas.map((c, i) => totalChapaG(i)), brancosG, nulosG, votantesG),
+      // Todas as urnas numa variável só (nossa Loja primeiro, depois as de trânsito)
+      apuracao_urnas: separada
+        ? [descreveUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), num(el.brancos), num(el.nulos), votantesLoja, false),
+           ...lojasTr.map((g, k) => {
+             const u = urnaDe(g.chave);
+             return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd, k === lojasTr.length - 1);
+           })].join('\n')
+        : '',
       total_votantes_geral: String(votantesG),
       qtd_lojas_transito: String(lojasTr.length),
     });
@@ -330,9 +341,11 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     }
     // Bloco de apuração: uma entrada por chapa cadastrada (serve para a apuração e para a proclamação).
     // Com apuração separada por loja, os votos já são os do consolidado.
-    VARS.apuracao_chapas = !chapas.length ? '[chapas].' : chapas.map((c, i) => [
-      `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}* para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente,`,
+    VARS.apuracao_chapas = !chapas.length ? '[chapas].' : chapas.map((c, i, arr) => [
+      `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}*`,
+      '§Para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente:',
       `§${(c.gm || '[nome]').toUpperCase()} - GRÃO MESTRE e ${(c.gm_adjunto || '[nome]').toUpperCase()} - GRÃO MESTRE ADJUNTO com ${VARS[`votos_chapa${i + 1}`] ?? num(c.votos)} votos válidos.`,
+      ...(i === arr.length - 1 ? [] : ['']),
     ].join('\n')).join('\n');
     chapas.forEach((c, i) => {
       VARS[`chapa${i + 1}_nome`] = c.nome || '';
