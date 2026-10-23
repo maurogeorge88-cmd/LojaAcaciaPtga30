@@ -59,6 +59,7 @@ export const CORPO_ELEICAO_GLEMT_PADRAO = "Aos {data_sessao} da era vulgar, às 
 
 const UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze',
   'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove', 'vinte'];
+const numeroExtenso = (n) => (n >= 0 && n <= 20 ? (UNIDADES[n] || 'zero') : String(n));
 const diaExtenso = (n) => {
   if (n <= 20) return n === 1 ? 'primeiro' : UNIDADES[n];
   if (n < 30) return `vinte e ${UNIDADES[n - 20]}`;
@@ -227,6 +228,24 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       total_votantes: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
       chapa_vencedora: !vencedora ? '[chapa]' : empate ? 'votação empatada entre as chapas' : `Chapa ${vencedora.i + 1} – ${vencedora.nome}`,
     });
+    // Voto em trânsito: Irmãos de outras Lojas (contados à parte dos votantes da Loja)
+    const transito = el.voto_transito ? (el.votantes_transito || []).filter(v => v && (v.nome || '').trim()) : [];
+    Object.assign(VARS, {
+      qtd_votantes_transito: String(transito.length),
+      qtd_votantes_transito_extenso: numeroExtenso(transito.length),
+      palavra_irmao_transito: transito.length === 1 ? 'Irmão' : 'Irmãos',
+      plural_transito: transito.length === 1 ? '' : 's',
+      votantes_transito: transito.length
+        ? transito.map(v => {
+            const partes = [`Ir∴ ${v.nome}`];
+            if (v.cim) partes.push(`CIM nº ${v.cim}`);
+            if (v.loja) partes.push(`da ${v.loja}`);
+            if (v.oriente) partes.push(`Oriente de ${v.oriente}`);
+            return `▪${partes.join(', ')};`;
+          }).join('\n')
+        : '',
+      total_votantes_loja: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
+    });
     chapas.forEach((c, i) => {
       VARS[`chapa${i + 1}_nome`] = c.nome || '';
       VARS[`chapa${i + 1}_gm`] = c.gm || '';
@@ -276,7 +295,15 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
   const corpoComTrecho = corpoBase.includes('{trecho_votacao}') || !VARS.trecho_votacao
     ? corpoBase
     : `${corpoBase}\n${VARS.trecho_votacao}`;
-  const corpoTexto = [interp(corpoComTrecho), (!ehEdital && modelo.rodape) ? interp(modelo.rodape) : '']
+  // Parágrafo do voto em trânsito (editável no modelo): só entra se houver votantes cadastrados.
+  // Vai no lugar de {trecho_voto_transito}; sem a variável no corpo, entra logo após ele.
+  const trechoTransito = (ehEleicao && Number(VARS.qtd_votantes_transito) > 0 && modelo.corpo_voto_transito)
+    ? interp(modelo.corpo_voto_transito) : '';
+  VARS.trecho_voto_transito = trechoTransito;
+  const corpoComTransito = corpoComTrecho.includes('{trecho_voto_transito}') || !trechoTransito
+    ? corpoComTrecho
+    : `${corpoComTrecho}\n${trechoTransito}`;
+  const corpoTexto = [interp(corpoComTransito), (!ehEdital && modelo.rodape) ? interp(modelo.rodape) : '']
     .filter(t => String(t).trim() !== '').join('\n');
   const paragrafos = corpoTexto.split('\n').map(l => (l.trim() === ''
     ? par([ar('')], { after: 0 })
@@ -394,6 +421,9 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   const W = 11906 - margens.left - margens.right;
   // Nº e CIM estreitos, nome menor (fonte 11) e mais espaço para a assinatura
   const CW = [500, 3500, 950, W - 4950];
+  // Votantes em trânsito (Irmãos de outras Lojas): tabela própria, no fim da lista
+  const transitoLista = el.voto_transito ? (el.votantes_transito || []).filter(v => v && (v.nome || '').trim()) : [];
+  const CW_T = [500, 3000, 900, 2600, W - 9000];
   const cel = (t, w, o = {}) => new TableCell({ borders: bd, width: { size: w, type: WidthType.DXA }, margins: { top: 150, bottom: 150, left: 80, right: 80 }, // espaço para assinar
     children: [par([ar(t, { ...o, size: FONTE_TABELA })], { align: o.align ?? AlignmentType.LEFT })] }); // tabela: fonte do modelo (padrão 11)
 
@@ -431,6 +461,27 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
         })(),
         tabela,
         par([ar(presentes.length ? `Total de Mestres presentes: ${mestres.length}` : `Total de Mestres aptos: ${mestres.length}`)], { align: AlignmentType.LEFT, after: 0 }),
+        // Votantes em trânsito: só aparece se houver algum cadastrado
+        ...(transitoLista.length ? [
+          par([ar('VOTANTES EM TRÂNSITO', { bold: true })], { align: AlignmentType.LEFT, before: 400, after: 120 }),
+          new Table({
+            width: { size: W, type: WidthType.DXA }, columnWidths: CW_T,
+            rows: [
+              new TableRow({ tableHeader: true, children: [
+                cel('Nº', CW_T[0], { bold: true, align: AlignmentType.CENTER }), cel('Irmão', CW_T[1], { bold: true }),
+                cel('CIM', CW_T[2], { bold: true, align: AlignmentType.CENTER }), cel('Loja de origem', CW_T[3], { bold: true }),
+                cel('Assinatura', CW_T[4], { bold: true }),
+              ] }),
+              ...transitoLista.map((v, i) => new TableRow({ children: [
+                cel(String(i + 1), CW_T[0], { align: AlignmentType.CENTER }), cel(v.nome || '', CW_T[1]),
+                cel(v.cim || '', CW_T[2], { align: AlignmentType.CENTER }),
+                cel([v.loja, v.oriente ? `Oriente de ${v.oriente}` : ''].filter(Boolean).join(' – '), CW_T[3]),
+                cel('', CW_T[4]),
+              ] })),
+            ],
+          }),
+          par([ar(`Total de votantes em trânsito: ${transitoLista.length}`)], { align: AlignmentType.LEFT, after: 0 }),
+        ] : []),
         // Assinatura do Venerável Mestre (cargo editável no modelo, aba Assinaturas)
         par([ar('_____________________________________')], { before: 700, after: 0 }),
         par([ar(nomeVm ? `Ir∴ ${nomeVm.toUpperCase()}` : '[VENERÁVEL MESTRE]', { bold: true })]),
