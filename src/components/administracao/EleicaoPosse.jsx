@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-  Document, Packer, Paragraph, TextRun, ImageRun,
+  Document, Packer, PageBreak, Paragraph, TextRun, ImageRun,
   AlignmentType, UnderlineType, BorderStyle, WidthType,
   Table, TableRow, TableCell, ShadingType, VerticalAlign, Tab, TabStopType, Footer, PageNumber,
 } from 'docx';
@@ -686,17 +686,18 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   }
 
     // ══════════════════════════════════════════════════════════
-  else if (tipo === 'lista_presenca_eleicao' || tipo === 'lista_presenca_posse') {
-    const sessaoNome = tipo === 'lista_presenca_eleicao' ? 'Eleição' : 'Posse';
-    const dataDoc    = tipo === 'lista_presenca_eleicao' ? eleicao.data_eleicao : eleicao.data_posse;
-    const lista      = tipo === 'lista_presenca_eleicao' ? presEleicao : presPosse;
+  // Conteúdo da lista de presença (usada solta e anexada ao edital/ata, a partir da 2ª página)
+  const blocoLista = (tipoLista, usarTituloDoModelo = true) => {
+    const sessaoNome = tipoLista === 'lista_presenca_eleicao' ? 'Eleição' : 'Posse';
+    const dataDoc    = tipoLista === 'lista_presenca_eleicao' ? eleicao.data_eleicao : eleicao.data_posse;
+    const lista      = tipoLista === 'lista_presenca_eleicao' ? presEleicao : presPosse;
     const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
     const borders    = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
     const pad        = { top: 80, bottom: 80, left: 120, right: 120 };
     const CW         = [500, 4800, 1600, 2442];
-    children = [
+    return [
       ...cabecalho(),
-      prC([ar(interpolarModelo(modelo.titulo_doc || `Lista de Presença — Sessão de ${sessaoNome}`, VARS), { bold: true })], { before: 0, after: 80 }),
+      prC([ar(interpolarModelo((usarTituloDoModelo && modelo.titulo_doc) || `Lista de Presença — Sessão de ${sessaoNome}`, VARS), { bold: true })], { before: 0, after: 80 }),
       prC([ar(`Gestão: ${gestao}     Data: ${formatarData(dataDoc)}`)], { before: 0, after: 160 }),
       new Table({
         width: { size: DOC_CFG.W - MARG.left - MARG.right, type: WidthType.DXA },
@@ -722,10 +723,14 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
       prL([ar(`Total de presentes: ${lista.length}`)], { before: 120, after: 0 }),
       // Assinatura do Venerável Mestre (eleição: VM em exercício; posse: VM Instalador) — cargo editável no modelo
       ...assModelo(
-        (tipo === 'lista_presenca_posse' ? vmInstalador : vmConvocante)?.nome ? `Ir∴ ${(tipo === 'lista_presenca_posse' ? vmInstalador : vmConvocante).nome.toUpperCase()}` : '[Venerável Mestre]',
-        modelo.assinatura_1_cargo || (tipo === 'lista_presenca_posse' ? 'Venerável Mestre Instalador' : 'Venerável Mestre')
+        (tipoLista === 'lista_presenca_posse' ? vmInstalador : vmConvocante)?.nome ? `Ir∴ ${(tipoLista === 'lista_presenca_posse' ? vmInstalador : vmConvocante).nome.toUpperCase()}` : '[Venerável Mestre]',
+        (usarTituloDoModelo && modelo.assinatura_1_cargo) || (tipoLista === 'lista_presenca_posse' ? 'Venerável Mestre Instalador' : 'Venerável Mestre')
       ),
     ];
+  };
+
+  if (tipo === 'lista_presenca_eleicao' || tipo === 'lista_presenca_posse') {
+    children = blocoLista(tipo);
   }
 
   // ══════════════════════════════════════════════════════════
@@ -837,6 +842,15 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   }
 
     // ─── Montar documento ─────────────────────────────────────
+  // Lista de presença a partir da página seguinte (mesmo padrão do documento solto)
+  const LISTA_DE = {
+    edital_eleicao: 'lista_presenca_eleicao', ata_eleicao_loja: 'lista_presenca_eleicao', ata_eleicao_cartorio: 'lista_presenca_eleicao',
+    edital_posse: 'lista_presenca_posse', ata_posse: 'lista_presenca_posse', ata_posse_cartorio: 'lista_presenca_posse',
+  };
+  if (comLista && LISTA_DE[tipo]) {
+    children = [...children, new Paragraph({ children: [new PageBreak()] }), ...blocoLista(LISTA_DE[tipo], false)];
+  }
+
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     // Rodapé: numeração "1 de 3" à direita
@@ -1375,7 +1389,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     );
   };
 
-  const gerarDoc = async (tipo, nomeArq, modeloId = null) => {
+  const gerarDoc = async (tipo, nomeArq, modeloId = null, comLista = false) => {
     // Edital só é gerado com número emitido (tela Editais)
     if ((tipo === 'edital_eleicao' || tipo === 'edital_posse') && !edDe(tipo === 'edital_posse')) {
       showError('Emita o edital (número) antes de gerar o documento.');
@@ -1419,7 +1433,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
           [posse ? 'edital_posse_numero' : 'edital_eleicao_numero']: ed.numero,
           [posse ? 'edital_posse_ano' : 'edital_eleicao_ano']: ed.ano };
       }
-      const buf = await gerarDocx(tipo, eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido);
+      const buf = await gerarDocx(tipo, eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, modeloEscolhido, comLista);
       downloadDocx(buf, nomeArq);
     } catch (e) {
       showError('Erro ao gerar documento: ' + e.message);
@@ -2485,6 +2499,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_Loja_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Eleição Cartório" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
                 onClick={() => gerarDoc('ata_eleicao_cartorio', `Ata_Eleicao_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📎" label="Edital para Eleição + Lista de Presença" disabled={!eleicaoSelecionada.data_eleicao || presEleicao.length === 0} gerando={gerando === 'edital_eleicao_lista'}
+                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
+              <BotaoDoc emoji="📎" label="Ata para Eleição + Lista de Presença" disabled={chapaEleita.length === 0 || presEleicao.length === 0} gerando={gerando === 'ata_eleicao_loja_lista'}
+                onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Eleição (${presEleicao.length})`} disabled={presEleicao.length === 0} gerando={gerando === 'lista_presenca_eleicao'}
                 onClick={() => gerarDoc('lista_presenca_eleicao', `Lista_Presenca_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
@@ -2513,6 +2531,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Posse Cartório" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse_cartorio'}
                 onClick={() => gerarDoc('ata_posse_cartorio', `Ata_Posse_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
+              <BotaoDoc emoji="📎" label="Edital para Posse + Lista de Presença" disabled={!eleicaoSelecionada.data_posse || presPosse.length === 0} gerando={gerando === 'edital_posse_lista'}
+                onClick={() => gerarDoc('edital_posse', `Edital_Posse_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
+              <BotaoDoc emoji="📎" label="Ata para Posse + Lista de Presença" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || presPosse.length === 0} gerando={gerando === 'ata_posse_lista'}
+                onClick={() => gerarDoc('ata_posse', `Ata_Posse_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
                 onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
