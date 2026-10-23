@@ -842,13 +842,41 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   }
 
     // ─── Montar documento ─────────────────────────────────────
-  // Lista de presença a partir da página seguinte (mesmo padrão do documento solto)
-  const LISTA_DE = {
-    edital_eleicao: 'lista_presenca_eleicao', ata_eleicao_loja: 'lista_presenca_eleicao', ata_eleicao_cartorio: 'lista_presenca_eleicao',
-    edital_posse: 'lista_presenca_posse', ata_posse: 'lista_presenca_posse', ata_posse_cartorio: 'lista_presenca_posse',
-  };
-  if (comLista && LISTA_DE[tipo]) {
-    children = [...children, new Paragraph({ children: [new PageBreak()] }), ...blocoLista(LISTA_DE[tipo], false)];
+  // Relação de Aptos a Votar a partir da página seguinte (comLista = linhas já prontas)
+  if (Array.isArray(comLista) && comLista.length) {
+    const bd = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+    const bordas = { top: bd, bottom: bd, left: bd, right: bd };
+    const padA = { top: 60, bottom: 60, left: 100, right: 100 };
+    const Wt = DOC_CFG.W - MARG.left - MARG.right;
+    const CWA = [600, Math.round(Wt * 0.46), 1500, Wt - 600 - Math.round(Wt * 0.46) - 1500];
+    const celA = (txt, w, { bold = false, align = AlignmentType.LEFT, head = false } = {}) => new TableCell({
+      borders: bordas, width: { size: w, type: WidthType.DXA }, margins: padA,
+      ...(head ? { shading: { fill: 'D9D9D9', type: ShadingType.CLEAR } } : {}),
+      children: [pr([ar(txt, { bold })], { align, before: 0, after: 0 })],
+    });
+    children = [
+      ...children,
+      new Paragraph({ children: [new PageBreak()] }),
+      prC([ar('RELAÇÃO DE IRMÃOS APTOS A VOTAR', { bold: true })], { before: 0, after: 160 }),
+      new Table({
+        width: { size: Wt, type: WidthType.DXA }, columnWidths: CWA,
+        rows: [
+          new TableRow({ tableHeader: true, children: [
+            celA('Nº', CWA[0], { bold: true, align: AlignmentType.CENTER, head: true }),
+            celA('Irmão', CWA[1], { bold: true, head: true }),
+            celA('CIM', CWA[2], { bold: true, align: AlignmentType.CENTER, head: true }),
+            celA('Assinatura', CWA[3], { bold: true, align: AlignmentType.CENTER, head: true }),
+          ] }),
+          ...comLista.map((a, i) => new TableRow({ children: [
+            celA(String(i + 1), CWA[0], { align: AlignmentType.CENTER }),
+            celA(a.nome || '', CWA[1]),
+            celA(a.cim || '', CWA[2], { align: AlignmentType.CENTER }),
+            celA('', CWA[3]),
+          ] })),
+        ],
+      }),
+      prL([ar(`Total de Irmãos aptos a votar: ${comLista.length}`)], { before: 120, after: 0 }),
+    ];
   }
 
   const doc = new Document({
@@ -1404,7 +1432,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       }
     }
     setEscolhaModeloEP(null);
-    setGerando(tipo);
+    setGerando(Array.isArray(comLista) ? `${tipo}_aptos` : tipo); // distingue o botão combinado do simples
     try {
       _modelosCache = null; // sempre com o texto mais recente dos modelos
       let modeloEscolhido = null;
@@ -2499,10 +2527,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_Loja_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Eleição Cartório" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
                 onClick={() => gerarDoc('ata_eleicao_cartorio', `Ata_Eleicao_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📎" label="Edital para Eleição + Lista de Presença" disabled={!eleicaoSelecionada.data_eleicao || presEleicao.length === 0} gerando={gerando === 'edital_eleicao_lista'}
-                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
-              <BotaoDoc emoji="📎" label="Ata para Eleição + Lista de Presença" disabled={chapaEleita.length === 0 || presEleicao.length === 0} gerando={gerando === 'ata_eleicao_loja_lista'}
-                onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
+              <BotaoDoc emoji="📎" label="Edital para Eleição + Relação de Aptos" disabled={!eleicaoSelecionada.data_eleicao} gerando={gerando === 'edital_eleicao_aptos'}
+                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_com_Aptos_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, aptidao.linhas.filter(l => l.apto).map(l => ({ nome: l.irmao?.nome || '', cim: l.irmao?.cim || '' })))} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Eleição (${presEleicao.length})`} disabled={presEleicao.length === 0} gerando={gerando === 'lista_presenca_eleicao'}
                 onClick={() => gerarDoc('lista_presenca_eleicao', `Lista_Presenca_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
@@ -2531,10 +2557,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Posse Cartório" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse_cartorio'}
                 onClick={() => gerarDoc('ata_posse_cartorio', `Ata_Posse_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📎" label="Edital para Posse + Lista de Presença" disabled={!eleicaoSelecionada.data_posse || presPosse.length === 0} gerando={gerando === 'edital_posse_lista'}
-                onClick={() => gerarDoc('edital_posse', `Edital_Posse_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
-              <BotaoDoc emoji="📎" label="Ata para Posse + Lista de Presença" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || presPosse.length === 0} gerando={gerando === 'ata_posse_lista'}
-                onClick={() => gerarDoc('ata_posse', `Ata_Posse_com_Lista_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, true)} />
+              <BotaoDoc emoji="📎" label="Edital para Posse + Relação de Aptos" disabled={!eleicaoSelecionada.data_posse} gerando={gerando === 'edital_posse_aptos'}
+                onClick={() => gerarDoc('edital_posse', `Edital_Posse_com_Aptos_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, aptidao.linhas.filter(l => l.apto).map(l => ({ nome: l.irmao?.nome || '', cim: l.irmao?.cim || '' })))} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
                 onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
