@@ -100,7 +100,7 @@ export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
     .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
-export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata' }) => {
+export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false }) => {
   const ehEdital = documento === 'edital';
   // Edital: exige o número emitido (tela Editais) — fonte única da numeração
   let editalReg = null;
@@ -448,6 +448,14 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     ]),
   ];
 
+  // Lista de presença a partir da página seguinte (mesmo padrão do documento solto)
+  let filhos = children;
+  if (comLista) {
+    const { PageBreak } = await import('docx');
+    const lista = await conteudoListaPresencaGLEMT({ balaustre });
+    filhos = [...children, new Paragraph({ children: [new PageBreak()] }), ...lista.children];
+  }
+
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
     sections: [{
@@ -456,13 +464,14 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
     ] })] }) },
       properties: { page: { size: { width: 11906, height: 16838 }, margin: margensDoModelo(modelo) } },
-      children,
+      children: filhos,
     }],
   });
   const blob = await Packer.toBlob(doc);
+  const sufixo = comLista ? '_com_Lista' : '';
   const nome = ehEdital
-    ? `Edital_${String(VARS.numero_edital || '').replace('/', '-')}_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}.docx`
-    : `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}.docx`;
+    ? `Edital_${String(VARS.numero_edital || '').replace('/', '-')}_Eleicao_GLEMT_${String(VARS.periodo_glemt_barra || '').replace('/', '-')}${sufixo}.docx`
+    : `Ata_${grau}_${VARS.numero_balaustre}-${VARS.ano_balaustre}${sufixo}.docx`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = nome; a.click();
@@ -471,7 +480,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
 };
 
 // Edital de convocação da eleição GLEMT (assinado só pelo VM)
-export const gerarEditalEleicaoGLEMT = async ({ balaustre }) => gerarAtaSessao({ balaustre, documento: 'edital' });
+export const gerarEditalEleicaoGLEMT = async ({ balaustre, comLista = false }) => gerarAtaSessao({ balaustre, documento: 'edital', comLista });
 
 // ════════════════════════════════════════════════════════════════════════
 // Lista de presença — Sessão Eleitoral da GLEMT (Mestres regulares na data)
@@ -481,7 +490,8 @@ export const TIPO_LISTA_GLEMT = 'lista_presenca_glemt';
 export const TITULO_LISTA_GLEMT_PADRAO = 'LISTA DE PRESENÇA — SESSÃO ELEITORAL\nEleição de Grão-Mestre e Grão-Mestre Adjunto da GLEMT — Período {periodo_glemt}';
 export const CORPO_LISTA_GLEMT_PADRAO = 'Sessão de {data_sessao}';
 
-export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
+// Monta o conteúdo da lista (usado solto e anexado ao edital/ata)
+const conteudoListaPresencaGLEMT = async ({ balaustre }) => {
   const { Table, TableRow, TableCell, WidthType, BorderStyle } = await import('docx');
   const [{ data: lojaData }, { data: irmaosData }, { data: modEl }] = await Promise.all([
     supabase.from('dados_loja').select('*').limit(1),
@@ -547,15 +557,7 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
   });
 
   const dataFmt = d ? d.split('-').reverse().join('/') : '';
-  const doc = new Document({
-    styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
-    sections: [{
-      // Rodapé: numeração "1 de 3" à direita
-      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
-      new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
-    ] })] }) },
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
-      children: [
+  const filhosLista = [
         // Cabeçalho da Loja (logo à esquerda, ou só texto se desmarcado)
         ...cabecalhoLojaDocx({ dadosLoja, comLogo: !!modeloLista.mostrar_logo, larguraUtil: W, after: 240, texto: modeloLista.cabecalho_texto, logoCm: modeloLista.logo_tamanho }),
         // Título (negrito) e texto abaixo, ambos do modelo — cada linha vira uma linha
@@ -597,7 +599,21 @@ export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
         par([ar('_____________________________________')], { before: 700, after: 0 }),
         par([ar(nomeVm ? `Ir∴ ${nomeVm.toUpperCase()}` : '[VENERÁVEL MESTRE]', { bold: true })]),
         par([ar(modeloLista.assinatura_1_cargo || 'Venerável Mestre')]),
-      ],
+  ];
+  return { children: filhosLista, margens, dataFmt };
+};
+
+export const gerarListaPresencaEleicaoGLEMT = async ({ balaustre }) => {
+  const { children: filhosLista, margens, dataFmt } = await conteudoListaPresencaGLEMT({ balaustre });
+  const doc = new Document({
+    styles: { default: { document: { run: { font: 'Times New Roman', size: 24 } } } },
+    sections: [{
+      // Rodapé: numeração "1 de 3" à direita
+      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
+        new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
+      ] })] }) },
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: margens } },
+      children: filhosLista,
     }],
   });
   const blob = await Packer.toBlob(doc);
