@@ -1419,7 +1419,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
 
   const gerarDoc = async (tipo, nomeArq, modeloId = null, comLista = false) => {
     // Edital só é gerado com número emitido (tela Editais)
-    if ((tipo === 'edital_eleicao' || tipo === 'edital_posse') && !edDe(tipo === 'edital_posse')) {
+    const temEditalVinculado = (tipo === 'edital_posse')
+      ? !!eleicaoSelecionada?.edital_posse_id
+      : !!eleicaoSelecionada?.edital_eleicao_id;
+    if ((tipo === 'edital_eleicao' || tipo === 'edital_posse') && !temEditalVinculado) {
       showError('Emita o edital (número) antes de gerar o documento.');
       return;
     }
@@ -1427,7 +1430,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const { data: opcoes } = await supabase.from('modelos_documentos').select('id, tipo, nome, tipo_base')
         .or(`tipo.eq.${tipo},tipo_base.eq.${tipo}`);
       if ((opcoes || []).length > 1) {
-        setEscolhaModeloEP({ tipo, nomeArq, opcoes: [...opcoes].sort((a, b) => (a.tipo === tipo ? -1 : b.tipo === tipo ? 1 : a.nome.localeCompare(b.nome))) });
+        setEscolhaModeloEP({ tipo, nomeArq, comLista, opcoes: [...opcoes].sort((a, b) => (a.tipo === tipo ? -1 : b.tipo === tipo ? 1 : a.nome.localeCompare(b.nome))) });
         return;
       }
     }
@@ -1450,7 +1453,15 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       let eleicaoDoc = eleicaoSelecionada;
       if (tipo === 'edital_eleicao' || tipo === 'edital_posse') {
         const posse = tipo === 'edital_posse';
-        const ed = edDe(posse);
+        // Busca o edital pelo vínculo (não depende do que já está carregado na tela)
+        let ed = edDe(posse);
+        if (!ed) {
+          const idEd = posse ? eleicaoSelecionada.edital_posse_id : eleicaoSelecionada.edital_eleicao_id;
+          const { data: reg } = await supabase.from('editais').select('*').eq('id', idEd).maybeSingle();
+          ed = reg || null;
+          if (ed) setEditaisLoja(prev => ({ ...prev, [ed.id]: ed }));
+        }
+        if (!ed) throw new Error('o edital vinculado não foi encontrado em Editais. Vincule ou emita outro na Configuração.');
         // Mantém a data do edital em Editais igual à da Configuração
         const dCfg = posse ? eleicaoSelecionada.data_edital_posse : eleicaoSelecionada.data_edital_eleicao;
         if (dCfg && ed.data_edital !== dCfg) {
@@ -2454,7 +2465,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>📄 Qual modelo usar?</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {escolhaModeloEP.opcoes.map(m => (
-                    <button key={m.id} onClick={() => gerarDoc(escolhaModeloEP.tipo, escolhaModeloEP.nomeArq, m.id)}
+                    <button key={m.id} onClick={() => gerarDoc(escolhaModeloEP.tipo, escolhaModeloEP.nomeArq, m.id, escolhaModeloEP.comLista)}
                       style={{ padding: '0.65rem 0.9rem', textAlign: 'left', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>
                       📄 {m.nome}
                     </button>
