@@ -18,9 +18,9 @@ const fmt = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/'
 // As fontes padrão do jsPDF não têm ∴ (nem ∴ de Ir∴): troca pelos três pontos em caracteres suportados
 const pdfTexto = (t) => String(t ?? '').replace(/∴/g, '.·.').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
 
-export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = {}, nomeArquivo = null }) => {
-  // Texto do edital já interpolado (mesmo modelo usado no Word)
-  const ed = await gerarAtaSessao({ balaustre, documento: 'edital', retornarTexto: true });
+export const gerarEditalAptosPDF = async ({ balaustre = null, conteudo = null, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = {}, eleicao = {}, subtituloAptos = null, nomeArquivo = null }) => {
+  // Texto do edital já interpolado: vem pronto (Loja) ou do modelo do balaustre (GLEMT)
+  const ed = conteudo || await gerarAtaSessao({ balaustre, documento: 'edital', retornarTexto: true });
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
@@ -105,7 +105,7 @@ export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF 
 
   // ── Relação de Aptos a Votar nas páginas seguintes (padrão do PDF atual) ──
   gerarAptosVotarPDF({
-    tipo: 'aptos', linhas: aptos, eleicao: {}, dadosLoja, logoB64, periodo, assinantes, glemt,
+    tipo: 'aptos', linhas: aptos, eleicao, dadosLoja, logoB64, periodo, assinantes, glemt, subtitulo: subtituloAptos,
     docExistente: doc,
     nomeArquivo: nomeArquivo || `Edital_${String(ed.numeroEdital || '').replace('/', '-')}_e_Aptos_GLEMT_${String(ed.periodo || '').replace('/', '-')}.pdf`,
   });
