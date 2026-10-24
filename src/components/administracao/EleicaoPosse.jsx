@@ -183,7 +183,7 @@ const calcularQuorum = (irmaos, eleicao, presencas, historico = []) => {
   return { totalCalculado, totalMestres, quorumMinimo, presentes, atingido: presentes >= quorumMinimo };
 };
 
-const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = [], modeloEscolhido = null) => {
+const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, historico = [], balaustresEl = [], modeloEscolhido = null, comLista = false) => {
 
   const modelos      = await buscarModelos();
   // Ata de Posse (Cartório) sem modelo próprio ainda: usa o texto do modelo de Ata de Posse
