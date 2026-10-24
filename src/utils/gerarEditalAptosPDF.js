@@ -1,0 +1,97 @@
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { gerarAtaSessao } from './gerarAtaSessao';
+import { gerarAptosVotarPDF } from './gerarAptosVotarPDF';
+
+// ════════════════════════════════════════════════════════════════════════
+// PDF único: Edital de Convocação (Eleição da GLEMT) + Relação de Aptos a Votar
+// O edital segue o texto do modelo (o mesmo do Word) e a relação mantém o
+// padrão do PDF de Aptos, que é desenhado nas páginas seguintes.
+// ════════════════════════════════════════════════════════════════════════
+
+const AZUL = [30, 58, 138];
+const DOURADO = [201, 168, 76];
+const TEXTO = [30, 41, 59];
+
+const fmt = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '');
+
+export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = {}, nomeArquivo = null }) => {
+  // Texto do edital já interpolado (mesmo modelo usado no Word)
+  const ed = await gerarAtaSessao({ balaustre, documento: 'edital', retornarTexto: true });
+
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 18;
+  const dadosLoja = ed.dadosLoja || dadosLojaPDF || {};
+
+  // ── Cabeçalho da Loja (mesmo do PDF de Aptos) ──────────────────────────
+  let y = 12;
+  if (logoB64) {
+    try { doc.addImage(`data:image/jpeg;base64,${logoB64}`, 'JPEG', M, y, 30, 30); } catch (e) { /* sem logo */ }
+  }
+  const xt = M + 34 + (W - M - (M + 34)) / 2;
+  doc.setFont('times', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
+  doc.text(`A.·.R.·.L.·.S.·. ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`, xt, y + 8, { align: 'center' });
+  doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(...TEXTO);
+  doc.text(`Fundada em ${dadosLoja.data_fundacao ? fmt(dadosLoja.data_fundacao) : '20/12/1997'}`, xt, y + 14, { align: 'center' });
+  doc.text('Jurisdicionada à', xt, y + 19, { align: 'center' });
+  doc.text('Grande Loja Maçônica do Estado de Mato Grosso', xt, y + 24, { align: 'center' });
+  y += 36;
+  doc.setDrawColor(...DOURADO); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+  y += 10;
+
+  // ── Título do edital (cada linha do modelo vira uma linha) ─────────────
+  doc.setFont('times', 'bold'); doc.setFontSize(13); doc.setTextColor(...AZUL);
+  (ed.titulo || []).forEach((linha) => {
+    const ls = doc.splitTextToSize(linha, W - 2 * M);
+    ls.forEach((l) => { doc.text(l, W / 2, y, { align: 'center' }); y += 6; });
+  });
+  if ((ed.subtitulo || []).length) {
+    doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
+    ed.subtitulo.forEach((linha) => {
+      doc.splitTextToSize(linha, W - 2 * M).forEach((l) => { doc.text(l, W / 2, y, { align: 'center' }); y += 5.5; });
+    });
+  }
+  y += 4;
+
+  // ── Corpo: parágrafos justificados; § = linha colada à anterior; *negrito* ──
+  doc.setTextColor(...TEXTO); doc.setFontSize(11.5);
+  const novaPagina = () => { doc.addPage(); y = 20; };
+  (ed.paragrafos || []).forEach((bruto) => {
+    const colado = bruto.startsWith('§');
+    const linha = (colado ? bruto.slice(1) : bruto).trim();
+    if (!linha) { y += 4; return; }
+    const negrito = /^\*.*\*$/.test(linha);
+    const texto = negrito ? linha.replace(/^\*|\*$/g, '') : linha.replace(/\*/g, '');
+    doc.setFont('times', negrito ? 'bold' : 'normal');
+    const ls = doc.splitTextToSize(texto, W - 2 * M);
+    ls.forEach((l, i) => {
+      if (y > H - 30) novaPagina();
+      // justificado, menos na última linha do parágrafo
+      doc.text(l, M, y, i === ls.length - 1 ? {} : { maxWidth: W - 2 * M, align: 'justify' });
+      y += 5.6;
+    });
+    y += colado ? 0 : 3.4;
+  });
+
+  // ── Assinaturas do edital ──────────────────────────────────────────────
+  y += 14;
+  if (y > H - 40) novaPagina();
+  (ed.assinaturas || []).forEach(({ nome, cargo }) => {
+    doc.setDrawColor(...TEXTO); doc.setLineWidth(0.3);
+    doc.line(W / 2 - 45, y, W / 2 + 45, y);
+    doc.setFont('times', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...TEXTO);
+    doc.text(`Ir∴ ${String(nome || '').toUpperCase()}`, W / 2, y + 5, { align: 'center' });
+    doc.setFont('times', 'normal');
+    doc.text(cargo || '', W / 2, y + 10, { align: 'center' });
+    y += 22;
+  });
+
+  // ── Relação de Aptos a Votar nas páginas seguintes (padrão do PDF atual) ──
+  gerarAptosVotarPDF({
+    tipo: 'aptos', linhas: aptos, eleicao: {}, dadosLoja, logoB64, periodo, assinantes, glemt,
+    docExistente: doc,
+    nomeArquivo: nomeArquivo || `Edital_${String(ed.numeroEdital || '').replace('/', '-')}_e_Aptos_GLEMT_${String(ed.periodo || '').replace('/', '-')}.pdf`,
+  });
+};
