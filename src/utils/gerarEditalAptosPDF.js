@@ -18,7 +18,7 @@ const fmt = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/'
 // As fontes padrão do jsPDF não têm ∴ (nem ∴ de Ir∴): troca pelos três pontos em caracteres suportados
 const pdfTexto = (t) => String(t ?? '').replace(/∴/g, '.·.').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
 
-export const gerarEditalAptosPDF = async ({ balaustre = null, conteudo = null, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = {}, eleicao = {}, subtituloAptos = null, nomeArquivo = null }) => {
+export const gerarEditalAptosPDF = async ({ balaustre = null, conteudo = null, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = null, eleicao = {}, subtituloAptos = null, nomeArquivo = null }) => {
   // Texto do edital já interpolado: vem pronto (Loja) ou do modelo do balaustre (GLEMT)
   const ed = conteudo || await gerarAtaSessao({ balaustre, documento: 'edital', retornarTexto: true });
 
