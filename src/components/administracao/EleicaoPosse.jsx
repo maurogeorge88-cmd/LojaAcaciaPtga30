@@ -1481,8 +1481,9 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       return;
     }
     if (!modeloId) {
+      // Modelos alternativos: o próprio tipo, os derivados (tipo_base) e as cópias antigas (tipo = base__timestamp)
       const { data: opcoes } = await supabase.from('modelos_documentos').select('id, tipo, nome, tipo_base')
-        .or(`tipo.eq.${tipo},tipo_base.eq.${tipo}`);
+        .or(`tipo.eq.${tipo},tipo_base.eq.${tipo},tipo.like.${tipo}__*`);
       if ((opcoes || []).length > 1) {
         setEscolhaModeloEP({ tipo, nomeArq, comLista, opcoes: [...opcoes].sort((a, b) => (a.tipo === tipo ? -1 : b.tipo === tipo ? 1 : a.nome.localeCompare(b.nome))) });
         return;
