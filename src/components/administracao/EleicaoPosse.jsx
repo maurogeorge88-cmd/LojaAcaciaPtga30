@@ -18,6 +18,7 @@ import { gerarQuadroGestaoPDF } from '../../utils/gerarQuadroGestaoPDF';
 import { cabecalhoLojaDocx, linhasCabecalho } from '../../utils/cabecalhoLoja';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { emitirEdital } from '../../utils/editais';
+import { gerarEditalAptosPDF } from '../../utils/gerarEditalAptosPDF';
 import VincularEdital from '../editais/VincularEdital';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
@@ -540,6 +541,21 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos, hi
   let children = [];
 
   // ══════════════════════════════════════════════════════════
+  // Texto puro do edital (usado pelo PDF que junta edital + relação de aptos)
+  if (tipo === 'edital_eleicao' && comLista === 'texto') {
+    return {
+      titulo: interpolarModelo(modelo.titulo_doc || 'Edital de Convocação para Eleição', VARS).replace(/\*/g, '').split('\n').filter(l => l.trim() !== ''),
+      subtitulo: interpolarModelo(modelo.subtitulo || '', VARS).replace(/\*/g, '').split('\n').filter(l => l.trim() !== ''),
+      paragrafos: [
+        ...interpolarModelo(modelo.corpo || '', VARS).split('\n'),
+        '',
+        `${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_eleicao}.`,
+      ],
+      assinaturas: [{ nome: vmConvocante?.nome || '[VM Sainte]', cargo: modelo.assinatura_1_cargo || 'Venerável Mestre' }],
+      dadosLoja, numeroEdital: `${eleicao.edital_eleicao_numero || ''}/${eleicao.edital_eleicao_ano || ''}`,
+    };
+  }
+
   if (tipo === 'edital_eleicao') {
     children = [
       ...cabecalho(),
@@ -1415,6 +1431,36 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         </span>
       </div>
     );
+  };
+
+  // PDF único: edital de eleição + relação de aptos (mesmo padrão dos dois documentos)
+  const gerarEditalAptosPdfLoja = async () => {
+    if (!eleicaoSelecionada?.edital_eleicao_id) { showError('Emita o edital (número) antes de gerar o documento.'); return; }
+    const aptos = (aptidao.linhas || []).filter(l => l.apto);
+    if (!aptos.length) { showError('Nenhum Irmão apto a votar.'); return; }
+    setGerando('edital_eleicao_pdf');
+    try {
+      _modelosCache = null;
+      // número do edital a partir do vínculo
+      let ed = edDe(false);
+      if (!ed) {
+        const { data: reg } = await supabase.from('editais').select('*').eq('id', eleicaoSelecionada.edital_eleicao_id).maybeSingle();
+        ed = reg || null;
+        if (ed) setEditaisLoja(prev => ({ ...prev, [ed.id]: ed }));
+      }
+      if (!ed) throw new Error('o edital vinculado não foi encontrado em Editais.');
+      const eleicaoDoc = { ...eleicaoSelecionada, edital_eleicao_numero: ed.numero, edital_eleicao_ano: ed.ano };
+      const conteudo = await gerarDocx('edital_eleicao', eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, null, 'texto');
+      await gerarEditalAptosPDF({
+        conteudo, aptos, dadosLojaPDF: dadosLoja, logoB64: LOGO_LOJA_B64,
+        periodo: aptidao.periodo, assinantes: aptidao.assinantes, eleicao: eleicaoSelecionada,
+        nomeArquivo: `Edital_${String(`${ed.numero}/${ed.ano}`).replace('/', '-')}_e_Aptos_Eleicao_${String(eleicaoSelecionada.gestao || '').replace('/', '-')}.pdf`,
+      });
+    } catch (e) {
+      showError('Erro ao gerar o PDF: ' + e.message);
+    } finally {
+      setGerando('');
+    }
   };
 
   const gerarDoc = async (tipo, nomeArq, modeloId = null, comLista = false) => {
@@ -2538,8 +2584,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_eleicao_loja', `Ata_Eleicao_Loja_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Eleição Cartório" disabled={chapaEleita.length === 0 || !balaustresEleicao.some(b => b.sessao_especial === 'eleicao_loja' && b.numero_balaustre)} gerando={gerando === 'ata_eleicao_cartorio'}
                 onClick={() => gerarDoc('ata_eleicao_cartorio', `Ata_Eleicao_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📎" label="Edital para Eleição + Relação de Aptos" disabled={!eleicaoSelecionada.data_eleicao} gerando={gerando === 'edital_eleicao_aptos'}
-                onClick={() => gerarDoc('edital_eleicao', `Edital_Eleicao_com_Aptos_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, aptidao.linhas.filter(l => l.apto).map(l => ({ nome: l.irmao?.nome || '', cim: l.irmao?.cim || '' })))} />
+              <BotaoDoc emoji="📎" label="Edital + Aptos a Votar (PDF)" disabled={!eleicaoSelecionada.data_eleicao || aptidao.carregando} gerando={gerando === 'edital_eleicao_pdf'}
+                onClick={() => gerarEditalAptosPdfLoja()} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Eleição (${presEleicao.length})`} disabled={presEleicao.length === 0} gerando={gerando === 'lista_presenca_eleicao'}
                 onClick={() => gerarDoc('lista_presenca_eleicao', `Lista_Presenca_Eleicao_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
@@ -2568,8 +2614,6 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 onClick={() => gerarDoc('ata_posse', `Ata_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
               <BotaoDoc emoji="📜" label="Ata para Posse Cartório" disabled={chapaEleita.length === 0 || !eleicaoSelecionada.data_posse || !balaustresEleicao.some(b => b.sessao_especial === 'posse_loja' && b.numero_balaustre)} gerando={gerando === 'ata_posse_cartorio'}
                 onClick={() => gerarDoc('ata_posse_cartorio', `Ata_Posse_Cartorio_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
-              <BotaoDoc emoji="📎" label="Edital para Posse + Relação de Aptos" disabled={!eleicaoSelecionada.data_posse} gerando={gerando === 'edital_posse_aptos'}
-                onClick={() => gerarDoc('edital_posse', `Edital_Posse_com_Aptos_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`, null, aptidao.linhas.filter(l => l.apto).map(l => ({ nome: l.irmao?.nome || '', cim: l.irmao?.cim || '' })))} />
               <BotaoDoc emoji="📋" label={`Lista de Presença para a Posse (${presPosse.length})`} disabled={presPosse.length === 0} gerando={gerando === 'lista_presenca_posse'}
                 onClick={() => gerarDoc('lista_presenca_posse', `Lista_Presenca_Posse_${eleicaoSelecionada.gestao?.replace('/', '_')}.docx`)} />
             </div>
