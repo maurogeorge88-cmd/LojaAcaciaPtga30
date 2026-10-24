@@ -1436,10 +1436,18 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   // PDF único: edital de eleição + relação de aptos (mesmo padrão dos dois documentos)
   const gerarEditalAptosPdfLoja = async () => {
     if (!eleicaoSelecionada?.edital_eleicao_id) { showError('Emita o edital (número) antes de gerar o documento.'); return; }
-    const aptos = (aptidao.linhas || []).filter(l => l.apto);
-    if (!aptos.length) { showError('Nenhum Irmão apto a votar.'); return; }
     setGerando('edital_eleicao_pdf');
     try {
+      // A aba Documentos não calcula a aptidão: calcula agora se ainda não houver linhas
+      let linhasApt = aptidao.linhas || [];
+      let periodoApt = aptidao.periodo;
+      let assinantesApt = aptidao.assinantes;
+      if (!linhasApt.length) {
+        const r = await carregarAptidao();
+        if (r?.linhas) { linhasApt = r.linhas; periodoApt = r.periodo; assinantesApt = r.assinantes || assinantesApt; }
+      }
+      const aptos = linhasApt.filter(l => l.apto);
+      if (!aptos.length) throw new Error('nenhum Irmão apto a votar (confira a aba Aptos a Votar).');
       _modelosCache = null;
       // número do edital a partir do vínculo
       let ed = edDe(false);
@@ -1453,7 +1461,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const conteudo = await gerarDocx('edital_eleicao', eleicaoDoc, chapas, presencas, dadosLoja, irmaos || [], historicoSituacoes, balaustresEleicao, null, 'texto');
       await gerarEditalAptosPDF({
         conteudo, aptos, dadosLojaPDF: dadosLoja, logoB64: LOGO_LOJA_B64,
-        periodo: aptidao.periodo, assinantes: aptidao.assinantes, eleicao: eleicaoSelecionada,
+        periodo: periodoApt, assinantes: assinantesApt, eleicao: eleicaoSelecionada,
         nomeArquivo: `Edital_${String(`${ed.numero}/${ed.ano}`).replace('/', '-')}_e_Aptos_Eleicao_${String(eleicaoSelecionada.gestao || '').replace('/', '-')}.pdf`,
       });
     } catch (e) {
@@ -1886,9 +1894,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         const r = (corpo || []).find(c => String(c.ano_exercicio || '').split(/[^0-9]+/).includes(ano) && alvos.includes(norm(c.cargo)));
         return r ? (irmaos || []).find(x => x.id === r.irmao_id)?.nome : null;
       };
-      setAptidao({ carregando: false, linhas, periodo, assinantes: {
+      const assinantes = {
         vm: nomeCargo('veneravel mestre', 'veneravel'), chanceler: nomeCargo('chanceler'), tesoureiro: nomeCargo('tesoureiro'),
-      } });
+      };
+      setAptidao({ carregando: false, linhas, periodo, assinantes });
+      return { linhas, periodo, assinantes }; // quem chamou pode usar na hora (ex.: PDF do edital)
     } catch (e) {
       setAptidao(a => ({ ...a, carregando: false }));
       showError('Erro ao analisar a aptidão: ' + e.message);
