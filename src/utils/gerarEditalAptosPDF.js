@@ -70,14 +70,23 @@ export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF 
     doc.setFont('times', negrito ? 'bold' : 'normal');
     const largura = W - 2 * M;
     const ls = doc.splitTextToSize(texto, largura);
-    ls.forEach((l, i) => {
+    // O jsPDF só justifica quando recebe o parágrafo inteiro (array de linhas);
+    // linha a linha ele espaça as letras. Blocos § e parágrafos de uma linha ficam à esquerda.
+    const justificar = !colado && ls.length > 1;
+    let i = 0;
+    while (i < ls.length) {
       if (y > H - 30) novaPagina();
-      // Justifica só as linhas cheias: a última do parágrafo e as linhas curtas
-      // (nome de chapa, cargos) ficam à esquerda, sem letras espaçadas
-      const cheia = i < ls.length - 1 && !colado && doc.getTextWidth(l) > largura * 0.85;
-      doc.text(l, M, y, cheia ? { maxWidth: largura, align: 'justify' } : {});
-      y += 5.6;
-    });
+      const cabem = Math.max(1, Math.floor((H - 30 - y) / 5.6));
+      const parte = ls.slice(i, i + cabem);
+      // a última linha do parágrafo nunca é esticada
+      const ultima = i + parte.length >= ls.length ? parte.pop() : null;
+      if (parte.length) {
+        doc.text(parte, M, y, justificar ? { maxWidth: largura, align: 'justify', lineHeightFactor: 1.35 } : { lineHeightFactor: 1.35 });
+        y += parte.length * 5.6;
+      }
+      if (ultima !== null) { doc.text(ultima, M, y); y += 5.6; }
+      i += parte.length + (ultima !== null ? 1 : 0);
+    }
     y += colado ? 0 : 3.4;
   });
 
