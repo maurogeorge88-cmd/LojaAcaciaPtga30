@@ -15,6 +15,9 @@ const TEXTO = [30, 41, 59];
 
 const fmt = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '');
 
+// As fontes padrão do jsPDF não têm ∴ (nem ∴ de Ir∴): troca pelos três pontos em caracteres suportados
+const pdfTexto = (t) => String(t ?? '').replace(/∴/g, '.·.').replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+
 export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF = {}, logoB64, periodo, assinantes = {}, glemt = {}, nomeArquivo = null }) => {
   // Texto do edital já interpolado (mesmo modelo usado no Word)
   const ed = await gerarAtaSessao({ balaustre, documento: 'edital', retornarTexto: true });
@@ -44,13 +47,13 @@ export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF 
   // ── Título do edital (cada linha do modelo vira uma linha) ─────────────
   doc.setFont('times', 'bold'); doc.setFontSize(13); doc.setTextColor(...AZUL);
   (ed.titulo || []).forEach((linha) => {
-    const ls = doc.splitTextToSize(linha, W - 2 * M);
+    const ls = doc.splitTextToSize(pdfTexto(linha), W - 2 * M);
     ls.forEach((l) => { doc.text(l, W / 2, y, { align: 'center' }); y += 6; });
   });
   if ((ed.subtitulo || []).length) {
     doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
     ed.subtitulo.forEach((linha) => {
-      doc.splitTextToSize(linha, W - 2 * M).forEach((l) => { doc.text(l, W / 2, y, { align: 'center' }); y += 5.5; });
+      doc.splitTextToSize(pdfTexto(linha), W - 2 * M).forEach((l) => { doc.text(l, W / 2, y, { align: 'center' }); y += 5.5; });
     });
   }
   y += 4;
@@ -63,13 +66,16 @@ export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF 
     const linha = (colado ? bruto.slice(1) : bruto).trim();
     if (!linha) { y += 4; return; }
     const negrito = /^\*.*\*$/.test(linha);
-    const texto = negrito ? linha.replace(/^\*|\*$/g, '') : linha.replace(/\*/g, '');
+    const texto = pdfTexto(negrito ? linha.replace(/^\*|\*$/g, '') : linha.replace(/\*/g, ''));
     doc.setFont('times', negrito ? 'bold' : 'normal');
-    const ls = doc.splitTextToSize(texto, W - 2 * M);
+    const largura = W - 2 * M;
+    const ls = doc.splitTextToSize(texto, largura);
     ls.forEach((l, i) => {
       if (y > H - 30) novaPagina();
-      // justificado, menos na última linha do parágrafo
-      doc.text(l, M, y, i === ls.length - 1 ? {} : { maxWidth: W - 2 * M, align: 'justify' });
+      // Justifica só as linhas cheias: a última do parágrafo e as linhas curtas
+      // (nome de chapa, cargos) ficam à esquerda, sem letras espaçadas
+      const cheia = i < ls.length - 1 && !colado && doc.getTextWidth(l) > largura * 0.85;
+      doc.text(l, M, y, cheia ? { maxWidth: largura, align: 'justify' } : {});
       y += 5.6;
     });
     y += colado ? 0 : 3.4;
@@ -82,9 +88,9 @@ export const gerarEditalAptosPDF = async ({ balaustre, aptos = [], dadosLojaPDF 
     doc.setDrawColor(...TEXTO); doc.setLineWidth(0.3);
     doc.line(W / 2 - 45, y, W / 2 + 45, y);
     doc.setFont('times', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...TEXTO);
-    doc.text(`Ir∴ ${String(nome || '').toUpperCase()}`, W / 2, y + 5, { align: 'center' });
+    doc.text(pdfTexto(`Ir∴ ${String(nome || '').toUpperCase()}`), W / 2, y + 5, { align: 'center' });
     doc.setFont('times', 'normal');
-    doc.text(cargo || '', W / 2, y + 10, { align: 'center' });
+    doc.text(pdfTexto(cargo || ''), W / 2, y + 10, { align: 'center' });
     y += 22;
   });
 
