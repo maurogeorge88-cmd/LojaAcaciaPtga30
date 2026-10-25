@@ -24,7 +24,7 @@ const VAZIA = () => {
     brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '', presentes: [], aptidao_ajustes: {}, bloquear_inaptos: false };
 };
 
-export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSaved, onMarcarRealizada, showSuccess, showError }) {
+export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSaved, onMarcarRealizada, onVoltarPendente, showSuccess, showError }) {
   const [aba, setAba] = useState('config');
   const [el, setElState] = useState(() => ({ ...VAZIA(), ...(balaustre.eleicao_glemt || {}) }));
   const [alterado, setAlterado] = useState(false);
@@ -352,6 +352,12 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                     ) : <div style={{ ...inp, color: '#10b981', fontWeight: 700 }}>✅ Realizada</div>}
                   </div>
                 </div>
+                {!pendente && podeEditar && (
+                  <button type="button" onClick={async () => { if (alterado) await salvar(true); onVoltarPendente?.(balaustreAtual); }}
+                    style={{ ...btn('#f59e0b', 'rgba(245,158,11,0.12)'), width: '100%', marginTop: '0.5rem' }}>
+                    ↩️ Voltar para pendente (libera o nº do balaustre)
+                  </button>
+                )}
                 {(() => {
                   const de = el.data_edital || menos15(ref);
                   if (!de || !ref) return null;
