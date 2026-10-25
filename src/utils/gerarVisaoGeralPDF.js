@@ -114,31 +114,19 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   titulo('Conta bancária');
   cartoes([
     [`Saldo em conta antes de ${ano}`, moeda(r.inicio.banco)],
-    ['Receitas em conta', moeda(r.movimento.receitas), VERDE, `Depósitos: ${moeda(r.movimento.depositos)}`],
-    ['Despesas em conta', moeda(r.movimento.despesas), VERMELHO],
-    ['Saldo em conta hoje', moeda(r.fim.banco), AZUL],
-  ]);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-  doc.setTextColor(...(Math.abs(r.confere) < 0.01 ? CINZA : VERMELHO));
-  doc.text(`${moeda(r.inicio.banco)} + ${moeda(r.movimento.receitas)} + ${moeda(r.movimento.depositos)} - ${moeda(r.movimento.despesas)} = ${moeda(r.fim.banco)}`
-    + (Math.abs(r.confere) < 0.01 ? '' : ` (diferenca de ${moeda(Math.abs(r.confere))})`), M, y);
-  y += 8;
-
-  titulo('Espécie (caixa físico)');
-  cartoes([
-    ['Recebido em dinheiro', moeda(r.movimento.especie.recebido), VERDE],
-    ['Sangrias (ao banco)', moeda(r.movimento.especie.sangrias)],
-    ['Despesas em dinheiro', moeda(r.movimento.especie.despesas), VERMELHO],
-    ['Caixa físico hoje', moeda(r.fim.caixa), AZUL, 'Acumulado'],
+    ['Receitas pagas', moeda(r.movimento.receitasPagas), VERDE, `Em espécie: ${moeda(r.movimento.especie.recebido)}`],
+    ['Despesas pagas', moeda(r.movimento.despesasPagas), VERMELHO],
+    ['Saldo no período', moeda(r.movimento.saldoPeriodo), r.movimento.saldoPeriodo >= 0 ? AZUL : VERMELHO],
   ]);
 
-  titulo('Movimento do ano');
+  titulo('Saldos atuais');
   cartoes([
-    ['Receitas pagas', moeda(r.movimento.receitasPagas), VERDE, 'Conta + espécie'],
-    ['Despesas pagas', moeda(r.movimento.despesasPagas), VERMELHO, 'Conta + espécie'],
-    ['Saldo do período', moeda(r.movimento.saldoPeriodo), r.movimento.saldoPeriodo >= 0 ? VERDE : VERMELHO],
-    ['Saldo total hoje', moeda(r.fim.total), AZUL, 'Conta + caixa'],
+    ['Caixa físico hoje', moeda(r.fim.caixa), VERDE, 'Dinheiro não depositado'],
+    ['Saldo em conta hoje', moeda(r.fim.banco), AZUL, 'PIX, Transf., Cartão'],
+    ['Saldo total', moeda(r.fim.total), TEXTO, 'Conta + caixa'],
   ]);
+
+  titulo('Maiores receitas e despesas');
   tabela(
     [{ t: 'Maiores receitas' }, { t: 'Valor', align: 'right' }],
     r.topReceitas.map(([n2, v]) => [n2, moeda(v)]),
