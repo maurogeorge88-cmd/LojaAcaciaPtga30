@@ -25,16 +25,23 @@ const Secao = ({ titulo, icone, children, acao }) => (
 );
 
 const Cartao = ({ rotulo, valor, detalhe, cor = CORES.azul }) => (
-  <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: `4px solid ${cor}`, borderRadius: 'var(--radius-lg)', padding: '0.85rem 1rem', minWidth: 0 }}>
+  <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: `4px solid ${cor}`, borderRadius: 'var(--radius-lg)', padding: '0.85rem 1rem', minWidth: 0, height: '100%', boxSizing: 'border-box' }}>
     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{rotulo}</div>
     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.25, overflowWrap: 'anywhere' }}>{valor}</div>
     {detalhe && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>{detalhe}</div>}
   </div>
 );
 
-// justifyContent centraliza os cartões que sobram na última linha
+// Flex: os cartões crescem para preencher a linha e os que sobram ficam centralizados,
+// mantendo a mesma largura dos de cima
 const Grade = ({ children, min = '190px' }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${min}, 230px))`, gap: '0.6rem', justifyContent: 'center' }}>{children}</div>
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', justifyContent: 'center' }}>
+    {Array.isArray(children)
+      ? children.flat().filter(Boolean).map((c, i) => (
+          <div key={i} style={{ flex: `1 1 ${min}`, minWidth: min, maxWidth: '280px' }}>{c}</div>
+        ))
+      : children}
+  </div>
 );
 
 const Tabela = ({ colunas, linhas, vazio = 'Nada registrado neste ano.' }) => (
@@ -90,7 +97,7 @@ export default function VisaoGeral({ showError }) {
           // Custo do ágape = despesas vinculadas; parte dos Irmãos = rateio das cotas
           q(supabase.from('lancamentos_loja').select('valor, tipo, evento_comemorativo_id, origem_tipo').not('evento_comemorativo_id', 'is', null)),
           q(supabase.from('evento_rateio_participantes').select('evento_id, cotas, irmao_id')),
-          q(supabase.from('pranchas').select('id, data_prancha').gte('data_prancha', de).lte('data_prancha', ate)),
+          q(supabase.from('pranchas').select('id, data_prancha, numero_prancha')),
           q(supabase.from('editais').select('id, ano').eq('ano', ano)),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
@@ -191,13 +198,15 @@ export default function VisaoGeral({ showError }) {
       const c = cotas[a.id] || { irmaos: 0, convidados: 0 };
       const todas = c.irmaos + c.convidados;
       const valorCota = a.valor_ajustado ? n(a.valor_ajustado) : (todas > 0 ? Math.max(0, total - contrib) / todas : 0);
-      const irmaos = c.irmaos * valorCota;                 // custo dos Irmãos
-      const loja = c.convidados * valorCota + contrib;     // custo da Loja: convidados + contribuição
-      // Saldo: o que foi coberto (Irmãos + parte da Loja) menos o custo do ágape
-      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos, saldo: irmaos + loja - total };
+      const irmaos = c.irmaos * valorCota;                 // o que os Irmãos pagaram
+      const convidados = c.convidados * valorCota + contrib; // parte dos convidados (referência)
+      const loja = total - irmaos;                         // custo real da Loja: o que sobrou do total
+      // Saldo: positivo quando os convidados cobrem o que a Loja bancou
+      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos, convidados, saldo: convidados - loja };
     }).sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
     const agTotal = agapes.reduce((t, a) => t + a.total, 0);
     const agLoja = agapes.reduce((t, a) => t + a.loja, 0);
+    const agConvidados = agapes.reduce((t, a) => t + a.convidados, 0);
     const agIrmaos = agapes.reduce((t, a) => t + a.irmaos, 0);
     const agSaldo = agapes.reduce((t, a) => t + a.saldo, 0);
 
@@ -218,8 +227,14 @@ export default function VisaoGeral({ showError }) {
     return {
       inicio, fim, movimento, topReceitas: porCategoria('receita'), topDespesas: porCategoria('despesa'),
       balaustresGrau, totalBalaustres: d.balaustres.length, sessoes: d.sessoesPres.length,
-      agapes, agTotal, agLoja, agIrmaos, agSaldo,
-      pranchas: d.pranchas.length, editais: d.editais.length,
+      agapes, agTotal, agLoja, agIrmaos, agSaldo, agConvidados,
+      pranchas: d.pranchas.filter(p => {
+        const anoData = anoDe(p.data_prancha);
+        if (anoData) return anoData === ano;
+        const m = String(p.numero_prancha || '').match(/(\d{4})\s*$/); // ex.: 034/2026
+        return m ? Number(m[1]) === ano : false;
+      }).length,
+      editais: d.editais.length,
       eventos, projetos, comodatosAno, comodatosAtivos, familiasAtendidas, totalAjudas,
       ajudas: d.ajudas.length, familiasCadastradas: d.familias.length,
     };
@@ -285,15 +300,15 @@ export default function VisaoGeral({ showError }) {
           <Grade>
             <Cartao rotulo="Quantidade" valor={r.agapes.length} cor={CORES.ambar} />
             <Cartao rotulo="Valor total dos ágapes" valor={moeda(r.agTotal)} cor={CORES.azul} />
-            <Cartao rotulo="Custo da Loja (convidados)" valor={moeda(r.agLoja)} cor={CORES.roxo} />
+            <Cartao rotulo="Custo da Loja" valor={moeda(r.agLoja)} detalhe={`Convidados: ${moeda(r.agConvidados)}`} cor={CORES.roxo} />
             <Cartao rotulo="Custo dos Irmãos" valor={moeda(r.agIrmaos)} cor={CORES.verde} />
             <Cartao rotulo="Saldo final" valor={moeda(r.agSaldo)} detalhe={r.agSaldo < 0 ? 'Prejuízo para a Loja' : 'Positivo'} cor={r.agSaldo < 0 ? CORES.vermelho : CORES.verde} />
             <Cartao rotulo="Custo médio" valor={moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0)} cor={CORES.cinza} />
           </Grade>
           <div style={{ marginTop: '0.6rem' }}>
             <Tabela
-              colunas={[{ titulo: 'Ágape / Festa' }, { titulo: 'Data' }, { titulo: 'Valor total', align: 'right' }, { titulo: 'Custo Loja (convidados)', align: 'right' }, { titulo: 'Custo Irmãos', align: 'right' }, { titulo: 'Saldo', align: 'right' }]}
-              linhas={r.agapes.map(a => [a.nome, dataBR(a.data), moeda(a.total), moeda(a.loja), moeda(a.irmaos),
+              colunas={[{ titulo: 'Ágape / Festa' }, { titulo: 'Data' }, { titulo: 'Valor total', align: 'right' }, { titulo: 'Custo Irmãos', align: 'right' }, { titulo: 'Custo Loja', align: 'right' }, { titulo: 'Convidados', align: 'right' }, { titulo: 'Saldo', align: 'right' }]}
+              linhas={r.agapes.map(a => [a.nome, dataBR(a.data), moeda(a.total), moeda(a.irmaos), moeda(a.loja), moeda(a.convidados),
                 <span style={{ color: a.saldo < -0.005 ? CORES.vermelho : CORES.verde, fontWeight: 700 }}>{moeda(a.saldo)}</span>])}
               vazio="Nenhum ágape registrado neste ano." />
           </div>
