@@ -139,6 +139,7 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   // ── Tronco de Solidariedade ────────────────────────────────────────────
   titulo('Tronco de Solidariedade e Arco Real');
   cartoes([
+    [`Saldo antes de ${ano}`, moeda(r.troncoAntes.total), TEXTO, `Conta ${moeda(r.troncoAntes.banco)} · Espécie ${moeda(r.troncoAntes.especie)}`],
     ['Arrecadado no ano', moeda(r.troncoAno.arrecadado), VERDE],
     ['Aplicado no ano', moeda(r.troncoAno.aplicado), VERMELHO],
     ['Disponível hoje', moeda(r.troncoAtual.total), AZUL, `Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`],
