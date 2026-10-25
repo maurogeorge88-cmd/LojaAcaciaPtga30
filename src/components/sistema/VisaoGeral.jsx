@@ -218,6 +218,8 @@ export default function VisaoGeral({ showError }) {
     const noAno = (l) => String(l.data_pagamento || '').substring(0, 4) === String(ano);
     const troncoAno = tronco((d.lancTronco || []).filter(noAno));
     const troncoAtual = tronco(d.lancTronco || []);     // acumulado, como em Finanças
+    // Saldo que já existia antes do ano (explica o disponível quando o aplicado supera o arrecadado)
+    const troncoAntes = tronco((d.lancTronco || []).filter(l => String(l.data_pagamento || '') < `${ano}-01-01`));
 
     // ARCO REAL — igual a calcularArcoRealTotal (acumulado)
     const arcoLista = d.arcoReal || [];
@@ -301,7 +303,7 @@ export default function VisaoGeral({ showError }) {
     const totalAjudas = d.ajudas.reduce((t, a) => t + n(a.valor_estimado), 0);
 
     return {
-      inicio, fim, movimento, troncoAno, troncoAtual, arco, confere,
+      inicio, fim, movimento, troncoAno, troncoAtual, troncoAntes, arco, confere,
       topReceitas: porCategoria('receita'), topDespesas: porCategoria('despesa'),
       balaustresGrau, totalBalaustres: d.balaustres.length, sessoes: d.sessoesPres.length,
       agapes, agTotal, agLoja, agIrmaos, agSaldo, agConvidados,
@@ -389,13 +391,15 @@ export default function VisaoGeral({ showError }) {
 
         <Secao titulo="Tronco de Solidariedade e Arco Real" icone="🕊️">
           <Grade>
+            <Cartao rotulo={`Saldo antes de ${ano}`} valor={moeda(r.troncoAntes.total)} detalhe={`Conta ${moeda(r.troncoAntes.banco)} · Espécie ${moeda(r.troncoAntes.especie)}`} cor={CORES.cinza} />
             <Cartao rotulo="Arrecadado no ano" valor={moeda(r.troncoAno.arrecadado)} cor={CORES.verde} />
             <Cartao rotulo="Aplicado no ano" valor={moeda(r.troncoAno.aplicado)} cor={CORES.vermelho} />
             <Cartao rotulo="Disponível hoje" valor={moeda(r.troncoAtual.total)} detalhe={`Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`} cor={CORES.azul} />
             <Cartao rotulo="Arco Real — disponível" valor={moeda(r.arco.saldo)} detalhe={`Receita ${moeda(r.arco.receita)} · Despesa ${moeda(r.arco.despesa)}`} cor={CORES.roxo} />
           </Grade>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
-            Informativo: Tronco e Arco Real já estão somados nos saldos acima.
+            {moeda(r.troncoAntes.total)} + {moeda(r.troncoAno.arrecadado)} − {moeda(r.troncoAno.aplicado)} = {moeda(r.troncoAtual.total)}
+            {' '}· Informativo: Tronco e Arco Real já estão somados nos saldos da Loja.
           </p>
         </Secao>
 
