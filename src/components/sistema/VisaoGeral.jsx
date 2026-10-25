@@ -391,7 +391,7 @@ export default function VisaoGeral({ showError }) {
 
         <Secao titulo="Tronco de Solidariedade e Arco Real" icone="🕊️">
           <Grade>
-            <Cartao rotulo={`Saldo antes de ${ano}`} valor={moeda(r.troncoAntes.total)} detalhe={`Conta ${moeda(r.troncoAntes.banco)} · Espécie ${moeda(r.troncoAntes.especie)}`} cor={CORES.cinza} />
+            <Cartao rotulo={`Saldo 1º de Janeiro/${ano}`} valor={moeda(r.troncoAntes.total)} detalhe={`Conta ${moeda(r.troncoAntes.banco)} · Espécie ${moeda(r.troncoAntes.especie)}`} cor={CORES.cinza} />
             <Cartao rotulo="Arrecadado no ano" valor={moeda(r.troncoAno.arrecadado)} cor={CORES.verde} />
             <Cartao rotulo="Aplicado no ano" valor={moeda(r.troncoAno.aplicado)} cor={CORES.vermelho} />
             <Cartao rotulo="Disponível hoje" valor={moeda(r.troncoAtual.total)} detalhe={`Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`} cor={CORES.azul} />
