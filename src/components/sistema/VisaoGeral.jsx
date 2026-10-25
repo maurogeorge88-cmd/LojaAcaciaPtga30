@@ -403,14 +403,14 @@ export default function VisaoGeral({ showError }) {
           </p>
         </Secao>
 
-        <Secao titulo="Ágapes e festas" icone="🍽️">
+        <Secao titulo={`Ágapes e festas (${r.agapes.length})`} icone="🍽️">
           <Grade>
             <Cartao rotulo="Quantidade" valor={r.agapes.length} cor={CORES.ambar} />
             <Cartao rotulo="Valor total dos ágapes" valor={moeda(r.agTotal)} cor={CORES.azul} />
             <Cartao rotulo="Pago pelos Irmãos" valor={moeda(r.agIrmaos)} cor={CORES.verde} />
             <Cartao rotulo="Custo da Loja" valor={moeda(r.agLoja)} detalhe={`Convidados: ${moeda(r.agConvidados)}`} cor={CORES.roxo} />
             <Cartao rotulo="Saldo final" valor={moeda(r.agSaldo)} detalhe={r.agSaldo < 0 ? 'Pago pela Loja' : 'Sobrou para a Loja'} cor={r.agSaldo < 0 ? CORES.vermelho : CORES.verde} />
-            <Cartao rotulo="Custo médio" valor={moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0)} cor={CORES.cinza} />
+            <Cartao rotulo="Média por ágape" valor={moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0)} detalhe={`${r.agapes.length} ágape(s) no ano`} cor={CORES.cinza} />
           </Grade>
           <div style={{ marginTop: '0.6rem' }}>
             <Tabela
