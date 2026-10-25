@@ -120,6 +120,15 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     ['Receitas do ano', moeda(r.movimento.receitas), VERDE],
     ['Despesas do ano', moeda(r.movimento.despesas), VERMELHO],
   ]);
+  // Conferência da conta
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  doc.setTextColor(...(Math.abs(r.confere) < 0.01 ? CINZA : VERMELHO));
+  doc.text(`${moeda(r.inicio.total)} + ${moeda(r.movimento.receitas)} - ${moeda(r.movimento.despesas)} = ${moeda(r.fim.total)}`
+    + (Math.abs(r.confere) < 0.01 ? '' : ` (diferenca de ${moeda(Math.abs(r.confere))})`), M, y);
+  y += 4;
+  doc.setFontSize(7.5); doc.setTextColor(...CINZA);
+  doc.text('Mesmas regras de Financas da Loja. Tronco e Arco Real sao controlados a parte.', M, y);
+  y += 8;
   tabela(
     [{ t: 'Maiores receitas' }, { t: 'Valor', align: 'right' }],
     r.topReceitas.map(([n, v]) => [n, moeda(v)]),
@@ -128,6 +137,14 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     [{ t: 'Maiores despesas' }, { t: 'Valor', align: 'right' }],
     r.topDespesas.map(([n, v]) => [n, moeda(v)]),
   );
+
+  // ── Tronco de Solidariedade ────────────────────────────────────────────
+  titulo('Tronco de Solidariedade');
+  cartoes([
+    ['Arrecadado no ano', moeda(r.troncoAno.arrecadado), VERDE],
+    ['Aplicado no ano', moeda(r.troncoAno.aplicado), VERMELHO],
+    ['Disponível hoje', moeda(r.troncoAtual.total), AZUL, `Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`],
+  ]);
 
   // ── 4. Ágapes e festas ─────────────────────────────────────────────────
   titulo('Ágapes e festas');
