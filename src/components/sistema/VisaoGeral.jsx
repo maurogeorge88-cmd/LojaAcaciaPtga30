@@ -101,7 +101,7 @@ export default function VisaoGeral({ showError }) {
           return tudo;
         };
         const [
-          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, eventos, projetos, custosProj, receitasProj,
+          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, eventos, projetos, custosProj, receitasProj,
           ajudas, familias, comodatos, sessoesPres,
         ] = await Promise.all([
           q(supabase.from('balaustres').select('id, grau_sessao, data_sessao, numero_balaustre').gte('data_sessao', de).lte('data_sessao', ate)),
@@ -114,6 +114,10 @@ export default function VisaoGeral({ showError }) {
           qTudo(() => supabase.from('pranchas_expedidas').select('id, data_prancha, numero_prancha').order('id')),
           q(supabase.from('editais').select('id, ano').eq('ano', ano)),
           q(supabase.from('dados_loja').select('*').limit(1)),
+          // Tronco por ID da categoria (não por nome, para não pegar "Tronco Arco Real")
+          q(supabase.from('categorias_financeiras').select('id, nome, categoria_pai_id')),
+          qTudo(() => supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categoria_id, categorias_financeiras(tipo)').eq('status', 'pago').order('id')),
+          q(supabase.from('arco_real_lancamentos').select('tipo, valor, status')),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
           q(supabase.from('custos_projeto').select('projeto_id, valor')),
@@ -124,7 +128,7 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate)),
         ]);
         if (!vivo) return;
-        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
+        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
       } catch (e) {
         showError?.('Erro ao carregar a visão geral: ' + e.message);
         if (vivo) setD(null);
@@ -194,16 +198,34 @@ export default function VisaoGeral({ showError }) {
     };
     const confere = Math.round((contaInicio + cAno.receitas + cAno.depositos - cAno.despesas - contaFim) * 100) / 100;
 
-    // TRONCO — mesma conta da tela de Finanças (informativo: já está nos saldos acima)
+    // TRONCO — igual a calcularTroncoTotal: filtra por ID das categorias
+    // "Tronco de Solidariedade" (receita), "Tronco Saida" e suas subcategorias
+    const catReceita = (d.categorias || []).find(c => (c.nome || '').toLowerCase() === 'tronco de solidariedade');
+    const catSaida = (d.categorias || []).find(c => (c.nome || '').toLowerCase() === 'tronco saida');
+    const idsTronco = [
+      ...(catReceita ? [catReceita.id] : []),
+      ...(catSaida ? [catSaida.id, ...(d.categorias || []).filter(c => String(c.categoria_pai_id) === String(catSaida.id)).map(c => c.id)] : []),
+    ].map(String);
+    const doTronco = (l) => idsTronco.includes(String(l.categoria_id));
     const tronco = (lancs) => {
-      const rb = soma(lancs, l => eTronco(l) && rec(l) && !dinheiro(l));
-      const re = soma(lancs, l => eTronco(l) && rec(l) && dinheiro(l) && !interna(l));
-      const db = soma(lancs, l => eTronco(l) && desp(l) && !dinheiro(l) && !interna(l));
-      const de2 = soma(lancs, l => eTronco(l) && desp(l) && dinheiro(l));
+      const lista = lancs.filter(doTronco);
+      const rb = soma(lista, l => rec(l) && !dinheiro(l));
+      const re = soma(lista, l => rec(l) && dinheiro(l) && !interna(l));
+      const db = soma(lista, l => desp(l) && !dinheiro(l) && !interna(l));
+      const de2 = soma(lista, l => desp(l) && dinheiro(l));
       return { banco: rb - db, especie: re - de2, arrecadado: rb + re, aplicado: db + de2, total: (rb - db) + (re - de2) };
     };
-    const troncoAno = tronco(d.lancAno);
-    const troncoAtual = tronco([...d.lancAteInicio, ...d.lancAno]);
+    const noAno = (l) => String(l.data_pagamento || '').substring(0, 4) === String(ano);
+    const troncoAno = tronco((d.lancTronco || []).filter(noAno));
+    const troncoAtual = tronco(d.lancTronco || []);     // acumulado, como em Finanças
+
+    // ARCO REAL — igual a calcularArcoRealTotal (acumulado)
+    const arcoLista = d.arcoReal || [];
+    const arco = {
+      receita: arcoLista.filter(l => l.tipo === 'receita' && l.status === 'pago').reduce((t, l) => t + n(l.valor), 0),
+      despesa: arcoLista.filter(l => l.tipo === 'despesa').reduce((t, l) => t + n(l.valor), 0),
+    };
+    arco.saldo = arco.receita - arco.despesa;
 
     // Top categorias do ano
     const porCategoria = (tipo) => {
@@ -279,7 +301,7 @@ export default function VisaoGeral({ showError }) {
     const totalAjudas = d.ajudas.reduce((t, a) => t + n(a.valor_estimado), 0);
 
     return {
-      inicio, fim, movimento, troncoAno, troncoAtual, confere,
+      inicio, fim, movimento, troncoAno, troncoAtual, arco, confere,
       topReceitas: porCategoria('receita'), topDespesas: porCategoria('despesa'),
       balaustresGrau, totalBalaustres: d.balaustres.length, sessoes: d.sessoesPres.length,
       agapes, agTotal, agLoja, agIrmaos, agSaldo, agConvidados,
@@ -365,14 +387,15 @@ export default function VisaoGeral({ showError }) {
           </div>
         </Secao>
 
-        <Secao titulo="Tronco de Solidariedade" icone="🕊️">
+        <Secao titulo="Tronco de Solidariedade e Arco Real" icone="🕊️">
           <Grade>
             <Cartao rotulo="Arrecadado no ano" valor={moeda(r.troncoAno.arrecadado)} cor={CORES.verde} />
             <Cartao rotulo="Aplicado no ano" valor={moeda(r.troncoAno.aplicado)} cor={CORES.vermelho} />
             <Cartao rotulo="Disponível hoje" valor={moeda(r.troncoAtual.total)} detalhe={`Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`} cor={CORES.azul} />
+            <Cartao rotulo="Arco Real — disponível" valor={moeda(r.arco.saldo)} detalhe={`Receita ${moeda(r.arco.receita)} · Despesa ${moeda(r.arco.despesa)}`} cor={CORES.roxo} />
           </Grade>
           <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
-            Informativo: estes valores já estão somados nos saldos acima.
+            Informativo: Tronco e Arco Real já estão somados nos saldos acima.
           </p>
         </Secao>
 
