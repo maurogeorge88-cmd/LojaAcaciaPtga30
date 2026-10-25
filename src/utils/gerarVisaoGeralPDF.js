@@ -121,7 +121,7 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   // ── 3. Financeiro: conta, espécie e movimento (igual a Finanças da Loja) ──
   titulo('Conta bancária');
   cartoes([
-    [`Saldo em conta antes de ${ano}`, moeda(r.inicio.banco)],
+    [`Saldo 1º de Janeiro/${ano}`, moeda(r.inicio.banco)],
     ['Receitas pagas', moeda(r.movimento.receitasPagas), VERDE, `Em espécie: ${moeda(r.movimento.especie.recebido)}`],
     ['Despesas pagas', moeda(r.movimento.despesasPagas), VERMELHO],
     ['Saldo no período', moeda(r.movimento.saldoPeriodo), r.movimento.saldoPeriodo >= 0 ? AZUL : VERMELHO],
