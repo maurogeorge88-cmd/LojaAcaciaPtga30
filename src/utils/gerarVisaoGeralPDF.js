@@ -110,32 +110,42 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     [...r.balaustresGrau.map(([g, q]) => [g, String(q)]), ['TOTAL', String(r.totalBalaustres)]],
   );
 
-  // ── 3. Financeiro ──────────────────────────────────────────────────────
-  titulo('Financeiro — como começou e como está');
-  const variacao = r.fim.total - r.inicio.total;
+  // ── 3. Financeiro: conta, espécie e movimento (igual a Finanças da Loja) ──
+  titulo('Conta bancária');
   cartoes([
-    [`Saldo em 01/01/${ano}`, moeda(r.inicio.total), null, `Banco ${moeda(r.inicio.banco)} · Caixa ${moeda(r.inicio.caixa)}`],
-    ['Saldo atual', moeda(r.fim.total), AZUL, `Banco ${moeda(r.fim.banco)} · Caixa ${moeda(r.fim.caixa)}`],
-    ['Variação no ano', `${variacao >= 0 ? '+' : '-'} ${moeda(Math.abs(variacao))}`, variacao >= 0 ? VERDE : VERMELHO],
-    ['Receitas do ano', moeda(r.movimento.receitas), VERDE],
-    ['Despesas do ano', moeda(r.movimento.despesas), VERMELHO],
+    [`Saldo em conta antes de ${ano}`, moeda(r.inicio.banco)],
+    ['Receitas em conta', moeda(r.movimento.receitas), VERDE, `Depósitos: ${moeda(r.movimento.depositos)}`],
+    ['Despesas em conta', moeda(r.movimento.despesas), VERMELHO],
+    ['Saldo em conta hoje', moeda(r.fim.banco), AZUL],
   ]);
-  // Conferência da conta
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
   doc.setTextColor(...(Math.abs(r.confere) < 0.01 ? CINZA : VERMELHO));
-  doc.text(`${moeda(r.inicio.total)} + ${moeda(r.movimento.receitas)} - ${moeda(r.movimento.despesas)} = ${moeda(r.fim.total)}`
+  doc.text(`${moeda(r.inicio.banco)} + ${moeda(r.movimento.receitas)} + ${moeda(r.movimento.depositos)} - ${moeda(r.movimento.despesas)} = ${moeda(r.fim.banco)}`
     + (Math.abs(r.confere) < 0.01 ? '' : ` (diferenca de ${moeda(Math.abs(r.confere))})`), M, y);
-  y += 4;
-  doc.setFontSize(7.5); doc.setTextColor(...CINZA);
-  doc.text('Mesmas regras de Financas da Loja. Tronco e Arco Real sao controlados a parte.', M, y);
   y += 8;
+
+  titulo('Espécie (caixa físico)');
+  cartoes([
+    ['Recebido em dinheiro', moeda(r.movimento.especie.recebido), VERDE],
+    ['Sangrias (ao banco)', moeda(r.movimento.especie.sangrias)],
+    ['Despesas em dinheiro', moeda(r.movimento.especie.despesas), VERMELHO],
+    ['Caixa físico hoje', moeda(r.fim.caixa), AZUL, 'Acumulado'],
+  ]);
+
+  titulo('Movimento do ano');
+  cartoes([
+    ['Receitas pagas', moeda(r.movimento.receitasPagas), VERDE, 'Conta + espécie'],
+    ['Despesas pagas', moeda(r.movimento.despesasPagas), VERMELHO, 'Conta + espécie'],
+    ['Saldo do período', moeda(r.movimento.saldoPeriodo), r.movimento.saldoPeriodo >= 0 ? VERDE : VERMELHO],
+    ['Saldo total hoje', moeda(r.fim.total), AZUL, 'Conta + caixa'],
+  ]);
   tabela(
     [{ t: 'Maiores receitas' }, { t: 'Valor', align: 'right' }],
-    r.topReceitas.map(([n, v]) => [n, moeda(v)]),
+    r.topReceitas.map(([n2, v]) => [n2, moeda(v)]),
   );
   tabela(
     [{ t: 'Maiores despesas' }, { t: 'Valor', align: 'right' }],
-    r.topDespesas.map(([n, v]) => [n, moeda(v)]),
+    r.topDespesas.map(([n2, v]) => [n2, moeda(v)]),
   );
 
   // ── Tronco de Solidariedade ────────────────────────────────────────────
@@ -145,6 +155,9 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     ['Aplicado no ano', moeda(r.troncoAno.aplicado), VERMELHO],
     ['Disponível hoje', moeda(r.troncoAtual.total), AZUL, `Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`],
   ]);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
+  doc.text('Informativo: estes valores ja estao somados nos saldos acima.', M, y);
+  y += 8;
 
   // ── 4. Ágapes e festas ─────────────────────────────────────────────────
   titulo('Ágapes e festas');
