@@ -26,6 +26,7 @@ import Pranchas from './components/pranchas/Pranchas';
 import Editais from './components/editais/Editais';
 import AuditoriaFinanceira from './components/financeiro/AuditoriaFinanceira';
 import VisaoGeral from './components/sistema/VisaoGeral';
+import LojasVisitantes from './components/irmaos/LojasVisitantes';
 import Comissoes from './components/comissoes/Comissoes';
 import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
@@ -214,6 +215,7 @@ function App() {
     'sobre': 'ℹ️ Sobre o Sistema',
     'sindicancia': '🔍 Sindicância',
     'estatisticas': '📈 Estatísticas',
+    'lojas-visitantes': '🏛️ Lojas Visitantes',
     'visao-geral': '🗓️ Visão Geral',
   };
 
@@ -1842,6 +1844,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'email-irmaos' && '📧 Central E-Mail'}
                   {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
                   {currentPage === 'auditoria-financeira' && '🔍 Auditoria Financeira'}
+                  {currentPage === 'lojas-visitantes' && '🏛️ Lojas Visitantes'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2386,6 +2389,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'estatisticas' && (
           <Estatisticas grauUsuario={grauUsuarioLogado} permissoes={permissoes} />
+        )}
+
+        {currentPage === 'lojas-visitantes' && (
+          <LojasVisitantes showSuccess={showSuccess} showError={showError} permissoes={permissoes} />
         )}
 
         {currentPage === 'visao-geral' && (
