@@ -25,6 +25,7 @@ import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Editais from './components/editais/Editais';
 import AuditoriaFinanceira from './components/financeiro/AuditoriaFinanceira';
+import VisaoGeral from './components/sistema/VisaoGeral';
 import Comissoes from './components/comissoes/Comissoes';
 import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
@@ -213,6 +214,7 @@ function App() {
     'sobre': 'ℹ️ Sobre o Sistema',
     'sindicancia': '🔍 Sindicância',
     'estatisticas': '📈 Estatísticas',
+    'visao-geral': '🗓️ Visão Geral',
   };
 
   // Guarda quais telas já foram registradas NESTA sessão (enquanto o app
@@ -2384,6 +2386,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'estatisticas' && (
           <Estatisticas grauUsuario={grauUsuarioLogado} permissoes={permissoes} />
+        )}
+
+        {currentPage === 'visao-geral' && (
+          <VisaoGeral showError={showError} />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
