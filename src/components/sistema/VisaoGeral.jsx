@@ -99,7 +99,7 @@ export default function VisaoGeral({ showError }) {
           // Custo do ágape = despesas vinculadas; parte dos Irmãos = rateio das cotas
           q(supabase.from('lancamentos_loja').select('valor, tipo, evento_comemorativo_id, origem_tipo').not('evento_comemorativo_id', 'is', null)),
           q(supabase.from('evento_rateio_participantes').select('evento_id, cotas, irmao_id')),
-          q(supabase.from('pranchas').select('id, data_prancha, numero_prancha')),
+          q(supabase.from('pranchas_expedidas').select('id, data_prancha, numero_prancha')),
           q(supabase.from('editais').select('id, ano').eq('ano', ano)),
           q(supabase.from('dados_loja').select('*').limit(1)),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
