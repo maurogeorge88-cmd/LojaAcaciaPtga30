@@ -89,6 +89,32 @@ const Balaustres = ({
     } catch (e) { showError('Erro: ' + e.message); }
   };
 
+  // Volta a eleição GLEMT para PENDENTE e devolve o número do balaustre
+  const voltarPendente = async (balaustre) => {
+    const num = balaustre.numero_balaustre;
+    const ano = balaustre.ano_balaustre;
+    const grau = balaustre.grau_sessao || 'Mestre';
+    if (!window.confirm(`Voltar a eleição GLEMT de ${formatarData(balaustre.data_sessao)} para PENDENTE?\nO balaustre nº ${num}/${ano} perderá a numeração e o próximo de ${grau} voltará a ser o nº ${num}.`)) return;
+    try {
+      // só devolve a numeração se este for o último do grau/ano, para não abrir vão na sequência
+      const { data: ult } = await supabase.from('balaustres').select('id, numero_balaustre')
+        .eq('grau_sessao', grau).eq('ano_balaustre', ano)
+        .not('numero_balaustre', 'is', null).order('numero_balaustre', { ascending: false }).limit(1);
+      if (ult && ult[0] && String(ult[0].id) !== String(balaustre.id)) {
+        showError(`Este não é o último balaustre de ${grau} de ${ano} (o último é o nº ${ult[0].numero_balaustre}). Acerte os posteriores primeiro.`);
+        return;
+      }
+      const { data, error } = await supabase.from('balaustres')
+        .update({ numero_balaustre: null, eleicao_glemt: { ...balaustre.eleicao_glemt, status: 'pendente' } })
+        .eq('id', balaustre.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a alteração (sem permissão).');
+      showSuccess(`Eleição GLEMT voltou para pendente — o nº ${num}/${ano} foi liberado.`);
+      setModalGLEMT(null);
+      onUpdate();
+    } catch (e) { showError('Erro: ' + e.message); }
+  };
+
   // ── Eleições da Loja (para vincular sessões de Eleição/Posse) ──
   const [eleicoesLoja, setEleicoesLoja] = useState([]);
   useEffect(() => {
@@ -929,6 +955,7 @@ const Balaustres = ({
           onClose={() => setModalGLEMT(null)}
           onSaved={onUpdate}
           onMarcarRealizada={marcarRealizada}
+          onVoltarPendente={voltarPendente}
           showSuccess={showSuccess}
           showError={showError}
         />
