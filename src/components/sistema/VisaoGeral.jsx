@@ -199,10 +199,12 @@ export default function VisaoGeral({ showError }) {
       const todas = c.irmaos + c.convidados;
       const valorCota = a.valor_ajustado ? n(a.valor_ajustado) : (todas > 0 ? Math.max(0, total - contrib) / todas : 0);
       const irmaos = c.irmaos * valorCota;                 // o que os Irmãos pagaram
-      const convidados = c.convidados * valorCota + contrib; // parte dos convidados (referência)
-      const loja = total - irmaos;                         // custo real da Loja: o que sobrou do total
-      // Saldo: positivo quando os convidados cobrem o que a Loja bancou
-      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos, convidados, saldo: convidados - loja };
+      const convidados = c.convidados * valorCota + contrib; // parte dos convidados (já dentro do total)
+      // Saldo = o que os Irmãos pagaram menos o custo total.
+      // Negativo: a Loja bancou a diferença (despesa). Positivo: sobrou para a Loja.
+      const saldo = irmaos - total;
+      const loja = Math.max(0, -saldo);                    // quanto a Loja bancou
+      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos, convidados, saldo };
     }).sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
     const agTotal = agapes.reduce((t, a) => t + a.total, 0);
     const agLoja = agapes.reduce((t, a) => t + a.loja, 0);
@@ -300,15 +302,15 @@ export default function VisaoGeral({ showError }) {
           <Grade>
             <Cartao rotulo="Quantidade" valor={r.agapes.length} cor={CORES.ambar} />
             <Cartao rotulo="Valor total dos ágapes" valor={moeda(r.agTotal)} cor={CORES.azul} />
+            <Cartao rotulo="Pago pelos Irmãos" valor={moeda(r.agIrmaos)} cor={CORES.verde} />
             <Cartao rotulo="Custo da Loja" valor={moeda(r.agLoja)} detalhe={`Convidados: ${moeda(r.agConvidados)}`} cor={CORES.roxo} />
-            <Cartao rotulo="Custo dos Irmãos" valor={moeda(r.agIrmaos)} cor={CORES.verde} />
-            <Cartao rotulo="Saldo final" valor={moeda(r.agSaldo)} detalhe={r.agSaldo < 0 ? 'Prejuízo para a Loja' : 'Positivo'} cor={r.agSaldo < 0 ? CORES.vermelho : CORES.verde} />
+            <Cartao rotulo="Saldo final" valor={moeda(r.agSaldo)} detalhe={r.agSaldo < 0 ? 'Pago pela Loja' : 'Sobrou para a Loja'} cor={r.agSaldo < 0 ? CORES.vermelho : CORES.verde} />
             <Cartao rotulo="Custo médio" valor={moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0)} cor={CORES.cinza} />
           </Grade>
           <div style={{ marginTop: '0.6rem' }}>
             <Tabela
-              colunas={[{ titulo: 'Ágape / Festa' }, { titulo: 'Data' }, { titulo: 'Valor total', align: 'right' }, { titulo: 'Custo Irmãos', align: 'right' }, { titulo: 'Custo Loja', align: 'right' }, { titulo: 'Convidados', align: 'right' }, { titulo: 'Saldo', align: 'right' }]}
-              linhas={r.agapes.map(a => [a.nome, dataBR(a.data), moeda(a.total), moeda(a.irmaos), moeda(a.loja), moeda(a.convidados),
+              colunas={[{ titulo: 'Ágape / Festa' }, { titulo: 'Data' }, { titulo: 'Valor total', align: 'right' }, { titulo: 'Pago pelos Irmãos', align: 'right' }, { titulo: 'Convidados', align: 'right' }, { titulo: 'Custo Loja', align: 'right' }, { titulo: 'Saldo', align: 'right' }]}
+              linhas={r.agapes.map(a => [a.nome, dataBR(a.data), moeda(a.total), moeda(a.irmaos), moeda(a.convidados), moeda(a.loja),
                 <span style={{ color: a.saldo < -0.005 ? CORES.vermelho : CORES.verde, fontWeight: 700 }}>{moeda(a.saldo)}</span>])}
               vazio="Nenhum ágape registrado neste ano." />
           </div>
