@@ -171,16 +171,26 @@ export default function VisaoGeral({ showError }) {
     const eTudo = especieDe([...d.lancAteInicio, ...d.lancAno]);
     const caixaAtual = eTudo.recebido - eTudo.sangrias - eTudo.despesas;
 
-    // Totais do período, como nos cartões "Receitas Pagas / Despesas Pagas" de Finanças
-    const receitasPagas = soma(d.lancAno, l => rec(l) && !comp(l) && !interna(l));
-    const despesasPagas = soma(d.lancAno, l => desp(l) && !comp(l) && !interna(l) && !ehAjusteInternoTronco(l));
+    // Totais do período — fórmulas de calcularResumo (Finanças da Loja):
+    //   receitas = receitasBancarias (inclui depósito do Tronco) + receitasDinheiro (sem Tronco)
+    //   despesas = despesasBancarias (sem Tronco em dinheiro e sem Ajuste Interno) + despesasDinheiro (sem Tronco)
+    const receitasBancarias = soma(d.lancAno, l =>
+      (rec(l) && eTronco(l) && interna(l)) ||                                  // depósito do Tronco
+      (rec(l) && !comp(l) && !dinheiro(l) && !interna(l)));
+    const receitasDinheiro = soma(d.lancAno, l => rec(l) && dinheiro(l) && !interna(l) && !eTronco(l));
+    const receitasPagas = receitasBancarias + receitasDinheiro;
+    const despesasBancarias = soma(d.lancAno, l =>
+      desp(l) && !(eTronco(l) && dinheiro(l)) && !ehAjusteInternoTronco(l)
+      && !comp(l) && !dinheiro(l) && !interna(l));
+    const despesasDinheiro = soma(d.lancAno, l => desp(l) && dinheiro(l) && !interna(l) && !eTronco(l));
+    const despesasPagas = despesasBancarias + despesasDinheiro;
 
     const inicio = { banco: contaInicio, caixa: 0, total: contaInicio };
     const fim = { banco: contaFim, caixa: caixaAtual, total: contaFim + caixaAtual };
     const movimento = {
       receitas: cAno.receitas, despesas: cAno.despesas, depositos: cAno.depositos,
       receitasPagas, despesasPagas, saldoPeriodo: receitasPagas - despesasPagas,
-      especie: eAno,
+      especie: { ...eAno, recebido: receitasDinheiro },
     };
     const confere = Math.round((contaInicio + cAno.receitas + cAno.depositos - cAno.despesas - contaFim) * 100) / 100;
 
