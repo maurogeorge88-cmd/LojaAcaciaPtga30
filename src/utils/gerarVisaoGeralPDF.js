@@ -109,6 +109,9 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     ['Comodatos ativos', r.comodatosAtivos.length, null, `${r.comodatosAno.length} no ano`],
     ['Pranchas', r.pranchas],
     ['Editais', r.editais],
+    ['Visitas a outras Lojas', r.visitas],
+    ['Visitantes recebidos', r.visitantes, null, `${r.autoridades} autoridade(s)`],
+    ['Comendas entregues', r.comendasEntregues.length],
   ]);
 
   // ── 2. Balaústres por grau ─────────────────────────────────────────────
@@ -184,6 +187,29 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
     [{ t: 'Projeto' }, { t: 'Início' }, { t: 'Custo', align: 'right' }, { t: 'Receita', align: 'right' }, { t: 'Resultado', align: 'right' }],
     r.projetos.map(p => [p.nome || '', fmt(p.data), moeda(p.custo), moeda(p.receita), moeda(p.receita - p.custo)]),
     'Nenhum projeto iniciado neste ano.',
+  );
+
+  // ── Relações e distinções ──────────────────────────────────────────────
+  titulo('Relações e distinções');
+  cartoes([
+    ['Visitas a outras Lojas', String(r.visitas)],
+    ['Visitantes recebidos', String(r.visitantes), VERDE, `${r.lojasDiferentes} loja(s) · ${r.autoridades} autoridade(s)`],
+    ['Comendas entregues', String(r.comendasEntregues.length)],
+  ]);
+  tabela(
+    [{ t: 'Irmãos que mais visitaram' }, { t: 'Visitas', align: 'right' }],
+    r.rankVisitas.slice(0, 10).map(([nome, q]) => [nome, String(q)]),
+    'Nenhuma visita registrada neste ano.',
+  );
+  tabela(
+    [{ t: 'Lojas que mais nos visitaram' }, { t: 'Visitas', align: 'right' }],
+    r.rankLojas.slice(0, 10).map(([nome, q]) => [nome, String(q)]),
+    'Nenhum visitante registrado neste ano.',
+  );
+  tabela(
+    [{ t: 'Irmão' }, { t: 'Comenda' }, { t: 'Origem' }, { t: 'Entrega' }],
+    r.comendasEntregues.map(c => [c.irmao, c.comenda, c.origem, fmt(c.data)]),
+    'Nenhuma comenda entregue neste ano.',
   );
 
   // ── 6. Filantropia e comodatos ─────────────────────────────────────────
