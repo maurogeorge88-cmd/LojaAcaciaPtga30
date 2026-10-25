@@ -99,22 +99,8 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   };
 
   // ── 1. O ano em números ────────────────────────────────────────────────
-  titulo('O ano em números');
-  cartoes([
-    ['Sessões realizadas', r.sessoes],
-    ['Balaústres', r.totalBalaustres],
-    ['Ágapes e festas', r.agapes.length],
-    ['Eventos', r.eventos.length],
-    ['Famílias atendidas', r.familiasAtendidas, null, `${r.ajudas} ajuda(s)`],
-    ['Comodatos ativos', r.comodatosAtivos.length, null, `${r.comodatosAno.length} no ano`],
-    ['Pranchas', r.pranchas],
-    ['Editais', r.editais],
-    ['Visitas a outras Lojas', r.visitas],
-    ['Visitantes recebidos', r.visitantes, null, `${r.autoridades} autoridade(s)`],
-    ['Comendas entregues', r.comendasEntregues.length],
-  ]);
-
-  // ── 2. Balaústres por grau ─────────────────────────────────────────────
+  // Os números do topo foram retirados: o detalhe de cada item já aparece
+  // nos blocos específicos (balaústres, financeiro, ágapes, relações…).
   titulo('Balaústres por grau');
   tabela(
     [{ t: 'Grau' }, { t: 'Quantidade', align: 'right' }],
