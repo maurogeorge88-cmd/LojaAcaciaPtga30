@@ -365,7 +365,7 @@ export default function VisaoGeral({ showError }) {
 
         <Secao titulo="Conta bancária" icone="🏦">
           <Grade>
-            <Cartao rotulo={`Saldo em conta antes de ${ano}`} valor={moeda(r.inicio.banco)} cor={CORES.cinza} />
+            <Cartao rotulo={`Saldo 1º de Janeiro/${ano}`} valor={moeda(r.inicio.banco)} cor={CORES.cinza} />
             <Cartao rotulo="Receitas pagas" valor={moeda(r.movimento.receitasPagas)} detalhe={`Em espécie: ${moeda(r.movimento.especie.recebido)}`} cor={CORES.verde} />
             <Cartao rotulo="Despesas pagas" valor={moeda(r.movimento.despesasPagas)} cor={CORES.vermelho} />
             <Cartao rotulo="Saldo no período" valor={moeda(r.movimento.saldoPeriodo)} cor={r.movimento.saldoPeriodo >= 0 ? CORES.azul : CORES.vermelho} />
