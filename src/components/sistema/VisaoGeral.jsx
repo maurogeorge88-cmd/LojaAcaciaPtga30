@@ -101,7 +101,7 @@ export default function VisaoGeral({ showError }) {
           return tudo;
         };
         const [
-          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, eventos, projetos, custosProj, receitasProj,
+          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, visitas, visitantes, comendas, eventos, projetos, custosProj, receitasProj,
           ajudas, familias, comodatos, sessoesPres,
         ] = await Promise.all([
           q(supabase.from('balaustres').select('id, grau_sessao, data_sessao, numero_balaustre').gte('data_sessao', de).lte('data_sessao', ate)),
@@ -118,6 +118,10 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('categorias_financeiras').select('id, nome, categoria_pai_id')),
           qTudo(() => supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categoria_id, categorias_financeiras(tipo)').eq('status', 'pago').order('id')),
           q(supabase.from('arco_real_lancamentos').select('tipo, valor, status')),
+          // Visitas dos Irmãos a outras Lojas, visitantes recebidos e comendas entregues
+          qTudo(() => supabase.from('visitas_outras_lojas').select('id, data_visita, irmaos(nome), potencias_masonicas(sigla)').gte('data_visita', de).lte('data_visita', ate).order('id')),
+          qTudo(() => supabase.from('visitantes_sessao').select('id, nome_visitante, nome_loja, cidade, eh_autoridade, sessao_id').order('id')),
+          qTudo(() => supabase.from('irmaos_comendas').select('id, data_entrega, irmaos(nome), comendas(nome, origem)').gte('data_entrega', de).lte('data_entrega', ate).order('id')),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
           q(supabase.from('custos_projeto').select('projeto_id, valor')),
@@ -125,10 +129,10 @@ export default function VisaoGeral({ showError }) {
           qTudo(() => supabase.from('ajudas_caridade').select('id, data_ajuda, valor_estimado, familia_id').gte('data_ajuda', de).lte('data_ajuda', ate).order('id')),
           q(supabase.from('familias_carentes').select('id, ativa')),
           qTudo(() => supabase.from('comodatos').select('id, status, data_emprestimo, data_devolucao_real, beneficiario_id').order('id')),
-          q(supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate)),
+          qTudo(() => supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate).order('id')),
         ]);
         if (!vivo) return;
-        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
+        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, categorias, lancTronco, arcoReal, visitas, visitantes, comendas, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
       } catch (e) {
         showError?.('Erro ao carregar a visão geral: ' + e.message);
         if (vivo) setD(null);
@@ -296,6 +300,31 @@ export default function VisaoGeral({ showError }) {
       .filter(p => anoDe(p.data_inicio || p.created_at) === ano)
       .map(p => ({ nome: p.nome, status: p.status, data: p.data_inicio || p.created_at, custo: custoP[p.id] || 0, receita: receitaP[p.id] || 0 }));
 
+    // Visitas a outras Lojas: total e quem mais visitou
+    const visitasPorIrmao = {};
+    (d.visitas || []).forEach(v => {
+      const nome = v.irmaos?.nome || 'Não informado';
+      visitasPorIrmao[nome] = (visitasPorIrmao[nome] || 0) + 1;
+    });
+    const rankVisitas = Object.entries(visitasPorIrmao).sort((a, b) => b[1] - a[1]);
+
+    // Visitantes recebidos: só os das sessões do ano
+    const idsSessoes = new Set((d.sessoesPres || []).map(x => String(x.id)));
+    const visitantesAno = (d.visitantes || []).filter(v => idsSessoes.has(String(v.sessao_id)));
+    const autoridades = visitantesAno.filter(v => v.eh_autoridade === true).length;
+    const lojasVisitantes = {};
+    visitantesAno.forEach(v => {
+      const nome = (v.nome_loja || 'Não informada').trim();
+      lojasVisitantes[nome] = (lojasVisitantes[nome] || 0) + 1;
+    });
+    const rankLojas = Object.entries(lojasVisitantes).sort((a, b) => b[1] - a[1]);
+
+    // Comendas efetivamente entregues no ano
+    const comendasEntregues = (d.comendas || [])
+      .filter(c => c.data_entrega)
+      .map(c => ({ irmao: c.irmaos?.nome || '—', comenda: c.comendas?.nome || '—', origem: c.comendas?.origem || '', data: c.data_entrega }))
+      .sort((a, b) => String(a.data).localeCompare(String(b.data)));
+
     const eventos = d.eventos.filter(e => anoDe(e.data_prevista) === ano);
     const comodatosAno = d.comodatos.filter(c => anoDe(c.data_emprestimo) === ano);
     const comodatosAtivos = d.comodatos.filter(c => !c.data_devolucao_real && String(c.status || '').toLowerCase() !== 'devolvido');
@@ -307,6 +336,9 @@ export default function VisaoGeral({ showError }) {
       topReceitas: porCategoria('receita'), topDespesas: porCategoria('despesa'),
       balaustresGrau, totalBalaustres: d.balaustres.length, sessoes: d.sessoesPres.length,
       agapes, agTotal, agLoja, agIrmaos, agSaldo, agConvidados,
+      visitas: (d.visitas || []).length, rankVisitas,
+      visitantes: visitantesAno.length, autoridades, lojasDiferentes: rankLojas.length, rankLojas,
+      comendasEntregues,
       pranchas: d.pranchas.filter(p => {
         const anoData = anoDe(p.data_prancha);
         if (anoData) return anoData === ano;
@@ -353,6 +385,9 @@ export default function VisaoGeral({ showError }) {
             <Cartao rotulo="Comodatos ativos" valor={r.comodatosAtivos.length} detalhe={`${r.comodatosAno.length} no ano`} cor={CORES.azul} />
             <Cartao rotulo="Pranchas" valor={r.pranchas} cor={CORES.cinza} />
             <Cartao rotulo="Editais" valor={r.editais} cor={CORES.cinza} />
+            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} cor={CORES.roxo} />
+            <Cartao rotulo="Visitantes recebidos" valor={r.visitantes} detalhe={`${r.autoridades} autoridade(s)`} cor={CORES.verde} />
+            <Cartao rotulo="Comendas entregues" valor={r.comendasEntregues.length} cor={CORES.ambar} />
           </Grade>
         </Secao>
 
@@ -431,6 +466,27 @@ export default function VisaoGeral({ showError }) {
               colunas={[{ titulo: 'Projeto' }, { titulo: 'Início' }, { titulo: 'Custo', align: 'right' }, { titulo: 'Receita', align: 'right' }, { titulo: 'Resultado', align: 'right' }]}
               linhas={r.projetos.map(p => [p.nome, dataBR(p.data), moeda(p.custo), moeda(p.receita), moeda(p.receita - p.custo)])}
               vazio="Nenhum projeto iniciado neste ano." />
+          </div>
+        </Secao>
+
+        <Secao titulo="Relações e distinções" icone="🎖️">
+          <Grade>
+            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} cor={CORES.roxo} />
+            <Cartao rotulo="Visitantes recebidos" valor={r.visitantes} detalhe={`${r.lojasDiferentes} loja(s) · ${r.autoridades} autoridade(s)`} cor={CORES.verde} />
+            <Cartao rotulo="Comendas entregues" valor={r.comendasEntregues.length} cor={CORES.ambar} />
+          </Grade>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.6rem', marginTop: '0.6rem' }}>
+            <Tabela colunas={[{ titulo: 'Irmãos que mais visitaram' }, { titulo: 'Visitas', align: 'right' }]}
+              linhas={r.rankVisitas.slice(0, 5).map(([nome, q]) => [nome, String(q)])}
+              vazio="Nenhuma visita registrada neste ano." />
+            <Tabela colunas={[{ titulo: 'Lojas que mais nos visitaram' }, { titulo: 'Visitas', align: 'right' }]}
+              linhas={r.rankLojas.slice(0, 5).map(([nome, q]) => [nome, String(q)])}
+              vazio="Nenhum visitante registrado neste ano." />
+          </div>
+          <div style={{ marginTop: '0.6rem' }}>
+            <Tabela colunas={[{ titulo: 'Irmão' }, { titulo: 'Comenda' }, { titulo: 'Origem' }, { titulo: 'Entrega' }]}
+              linhas={r.comendasEntregues.map(c => [c.irmao, c.comenda, c.origem, dataBR(c.data)])}
+              vazio="Nenhuma comenda entregue neste ano." />
           </div>
         </Secao>
 
