@@ -26,6 +26,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [visitantes, setVisitantes] = useState([]);
   const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
   const [visitanteEditandoId, setVisitanteEditandoId] = useState(null);
+  // Lojas cadastradas (evita a mesma Loja gravada de várias formas)
+  const [lojasVisitantes, setLojasVisitantes] = useState([]);
+  useEffect(() => {
+    supabase.from('lojas_visitantes').select('*').eq('ativa', true).order('nome')
+      .then(({ data }) => setLojasVisitantes(data || []));
+  }, []);
 
   useEffect(() => {
     if (sessaoId) {
@@ -313,6 +319,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       nome_visitante: visitanteForm.nome_visitante,
       nome_loja: visitanteForm.nome_loja,
       cidade: visitanteForm.cidade,
+      loja_id: visitanteForm.loja_id || null,
       eh_autoridade: visitanteForm.eh_autoridade,
       cargo_autoridade: visitanteForm.eh_autoridade ? (visitanteForm.cargo_autoridade || '').trim() : null,
     };
@@ -366,6 +373,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       nome_visitante: v.nome_visitante,
       nome_loja: v.nome_loja,
       cidade: v.cidade,
+      loja_id: v.loja_id || null,
       eh_autoridade: v.eh_autoridade || false,
       cargo_autoridade: v.cargo_autoridade || '',
     });
@@ -665,13 +673,24 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             onChange={(e) => setVisitanteForm({...visitanteForm, nome_visitante: e.target.value})}
             style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
           />
-          <input
-            type="text"
-            placeholder="Loja"
-            value={visitanteForm.nome_loja}
-            onChange={(e) => setVisitanteForm({...visitanteForm, nome_loja: e.target.value})}
+          <select
+            value={visitanteForm.loja_id || ''}
+            onChange={(e) => {
+              const loja = lojasVisitantes.find(l => String(l.id) === e.target.value);
+              setVisitanteForm({
+                ...visitanteForm,
+                loja_id: loja ? loja.id : null,
+                nome_loja: loja ? `${loja.prefixo || 'ARLS'} ${loja.nome}` : '',
+                cidade: loja ? loja.oriente : visitanteForm.cidade,
+              });
+            }}
             style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
-          />
+          >
+            <option value="">Loja (selecione)</option>
+            {lojasVisitantes.map(l => (
+              <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}`}</option>
+            ))}
+          </select>
           <input
             type="text"
             placeholder="Cidade"
