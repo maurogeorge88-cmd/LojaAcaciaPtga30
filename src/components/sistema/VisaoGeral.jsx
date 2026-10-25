@@ -128,59 +128,60 @@ export default function VisaoGeral({ showError }) {
     if (!d) return null;
     const n = (v) => Number(v) || 0;
 
-    // Financeiro — MESMAS regras de Finanças da Loja (calcularResumo), para os valores baterem:
-    //   banco   = receitas não-dinheiro + depósitos (transf. internas) − despesas não-dinheiro
-    //   caixa   = receitas em dinheiro (sem Tronco) − sangrias − despesas em dinheiro (sem Tronco)
-    //   Tronco e Arco Real ficam à parte, em bloco próprio
+    // ── Financeiro: fórmulas copiadas de FinancasLoja (calcularResumo,
+    //    calcularSaldoAnterior e calcularCaixaFisicoTotal), para os valores baterem ──
     const eTronco = (l) => (l.categorias_financeiras?.nome || '').toLowerCase().includes('tronco');
-    const saldos = (lancs) => {
-      let banco = 0, caixa = 0, receitas = 0, despesas = 0;
-      lancs.forEach((l) => {
-        const tipo = l.categorias_financeiras?.tipo;
-        const v = n(l.valor);
-        const interna = l.eh_transferencia_interna === true;
-        const dinheiro = l.tipo_pagamento === 'dinheiro';
-        const comp = l.tipo_pagamento === 'compensacao';
-        const tronco = eTronco(l);
-        if (tipo === 'receita') {
-          if (tronco && interna) { banco += v; return; }             // depósito do Tronco entra no banco
-          if (!comp && !dinheiro && !interna) { banco += v; receitas += v; return; }
-          if (interna) { banco += v; return; }                        // demais depósitos: só trocam de lugar
-          if (!comp && dinheiro && !tronco) { caixa += v; receitas += v; }
-        } else if (tipo === 'despesa') {
-          if (ehAjusteInternoTronco(l)) return;                       // repasse de valor já computado
-          if (tronco && dinheiro) return;                             // sai só do Tronco em espécie
-          if (interna) { caixa -= v; return; }                        // sangria: do caixa para o banco
-          if (!comp && !dinheiro) { banco -= v; despesas += v; return; }
-          if (!comp && dinheiro && !tronco) { caixa -= v; despesas += v; }
-        }
-      });
-      return { banco, caixa, receitas, despesas, total: banco + caixa };
+    const soma = (lista, fn) => lista.filter(fn).reduce((t, l) => t + n(l.valor), 0);
+    const rec = (l) => l.categorias_financeiras?.tipo === 'receita';
+    const desp = (l) => l.categorias_financeiras?.tipo === 'despesa';
+    const dinheiro = (l) => l.tipo_pagamento === 'dinheiro';
+    const comp = (l) => l.tipo_pagamento === 'compensacao';
+    const interna = (l) => l.eh_transferencia_interna === true;
+
+    // CONTA (saldo bancário) — saldo anterior + receitas bancárias + depósitos − despesas bancárias
+    const contaDe = (lancs) => ({
+      receitas: soma(lancs, l => rec(l) && !comp(l) && !dinheiro(l) && !interna(l)),
+      depositos: soma(lancs, l => rec(l) && interna(l)),
+      despesas: soma(lancs, l => desp(l) && !ehAjusteInternoTronco(l) && !comp(l) && !dinheiro(l) && !interna(l)),
+    });
+    const cAnt = contaDe(d.lancAteInicio);
+    const cAno = contaDe(d.lancAno);
+    const contaInicio = cAnt.receitas + cAnt.depositos - cAnt.despesas;
+    const contaFim = contaInicio + cAno.receitas + cAno.depositos - cAno.despesas;
+
+    // ESPÉCIE (caixa físico) — acumulado de todos os tempos, como em Finanças
+    const especieDe = (lancs) => ({
+      recebido: soma(lancs, l => rec(l) && dinheiro(l) && !interna(l) && !eTronco(l)),
+      sangrias: soma(lancs, l => desp(l) && interna(l) && !eTronco(l)),
+      despesas: soma(lancs, l => desp(l) && dinheiro(l) && !interna(l) && !eTronco(l)),
+    });
+    const eAno = especieDe(d.lancAno);
+    const eTudo = especieDe([...d.lancAteInicio, ...d.lancAno]);
+    const caixaAtual = eTudo.recebido - eTudo.sangrias - eTudo.despesas;
+
+    // Totais do período, como nos cartões "Receitas Pagas / Despesas Pagas" de Finanças
+    const receitasPagas = soma(d.lancAno, l => rec(l) && !comp(l) && !interna(l));
+    const despesasPagas = soma(d.lancAno, l => desp(l) && !comp(l) && !interna(l) && !ehAjusteInternoTronco(l));
+
+    const inicio = { banco: contaInicio, caixa: 0, total: contaInicio };
+    const fim = { banco: contaFim, caixa: caixaAtual, total: contaFim + caixaAtual };
+    const movimento = {
+      receitas: cAno.receitas, despesas: cAno.despesas, depositos: cAno.depositos,
+      receitasPagas, despesasPagas, saldoPeriodo: receitasPagas - despesasPagas,
+      especie: eAno,
     };
-    // Tronco: mesma conta da tela de Finanças
+    const confere = Math.round((contaInicio + cAno.receitas + cAno.depositos - cAno.despesas - contaFim) * 100) / 100;
+
+    // TRONCO — mesma conta da tela de Finanças (informativo: já está nos saldos acima)
     const tronco = (lancs) => {
-      let rb = 0, re = 0, db = 0, de2 = 0;
-      lancs.forEach((l) => {
-        if (!eTronco(l)) return;
-        const v = n(l.valor);
-        const dinheiro = l.tipo_pagamento === 'dinheiro';
-        const interna = l.eh_transferencia_interna === true;
-        if (l.categorias_financeiras?.tipo === 'receita') {
-          if (!dinheiro) rb += v;
-          else if (!interna) re += v;
-        } else {
-          if (!dinheiro && !interna) db += v;
-          else if (dinheiro) de2 += v;
-        }
-      });
+      const rb = soma(lancs, l => eTronco(l) && rec(l) && !dinheiro(l));
+      const re = soma(lancs, l => eTronco(l) && rec(l) && dinheiro(l) && !interna(l));
+      const db = soma(lancs, l => eTronco(l) && desp(l) && !dinheiro(l) && !interna(l));
+      const de2 = soma(lancs, l => eTronco(l) && desp(l) && dinheiro(l));
       return { banco: rb - db, especie: re - de2, arrecadado: rb + re, aplicado: db + de2, total: (rb - db) + (re - de2) };
     };
-    const inicio = saldos(d.lancAteInicio);
-    const fim = saldos([...d.lancAteInicio, ...d.lancAno]);
-    const movimento = saldos(d.lancAno);
     const troncoAno = tronco(d.lancAno);
     const troncoAtual = tronco([...d.lancAteInicio, ...d.lancAno]);
-    const confere = Math.round((inicio.total + movimento.receitas - movimento.despesas - fim.total) * 100) / 100;
 
     // Top categorias do ano
     const porCategoria = (tipo) => {
@@ -189,7 +190,6 @@ export default function VisaoGeral({ showError }) {
         if (l.categorias_financeiras?.tipo !== tipo) return;
         if (l.eh_transferencia_interna || l.tipo_pagamento === 'compensacao') return;
         if (ehAjusteInternoTronco(l)) return;
-        if (eTronco(l) && l.tipo_pagamento === 'dinheiro') return; // fora do saldo da Loja
         const nome = l.categorias_financeiras?.nome || 'Sem categoria';
         m[nome] = (m[nome] || 0) + n(l.valor);
       });
@@ -317,24 +317,35 @@ export default function VisaoGeral({ showError }) {
           </Grade>
         </Secao>
 
-        <Secao titulo="Financeiro — como começou e como está" icone="💰">
+        <Secao titulo="Conta bancária" icone="🏦">
           <Grade>
-            <Cartao rotulo={`Saldo em 01/01/${ano}`} valor={moeda(r.inicio.total)} detalhe={`Banco ${moeda(r.inicio.banco)} · Caixa ${moeda(r.inicio.caixa)}`} cor={CORES.cinza} />
-            <Cartao rotulo="Saldo hoje" valor={moeda(r.fim.total)} detalhe={`Banco ${moeda(r.fim.banco)} · Caixa ${moeda(r.fim.caixa)}`} cor={CORES.azul} />
-            <Cartao rotulo="Variação no ano" valor={`${variacao >= 0 ? '+' : '−'} ${moeda(Math.abs(variacao))}`} cor={variacao >= 0 ? CORES.verde : CORES.vermelho} />
-            <Cartao rotulo="Receitas do ano" valor={moeda(r.movimento.receitas)} cor={CORES.verde} />
-            <Cartao rotulo="Despesas do ano" valor={moeda(r.movimento.despesas)} cor={CORES.vermelho} />
+            <Cartao rotulo={`Saldo em conta antes de ${ano}`} valor={moeda(r.inicio.banco)} cor={CORES.cinza} />
+            <Cartao rotulo="Receitas em conta" valor={moeda(r.movimento.receitas)} detalhe={`Depósitos: ${moeda(r.movimento.depositos)}`} cor={CORES.verde} />
+            <Cartao rotulo="Despesas em conta" valor={moeda(r.movimento.despesas)} cor={CORES.vermelho} />
+            <Cartao rotulo="Saldo em conta hoje" valor={moeda(r.fim.banco)} cor={CORES.azul} />
           </Grade>
-
-          {/* Conferência: a conta tem de fechar com o saldo */}
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: Math.abs(r.confere) < 0.01 ? 'var(--color-text-muted)' : CORES.vermelho, fontWeight: Math.abs(r.confere) < 0.01 ? 400 : 700, textAlign: 'center' }}>
-            {moeda(r.inicio.total)} + {moeda(r.movimento.receitas)} − {moeda(r.movimento.despesas)} = {moeda(r.fim.total)}
+          <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', textAlign: 'center', fontWeight: Math.abs(r.confere) < 0.01 ? 400 : 700, color: Math.abs(r.confere) < 0.01 ? 'var(--color-text-muted)' : CORES.vermelho }}>
+            {moeda(r.inicio.banco)} + {moeda(r.movimento.receitas)} + {moeda(r.movimento.depositos)} − {moeda(r.movimento.despesas)} = {moeda(r.fim.banco)}
             {Math.abs(r.confere) < 0.01 ? ' ✔' : ` — diferença de ${moeda(Math.abs(r.confere))}`}
           </p>
-          <p style={{ margin: '0.2rem 0 0', fontSize: '0.7rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
-            Mesmas regras de Finanças da Loja. Tronco e Arco Real são controlados à parte.
-          </p>
+        </Secao>
 
+        <Secao titulo="Espécie (caixa físico)" icone="💵">
+          <Grade>
+            <Cartao rotulo="Recebido em dinheiro" valor={moeda(r.movimento.especie.recebido)} cor={CORES.verde} />
+            <Cartao rotulo="Sangrias (ao banco)" valor={moeda(r.movimento.especie.sangrias)} cor={CORES.ambar} />
+            <Cartao rotulo="Despesas em dinheiro" valor={moeda(r.movimento.especie.despesas)} cor={CORES.vermelho} />
+            <Cartao rotulo="Caixa físico hoje" valor={moeda(r.fim.caixa)} detalhe="Acumulado, como em Finanças" cor={CORES.azul} />
+          </Grade>
+        </Secao>
+
+        <Secao titulo="Movimento do ano" icone="📈">
+          <Grade>
+            <Cartao rotulo="Receitas pagas" valor={moeda(r.movimento.receitasPagas)} detalhe="Conta + espécie" cor={CORES.verde} />
+            <Cartao rotulo="Despesas pagas" valor={moeda(r.movimento.despesasPagas)} detalhe="Conta + espécie" cor={CORES.vermelho} />
+            <Cartao rotulo="Saldo do período" valor={moeda(r.movimento.saldoPeriodo)} cor={r.movimento.saldoPeriodo >= 0 ? CORES.verde : CORES.vermelho} />
+            <Cartao rotulo="Saldo total hoje" valor={moeda(r.fim.total)} detalhe="Conta + caixa" cor={CORES.azul} />
+          </Grade>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.6rem', marginTop: '0.6rem' }}>
             <Tabela colunas={[{ titulo: 'Maiores receitas' }, { titulo: 'Valor', align: 'right' }]}
               linhas={r.topReceitas.map(([nome, v]) => [nome, moeda(v)])} />
@@ -349,6 +360,9 @@ export default function VisaoGeral({ showError }) {
             <Cartao rotulo="Aplicado no ano" valor={moeda(r.troncoAno.aplicado)} cor={CORES.vermelho} />
             <Cartao rotulo="Disponível hoje" valor={moeda(r.troncoAtual.total)} detalhe={`Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`} cor={CORES.azul} />
           </Grade>
+          <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
+            Informativo: estes valores já estão somados nos saldos acima.
+          </p>
         </Secao>
 
         <Secao titulo="Ágapes e festas" icone="🍽️">
