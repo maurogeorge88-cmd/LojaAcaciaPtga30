@@ -45,23 +45,31 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   // ── Blocos de números (cartões) ────────────────────────────────────────
   const cartoes = (itens, colunas = 3) => {
     const larg = (W - 2 * M - (colunas - 1) * 4) / colunas;
+    const alt = 18;
+    const linhas = Math.ceil(itens.length / colunas);
     itens.forEach((it, i) => {
+      const linha = Math.floor(i / colunas);
       const col = i % colunas;
-      if (col === 0 && i > 0) y += 19;
-      if (y + 19 > H - 18) { doc.addPage(); y = 20; }
-      const x = M + col * (larg + 4);
+      if (col === 0 && i > 0) y += alt + 3;
+      if (y + alt > H - 18) { doc.addPage(); y = 20; }
+      // última linha incompleta: centraliza os cartões que sobraram
+      const nestaLinha = linha === linhas - 1 ? itens.length - linha * colunas : colunas;
+      const sobra = (colunas - nestaLinha) * (larg + 4) / 2;
+      const x = M + sobra + col * (larg + 4);
       doc.setFillColor(248, 250, 252); doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.3);
-      doc.roundedRect(x, y, larg, 16, 2, 2, 'FD');
+      doc.roundedRect(x, y, larg, alt, 2, 2, 'FD');
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
       doc.text(String(it[0]).toUpperCase(), x + 3, y + 5, { maxWidth: larg - 6 });
       doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...(it[2] || TEXTO));
-      doc.text(String(it[1]), x + 3, y + 11.5, { maxWidth: larg - 6 });
+      doc.text(String(it[1]), x + 3, y + 11, { maxWidth: larg - 6 });
       if (it[3]) {
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...CINZA);
-        doc.text(String(it[3]), x + 3, y + 14.8, { maxWidth: larg - 6 });
+        // detalhe pode ocupar duas linhas, sem estourar o quadro
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...CINZA);
+        const ls = doc.splitTextToSize(String(it[3]), larg - 6).slice(0, 2);
+        ls.forEach((l, k) => doc.text(l, x + 3, y + 14.2 + k * 2.8));
       }
     });
-    y += 22;
+    y += alt + 7;
   };
 
   const titulo = (txt) => {
@@ -150,13 +158,13 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   y += 8;
 
   // ── 4. Ágapes e festas ─────────────────────────────────────────────────
-  titulo('Ágapes e festas');
+  titulo(`Ágapes e festas (${r.agapes.length})`);
   cartoes([
     ['Valor total', moeda(r.agTotal)],
     ['Pago pelos Irmãos', moeda(r.agIrmaos), VERDE],
     ['Custo da Loja', moeda(r.agLoja), null, `Convidados: ${moeda(r.agConvidados)}`],
     ['Saldo final', moeda(r.agSaldo), r.agSaldo < 0 ? VERMELHO : VERDE, r.agSaldo < 0 ? 'Pago pela Loja' : 'Sobrou para a Loja'],
-    ['Custo médio', moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0)],
+    ['Média por ágape', moeda(r.agapes.length ? r.agTotal / r.agapes.length : 0), null, `${r.agapes.length} ágape(s) no ano`],
   ]);
   tabela(
     [{ t: 'Ágape / Festa' }, { t: 'Data' }, { t: 'Valor total', align: 'right' }, { t: 'Irmãos', align: 'right' }, { t: 'Convidados', align: 'right' }, { t: 'Custo Loja', align: 'right' }, { t: 'Saldo', align: 'right' }],
