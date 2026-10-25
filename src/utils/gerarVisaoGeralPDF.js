@@ -99,8 +99,18 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   };
 
   // ── 1. O ano em números ────────────────────────────────────────────────
-  // Os números do topo foram retirados: o detalhe de cada item já aparece
-  // nos blocos específicos (balaústres, financeiro, ágapes, relações…).
+  titulo('O ano em números');
+  cartoes([
+    ['Sessões realizadas', r.sessoes],
+    ['Balaústres', r.totalBalaustres],
+    ['Ágapes e festas', r.agapes.length],
+    ['Eventos', r.eventos.length],
+    ['Famílias atendidas', r.familiasAtendidas, null, `${r.ajudas} ajuda(s)`],
+    ['Comodatos ativos', r.comodatosAtivos.length, null, `${r.comodatosAno.length} no ano`],
+    ['Pranchas', r.pranchas],
+    ['Editais', r.editais],
+  ]);
+
   titulo('Balaústres por grau');
   tabela(
     [{ t: 'Grau' }, { t: 'Quantidade', align: 'right' }],
@@ -176,27 +186,13 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   );
 
   // ── Relações e distinções ──────────────────────────────────────────────
-  titulo('Relações e distinções');
+  titulo('Visitas e comendas');
   cartoes([
     ['Visitas a outras Lojas', String(r.visitas)],
-    ['Visitantes recebidos', String(r.visitantes), VERDE, `${r.lojasDiferentes} loja(s) · ${r.autoridades} autoridade(s)`],
+    ['Visitantes em nossa Loja', String(r.visitantes), VERDE, `${r.lojasDiferentes} loja(s)`],
+    ['Autoridades recebidas', String(r.autoridades)],
     ['Comendas entregues', String(r.comendasEntregues.length)],
   ]);
-  tabela(
-    [{ t: 'Irmãos que mais visitaram' }, { t: 'Visitas', align: 'right' }],
-    r.rankVisitas.slice(0, 10).map(([nome, q]) => [nome, String(q)]),
-    'Nenhuma visita registrada neste ano.',
-  );
-  tabela(
-    [{ t: 'Lojas que mais nos visitaram' }, { t: 'Visitas', align: 'right' }],
-    r.rankLojas.slice(0, 10).map(([nome, q]) => [nome, String(q)]),
-    'Nenhum visitante registrado neste ano.',
-  );
-  tabela(
-    [{ t: 'Irmão' }, { t: 'Comenda' }, { t: 'Origem' }, { t: 'Entrega' }],
-    r.comendasEntregues.map(c => [c.irmao, c.comenda, c.origem, fmt(c.data)]),
-    'Nenhuma comenda entregue neste ano.',
-  );
 
   // ── 6. Filantropia e comodatos ─────────────────────────────────────────
   titulo('Filantropia e comodatos');
