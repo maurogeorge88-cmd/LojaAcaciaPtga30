@@ -88,27 +88,39 @@ export default function VisaoGeral({ showError }) {
       setCarregando(true);
       try {
         const q = (p) => p.then(r => r.data || []);
+        // O Supabase devolve no máximo 1000 linhas por consulta: busca em páginas
+        // (sem isso, lançamentos e presenças ficavam truncados e os totais não batiam)
+        const qTudo = async (montarQuery) => {
+          const tudo = [];
+          for (let de2 = 0; ; de2 += 1000) {
+            const { data, error } = await montarQuery().range(de2, de2 + 999);
+            if (error) throw error;
+            tudo.push(...(data || []));
+            if (!data || data.length < 1000) break;
+          }
+          return tudo;
+        };
         const [
           balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, eventos, projetos, custosProj, receitasProj,
           ajudas, familias, comodatos, sessoesPres,
         ] = await Promise.all([
           q(supabase.from('balaustres').select('id, grau_sessao, data_sessao, numero_balaustre').gte('data_sessao', de).lte('data_sessao', ate)),
-          q(supabase.from('lancamentos_loja').select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').lt('data_pagamento', de)),
-          q(supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').gte('data_pagamento', de).lte('data_pagamento', ate)),
+          qTudo(() => supabase.from('lancamentos_loja').select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').lt('data_pagamento', de).order('id')),
+          qTudo(() => supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').gte('data_pagamento', de).lte('data_pagamento', ate).order('id')),
           q(supabase.from('eventos_comemorativos_fin').select('*').eq('ano', ano)),
           // Custo do ágape = despesas vinculadas; parte dos Irmãos = rateio das cotas
-          q(supabase.from('lancamentos_loja').select('valor, tipo, evento_comemorativo_id, origem_tipo').not('evento_comemorativo_id', 'is', null)),
-          q(supabase.from('evento_rateio_participantes').select('evento_id, cotas, irmao_id')),
-          q(supabase.from('pranchas_expedidas').select('id, data_prancha, numero_prancha')),
+          qTudo(() => supabase.from('lancamentos_loja').select('valor, tipo, evento_comemorativo_id, origem_tipo').not('evento_comemorativo_id', 'is', null).order('id')),
+          qTudo(() => supabase.from('evento_rateio_participantes').select('evento_id, cotas, irmao_id').order('id')),
+          qTudo(() => supabase.from('pranchas_expedidas').select('id, data_prancha, numero_prancha').order('id')),
           q(supabase.from('editais').select('id, ano').eq('ano', ano)),
           q(supabase.from('dados_loja').select('*').limit(1)),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
           q(supabase.from('custos_projeto').select('projeto_id, valor')),
           q(supabase.from('receitas_projeto').select('projeto_id, valor')),
-          q(supabase.from('ajudas_caridade').select('id, data_ajuda, valor_estimado, familia_id').gte('data_ajuda', de).lte('data_ajuda', ate)),
+          qTudo(() => supabase.from('ajudas_caridade').select('id, data_ajuda, valor_estimado, familia_id').gte('data_ajuda', de).lte('data_ajuda', ate).order('id')),
           q(supabase.from('familias_carentes').select('id, ativa')),
-          q(supabase.from('comodatos').select('id, status, data_emprestimo, data_devolucao_real, beneficiario_id')),
+          qTudo(() => supabase.from('comodatos').select('id, status, data_emprestimo, data_devolucao_real, beneficiario_id').order('id')),
           q(supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate)),
         ]);
         if (!vivo) return;
