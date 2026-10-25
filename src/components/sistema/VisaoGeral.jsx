@@ -332,32 +332,21 @@ export default function VisaoGeral({ showError }) {
         <Secao titulo="Conta bancária" icone="🏦">
           <Grade>
             <Cartao rotulo={`Saldo em conta antes de ${ano}`} valor={moeda(r.inicio.banco)} cor={CORES.cinza} />
-            <Cartao rotulo="Receitas em conta" valor={moeda(r.movimento.receitas)} detalhe={`Depósitos: ${moeda(r.movimento.depositos)}`} cor={CORES.verde} />
-            <Cartao rotulo="Despesas em conta" valor={moeda(r.movimento.despesas)} cor={CORES.vermelho} />
-            <Cartao rotulo="Saldo em conta hoje" valor={moeda(r.fim.banco)} cor={CORES.azul} />
-          </Grade>
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', textAlign: 'center', fontWeight: Math.abs(r.confere) < 0.01 ? 400 : 700, color: Math.abs(r.confere) < 0.01 ? 'var(--color-text-muted)' : CORES.vermelho }}>
-            {moeda(r.inicio.banco)} + {moeda(r.movimento.receitas)} + {moeda(r.movimento.depositos)} − {moeda(r.movimento.despesas)} = {moeda(r.fim.banco)}
-            {Math.abs(r.confere) < 0.01 ? ' ✔' : ` — diferença de ${moeda(Math.abs(r.confere))}`}
-          </p>
-        </Secao>
-
-        <Secao titulo="Espécie (caixa físico)" icone="💵">
-          <Grade>
-            <Cartao rotulo="Recebido em dinheiro" valor={moeda(r.movimento.especie.recebido)} cor={CORES.verde} />
-            <Cartao rotulo="Sangrias (ao banco)" valor={moeda(r.movimento.especie.sangrias)} cor={CORES.ambar} />
-            <Cartao rotulo="Despesas em dinheiro" valor={moeda(r.movimento.especie.despesas)} cor={CORES.vermelho} />
-            <Cartao rotulo="Caixa físico hoje" valor={moeda(r.fim.caixa)} detalhe="Acumulado, como em Finanças" cor={CORES.azul} />
+            <Cartao rotulo="Receitas pagas" valor={moeda(r.movimento.receitasPagas)} detalhe={`Em espécie: ${moeda(r.movimento.especie.recebido)}`} cor={CORES.verde} />
+            <Cartao rotulo="Despesas pagas" valor={moeda(r.movimento.despesasPagas)} cor={CORES.vermelho} />
+            <Cartao rotulo="Saldo no período" valor={moeda(r.movimento.saldoPeriodo)} cor={r.movimento.saldoPeriodo >= 0 ? CORES.azul : CORES.vermelho} />
           </Grade>
         </Secao>
 
-        <Secao titulo="Movimento do ano" icone="📈">
+        <Secao titulo="Saldos atuais" icone="💵">
           <Grade>
-            <Cartao rotulo="Receitas pagas" valor={moeda(r.movimento.receitasPagas)} detalhe="Conta + espécie" cor={CORES.verde} />
-            <Cartao rotulo="Despesas pagas" valor={moeda(r.movimento.despesasPagas)} detalhe="Conta + espécie" cor={CORES.vermelho} />
-            <Cartao rotulo="Saldo do período" valor={moeda(r.movimento.saldoPeriodo)} cor={r.movimento.saldoPeriodo >= 0 ? CORES.verde : CORES.vermelho} />
-            <Cartao rotulo="Saldo total hoje" valor={moeda(r.fim.total)} detalhe="Conta + caixa" cor={CORES.azul} />
+            <Cartao rotulo="Caixa físico hoje" valor={moeda(r.fim.caixa)} detalhe="Dinheiro não depositado" cor={CORES.verde} />
+            <Cartao rotulo="Saldo em conta hoje" valor={moeda(r.fim.banco)} detalhe="PIX, Transf., Cartão" cor={CORES.azul} />
+            <Cartao rotulo="Saldo total" valor={moeda(r.fim.total)} detalhe="Conta + caixa" cor={CORES.roxo} />
           </Grade>
+        </Secao>
+
+        <Secao titulo="Maiores receitas e despesas" icone="📈">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.6rem', marginTop: '0.6rem' }}>
             <Tabela colunas={[{ titulo: 'Maiores receitas' }, { titulo: 'Valor', align: 'right' }]}
               linhas={r.topReceitas.map(([nome, v]) => [nome, moeda(v)])} />
