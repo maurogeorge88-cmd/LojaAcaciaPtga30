@@ -137,14 +137,15 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   );
 
   // ── Tronco de Solidariedade ────────────────────────────────────────────
-  titulo('Tronco de Solidariedade');
+  titulo('Tronco de Solidariedade e Arco Real');
   cartoes([
     ['Arrecadado no ano', moeda(r.troncoAno.arrecadado), VERDE],
     ['Aplicado no ano', moeda(r.troncoAno.aplicado), VERMELHO],
     ['Disponível hoje', moeda(r.troncoAtual.total), AZUL, `Conta ${moeda(r.troncoAtual.banco)} · Espécie ${moeda(r.troncoAtual.especie)}`],
+    ['Arco Real — disponível', moeda(r.arco.saldo), AZUL, `Receita ${moeda(r.arco.receita)} · Despesa ${moeda(r.arco.despesa)}`],
   ]);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
-  doc.text('Informativo: estes valores ja estao somados nos saldos acima.', M, y);
+  doc.text('Informativo: Tronco e Arco Real ja estao somados nos saldos acima.', M, y);
   y += 8;
 
   // ── 4. Ágapes e festas ─────────────────────────────────────────────────
