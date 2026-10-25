@@ -79,13 +79,16 @@ export default function VisaoGeral({ showError }) {
       try {
         const q = (p) => p.then(r => r.data || []);
         const [
-          balaustres, lancAteInicio, lancAno, agapes, eventos, projetos, custosProj, receitasProj,
+          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, eventos, projetos, custosProj, receitasProj,
           ajudas, familias, comodatos, sessoesPres,
         ] = await Promise.all([
           q(supabase.from('balaustres').select('id, grau_sessao, data_sessao, numero_balaustre').gte('data_sessao', de).lte('data_sessao', ate)),
           q(supabase.from('lancamentos_loja').select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').lt('data_pagamento', de)),
           q(supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)').eq('status', 'pago').gte('data_pagamento', de).lte('data_pagamento', ate)),
           q(supabase.from('eventos_comemorativos_fin').select('*').eq('ano', ano)),
+          // Custo do ágape = despesas vinculadas; parte dos Irmãos = rateio das cotas
+          q(supabase.from('lancamentos_loja').select('valor, tipo, evento_comemorativo_id, origem_tipo').not('evento_comemorativo_id', 'is', null)),
+          q(supabase.from('evento_rateio_participantes').select('evento_id, cotas')),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
           q(supabase.from('custos_projeto').select('projeto_id, valor')),
@@ -96,7 +99,7 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate)),
         ]);
         if (!vivo) return;
-        setD({ balaustres, lancAteInicio, lancAno, agapes, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
+        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
       } catch (e) {
         showError?.('Erro ao carregar a visão geral: ' + e.message);
         if (vivo) setD(null);
@@ -166,10 +169,24 @@ export default function VisaoGeral({ showError }) {
     });
 
     // Ágapes: o que a Loja custeou, o que os Irmãos pagaram e o total
+    // Mesmas contas da tela Ágape & Festas:
+    //   custo = soma das despesas vinculadas · Loja = contribuição · Irmãos = rateio das cotas
+    const despPorEvento = {};
+    (d.despesasAgape || []).forEach((l) => {
+      if (l.tipo !== 'despesa') return;
+      despPorEvento[l.evento_comemorativo_id] = (despPorEvento[l.evento_comemorativo_id] || 0) + n(l.valor);
+    });
+    const cotasPorEvento = {};
+    (d.rateioAgape || []).forEach((p) => {
+      cotasPorEvento[p.evento_id] = (cotasPorEvento[p.evento_id] || 0) + n(p.cotas);
+    });
     const agapes = d.agapes.map((a) => {
-      const total = n(a.valor_ajustado ?? a.valor_final ?? a.valor);
+      const total = despPorEvento[a.id] || 0;
       const loja = n(a.contribuicao_loja);
-      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos: Math.max(total - loja, 0) };
+      const cotas = cotasPorEvento[a.id] || 0;
+      const valorCota = a.valor_ajustado ? n(a.valor_ajustado) : (cotas > 0 ? Math.max(0, total - loja) / cotas : 0);
+      const irmaos = cotas * valorCota;
+      return { nome: a.nome || a.descricao || 'Ágape', data: a.data_evento, status: a.status, total, loja, irmaos };
     }).sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
     const agTotal = agapes.reduce((t, a) => t + a.total, 0);
     const agLoja = agapes.reduce((t, a) => t + a.loja, 0);
