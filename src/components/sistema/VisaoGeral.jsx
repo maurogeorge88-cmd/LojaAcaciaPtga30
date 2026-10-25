@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { ehAjusteInternoTronco } from '../financeiro/utils/ajusteTronco';
+import { gerarVisaoGeralPDF } from '../../utils/gerarVisaoGeralPDF';
+import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 
 // ════════════════════════════════════════════════════════════════════════
 // VISÃO GERAL — o ano da Loja em uma tela (somente leitura).
@@ -87,7 +89,7 @@ export default function VisaoGeral({ showError }) {
       try {
         const q = (p) => p.then(r => r.data || []);
         const [
-          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, eventos, projetos, custosProj, receitasProj,
+          balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, eventos, projetos, custosProj, receitasProj,
           ajudas, familias, comodatos, sessoesPres,
         ] = await Promise.all([
           q(supabase.from('balaustres').select('id, grau_sessao, data_sessao, numero_balaustre').gte('data_sessao', de).lte('data_sessao', ate)),
@@ -99,6 +101,7 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('evento_rateio_participantes').select('evento_id, cotas, irmao_id')),
           q(supabase.from('pranchas').select('id, data_prancha, numero_prancha')),
           q(supabase.from('editais').select('id, ano').eq('ano', ano)),
+          q(supabase.from('dados_loja').select('*').limit(1)),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
           q(supabase.from('custos_projeto').select('projeto_id, valor')),
@@ -109,7 +112,7 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('sessoes_presenca').select('id, data_sessao').gte('data_sessao', de).lte('data_sessao', ate)),
         ]);
         if (!vivo) return;
-        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
+        setD({ balaustres, lancAteInicio, lancAno, agapes, despesasAgape, rateioAgape, pranchas, editais, loja, eventos, projetos, custosProj, receitasProj, ajudas, familias, comodatos, sessoesPres });
       } catch (e) {
         showError?.('Erro ao carregar a visão geral: ' + e.message);
         if (vivo) setD(null);
@@ -256,6 +259,11 @@ export default function VisaoGeral({ showError }) {
           {anos.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Somente leitura — nada aqui altera dados.</span>
+        <button type="button" disabled={carregando || !r}
+          onClick={() => gerarVisaoGeralPDF({ ano, r, dadosLoja: (d?.loja && d.loja[0]) || {}, logoB64: LOGO_LOJA_B64 })}
+          style={{ marginLeft: 'auto', padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-md)', border: 'none', background: carregando || !r ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', fontWeight: 700, fontSize: '0.8rem', cursor: carregando || !r ? 'not-allowed' : 'pointer' }}>
+          📄 Gerar PDF
+        </button>
       </div>
 
       {carregando && <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Carregando o ano de {ano}…</p>}
