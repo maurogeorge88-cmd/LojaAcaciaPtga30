@@ -29,7 +29,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   // Lojas cadastradas (evita a mesma Loja gravada de várias formas)
   const [lojasVisitantes, setLojasVisitantes] = useState([]);
   useEffect(() => {
-    supabase.from('lojas_visitantes').select('*').eq('ativa', true).order('nome')
+    supabase.from('lojas_visitantes').select('*').eq('ativa', true)
+      .order('eh_potencia', { ascending: false }).order('nome')
       .then(({ data }) => setLojasVisitantes(data || []));
   }, []);
 
@@ -316,7 +317,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   // Assim, corrigir a Loja em "Lojas Visitantes" reflete em todas as visitas.
   const nomeLojaDe = (v) => {
     const l = lojasVisitantes.find(x => String(x.id) === String(v.loja_id));
-    return l ? `${l.prefixo || 'ARLS'} ${l.nome}` : (v.nome_loja || '');
+    return l ? `${l.eh_potencia ? '' : `${l.prefixo || 'ARLS'} `}${l.nome}` : (v.nome_loja || '');
   };
   const cidadeDe = (v) => {
     const l = lojasVisitantes.find(x => String(x.id) === String(v.loja_id));
@@ -709,7 +710,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
               setVisitanteForm({
                 ...visitanteForm,
                 loja_id: loja ? loja.id : null,
-                nome_loja: loja ? `${loja.prefixo || 'ARLS'} ${loja.nome}` : '',
+                nome_loja: loja ? `${loja.eh_potencia ? '' : `${loja.prefixo || 'ARLS'} `}${loja.nome}` : '',
                 cidade: loja ? loja.oriente : visitanteForm.cidade,
               });
             }}
@@ -719,9 +720,18 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             {!visitanteForm.loja_id && visitanteForm.nome_loja && (
               <option value="" disabled>{`${visitanteForm.nome_loja} (cadastro antigo — escolha a Loja)`}</option>
             )}
-            {lojasVisitantes.map(l => (
-              <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}${l.potencia ? ` (${l.potencia})` : ''}`}</option>
-            ))}
+            {lojasVisitantes.some(l => l.eh_potencia) && (
+              <optgroup label="Potências">
+                {lojasVisitantes.filter(l => l.eh_potencia).map(l => (
+                  <option key={l.id} value={l.id}>{`${l.nome} – ${l.oriente}`}</option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Lojas">
+              {lojasVisitantes.filter(l => !l.eh_potencia).map(l => (
+                <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}${l.potencia ? ` (${l.potencia})` : ''}`}</option>
+              ))}
+            </optgroup>
           </select>
           <input
             type="text"
