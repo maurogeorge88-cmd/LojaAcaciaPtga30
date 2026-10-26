@@ -688,7 +688,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           >
             <option value="">Loja (selecione)</option>
             {lojasVisitantes.map(l => (
-              <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}`}</option>
+              <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}${l.potencia ? ` (${l.potencia})` : ''}`}</option>
             ))}
           </select>
           <input
