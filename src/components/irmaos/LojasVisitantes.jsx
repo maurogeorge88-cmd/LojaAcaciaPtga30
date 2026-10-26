@@ -57,6 +57,26 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
     }
   };
 
+  // Excluir: só se nenhum visitante estiver vinculado (senão, desative)
+  const excluir = async (l) => {
+    try {
+      const { count } = await supabase.from('visitantes_sessao')
+        .select('id', { count: 'exact', head: true }).eq('loja_id', l.id);
+      if (count > 0) {
+        showError?.(`Esta Loja tem ${count} visitante(s) vinculado(s). Desative-a ou troque o vínculo antes de excluir.`);
+        return;
+      }
+      if (!window.confirm(`Excluir "${nomeCompletoLoja(l)}"?`)) return;
+      const { data, error } = await supabase.from('lojas_visitantes').delete().eq('id', l.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a exclusão (sem permissão).');
+      showSuccess?.('Loja excluída!');
+      carregar();
+    } catch (e) {
+      showError?.('Erro ao excluir: ' + e.message);
+    }
+  };
+
   const alternarAtiva = async (l) => {
     const { error } = await supabase.from('lojas_visitantes').update({ ativa: !l.ativa }).eq('id', l.id);
     if (error) { showError?.('Erro: ' + error.message); return; }
@@ -102,6 +122,8 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
                 style={{ padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
                 {l.ativa ? '🚫' : '↩️'}
               </button>
+              <button type="button" onClick={() => excluir(l)} title="Excluir"
+                style={{ padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.12)', color: '#ef4444', cursor: 'pointer' }}>🗑️</button>
             </>)}
           </div>
         ))}
