@@ -9,10 +9,16 @@ import { supabase } from '../../supabaseClient';
 
 export const POTENCIAS = ['GLEMT', 'GOEMT', 'GOB'];
 
-export const nomeCompletoLoja = (l) =>
-  l ? `${l.prefixo || 'ARLS'} ${l.nome}${l.oriente ? ` – Oriente de ${l.oriente}` : ''}${l.potencia ? ` (${l.potencia})` : ''}` : '';
+// Potência não leva o prefixo "ARLS"
+export const nomeCompletoLoja = (l) => {
+  if (!l) return '';
+  const prefixo = l.eh_potencia ? '' : `${l.prefixo || 'ARLS'} `;
+  const oriente = l.oriente ? ` – Oriente de ${l.oriente}` : '';
+  const pot = l.potencia && !l.eh_potencia ? ` (${l.potencia})` : '';
+  return `${prefixo}${l.nome}${oriente}${pot}`;
+};
 
-const VAZIO = { prefixo: 'ARLS', nome: '', oriente: '', potencia: 'GLEMT', ativa: true };
+const VAZIO = { prefixo: 'ARLS', nome: '', oriente: '', potencia: 'GLEMT', eh_potencia: false, ativa: true };
 const lab = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' };
 const inp = { width: '100%', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' };
 
@@ -27,20 +33,20 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
   const podeEditar = permissoes?.pode_editar_presenca !== false;
 
   const carregar = async () => {
-    const { data, error } = await supabase.from('lojas_visitantes').select('*').order('nome');
+    const { data, error } = await supabase.from('lojas_visitantes').select('*').order('eh_potencia', { ascending: false }).order('nome');
     if (error) { showError?.('Erro ao carregar as Lojas: ' + error.message); return; }
     setLojas(data || []);
   };
   useEffect(() => { carregar(); }, []);
 
   const abrirNova = () => { setForm(VAZIO); setEditando(null); setModal(true); };
-  const abrirEdicao = (l) => { setForm({ prefixo: l.prefixo || 'ARLS', nome: l.nome, oriente: l.oriente, potencia: l.potencia || 'GLEMT', ativa: l.ativa }); setEditando(l); setModal(true); };
+  const abrirEdicao = (l) => { setForm({ prefixo: l.prefixo || 'ARLS', nome: l.nome, oriente: l.oriente, potencia: l.potencia || 'GLEMT', eh_potencia: !!l.eh_potencia, ativa: l.ativa }); setEditando(l); setModal(true); };
 
   const salvar = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { prefixo: (form.prefixo || 'ARLS').trim(), nome: form.nome.trim(), oriente: form.oriente.trim(), potencia: form.potencia || 'GLEMT', ativa: form.ativa };
+      const payload = { prefixo: form.eh_potencia ? '' : (form.prefixo || 'ARLS').trim(), nome: form.nome.trim(), oriente: form.oriente.trim(), potencia: form.potencia || 'GLEMT', eh_potencia: !!form.eh_potencia, ativa: form.ativa };
       const { data, error } = editando
         ? await supabase.from('lojas_visitantes').update(payload).eq('id', editando.id).select()
         : await supabase.from('lojas_visitantes').insert([payload]).select();
@@ -110,7 +116,11 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
           </p>
         )}
         {filtradas.map((l, i) => (
-          <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', opacity: l.ativa ? 1 : 0.55 }}>
+          <div key={l.id} style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1rem',
+            borderTop: i ? (l.eh_potencia !== filtradas[i - 1].eh_potencia ? '2px solid var(--color-accent)' : '1px solid var(--color-border)') : 'none',
+            opacity: l.ativa ? 1 : 0.55,
+          }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{nomeCompletoLoja(l)}</p>
               {!l.ativa && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Inativa</span>}
@@ -136,14 +146,22 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
             <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>
               {editando ? 'Editar Loja' : 'Nova Loja'}
             </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <div>
-                <label style={lab}>Prefixo</label>
-                <input type="text" value={form.prefixo} onChange={e => setForm({ ...form, prefixo: e.target.value })} style={inp} />
-              </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.85rem', color: 'var(--color-text)', marginBottom: '0.75rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!form.eh_potencia}
+                onChange={e => setForm({ ...form, eh_potencia: e.target.checked, prefixo: e.target.checked ? '' : 'ARLS' })} />
+              É uma Potência (Grande Loja / Grande Oriente) — sem o prefixo ARLS
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: form.eh_potencia ? '1fr' : '110px 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              {!form.eh_potencia && (
+                <div>
+                  <label style={lab}>Prefixo</label>
+                  <input type="text" value={form.prefixo} onChange={e => setForm({ ...form, prefixo: e.target.value })} style={inp} />
+                </div>
+              )}
               <div>
                 <label style={lab}>Nome da Loja *</label>
-                <input type="text" required placeholder="Ex.: Acácia de Paranatinga nº 30"
+                <input type="text" required
+                  placeholder={form.eh_potencia ? 'Ex.: Grande Loja Maçônica do Estado de Mato Grosso' : 'Ex.: Acácia de Paranatinga nº 30'}
                   value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} style={inp} />
               </div>
             </div>
