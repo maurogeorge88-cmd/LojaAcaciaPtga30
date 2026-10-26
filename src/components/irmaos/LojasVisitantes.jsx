@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
 // ════════════════════════════════════════════════════════════════════════
-// LOJAS VISITANTES — cadastro único das Lojas que nos visitam.
+// LOJAS MAÇÔNICAS — cadastro único das Lojas: usado nas visitas que recebemos
+// e nas visitas que os Irmãos fazem a outras Lojas.
 // O banco recusa nome repetido (compara sem acento, pontuação ou prefixo),
 // então a mesma Loja não entra duas vezes com grafias diferentes.
 // ════════════════════════════════════════════════════════════════════════
