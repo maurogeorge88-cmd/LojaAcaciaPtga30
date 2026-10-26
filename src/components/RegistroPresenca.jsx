@@ -312,6 +312,17 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     setJustificativas({});
   };
 
+  // Nome da Loja: usa o cadastro atual quando houver vínculo, senão o texto gravado.
+  // Assim, corrigir a Loja em "Lojas Visitantes" reflete em todas as visitas.
+  const nomeLojaDe = (v) => {
+    const l = lojasVisitantes.find(x => String(x.id) === String(v.loja_id));
+    return l ? `${l.prefixo || 'ARLS'} ${l.nome}` : (v.nome_loja || '');
+  };
+  const cidadeDe = (v) => {
+    const l = lojasVisitantes.find(x => String(x.id) === String(v.loja_id));
+    return l ? l.oriente : (v.cidade || '');
+  };
+
   const adicionarVisitante = async () => {
     // Antes saía em silêncio quando faltava algum campo (parecia que "não salvava")
     const faltando = [];
@@ -389,8 +400,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const editarVisitante = (v) => {
     setVisitanteForm({
       nome_visitante: v.nome_visitante,
-      nome_loja: v.nome_loja,
-      cidade: v.cidade,
+      nome_loja: nomeLojaDe(v),
+      cidade: cidadeDe(v),
       loja_id: v.loja_id || null,
       eh_autoridade: v.eh_autoridade || false,
       cargo_autoridade: v.cargo_autoridade || '',
@@ -777,8 +788,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                     )}
                     {v.nome_visitante}
                   </td>
-                  <td style={{color:"var(--color-text)"}}>{v.nome_loja}</td>
-                  <td style={{color:"var(--color-text)"}}>{v.cidade}</td>
+                  <td style={{color:"var(--color-text)"}}>{nomeLojaDe(v)}</td>
+                  <td style={{color:"var(--color-text)"}}>{cidadeDe(v)}</td>
                   <td style={{color:"var(--color-text)"}}>
                     <button
                       onClick={() => editarVisitante(v)}
