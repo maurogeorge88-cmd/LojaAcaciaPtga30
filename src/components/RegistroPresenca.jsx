@@ -313,7 +313,15 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   };
 
   const adicionarVisitante = async () => {
-    if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
+    // Antes saía em silêncio quando faltava algum campo (parecia que "não salvava")
+    const faltando = [];
+    if (!String(visitanteForm.nome_visitante || '').trim()) faltando.push('nome do visitante');
+    if (!String(visitanteForm.nome_loja || '').trim()) faltando.push('Loja (selecione na lista)');
+    if (!String(visitanteForm.cidade || '').trim()) faltando.push('cidade');
+    if (faltando.length) {
+      setMensagem({ tipo: 'erro', texto: `⚠️ Preencha: ${faltando.join(', ')}.` });
+      return;
+    }
 
     const payloadVisitante = {
       nome_visitante: visitanteForm.nome_visitante,
@@ -348,24 +356,31 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       }
 
       carregarDados();
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
       setVisitanteEditandoId(null);
       setMensagem({ tipo: 'sucesso', texto: '✅ Visitante atualizado com sucesso!' });
       return;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('visitantes_sessao')
-      .insert([{ sessao_id: sessaoId, ...payloadVisitante }]);
-    
+      .insert([{ sessao_id: sessaoId, ...payloadVisitante }])
+      .select();
+
     if (error) {
       console.error('Erro ao adicionar visitante:', error);
       setMensagem({ tipo: 'erro', texto: `❌ Erro ao adicionar visitante: ${error.message || error.details || 'erro desconhecido'}` });
       return;
     }
 
+    if (!data || data.length === 0) {
+      setMensagem({ tipo: 'erro', texto: '❌ O visitante não foi gravado: nenhuma linha inserida (provável falta de permissão/RLS).' });
+      return;
+    }
+
+    setMensagem({ tipo: 'sucesso', texto: '✅ Visitante adicionado!' });
     carregarDados();
-    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
   };
 
   const editarVisitante = (v) => {
@@ -381,7 +396,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   };
 
   const cancelarEdicaoVisitante = () => {
-    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+    setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
     setVisitanteEditandoId(null);
   };
 
@@ -405,7 +420,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
     carregarDados();
     if (visitanteEditandoId === id) {
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '' });
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
       setVisitanteEditandoId(null);
     }
   };
@@ -687,6 +702,9 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
           >
             <option value="">Loja (selecione)</option>
+            {!visitanteForm.loja_id && visitanteForm.nome_loja && (
+              <option value="" disabled>{`${visitanteForm.nome_loja} (cadastro antigo — escolha a Loja)`}</option>
+            )}
             {lojasVisitantes.map(l => (
               <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}${l.potencia ? ` (${l.potencia})` : ''}`}</option>
             ))}
