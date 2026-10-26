@@ -215,7 +215,7 @@ function App() {
     'sobre': 'ℹ️ Sobre o Sistema',
     'sindicancia': '🔍 Sindicância',
     'estatisticas': '📈 Estatísticas',
-    'lojas-visitantes': '🏛️ Lojas Visitantes',
+    'lojas-visitantes': '🏛️ Lojas Maçônicas',
     'visao-geral': '🗓️ Visão Geral',
   };
 
@@ -1844,7 +1844,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'email-irmaos' && '📧 Central E-Mail'}
                   {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
                   {currentPage === 'auditoria-financeira' && '🔍 Auditoria Financeira'}
-                  {currentPage === 'lojas-visitantes' && '🏛️ Lojas Visitantes'}
+                  {currentPage === 'lojas-visitantes' && '🏛️ Lojas Maçônicas'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
