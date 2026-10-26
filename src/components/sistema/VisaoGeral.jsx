@@ -120,7 +120,7 @@ export default function VisaoGeral({ showError }) {
           q(supabase.from('arco_real_lancamentos').select('tipo, valor, status')),
           // Visitas dos Irmãos a outras Lojas, visitantes recebidos e comendas entregues
           qTudo(() => supabase.from('visitas_outras_lojas').select('id, data_visita, loja_id, nome_loja, irmaos(nome), potencias_masonicas(sigla)').gte('data_visita', de).lte('data_visita', ate).order('id')),
-          qTudo(() => supabase.from('visitantes_sessao').select('id, nome_visitante, nome_loja, cidade, eh_autoridade, sessao_id').order('id')),
+          qTudo(() => supabase.from('visitantes_sessao').select('id, nome_visitante, nome_loja, cidade, eh_autoridade, sessao_id, loja_id').order('id')),
           qTudo(() => supabase.from('irmaos_comendas').select('id, data_entrega, irmaos(nome), comendas(nome, origem)').gte('data_entrega', de).lte('data_entrega', ate).order('id')),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
           q(supabase.from('projetos').select('id, nome, status, data_inicio, created_at')),
