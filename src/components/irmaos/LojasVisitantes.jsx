@@ -7,7 +7,7 @@ import { supabase } from '../../supabaseClient';
 // então a mesma Loja não entra duas vezes com grafias diferentes.
 // ════════════════════════════════════════════════════════════════════════
 
-export const POTENCIAS = ['GLEMT', 'GOE', 'GOB'];
+export const POTENCIAS = ['GLEMT', 'GOEMT', 'GOB'];
 
 export const nomeCompletoLoja = (l) =>
   l ? `${l.prefixo || 'ARLS'} ${l.nome}${l.oriente ? ` – Oriente de ${l.oriente}` : ''}${l.potencia ? ` (${l.potencia})` : ''}` : '';
