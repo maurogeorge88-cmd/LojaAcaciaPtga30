@@ -14,12 +14,29 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
   const [irmaos, setIrmaos] = useState([]);
   const [potencias, setPotencias] = useState([]);
   const [modalVisita, setModalVisita] = useState(false);
+  // Cadastro único de Lojas Maçônicas (mesmo usado nas visitas recebidas)
+  const [lojasCadastro, setLojasCadastro] = useState([]);
+  const carregarLojasCadastro = async () => {
+    const { data } = await supabase.from('lojas_visitantes').select('*').eq('ativa', true)
+      .order('eh_potencia', { ascending: false }).order('nome');
+    setLojasCadastro(data || []);
+  };
+  useEffect(() => { carregarLojasCadastro(); }, []);
+  const nomeLojaVisita = (v) => {
+    const l = lojasCadastro.find(x => String(x.id) === String(v.loja_id));
+    return l ? `${l.eh_potencia ? '' : `${l.prefixo || 'ARLS'} `}${l.nome}` : (v.nome_loja || '');
+  };
+  const orienteVisita = (v) => {
+    const l = lojasCadastro.find(x => String(x.id) === String(v.loja_id));
+    return l ? l.oriente : (v.oriente || '');
+  };
   const [visitaEditando, setVisitaEditando] = useState(null);
   const [visitaForm, setVisitaForm] = useState({
     irmao_id: '',
     data_visita: '',
     nome_loja: '',
     oriente: '',
+    loja_id: '',
     potencia_id: '',
     observacoes: ''
   });
@@ -279,6 +296,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
         data_visita: visita.data_visita,
         nome_loja: visita.nome_loja,
         oriente: visita.oriente,
+        loja_id: visita.loja_id || '',
         potencia_id: visita.potencia_id != null ? String(visita.potencia_id) : '',
         observacoes: visita.observacoes || ''
       });
@@ -289,6 +307,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
         data_visita: '',
         nome_loja: '',
         oriente: '',
+        loja_id: '',
         potencia_id: '',
         observacoes: ''
       });
@@ -299,8 +318,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
   const salvarVisita = async (e) => {
     e.preventDefault();
 
-    if (!visitaForm.irmao_id || !visitaForm.data_visita || !visitaForm.nome_loja || !visitaForm.oriente) {
-      setMensagem({ tipo: 'erro', texto: 'Preencha todos os campos obrigatórios' });
+    if (!visitaForm.irmao_id || !visitaForm.data_visita || !visitaForm.loja_id) {
+      setMensagem({ tipo: 'erro', texto: 'Preencha o Irmão, a data e selecione a Loja (cadastre em Lojas Maçônicas se não existir)' });
       return;
     }
 
@@ -308,6 +327,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
     // string vazia, que quebra update/insert em coluna de chave estrangeira).
     const payload = {
       ...visitaForm,
+      loja_id: visitaForm.loja_id || null,
       potencia_id: visitaForm.potencia_id ? visitaForm.potencia_id : null,
     };
 
@@ -781,7 +801,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                               
                               {/* Linha 2: Loja - Potência - Oriente */}
                               <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
+                                {nomeLojaVisita(visita)} - {visita.potencias_masonicas?.sigla || 'N/A'} - {orienteVisita(visita)}
                               </div>
                             </div>
                           ))}
@@ -847,30 +867,41 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Nome da Loja *</label>
-                  <input
-                    type="text"
-                    value={visitaForm.nome_loja}
-                    onChange={(e) => setVisitaForm({ ...visitaForm, nome_loja: e.target.value })}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label className="form-label">Loja visitada *</label>
+                  <select
+                    value={visitaForm.loja_id || ''}
+                    onChange={(e) => {
+                      const l = lojasCadastro.find(x => String(x.id) === e.target.value);
+                      setVisitaForm({
+                        ...visitaForm,
+                        loja_id: l ? l.id : '',
+                        nome_loja: l ? `${l.eh_potencia ? '' : `${l.prefixo || 'ARLS'} `}${l.nome}` : '',
+                        oriente: l ? l.oriente : '',
+                      });
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                     style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                    placeholder="Ex: Acácia do Cerrado"
                     required
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label">Oriente (Município) *</label>
-                  <input
-                    type="text"
-                    value={visitaForm.oriente}
-                    onChange={(e) => setVisitaForm({ ...visitaForm, oriente: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
-                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                    placeholder="Ex: Cuiabá"
-                    required
-                  />
+                  >
+                    <option value="">Selecione a Loja (cadastre em Lojas Maçônicas se não existir)</option>
+                    {lojasCadastro.some(l => l.eh_potencia) && (
+                      <optgroup label="Potências">
+                        {lojasCadastro.filter(l => l.eh_potencia).map(l => (
+                          <option key={l.id} value={l.id}>{`${l.nome} – ${l.oriente}`}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <optgroup label="Lojas">
+                      {lojasCadastro.filter(l => !l.eh_potencia).map(l => (
+                        <option key={l.id} value={l.id}>{`${l.prefixo || 'ARLS'} ${l.nome} – ${l.oriente}${l.potencia ? ` (${l.potencia})` : ''}`}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                  {visitaForm.oriente && (
+                    <p style={{margin:"0.3rem 0 0",fontSize:"0.75rem",color:"var(--color-text-muted)"}}>Oriente: {visitaForm.oriente}</p>
+                  )}
                 </div>
               </div>
 
