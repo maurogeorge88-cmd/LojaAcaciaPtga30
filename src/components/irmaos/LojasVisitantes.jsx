@@ -7,10 +7,12 @@ import { supabase } from '../../supabaseClient';
 // então a mesma Loja não entra duas vezes com grafias diferentes.
 // ════════════════════════════════════════════════════════════════════════
 
-export const nomeCompletoLoja = (l) =>
-  l ? `${l.prefixo || 'ARLS'} ${l.nome}${l.oriente ? ` – Oriente de ${l.oriente}` : ''}` : '';
+export const POTENCIAS = ['GLEMT', 'GOE', 'GOB'];
 
-const VAZIO = { prefixo: 'ARLS', nome: '', oriente: '', ativa: true };
+export const nomeCompletoLoja = (l) =>
+  l ? `${l.prefixo || 'ARLS'} ${l.nome}${l.oriente ? ` – Oriente de ${l.oriente}` : ''}${l.potencia ? ` (${l.potencia})` : ''}` : '';
+
+const VAZIO = { prefixo: 'ARLS', nome: '', oriente: '', potencia: 'GLEMT', ativa: true };
 const lab = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' };
 const inp = { width: '100%', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' };
 
@@ -32,13 +34,13 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
   useEffect(() => { carregar(); }, []);
 
   const abrirNova = () => { setForm(VAZIO); setEditando(null); setModal(true); };
-  const abrirEdicao = (l) => { setForm({ prefixo: l.prefixo || 'ARLS', nome: l.nome, oriente: l.oriente, ativa: l.ativa }); setEditando(l); setModal(true); };
+  const abrirEdicao = (l) => { setForm({ prefixo: l.prefixo || 'ARLS', nome: l.nome, oriente: l.oriente, potencia: l.potencia || 'GLEMT', ativa: l.ativa }); setEditando(l); setModal(true); };
 
   const salvar = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload = { prefixo: (form.prefixo || 'ARLS').trim(), nome: form.nome.trim(), oriente: form.oriente.trim(), ativa: form.ativa };
+      const payload = { prefixo: (form.prefixo || 'ARLS').trim(), nome: form.nome.trim(), oriente: form.oriente.trim(), potencia: form.potencia || 'GLEMT', ativa: form.ativa };
       const { data, error } = editando
         ? await supabase.from('lojas_visitantes').update(payload).eq('id', editando.id).select()
         : await supabase.from('lojas_visitantes').insert([payload]).select();
@@ -62,13 +64,13 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
   };
 
   const t = busca.trim().toLowerCase();
-  const filtradas = lojas.filter(l => !t || `${l.nome} ${l.oriente}`.toLowerCase().includes(t));
+  const filtradas = lojas.filter(l => !t || `${l.nome} ${l.oriente} ${l.potencia || ''}`.toLowerCase().includes(t));
 
   return (
     <div style={{ padding: '0.5rem', maxWidth: '1000px', margin: '0 auto' }}>
 
       <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '0.9rem' }}>
-        <input type="text" placeholder="🔍 Buscar Loja ou oriente..." value={busca} onChange={e => setBusca(e.target.value)}
+        <input type="text" placeholder="🔍 Buscar Loja, oriente ou potência..." value={busca} onChange={e => setBusca(e.target.value)}
           style={{ ...inp, flex: 1, minWidth: '220px', width: 'auto' }} />
         {podeEditar && (
           <button type="button" onClick={abrirNova}
@@ -123,10 +125,18 @@ export default function LojasVisitantes({ showSuccess, showError, permissoes }) 
                   value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} style={inp} />
               </div>
             </div>
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={lab}>Oriente (cidade) *</label>
-              <input type="text" required placeholder="Ex.: Paranatinga-MT"
-                value={form.oriente} onChange={e => setForm({ ...form, oriente: e.target.value })} style={inp} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div>
+                <label style={lab}>Oriente (cidade) *</label>
+                <input type="text" required placeholder="Ex.: Paranatinga-MT"
+                  value={form.oriente} onChange={e => setForm({ ...form, oriente: e.target.value })} style={inp} />
+              </div>
+              <div>
+                <label style={lab}>Potência *</label>
+                <select value={form.potencia} onChange={e => setForm({ ...form, potencia: e.target.value })} style={inp}>
+                  {POTENCIAS.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
             </div>
             <p style={{ margin: '0 0 1rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
               Ficará assim: <strong>{nomeCompletoLoja({ ...form, nome: form.nome || '[nome]', oriente: form.oriente })}</strong>
