@@ -188,7 +188,7 @@ export const gerarVisaoGeralPDF = ({ ano, r, dadosLoja = {}, logoB64 }) => {
   // ── Relações e distinções ──────────────────────────────────────────────
   titulo('Visitas e comendas');
   cartoes([
-    ['Visitas a outras Lojas', String(r.visitas)],
+    ['Visitas a outras Lojas', String(r.visitas), null, `${r.lojasVisitadas} loja(s)`],
     ['Visitantes em nossa Loja', String(r.visitantes), VERDE, `${r.lojasDiferentes} loja(s)`],
     ['Autoridades recebidas', String(r.autoridades)],
     ['Comendas entregues', String(r.comendasEntregues.length)],
