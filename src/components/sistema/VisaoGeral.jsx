@@ -119,7 +119,7 @@ export default function VisaoGeral({ showError }) {
           qTudo(() => supabase.from('lancamentos_loja').select('valor, data_pagamento, tipo_pagamento, eh_transferencia_interna, categoria_id, categorias_financeiras(tipo)').eq('status', 'pago').order('id')),
           q(supabase.from('arco_real_lancamentos').select('tipo, valor, status')),
           // Visitas dos Irmãos a outras Lojas, visitantes recebidos e comendas entregues
-          qTudo(() => supabase.from('visitas_outras_lojas').select('id, data_visita, irmaos(nome), potencias_masonicas(sigla)').gte('data_visita', de).lte('data_visita', ate).order('id')),
+          qTudo(() => supabase.from('visitas_outras_lojas').select('id, data_visita, loja_id, nome_loja, irmaos(nome), potencias_masonicas(sigla)').gte('data_visita', de).lte('data_visita', ate).order('id')),
           qTudo(() => supabase.from('visitantes_sessao').select('id, nome_visitante, nome_loja, cidade, eh_autoridade, sessao_id').order('id')),
           qTudo(() => supabase.from('irmaos_comendas').select('id, data_entrega, irmaos(nome), comendas(nome, origem)').gte('data_entrega', de).lte('data_entrega', ate).order('id')),
           q(supabase.from('eventos_loja').select('id, nome_evento, tipo_evento, status, data_prevista')),
@@ -312,12 +312,24 @@ export default function VisaoGeral({ showError }) {
     const idsSessoes = new Set((d.sessoesPres || []).map(x => String(x.id)));
     const visitantesAno = (d.visitantes || []).filter(v => idsSessoes.has(String(v.sessao_id)));
     const autoridades = visitantesAno.filter(v => v.eh_autoridade === true).length;
+    // Agrupa pela Loja cadastrada (loja_id); sem vínculo, pelo nome normalizado,
+    // para que grafias diferentes da mesma Loja não contem duas vezes
+    const limparNome = (txt) => String(txt || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/^\s*(a\s*[.·:]*\s*r\s*[.·:]*\s*l\s*[.·:]*\s*s\s*[.·:]*|arls|loja)\s*/, '')
+      .replace(/\b(n|no|nº|num|numero)?\s*[0-9]+\b/g, '')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+    const chaveLoja = (v) => (v.loja_id ? `id:${v.loja_id}` : (limparNome(v.nome_loja) || 'nao informada'));
     const lojasVisitantes = {};
     visitantesAno.forEach(v => {
-      const nome = (v.nome_loja || 'Não informada').trim();
-      lojasVisitantes[nome] = (lojasVisitantes[nome] || 0) + 1;
+      const chave = chaveLoja(v);
+      const g = lojasVisitantes[chave] || (lojasVisitantes[chave] = { nome: (v.nome_loja || 'Não informada').trim(), qtd: 0 });
+      g.qtd += 1;
     });
-    const rankLojas = Object.entries(lojasVisitantes).sort((a, b) => b[1] - a[1]);
+    const rankLojas = Object.values(lojasVisitantes).map(g => [g.nome, g.qtd]).sort((a, b) => b[1] - a[1]);
+    // Lojas diferentes que VISITAMOS (mesma regra)
+    const lojasVisitadas = new Set((d.visitas || []).map(chaveLoja)).size;
 
     // Comendas efetivamente entregues no ano
     const comendasEntregues = (d.comendas || [])
@@ -336,7 +348,7 @@ export default function VisaoGeral({ showError }) {
       topReceitas: porCategoria('receita'), topDespesas: porCategoria('despesa'),
       balaustresGrau, totalBalaustres: d.balaustres.length, sessoes: d.sessoesPres.length,
       agapes, agTotal, agLoja, agIrmaos, agSaldo, agConvidados,
-      visitas: (d.visitas || []).length, rankVisitas,
+      visitas: (d.visitas || []).length, lojasVisitadas, rankVisitas,
       visitantes: visitantesAno.length, autoridades, lojasDiferentes: rankLojas.length, rankLojas,
       comendasEntregues,
       pranchas: d.pranchas.filter(p => {
@@ -385,7 +397,7 @@ export default function VisaoGeral({ showError }) {
             <Cartao rotulo="Comodatos ativos" valor={r.comodatosAtivos.length} detalhe={`${r.comodatosAno.length} no ano`} cor={CORES.azul} />
             <Cartao rotulo="Pranchas" valor={r.pranchas} cor={CORES.cinza} />
             <Cartao rotulo="Editais" valor={r.editais} cor={CORES.cinza} />
-            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} cor={CORES.roxo} />
+            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} detalhe={`${r.lojasVisitadas} loja(s)`} cor={CORES.roxo} />
             <Cartao rotulo="Visitantes recebidos" valor={r.visitantes} detalhe={`${r.autoridades} autoridade(s)`} cor={CORES.verde} />
             <Cartao rotulo="Comendas entregues" valor={r.comendasEntregues.length} cor={CORES.ambar} />
           </Grade>
@@ -471,7 +483,7 @@ export default function VisaoGeral({ showError }) {
 
         <Secao titulo="Relações e distinções" icone="🎖️">
           <Grade>
-            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} cor={CORES.roxo} />
+            <Cartao rotulo="Visitas a outras Lojas" valor={r.visitas} detalhe={`${r.lojasVisitadas} loja(s)`} cor={CORES.roxo} />
             <Cartao rotulo="Visitantes recebidos" valor={r.visitantes} detalhe={`${r.lojasDiferentes} loja(s) · ${r.autoridades} autoridade(s)`} cor={CORES.verde} />
             <Cartao rotulo="Comendas entregues" valor={r.comendasEntregues.length} cor={CORES.ambar} />
           </Grade>
