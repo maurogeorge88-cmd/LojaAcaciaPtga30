@@ -355,6 +355,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         return;
       }
 
+      // Atualiza a lista na hora com a linha que o banco devolveu (não espera o recarregamento)
+      setVisitantes(prev => prev.map(v => (String(v.id) === String(visitanteEditandoId) ? { ...v, ...data[0] } : v)));
       carregarDados();
       setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
       setVisitanteEditandoId(null);
@@ -379,6 +381,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     }
 
     setMensagem({ tipo: 'sucesso', texto: '✅ Visitante adicionado!' });
+    setVisitantes(prev => [data[0], ...prev]);   // aparece na hora
     carregarDados();
     setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '', eh_autoridade: false, cargo_autoridade: '', loja_id: null });
   };
