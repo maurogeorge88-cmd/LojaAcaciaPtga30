@@ -11,10 +11,17 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [busca, setBusca] = useState('');
   const [operacaoDetalhes, setOperacaoDetalhes] = useState(null);
+  // Categoria financeira fixa da operação: usada ao quitar cada parcela
+  const [categorias, setCategorias] = useState([]);
+  useEffect(() => {
+    supabase.from('categorias_financeiras').select('id, nome, tipo, categoria_pai_id').order('nome')
+      .then(({ data }) => setCategorias(data || []));
+  }, []);
 
   // Formulário
   const [formData, setFormData] = useState({
     entidade_id: '',
+    categoria_id: '',
     valor_principal: '',
     valor_total: '',
     valor_parcela: '',
@@ -82,6 +89,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   const abrirModalNovo = () => {
     setFormData({
       entidade_id: '',
+      categoria_id: '',
       valor_principal: '',
       valor_total: '',
       valor_parcela: '',
@@ -101,6 +109,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
     setFormData({
       id: operacao.id,
       entidade_id: operacao.entidade_id,
+      categoria_id: operacao.categoria_id || '',
       valor_principal: operacao.valor_principal ?? operacao.valor_total,
       valor_total: operacao.valor_total,
       valor_parcela: operacao.valor_parcela ?? '',
@@ -202,6 +211,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
           .update({
             entidade_id: formData.entidade_id,
             entidade_nome: entidade?.nome,
+            categoria_id: formData.categoria_id || null,
             valor_principal: valorPrincipal,
             valor_total: valorTotal,
             forma_pagamento: formData.forma_pagamento,
@@ -227,6 +237,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
             tipo_operacao: tipo,
             entidade_id: formData.entidade_id,
             entidade_nome: entidade?.nome,
+            categoria_id: formData.categoria_id || null,
             valor_principal: valorPrincipal,
             valor_total: valorTotal,
             forma_pagamento: formData.forma_pagamento,
@@ -641,6 +652,27 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     ⚠️ Nenhuma entidade cadastrada. Cadastre uma entidade primeiro.
                   </p>
                 )}
+              </div>
+
+              {/* Categoria financeira: fica fixa na operação e é usada ao quitar cada parcela */}
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
+                  Categoria no Financeiro da Loja
+                </label>
+                <select
+                  value={formData.categoria_id}
+                  onChange={(e) => setFormData({ ...formData, categoria_id: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 1rem",outline:"none"}}
+                >
+                  <option value="">Sem lançamento automático</option>
+                  {categorias.filter(c => c.categoria_pai_id).map(c => {
+                    const pai = categorias.find(p => String(p.id) === String(c.categoria_pai_id));
+                    return <option key={c.id} value={c.id}>{pai ? `${pai.nome} › ${c.nome}` : c.nome}</option>;
+                  })}
+                </select>
+                <p style={{margin:"0.25rem 0 0",fontSize:"0.72rem",color:"var(--color-text-muted)"}}>
+                  Ao quitar cada parcela, o lançamento é criado automaticamente nesta categoria.
+                </p>
               </div>
 
               {/* Valor Total e Data */}
