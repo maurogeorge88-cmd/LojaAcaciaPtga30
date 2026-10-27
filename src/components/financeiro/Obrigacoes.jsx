@@ -47,14 +47,15 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         proximosVencimentos(),
       ]);
       setObrigacoes(obr || []);
-      const [{ data: irm }, { data: corpo }] = await Promise.all([
+      // Cargo atual: corpo_administrativo e, na falta dele, historico_cargos
+      const [{ data: irm }, corpoRes, histRes] = await Promise.all([
         supabase.from('irmaos').select('id, nome').order('nome'),
         supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id').order('ano_exercicio', { ascending: false }),
+        supabase.from('historico_cargos').select('cargo, irmao_id, ano_exercicio').order('ano_exercicio', { ascending: false }),
       ]);
-      // Cargo atual de cada Irmão: o do exercício mais recente
       const cargoPorIrmao = {};
-      (corpo || []).forEach(c => {
-        if (!cargoPorIrmao[String(c.irmao_id)]) cargoPorIrmao[String(c.irmao_id)] = c.cargo;
+      [...(corpoRes?.data || []), ...(histRes?.data || [])].forEach(c => {
+        if (c?.irmao_id && !cargoPorIrmao[String(c.irmao_id)]) cargoPorIrmao[String(c.irmao_id)] = c.cargo;
       });
       setIrmaos((irm || []).map(i => ({ ...i, cargo: cargoPorIrmao[String(i.id)] || '' })));
       setBaixas(bx || []);
@@ -132,7 +133,8 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
   const irmaoResp = (x) => irmaos.find(i => String(i.id) === String(x?.responsavel_id)) || padraoResp || null;
   const nomeResp = (x) => {
     const i = irmaoResp(x);
-    return i ? `${nomeCurto(i.nome)}${x?.responsavel_id ? '' : ' (padrão)'}` : '';
+    if (!i) return 'Sem responsável';
+    return `${nomeCurto(i.nome)}${x?.responsavel_id ? '' : ' (padrão)'}`;
   };
   const resp = (x) => String(x?.responsavel_id || padraoResp?.id || '');
   const avisosFiltrados = avisos.filter(a => !filtroResp || resp(a) === filtroResp);
