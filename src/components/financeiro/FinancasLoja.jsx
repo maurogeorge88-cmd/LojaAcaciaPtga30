@@ -27,6 +27,7 @@ import ModalQuitacaoLote from './ModalQuitacaoLote';
 import { gerarReciboPagamentoPDF } from '../../utils/gerarReciboPagamentoPDF';
 import ModalEdicaoLote from './components/ModalEdicaoLote';
 import { ehAjusteInternoTronco } from './utils/ajusteTronco';
+import { buscarAvisosObrigacoes } from './utils/obrigacoes';
 import MarcoConferencia from './components/MarcoConferencia';
 
 // 💰 COMPONENTE: Finanças da Loja
@@ -116,6 +117,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // Parcelas de empréstimos a vencer (ou já vencidas): aviso para não passar batido
   const [parcelasAviso, setParcelasAviso] = useState([]);
   const [avisoFechado, setAvisoFechado] = useState(false);
+  // Obrigações (água, energia, IPTU…): só lembrete, nada entra no financeiro
+  const [obrigacoesAviso, setObrigacoesAviso] = useState([]);
+  const [avisoObrigFechado, setAvisoObrigFechado] = useState(false);
+  useEffect(() => {
+    buscarAvisosObrigacoes().then(setObrigacoesAviso).catch(() => setObrigacoesAviso([]));
+  }, []);
   useEffect(() => {
     const iso = (d) => d.toISOString().split('T')[0];
     const limite = new Date(); limite.setDate(limite.getDate() + 5);
@@ -4513,7 +4520,41 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
 
-      {/* Aviso de parcelas de empréstimo (Crédito/Débito) — canto inferior direito */}
+      {/* Avisos no canto inferior direito — empilhados, nunca sobrepostos:
+          Obrigações em cima, Parcelas de Empréstimo embaixo */}
+      {obrigacoesAviso.length > 0 && !avisoObrigFechado && (
+        <div style={{position:'fixed',right:'1rem',zIndex:41,width:'320px',maxWidth:'calc(100vw - 2rem)',
+          bottom: (parcelasAviso.length > 0 && !avisoFechado) ? 'calc(1rem + 300px)' : '1rem',
+          background:'var(--color-surface)',border:'1px solid rgba(14,165,233,0.5)',borderRadius:'var(--radius-lg)',
+          boxShadow:'0 12px 32px rgba(0,0,0,0.35)',overflow:'hidden'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem',padding:'0.6rem 0.8rem',borderBottom:'1px solid var(--color-border)'}}>
+            <strong style={{fontSize:'0.85rem',color:'#0ea5e9'}}>🧾 Obrigações ({obrigacoesAviso.length})</strong>
+            <button type="button" onClick={() => setAvisoObrigFechado(true)}
+              style={{background:'transparent',border:'none',color:'var(--color-text-muted)',fontSize:'1.1rem',cursor:'pointer',lineHeight:1}}>✕</button>
+          </div>
+          <div style={{maxHeight:'200px',overflowY:'auto',padding:'0.5rem 0.8rem'}}>
+            {obrigacoesAviso.slice(0, 6).map(o => (
+              <div key={`${o.id}-${o.competencia}`} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem',padding:'0.4rem 0',borderBottom:'1px solid var(--color-border)'}}>
+                <div style={{minWidth:0}}>
+                  <p style={{margin:0,fontSize:'0.8rem',fontWeight:700,color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{o.nome}</p>
+                  <p style={{margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)'}}>
+                    Vence: {String(o.vencimento).split('-').reverse().join('/')}
+                  </p>
+                </div>
+                <span style={{flexShrink:0,fontSize:'0.68rem',fontWeight:700,padding:'0.1rem 0.5rem',borderRadius:'999px',
+                  color: o.vencida ? '#ef4444' : '#0ea5e9', border:`1px solid ${o.vencida ? 'rgba(239,68,68,0.5)' : 'rgba(14,165,233,0.5)'}`}}>
+                  {o.vencida ? `Atrasado ${Math.abs(o.dias)}d` : o.dias === 0 ? 'Vence hoje' : `Em ${o.dias}d`}
+                </span>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setAvisoObrigFechado(true)}
+            style={{width:'100%',padding:'0.55rem',background:'#0ea5e9',color:'#fff',border:'none',fontWeight:800,fontSize:'0.8rem',cursor:'pointer'}}>
+            Ver Obrigações
+          </button>
+        </div>
+      )}
+
       {parcelasAviso.length > 0 && !avisoFechado && (
         <div style={{position:'fixed',right:'1rem',bottom:'1rem',zIndex:40,width:'320px',maxWidth:'calc(100vw - 2rem)',
           background:'var(--color-surface)',border:'1px solid rgba(245,158,11,0.5)',borderRadius:'var(--radius-lg)',
