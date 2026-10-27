@@ -47,8 +47,16 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         proximosVencimentos(),
       ]);
       setObrigacoes(obr || []);
-      const { data: irm } = await supabase.from('irmaos').select('id, nome, cargo').order('nome');
-      setIrmaos(irm || []);
+      const [{ data: irm }, { data: corpo }] = await Promise.all([
+        supabase.from('irmaos').select('id, nome').order('nome'),
+        supabase.from('corpo_administrativo').select('cargo, ano_exercicio, irmao_id').order('ano_exercicio', { ascending: false }),
+      ]);
+      // Cargo atual de cada Irmão: o do exercício mais recente
+      const cargoPorIrmao = {};
+      (corpo || []).forEach(c => {
+        if (!cargoPorIrmao[String(c.irmao_id)]) cargoPorIrmao[String(c.irmao_id)] = c.cargo;
+      });
+      setIrmaos((irm || []).map(i => ({ ...i, cargo: cargoPorIrmao[String(i.id)] || '' })));
       setBaixas(bx || []);
       setAvisos(av);
     } catch (e) {
@@ -117,7 +125,8 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
   const etiqueta = (a) => (a.vencida ? `Atrasado ${Math.abs(a.dias)}d` : a.dias === 0 ? 'Vence hoje' : `Em ${a.dias}d`);
   const nomeDe = (id) => obrigacoes.find(o => String(o.id) === String(id))?.nome || '—';
   // Sem responsável escolhido, vale o padrão da Loja: o Tesoureiro
-  const temCargo = (i, termo) => String(i?.cargo || '').toLowerCase().includes(termo);
+  const temCargo = (i, termo) => String(i?.cargo || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(termo);
   const padraoResp = irmaos.find(i => temCargo(i, 'tesoureiro') && !temCargo(i, 'adjunto'))
     || irmaos.find(i => temCargo(i, 'tesoureiro'));
   const irmaoResp = (x) => irmaos.find(i => String(i.id) === String(x?.responsavel_id)) || padraoResp || null;
