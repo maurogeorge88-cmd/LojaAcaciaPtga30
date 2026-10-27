@@ -53,6 +53,7 @@ export default function MenuLoja({
       { pagina: 'categorias-financeiras', icone: '🏷️', label: 'Categorias', mostrar: ver('financeiro') },
       { pagina: 'eventos-comemorativos', icone: '🍽️', label: 'Ágape & Festas', mostrar: ver('financeiro') },
       { pagina: 'relatorio-financeiro', icone: '📊', label: 'Conferir Finanças', mostrar: ver('financeiro') },
+      { pagina: 'obrigacoes', icone: '🧾', label: 'Obrigações', mostrar: ver('financeiro') },
       { pagina: 'auditoria-financeira', icone: '🔍', label: 'Auditoria Financeira', mostrar: podeAuditoria },
     ]},
     // Sem acesso ao financeiro: Ágape continua visível (somente consulta)
