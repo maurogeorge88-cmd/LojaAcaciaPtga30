@@ -302,6 +302,36 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
     }
   };
 
+  // Exclusão definitiva: apaga a operação, as parcelas e os lançamentos já gerados
+  const excluirOperacao = async (operacao) => {
+    const nome = operacao.descricao || operacao.entidade_nome;
+    if (!window.confirm(`EXCLUIR definitivamente a operação "${nome}"?\n\nSerão apagados também as parcelas e os lançamentos já criados no Financeiro da Loja.\nEsta ação não pode ser desfeita.`)) return;
+    try {
+      setLoading(true);
+      // 1) lançamentos gerados pelas quitações
+      const { data: parcelas } = await supabase.from('parcelas_operacoes')
+        .select('id, lancamento_id').eq('operacao_id', operacao.id);
+      const idsLanc = (parcelas || []).map(p => p.lancamento_id).filter(Boolean);
+      if (idsLanc.length) {
+        const { error: errL } = await supabase.from('lancamentos_loja').delete().in('id', idsLanc);
+        if (errL) throw errL;
+      }
+      // 2) parcelas
+      const { error: errP } = await supabase.from('parcelas_operacoes').delete().eq('operacao_id', operacao.id);
+      if (errP) throw errP;
+      // 3) operação
+      const { data, error } = await supabase.from('operacoes_credito_debito').delete().eq('id', operacao.id).select();
+      if (error) throw error;
+      if (!data?.length) throw new Error('o banco não permitiu a exclusão (sem permissão).');
+      showSuccess(idsLanc.length ? `Operação excluída e ${idsLanc.length} lançamento(s) removido(s) do Financeiro!` : 'Operação excluída!');
+      carregarDados();
+    } catch (e) {
+      showError('Erro ao excluir: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const cancelarOperacao = async (id, descricao) => {
     if (!window.confirm(`Deseja realmente cancelar esta operação?\n"${descricao}"`)) {
       return;
@@ -613,6 +643,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                           </button>
                         </>
                       )}
+                      <button
+                        onClick={() => excluirOperacao(operacao)}
+                        title="Excluir definitivamente"
+                        style={{padding:"0.4rem 0.9rem",background:"rgba(239,68,68,0.25)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.5)",borderRadius:"var(--radius-md)",fontWeight:700,fontSize:"0.8rem",cursor:"pointer"}}
+                      >
+                        🗑️ Excluir
+                      </button>
                     </div>
                   </div>
                 </div>
