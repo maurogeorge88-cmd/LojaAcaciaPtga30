@@ -14,6 +14,15 @@ import {
 const VAZIO = { nome: '', periodicidade: 'mensal', dia_vencimento: 10, mes_referencia: 1, dias_aviso: 5, responsavel_id: '', observacoes: '', ativa: true };
 const lab = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' };
 const inp = { width: '100%', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' };
+// Mesma regra de nome curto usada nas outras telas: dois nomes, três quando houver preposição
+const PREPOSICOES = ['de', 'da', 'do', 'das', 'dos', 'e'];
+const nomeCurto = (nome) => {
+  const p = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  if (p.length <= 2) return p.join(' ');
+  if (PREPOSICOES.includes(p[1].toLowerCase())) return p.slice(0, 3).join(' ');
+  return p.slice(0, 2).join(' ');
+};
+
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 export default function Obrigacoes({ userData, showSuccess, showError }) {
@@ -38,7 +47,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         proximosVencimentos(),
       ]);
       setObrigacoes(obr || []);
-      const { data: irm } = await supabase.from('irmaos').select('id, nome').order('nome');
+      const { data: irm } = await supabase.from('irmaos').select('id, nome, cargo').order('nome');
       setIrmaos(irm || []);
       setBaixas(bx || []);
       setAvisos(av);
@@ -107,7 +116,16 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
 
   const etiqueta = (a) => (a.vencida ? `Atrasado ${Math.abs(a.dias)}d` : a.dias === 0 ? 'Vence hoje' : `Em ${a.dias}d`);
   const nomeDe = (id) => obrigacoes.find(o => String(o.id) === String(id))?.nome || '—';
-  const resp = (x) => String(x?.responsavel_id || '');
+  // Sem responsável escolhido, vale o padrão da Loja: o Tesoureiro
+  const temCargo = (i, termo) => String(i?.cargo || '').toLowerCase().includes(termo);
+  const padraoResp = irmaos.find(i => temCargo(i, 'tesoureiro') && !temCargo(i, 'adjunto'))
+    || irmaos.find(i => temCargo(i, 'tesoureiro'));
+  const irmaoResp = (x) => irmaos.find(i => String(i.id) === String(x?.responsavel_id)) || padraoResp || null;
+  const nomeResp = (x) => {
+    const i = irmaoResp(x);
+    return i ? `${nomeCurto(i.nome)}${x?.responsavel_id ? '' : ' (padrão)'}` : '';
+  };
+  const resp = (x) => String(x?.responsavel_id || padraoResp?.id || '');
   const avisosFiltrados = avisos.filter(a => !filtroResp || resp(a) === filtroResp);
   const obrigacoesFiltradas = obrigacoes.filter(o => !filtroResp || resp(o) === filtroResp);
   const baixasFiltradas = baixas.filter(b => {
@@ -135,7 +153,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
           <select value={filtroResp} onChange={e => setFiltroResp(e.target.value)}
             style={{ ...inp, width: 'auto', padding: '0.3rem 0.6rem', fontSize: '0.82rem' }}>
             <option value="">Todos</option>
-            {irmaos.map(i => <option key={i.id} value={String(i.id)}>{i.nome}</option>)}
+            {irmaos.map(i => <option key={i.id} value={String(i.id)}>{nomeCurto(i.nome)}</option>)}
           </select>
         </div>
       </div>
@@ -163,7 +181,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{a.nome}</p>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                   Vence: {dataBR(a.vencimento)} · {PERIODICIDADES[a.periodicidade]?.rotulo}
-                  {a.irmaos?.nome ? ` · 👤 ${a.irmaos.nome}` : ''}
+                  {nomeResp(a) ? ` · 👤 ${nomeResp(a)}` : ''}
                   {a.observacoes ? ` · ${a.observacoes}` : ''}
                 </p>
               </div>
@@ -196,7 +214,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{o.nome}{!o.ativa && ' (inativa)'}</p>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                   {PERIODICIDADES[o.periodicidade]?.rotulo} · dia {o.dia_vencimento}
-                  {o.responsavel_id ? ` · 👤 ${irmaos.find(i => String(i.id) === String(o.responsavel_id))?.nome || ''}` : ''}
+                  {nomeResp(o) ? ` · 👤 ${nomeResp(o)}` : ''}
                   {o.periodicidade !== 'mensal' && o.mes_referencia ? ` · a partir de ${MESES[o.mes_referencia - 1]}` : ''}
                   {` · avisar ${o.dias_aviso} dia(s) antes`}
                 </p>
@@ -280,8 +298,8 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={lab}>Responsável</label>
               <select value={form.responsavel_id || ''} onChange={e => setForm({ ...form, responsavel_id: e.target.value })} style={inp}>
-                <option value="">Sem responsável definido</option>
-                {irmaos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                <option value="">Padrão da Loja{padraoResp ? ` — ${nomeCurto(padraoResp.nome)} (Tesoureiro)` : ''}</option>
+                {irmaos.map(i => <option key={i.id} value={i.id}>{nomeCurto(i.nome)}</option>)}
               </select>
             </div>
             <div style={{ marginBottom: '0.75rem' }}>
