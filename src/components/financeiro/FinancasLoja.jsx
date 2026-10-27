@@ -113,6 +113,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [expandedLista, setExpandedLista] = useState({ origens: new Set(), datas: new Set() });
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [idsAlteradosConf, setIdsAlteradosConf] = useState(new Set()); // lançamentos alterados após a conferência
+  // Parcelas de empréstimos a vencer (ou já vencidas): aviso para não passar batido
+  const [parcelasAviso, setParcelasAviso] = useState([]);
+  useEffect(() => {
+    const iso = (d) => d.toISOString().split('T')[0];
+    const limite = new Date(); limite.setDate(limite.getDate() + 5);
+    const hoje = iso(new Date());
+    supabase.from('parcelas_operacoes')
+      .select('id, numero_parcela, valor, data_vencimento, status, operacoes_credito_debito(entidade_nome, tipo_operacao, numero_parcelas)')
+      .neq('status', 'pago')
+      .lte('data_vencimento', iso(limite))
+      .order('data_vencimento')
+      .then(({ data }) => setParcelasAviso((data || []).map(p => ({ ...p, vencida: String(p.data_vencimento) < hoje }))));
+  }, []);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [arcoRealTotal, setArcoRealTotal] = useState({ receita: 0, despesa: 0, saldo: 0 });
@@ -2347,6 +2360,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* LINHA 2: Detalhamento */}
           <div style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:'0.5rem',flex:1}}>
+
+            {/* Aviso: parcelas de empréstimo vencendo ou vencidas */}
+            {parcelasAviso.length > 0 && (
+              <div style={{gridColumn:'1 / -1',border:'1px solid rgba(245,158,11,0.5)',background:'rgba(245,158,11,0.12)',borderRadius:'var(--radius-lg)',padding:'0.7rem 1rem',marginBottom:'0.75rem'}}>
+                <p style={{margin:0,fontWeight:800,color:'#f59e0b',fontSize:'0.85rem'}}>
+                  ⏰ {parcelasAviso.length} parcela(s) de empréstimo {parcelasAviso.some(p => p.vencida) ? 'vencida(s) ou a vencer' : 'a vencer'}
+                </p>
+                {parcelasAviso.slice(0, 5).map(p => (
+                  <p key={p.id} style={{margin:'0.2rem 0 0',fontSize:'0.8rem',color:'var(--color-text)'}}>
+                    <strong style={{color: p.vencida ? '#ef4444' : 'var(--color-text)'}}>
+                      {String(p.data_vencimento).substring(0,10).split('-').reverse().join('/')}
+                    </strong>
+                    {' — '}{p.operacoes_credito_debito?.entidade_nome || 'Operação'}
+                    {' · parcela '}{p.numero_parcela}/{p.operacoes_credito_debito?.numero_parcelas || '?'}
+                    {' · R$ '}{(p.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {p.vencida && <span style={{color:'#ef4444',fontWeight:700}}> (vencida)</span>}
+                  </p>
+                ))}
+                {parcelasAviso.length > 5 && (
+                  <p style={{margin:'0.2rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                    e mais {parcelasAviso.length - 5}… veja em Controle Financeiro › Crédito/Débito.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Grupo Saldos Atuais */}
             <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(14,165,233,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #0ea5e9',display:'flex',flexDirection:'column',height:'100%'}}>
