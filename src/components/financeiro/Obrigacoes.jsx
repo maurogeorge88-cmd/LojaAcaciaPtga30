@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-  PERIODICIDADES, podeGerirObrigacoes, buscarAvisosObrigacoes,
+  PERIODICIDADES, podeGerirObrigacoes, proximosVencimentos,
   darBaixa, desfazerBaixa, dataBR,
 } from './utils/obrigacoes';
 
@@ -32,7 +32,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
       const [{ data: obr }, { data: bx }, av] = await Promise.all([
         supabase.from('obrigacoes').select('*').order('nome'),
         supabase.from('obrigacoes_baixas').select('*').order('resolvida_em', { ascending: false }).limit(60),
-        buscarAvisosObrigacoes(),
+        proximosVencimentos(),
       ]);
       setObrigacoes(obr || []);
       setBaixas(bx || []);
@@ -108,7 +108,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
       {/* PENDENTES */}
       <section style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>🧾 A resolver ({avisos.length})</h3>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>🧾 Próximos vencimentos ({avisos.length})</h3>
           {podeGerir && (
             <button type="button" onClick={() => { setForm(VAZIO); setEditando(null); setModal(true); }}
               style={{ padding: '0.45rem 0.9rem', borderRadius: 'var(--radius-lg)', border: 'none', background: 'var(--color-accent)', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
@@ -119,10 +119,10 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
           {avisos.length === 0 ? (
             <p style={{ margin: 0, padding: '0.9rem 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-              Nenhuma obrigação a resolver no momento.
+              Nenhuma obrigação pendente no momento.
             </p>
           ) : avisos.map((a, i) => (
-            <div key={`${a.id}-${a.competencia}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '0.6rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', borderLeft: `4px solid ${a.vencida ? '#ef4444' : '#f59e0b'}` }}>
+            <div key={`${a.id}-${a.competencia}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '0.6rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', borderLeft: `4px solid ${a.vencida ? '#ef4444' : a.noPrazoDeAviso ? '#f59e0b' : 'var(--color-border)'}` }}>
               <div style={{ flex: 1, minWidth: '180px' }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{a.nome}</p>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
@@ -130,7 +130,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
                   {a.observacoes ? ` · ${a.observacoes}` : ''}
                 </p>
               </div>
-              <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '999px', color: a.vencida ? '#ef4444' : '#f59e0b', border: `1px solid ${a.vencida ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'}` }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.6rem', borderRadius: '999px', color: a.vencida ? '#ef4444' : a.noPrazoDeAviso ? '#f59e0b' : 'var(--color-text-muted)', border: `1px solid ${a.vencida ? 'rgba(239,68,68,0.5)' : a.noPrazoDeAviso ? 'rgba(245,158,11,0.5)' : 'var(--color-border)'}` }}>
                 {etiqueta(a)}
               </span>
               {podeGerir && (
