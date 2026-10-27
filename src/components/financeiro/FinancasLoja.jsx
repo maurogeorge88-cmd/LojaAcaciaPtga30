@@ -115,6 +115,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [idsAlteradosConf, setIdsAlteradosConf] = useState(new Set()); // lançamentos alterados após a conferência
   // Parcelas de empréstimos a vencer (ou já vencidas): aviso para não passar batido
   const [parcelasAviso, setParcelasAviso] = useState([]);
+  const [avisoFechado, setAvisoFechado] = useState(false);
   useEffect(() => {
     const iso = (d) => d.toISOString().split('T')[0];
     const limite = new Date(); limite.setDate(limite.getDate() + 5);
@@ -2361,31 +2362,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* LINHA 2: Detalhamento */}
           <div style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:'0.5rem',flex:1}}>
 
-            {/* Aviso: parcelas de empréstimo vencendo ou vencidas */}
-            {parcelasAviso.length > 0 && (
-              <div style={{gridColumn:'1 / -1',border:'1px solid rgba(245,158,11,0.5)',background:'rgba(245,158,11,0.12)',borderRadius:'var(--radius-lg)',padding:'0.7rem 1rem',marginBottom:'0.75rem'}}>
-                <p style={{margin:0,fontWeight:800,color:'#f59e0b',fontSize:'0.85rem'}}>
-                  ⏰ {parcelasAviso.length} parcela(s) de empréstimo {parcelasAviso.some(p => p.vencida) ? 'vencida(s) ou a vencer' : 'a vencer'}
-                </p>
-                {parcelasAviso.slice(0, 5).map(p => (
-                  <p key={p.id} style={{margin:'0.2rem 0 0',fontSize:'0.8rem',color:'var(--color-text)'}}>
-                    <strong style={{color: p.vencida ? '#ef4444' : 'var(--color-text)'}}>
-                      {String(p.data_vencimento).substring(0,10).split('-').reverse().join('/')}
-                    </strong>
-                    {' — '}{p.operacoes_credito_debito?.entidade_nome || 'Operação'}
-                    {' · parcela '}{p.numero_parcela}/{p.operacoes_credito_debito?.numero_parcelas || '?'}
-                    {' · R$ '}{(p.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    {p.vencida && <span style={{color:'#ef4444',fontWeight:700}}> (vencida)</span>}
-                  </p>
-                ))}
-                {parcelasAviso.length > 5 && (
-                  <p style={{margin:'0.2rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
-                    e mais {parcelasAviso.length - 5}… veja em Controle Financeiro › Crédito/Débito.
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Grupo Saldos Atuais */}
             <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(14,165,233,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #0ea5e9',display:'flex',flexDirection:'column',height:'100%'}}>
               <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
@@ -4534,6 +4510,44 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </div>
       )}
 
+
+      {/* Aviso de parcelas de empréstimo (Crédito/Débito) — canto inferior direito */}
+      {parcelasAviso.length > 0 && !avisoFechado && (
+        <div style={{position:'fixed',right:'1rem',bottom:'1rem',zIndex:40,width:'320px',maxWidth:'calc(100vw - 2rem)',
+          background:'var(--color-surface)',border:'1px solid rgba(245,158,11,0.5)',borderRadius:'var(--radius-lg)',
+          boxShadow:'0 12px 32px rgba(0,0,0,0.35)',overflow:'hidden'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem',padding:'0.6rem 0.8rem',borderBottom:'1px solid var(--color-border)'}}>
+            <strong style={{fontSize:'0.85rem',color:'#f59e0b'}}>⏰ Parcelas de Empréstimo ({parcelasAviso.length})</strong>
+            <button type="button" onClick={() => setAvisoFechado(true)}
+              style={{background:'transparent',border:'none',color:'var(--color-text-muted)',fontSize:'1.1rem',cursor:'pointer',lineHeight:1}}>✕</button>
+          </div>
+          <div style={{maxHeight:'220px',overflowY:'auto',padding:'0.5rem 0.8rem'}}>
+            {parcelasAviso.slice(0, 6).map(p => {
+              const dias = Math.round((new Date(String(p.data_vencimento).substring(0,10)) - new Date(new Date().toISOString().split('T')[0])) / 86400000);
+              return (
+                <div key={p.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem',padding:'0.4rem 0',borderBottom:'1px solid var(--color-border)'}}>
+                  <div style={{minWidth:0}}>
+                    <p style={{margin:0,fontSize:'0.8rem',fontWeight:700,color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {p.operacoes_credito_debito?.entidade_nome || 'Operação'}
+                    </p>
+                    <p style={{margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)'}}>
+                      Vence: {String(p.data_vencimento).substring(0,10).split('-').reverse().join('/')} · R$ {(p.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  <span style={{flexShrink:0,fontSize:'0.68rem',fontWeight:700,padding:'0.1rem 0.5rem',borderRadius:'999px',
+                    color: p.vencida ? '#ef4444' : '#f59e0b', border:`1px solid ${p.vencida ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'}`}}>
+                    {p.vencida ? `Atrasado ${Math.abs(dias)}d` : dias === 0 ? 'Vence hoje' : `Em ${dias}d`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <button type="button" onClick={() => { window.location.hash = ''; setAvisoFechado(true); }}
+            style={{width:'100%',padding:'0.55rem',background:'#f59e0b',color:'#1f2937',border:'none',fontWeight:800,fontSize:'0.8rem',cursor:'pointer'}}>
+            Ver Crédito/Débito
+          </button>
+        </div>
+      )}
     </div>
   );
 }
