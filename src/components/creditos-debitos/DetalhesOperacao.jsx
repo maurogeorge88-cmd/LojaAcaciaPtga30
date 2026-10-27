@@ -80,6 +80,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
         const { data: lanc, error: errLanc } = await supabase
           .from('lancamentos_loja')
           .insert([{
+            // tipo é obrigatório em lancamentos_loja: débito da Loja = despesa; crédito = receita
+            tipo: operacao.tipo_operacao === 'credito' ? 'receita' : 'despesa',
             categoria_id: operacao.categoria_id,
             descricao: `Parcela ${parcelaAtual.numero_parcela}/${operacao.numero_parcelas} – ${operacao.entidade_nome || 'Operação'}`,
             valor: valorPago,
