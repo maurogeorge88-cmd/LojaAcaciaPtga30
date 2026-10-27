@@ -48,27 +48,49 @@ export const vencimentosNaJanela = (o, deISO, ateISO) => {
 };
 
 // Obrigações a avisar: dentro do prazo de antecedência ou já vencidas e não resolvidas
-export const buscarAvisosObrigacoes = async ({ diasPassado = 365 } = {}) => {
+export const buscarAvisosObrigacoes = async () => {
   const [{ data: obrigacoes }, { data: baixas }] = await Promise.all([
     supabase.from('obrigacoes').select('*').eq('ativa', true).order('nome'),
     supabase.from('obrigacoes_baixas').select('obrigacao_id, competencia'),
   ]);
   const resolvidas = new Set((baixas || []).map(b => `${b.obrigacao_id}|${b.competencia}`));
   const hoje = iso(new Date());
-  const de = new Date(); de.setDate(de.getDate() - diasPassado);
-  const ate = new Date(); ate.setDate(ate.getDate() + 60);
+  const ate = new Date(); ate.setMonth(ate.getMonth() + 14);  // cobre até o próximo ciclo anual
 
   const avisos = [];
   (obrigacoes || []).forEach((o) => {
-    vencimentosNaJanela(o, iso(de), iso(ate)).forEach((venc) => {
-      if (resolvidas.has(`${o.id}|${competenciaDe(venc)}`)) return;
-      const dias = Math.round((new Date(`${venc}T00:00:00`) - new Date(`${hoje}T00:00:00`)) / 86400000);
-      // só entra no aviso quando chega o prazo de antecedência (ou já venceu)
-      if (dias > (o.dias_aviso ?? 5)) return;
-      avisos.push({ ...o, vencimento: venc, competencia: competenciaDe(venc), dias, vencida: dias < 0 });
-    });
+    // Começa na data do cadastro (nunca antes): não inventa pendências do passado
+    const inicio = o.created_at ? String(o.created_at).substring(0, 10) : hoje;
+    const de = inicio > hoje ? inicio : (inicio || hoje);
+    // Uma linha por obrigação: o vencimento pendente mais antigo
+    const pendente = vencimentosNaJanela(o, de, iso(ate))
+      .find(v => !resolvidas.has(`${o.id}|${competenciaDe(v)}`));
+    if (!pendente) return;
+    const dias = Math.round((new Date(`${pendente}T00:00:00`) - new Date(`${hoje}T00:00:00`)) / 86400000);
+    // só entra no aviso quando chega o prazo de antecedência (ou já venceu)
+    if (dias > (o.dias_aviso ?? 5)) return;
+    avisos.push({ ...o, vencimento: pendente, competencia: competenciaDe(pendente), dias, vencida: dias < 0 });
   });
   return avisos.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+};
+
+// Próximo vencimento de cada obrigação (mesmo fora do prazo de aviso) — para a tela
+export const proximosVencimentos = async () => {
+  const [{ data: obrigacoes }, { data: baixas }] = await Promise.all([
+    supabase.from('obrigacoes').select('*').eq('ativa', true).order('nome'),
+    supabase.from('obrigacoes_baixas').select('obrigacao_id, competencia'),
+  ]);
+  const resolvidas = new Set((baixas || []).map(b => `${b.obrigacao_id}|${b.competencia}`));
+  const hoje = iso(new Date());
+  const ate = new Date(); ate.setMonth(ate.getMonth() + 14);
+  return (obrigacoes || []).map((o) => {
+    const inicio = o.created_at ? String(o.created_at).substring(0, 10) : hoje;
+    const pendente = vencimentosNaJanela(o, inicio, iso(ate))
+      .find(v => !resolvidas.has(`${o.id}|${competenciaDe(v)}`));
+    if (!pendente) return null;
+    const dias = Math.round((new Date(`${pendente}T00:00:00`) - new Date(`${hoje}T00:00:00`)) / 86400000);
+    return { ...o, vencimento: pendente, competencia: competenciaDe(pendente), dias, vencida: dias < 0, noPrazoDeAviso: dias <= (o.dias_aviso ?? 5) };
+  }).filter(Boolean).sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 };
 
 export const darBaixa = async (obrigacaoId, competencia) => {
