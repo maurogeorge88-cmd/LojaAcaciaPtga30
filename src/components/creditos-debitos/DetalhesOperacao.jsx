@@ -351,6 +351,44 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             </div>
           </div>
 
+          {/* ACOMPANHAMENTO — para apresentar aos Irmãos */}
+          {(() => {
+            const principal = operacao.valor_principal ?? operacao.valor_total;
+            const juros = operacao.valor_total - principal;
+            const pago = operacao.valor_pago || 0;
+            const resta = Math.max(operacao.valor_total - pago, 0);
+            const pagas = parcelas.filter(p => p.status === 'pago').length;
+            const pct = operacao.valor_total > 0 ? Math.min((pago / operacao.valor_total) * 100, 100) : 0;
+            const pendentes = parcelas.filter(p => p.status !== 'pago');
+            const proxima = [...pendentes].sort((a, b) => String(a.data_vencimento).localeCompare(String(b.data_vencimento)))[0];
+            const hoje = new Date().toISOString().split('T')[0];
+            const atrasadas = pendentes.filter(p => String(p.data_vencimento) < hoje);
+            const brl = (v) => `R$ ${(Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            const item = (rot, val, cor, det) => (
+              <div key={rot} style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.6rem 0.8rem"}}>
+                <span style={{display:"block",fontSize:"0.7rem",textTransform:"uppercase",color:"var(--color-text-muted)",fontWeight:700}}>{rot}</span>
+                <strong style={{fontSize:"1.05rem",color: cor || "var(--color-text)"}}>{val}</strong>
+                {det && <span style={{display:"block",fontSize:"0.7rem",color:"var(--color-text-muted)"}}>{det}</span>}
+              </div>
+            );
+            return (
+              <div className="mb-6">
+                <h3 className="text-lg font-bold mb-3" style={{color:"var(--color-text)"}}>📊 Acompanhamento</h3>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))",gap:"0.6rem"}}>
+                  {item('Valor principal', brl(principal), null, juros !== 0 ? `${juros > 0 ? 'Juros' : 'Desconto'}: ${brl(Math.abs(juros))}` : null)}
+                  {item('Valor final', brl(operacao.valor_total), null, operacao.numero_parcelas > 1 ? `${operacao.numero_parcelas}x de ${brl(operacao.valor_parcela)}` : null)}
+                  {item('Já pago', brl(pago), '#10b981', `${pagas} de ${operacao.numero_parcelas} parcela(s)`)}
+                  {item('Resta pagar', brl(resta), '#f59e0b', proxima ? `Próximo venc.: ${String(proxima.data_vencimento).substring(0,10).split('-').reverse().join('/')}` : 'Quitado')}
+                  {atrasadas.length > 0 && item('Em atraso', brl(atrasadas.reduce((t, p) => t + (p.valor || 0), 0)), '#ef4444', `${atrasadas.length} parcela(s)`)}
+                </div>
+                <div style={{marginTop:"0.6rem",height:"10px",borderRadius:"999px",background:"var(--color-surface-2)",overflow:"hidden"}}>
+                  <div style={{width:`${pct}%`,height:"100%",background:"#10b981"}} />
+                </div>
+                <p style={{margin:"0.25rem 0 0",fontSize:"0.75rem",color:"var(--color-text-muted)",textAlign:"right"}}>{pct.toFixed(1)}% pago</p>
+              </div>
+            );
+          })()}
+
           {/* LISTA DE PARCELAS */}
           <div>
             <h3 className="text-lg font-bold mb-3" style={{color:"var(--color-text)"}}>📅 Parcelas</h3>
