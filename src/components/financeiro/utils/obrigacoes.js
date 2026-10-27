@@ -7,6 +7,7 @@ import { ehAdminTotal, ehTesoureiro } from '../../../config/permissoes';
 // ════════════════════════════════════════════════════════════════════════
 
 export const PERIODICIDADES = {
+  quinzenal: { rotulo: 'Quinzenal', meses: 1, quinzenal: true },
   mensal: { rotulo: 'Mensal', meses: 1 },
   bimestral: { rotulo: 'Bimestral', meses: 2 },
   trimestral: { rotulo: 'Trimestral', meses: 3 },
@@ -20,7 +21,8 @@ export const podeGerirObrigacoes = (u) => ehAdminTotal(u) || ehTesoureiro(u) || 
 
 const iso = (d) => d.toISOString().split('T')[0];
 export const dataBR = (s) => (s ? String(s).substring(0, 10).split('-').reverse().join('/') : '');
-export const competenciaDe = (dataISO) => String(dataISO).substring(0, 7);
+// Dia incluso: separa as duas quinzenas do mesmo mês
+export const competenciaDe = (dataISO) => String(dataISO).substring(0, 10);
 
 // Vencimento do período em que a obrigação está agora (ou o próximo, se já passou e foi resolvida)
 const vencimentoNoMes = (o, ano, mes) => {
@@ -31,8 +33,25 @@ const vencimentoNoMes = (o, ano, mes) => {
 
 // Os vencimentos de uma obrigação dentro de uma janela (do passado recente ao futuro próximo)
 export const vencimentosNaJanela = (o, deISO, ateISO) => {
+  // Quinzenal: dois vencimentos por mês (o dia escolhido e 15 dias depois)
+  if (PERIODICIDADES[o.periodicidade]?.quinzenal) {
+    const saidaQ = [];
+    const iniQ = new Date(`${deISO}T00:00:00`);
+    const fimQ = new Date(`${ateISO}T00:00:00`);
+    for (let ano = iniQ.getFullYear(); ano <= fimQ.getFullYear(); ano++) {
+      for (let mes = 1; mes <= 12; mes++) {
+        const ultimo = new Date(ano, mes, 0).getDate();
+        [o.dia_vencimento || 1, (o.dia_vencimento || 1) + 15].forEach((d) => {
+          const dia = Math.min(d, ultimo);
+          const venc = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+          if (venc >= deISO && venc <= ateISO) saidaQ.push(venc);
+        });
+      }
+    }
+    return [...new Set(saidaQ)].sort();
+  }
   const passo = PERIODICIDADES[o.periodicidade]?.meses || 1;
-  const base = o.periodicidade === 'mensal' ? null : (o.mes_referencia || 1);
+  const base = (o.periodicidade === 'mensal' || o.periodicidade === 'quinzenal') ? null : (o.mes_referencia || 1);
   const saida = [];
   const ini = new Date(`${deISO}T00:00:00`);
   const fim = new Date(`${ateISO}T00:00:00`);
@@ -50,7 +69,7 @@ export const vencimentosNaJanela = (o, deISO, ateISO) => {
 // Obrigações a avisar: dentro do prazo de antecedência ou já vencidas e não resolvidas
 export const buscarAvisosObrigacoes = async () => {
   const [{ data: obrigacoes }, { data: baixas }] = await Promise.all([
-    supabase.from('obrigacoes').select('*').eq('ativa', true).order('nome'),
+    supabase.from('obrigacoes').select('*, irmaos(nome)').eq('ativa', true).order('nome'),
     supabase.from('obrigacoes_baixas').select('obrigacao_id, competencia'),
   ]);
   const resolvidas = new Set((baixas || []).map(b => `${b.obrigacao_id}|${b.competencia}`));
@@ -77,7 +96,7 @@ export const buscarAvisosObrigacoes = async () => {
 // Próximo vencimento de cada obrigação (mesmo fora do prazo de aviso) — para a tela
 export const proximosVencimentos = async () => {
   const [{ data: obrigacoes }, { data: baixas }] = await Promise.all([
-    supabase.from('obrigacoes').select('*').eq('ativa', true).order('nome'),
+    supabase.from('obrigacoes').select('*, irmaos(nome)').eq('ativa', true).order('nome'),
     supabase.from('obrigacoes_baixas').select('obrigacao_id, competencia'),
   ]);
   const resolvidas = new Set((baixas || []).map(b => `${b.obrigacao_id}|${b.competencia}`));
