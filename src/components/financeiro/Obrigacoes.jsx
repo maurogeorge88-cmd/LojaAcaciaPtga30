@@ -11,7 +11,7 @@ import {
 // gravada nesta tela e a obrigação volta sozinha no período seguinte.
 // ════════════════════════════════════════════════════════════════════════
 
-const VAZIO = { nome: '', periodicidade: 'mensal', dia_vencimento: 10, mes_referencia: 1, dias_aviso: 5, observacoes: '', ativa: true };
+const VAZIO = { nome: '', periodicidade: 'mensal', dia_vencimento: 10, mes_referencia: 1, dias_aviso: 5, responsavel_id: '', observacoes: '', ativa: true };
 const lab = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' };
 const inp = { width: '100%', padding: '0.55rem 0.8rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' };
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -24,6 +24,9 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
   const [editando, setEditando] = useState(null);
   const [modal, setModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [aba, setAba] = useState('pendentes');     // pendentes | historico | configurar
+  const [irmaos, setIrmaos] = useState([]);
+  const [filtroResp, setFiltroResp] = useState('');
 
   const podeGerir = podeGerirObrigacoes(userData);
 
@@ -35,6 +38,8 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         proximosVencimentos(),
       ]);
       setObrigacoes(obr || []);
+      const { data: irm } = await supabase.from('irmaos').select('id, nome').order('nome');
+      setIrmaos(irm || []);
       setBaixas(bx || []);
       setAvisos(av);
     } catch (e) {
@@ -53,6 +58,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
         dia_vencimento: Number(form.dia_vencimento) || 10,
         mes_referencia: form.periodicidade === 'mensal' ? null : (Number(form.mes_referencia) || 1),
         dias_aviso: Number(form.dias_aviso) || 0,
+        responsavel_id: form.responsavel_id || null,
         observacoes: form.observacoes.trim() || null,
         ativa: form.ativa,
       };
@@ -101,14 +107,44 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
 
   const etiqueta = (a) => (a.vencida ? `Atrasado ${Math.abs(a.dias)}d` : a.dias === 0 ? 'Vence hoje' : `Em ${a.dias}d`);
   const nomeDe = (id) => obrigacoes.find(o => String(o.id) === String(id))?.nome || '—';
+  const resp = (x) => String(x?.responsavel_id || '');
+  const avisosFiltrados = avisos.filter(a => !filtroResp || resp(a) === filtroResp);
+  const obrigacoesFiltradas = obrigacoes.filter(o => !filtroResp || resp(o) === filtroResp);
+  const baixasFiltradas = baixas.filter(b => {
+    if (!filtroResp) return true;
+    const o = obrigacoes.find(x => String(x.id) === String(b.obrigacao_id));
+    return resp(o) === filtroResp;
+  });
+  const estiloAba = (id) => ({
+    padding: '0.45rem 0.9rem', border: 'none', background: 'transparent', cursor: 'pointer',
+    fontWeight: 700, fontSize: '0.85rem',
+    color: aba === id ? 'var(--color-accent)' : 'var(--color-text-muted)',
+    borderBottom: `2px solid ${aba === id ? 'var(--color-accent)' : 'transparent'}`,
+  });
 
   return (
     <div style={{ padding: '0.5rem', maxWidth: '1000px', margin: '0 auto' }}>
 
+      {/* ABAS + FILTRO */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', borderBottom: '1px solid var(--color-border)', marginBottom: '1rem' }}>
+        <button type="button" onClick={() => setAba('pendentes')} style={estiloAba('pendentes')}>⏳ Pendentes ({avisosFiltrados.length})</button>
+        <button type="button" onClick={() => setAba('historico')} style={estiloAba('historico')}>✔ Histórico ({baixasFiltradas.length})</button>
+        <button type="button" onClick={() => setAba('configurar')} style={estiloAba('configurar')}>⚙ Configurar ({obrigacoesFiltradas.length})</button>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', paddingBottom: '0.3rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Responsável:</span>
+          <select value={filtroResp} onChange={e => setFiltroResp(e.target.value)}
+            style={{ ...inp, width: 'auto', padding: '0.3rem 0.6rem', fontSize: '0.82rem' }}>
+            <option value="">Todos</option>
+            {irmaos.map(i => <option key={i.id} value={String(i.id)}>{i.nome}</option>)}
+          </select>
+        </div>
+      </div>
+
       {/* PENDENTES */}
+      {aba === 'pendentes' && (
       <section style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.6rem' }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>🧾 Próximos vencimentos ({avisos.length})</h3>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>🧾 Próximos vencimentos ({avisosFiltrados.length})</h3>
           {podeGerir && (
             <button type="button" onClick={() => { setForm(VAZIO); setEditando(null); setModal(true); }}
               style={{ padding: '0.45rem 0.9rem', borderRadius: 'var(--radius-lg)', border: 'none', background: 'var(--color-accent)', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
@@ -121,12 +157,13 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
             <p style={{ margin: 0, padding: '0.9rem 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
               Nenhuma obrigação pendente no momento.
             </p>
-          ) : avisos.map((a, i) => (
+          ) : avisosFiltrados.map((a, i) => (
             <div key={`${a.id}-${a.competencia}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '0.6rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', borderLeft: `4px solid ${a.vencida ? '#ef4444' : a.noPrazoDeAviso ? '#f59e0b' : 'var(--color-border)'}` }}>
               <div style={{ flex: 1, minWidth: '180px' }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{a.nome}</p>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                   Vence: {dataBR(a.vencimento)} · {PERIODICIDADES[a.periodicidade]?.rotulo}
+                  {a.irmaos?.nome ? ` · 👤 ${a.irmaos.nome}` : ''}
                   {a.observacoes ? ` · ${a.observacoes}` : ''}
                 </p>
               </div>
@@ -143,20 +180,23 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* CADASTRO */}
+      {aba === 'configurar' && (
       <section style={{ marginBottom: '1.5rem' }}>
         <h3 style={{ margin: '0 0 0.6rem', fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>📋 Obrigações cadastradas</h3>
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-          {obrigacoes.length === 0 && (
+          {obrigacoesFiltradas.length === 0 && (
             <p style={{ margin: 0, padding: '0.9rem 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Nenhuma obrigação cadastrada.</p>
           )}
-          {obrigacoes.map((o, i) => (
+          {obrigacoesFiltradas.map((o, i) => (
             <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', opacity: o.ativa ? 1 : 0.55 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{o.nome}{!o.ativa && ' (inativa)'}</p>
                 <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                   {PERIODICIDADES[o.periodicidade]?.rotulo} · dia {o.dia_vencimento}
+                  {o.responsavel_id ? ` · 👤 ${irmaos.find(i => String(i.id) === String(o.responsavel_id))?.nome || ''}` : ''}
                   {o.periodicidade !== 'mensal' && o.mes_referencia ? ` · a partir de ${MESES[o.mes_referencia - 1]}` : ''}
                   {` · avisar ${o.dias_aviso} dia(s) antes`}
                 </p>
@@ -171,15 +211,17 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* HISTÓRICO DE BAIXAS */}
+      {aba === 'historico' && (
       <section>
         <h3 style={{ margin: '0 0 0.6rem', fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)' }}>✔ Resolvidas recentemente</h3>
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-          {baixas.length === 0 && (
+          {baixasFiltradas.length === 0 && (
             <p style={{ margin: 0, padding: '0.9rem 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Nada resolvido ainda.</p>
           )}
-          {baixas.map((b, i) => (
+          {baixasFiltradas.map((b, i) => (
             <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 1rem', borderTop: i ? '1px solid var(--color-border)' : 'none', fontSize: '0.82rem' }}>
               <strong style={{ color: 'var(--color-text)', minWidth: '140px' }}>{nomeDe(b.obrigacao_id)}</strong>
               <span style={{ color: 'var(--color-text-muted)' }}>{b.competencia.split('-').reverse().join('/')}</span>
@@ -194,6 +236,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
           ))}
         </div>
       </section>
+      )}
 
       {/* MODAL */}
       {modal && podeGerir && (
@@ -234,6 +277,13 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
                 </select>
               </div>
             )}
+            <div style={{ marginBottom: '0.75rem' }}>
+              <label style={lab}>Responsável</label>
+              <select value={form.responsavel_id || ''} onChange={e => setForm({ ...form, responsavel_id: e.target.value })} style={inp}>
+                <option value="">Sem responsável definido</option>
+                {irmaos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+              </select>
+            </div>
             <div style={{ marginBottom: '0.75rem' }}>
               <label style={lab}>Observações</label>
               <input type="text" placeholder="Ex.: débito automático, emitir no site…"
