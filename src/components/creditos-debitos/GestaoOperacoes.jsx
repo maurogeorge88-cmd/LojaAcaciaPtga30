@@ -15,7 +15,9 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   // Formulário
   const [formData, setFormData] = useState({
     entidade_id: '',
+    valor_principal: '',
     valor_total: '',
+    valor_parcela: '',
     forma_pagamento: 'unico',
     meio_pagamento: 'pix',
     numero_parcelas: 1,
@@ -80,7 +82,9 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   const abrirModalNovo = () => {
     setFormData({
       entidade_id: '',
+      valor_principal: '',
       valor_total: '',
+      valor_parcela: '',
       forma_pagamento: 'unico',
       meio_pagamento: 'pix',
       numero_parcelas: 1,
@@ -97,7 +101,9 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
     setFormData({
       id: operacao.id,
       entidade_id: operacao.entidade_id,
+      valor_principal: operacao.valor_principal ?? operacao.valor_total,
       valor_total: operacao.valor_total,
+      valor_parcela: operacao.valor_parcela ?? '',
       forma_pagamento: operacao.forma_pagamento,
       meio_pagamento: operacao.meio_pagamento || 'pix',
       numero_parcelas: operacao.numero_parcelas,
@@ -110,10 +116,19 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
     setModalAberto(true);
   };
 
+  // Parcela sugerida pela divisão; o campo é editável e o que valer é o digitado
   const calcularValorParcela = () => {
     const valor = parseFloat(formData.valor_total) || 0;
     const parcelas = parseInt(formData.numero_parcelas) || 1;
     return (valor / parcelas).toFixed(2);
+  };
+  const valorParcelaAtual = () => parseFloat(formData.valor_parcela) || parseFloat(calcularValorParcela()) || 0;
+  // Juros = valor final (com juros) − valor principal (o que foi pego)
+  const jurosDaOperacao = () => {
+    const principal = parseFloat(formData.valor_principal) || 0;
+    const final = parseFloat(formData.valor_total) || 0;
+    const juros = final - principal;
+    return { juros, percentual: principal > 0 ? (juros / principal) * 100 : 0 };
   };
 
   const gerarParcelas = async (operacaoId, valorTotal, numeroParcelas, dataVencimento) => {
@@ -175,9 +190,10 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       // Buscar nome da entidade
       const entidade = entidades.find(e => e.id === formData.entidade_id);
 
-      const valorParcela = formData.forma_pagamento === 'parcelado' 
-        ? parseFloat((valorTotal / formData.numero_parcelas).toFixed(2))
+      const valorParcela = formData.forma_pagamento === 'parcelado'
+        ? (parseFloat(formData.valor_parcela) || parseFloat((valorTotal / formData.numero_parcelas).toFixed(2)))
         : valorTotal;
+      const valorPrincipal = parseFloat(formData.valor_principal) || valorTotal;
 
       if (modoEdicao) {
         // Atualizar operação
@@ -186,6 +202,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
           .update({
             entidade_id: formData.entidade_id,
             entidade_nome: entidade?.nome,
+            valor_principal: valorPrincipal,
             valor_total: valorTotal,
             forma_pagamento: formData.forma_pagamento,
             meio_pagamento: formData.meio_pagamento,
@@ -210,6 +227,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
             tipo_operacao: tipo,
             entidade_id: formData.entidade_id,
             entidade_nome: entidade?.nome,
+            valor_principal: valorPrincipal,
             valor_total: valorTotal,
             forma_pagamento: formData.forma_pagamento,
             meio_pagamento: formData.meio_pagamento,
@@ -477,10 +495,27 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm" style={{color:"var(--color-text)"}}>
                         <div>
-                          <span className="block">Valor Total</span>
+                          <span className="block">Valor Principal</span>
+                          <span className="font-semibold">
+                            R$ {(operacao.valor_principal ?? operacao.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                          {(operacao.valor_total - (operacao.valor_principal ?? operacao.valor_total)) !== 0 && (
+                            <span className="block" style={{fontSize:"0.72rem",color:"#f59e0b"}}>
+                              Juros: R$ {(operacao.valor_total - (operacao.valor_principal ?? operacao.valor_total)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <span className="block">Valor Final</span>
                           <span className={`font-bold text-lg ${tipo === 'credito' ? '' : ''}`}>
                             R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
+                          {operacao.numero_parcelas > 1 && (
+                            <span className="block" style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>
+                              {operacao.numero_parcelas}x de R$ {(operacao.valor_parcela || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
                         </div>
 
                         <div>
@@ -612,7 +647,27 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                    Valor Total <span>*</span>
+                    Valor Principal (o que foi pego) <span>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.valor_principal}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      // sem juros informados, o valor final acompanha o principal
+                      setFormData(f => ({ ...f, valor_principal: v, valor_total: (!f.valor_total || f.valor_total === f.valor_principal) ? v : f.valor_total }));
+                    }}
+                    placeholder="0.00"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 1rem",outline:"none"}}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
+                    Valor Final (com juros) <span>*</span>
                   </label>
                   <input
                     type="number"
@@ -639,6 +694,14 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   />
                 </div>
               </div>
+
+              {/* Juros: diferença entre o valor final e o principal */}
+              {jurosDaOperacao().juros !== 0 && (
+                <p style={{margin:"-0.5rem 0 0",fontSize:"0.8rem",fontWeight:600,color: jurosDaOperacao().juros > 0 ? "#f59e0b" : "#10b981"}}>
+                  {jurosDaOperacao().juros > 0 ? 'Juros' : 'Desconto'}: R$ {Math.abs(jurosDaOperacao().juros).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {' '}({Math.abs(jurosDaOperacao().percentual).toFixed(2)}% sobre o principal)
+                </p>
+              )}
 
               {/* Forma e Meio de Pagamento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -706,9 +769,12 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         Valor da Parcela
                       </label>
                       <input
-                        type="text"
-                        value={`R$ ${calcularValorParcela()}`}
-                        disabled
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.valor_parcela}
+                        onChange={(e) => setFormData({ ...formData, valor_parcela: e.target.value })}
+                        placeholder={calcularValorParcela()}
                         className="w-full px-4 py-2 border rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
