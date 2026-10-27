@@ -121,9 +121,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const limite = new Date(); limite.setDate(limite.getDate() + 5);
     const hoje = iso(new Date());
     supabase.from('parcelas_operacoes')
-      .select('id, numero_parcela, valor, data_vencimento, status, operacoes_credito_debito(entidade_nome, tipo_operacao, numero_parcelas)')
+      .select('id, numero_parcela, valor, data_vencimento, status, operacoes_credito_debito!inner(entidade_nome, tipo_operacao, numero_parcelas, status)')
       .neq('status', 'pago')
       .lte('data_vencimento', iso(limite))
+      .eq('operacoes_credito_debito.tipo_operacao', 'debito')   // só empréstimos que a Loja tem a pagar
+      .eq('operacoes_credito_debito.status', 'ativo')           // operações quitadas/canceladas ficam de fora
       .order('data_vencimento')
       .then(({ data }) => setParcelasAviso((data || []).map(p => ({ ...p, vencida: String(p.data_vencimento) < hoje }))));
   }, []);
