@@ -74,10 +74,32 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
       setLoading(true);
 
+      // Lançamento automático no Financeiro da Loja, na categoria fixa da operação
+      let lancamentoId = null;
+      if (operacao.categoria_id) {
+        const { data: lanc, error: errLanc } = await supabase
+          .from('lancamentos_loja')
+          .insert([{
+            categoria_id: operacao.categoria_id,
+            descricao: `Parcela ${parcelaAtual.numero_parcela}/${operacao.numero_parcelas} – ${operacao.entidade_nome || 'Operação'}`,
+            valor: valorPago,
+            status: 'pago',
+            data_lancamento: formQuitacao.data_pagamento,
+            data_vencimento: parcelaAtual.data_vencimento,
+            data_pagamento: formQuitacao.data_pagamento,
+            tipo_pagamento: formQuitacao.meio_pagamento || operacao.meio_pagamento || 'pix',
+            observacoes: formQuitacao.observacoes.trim() || null,
+          }])
+          .select();
+        if (errLanc) throw errLanc;
+        lancamentoId = lanc?.[0]?.id || null;
+      }
+
       // Atualizar parcela
       const { error: errorParcela } = await supabase
         .from('parcelas_operacoes')
         .update({
+          lancamento_id: lancamentoId,
           status: 'pago',
           valor_pago: valorPago,
           data_pagamento: formQuitacao.data_pagamento,
@@ -141,9 +163,16 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
       setLoading(true);
 
       // Atualizar parcela
+      // Estorno: apaga também o lançamento criado no Financeiro da Loja
+      if (parcela.lancamento_id) {
+        const { error: errDel } = await supabase.from('lancamentos_loja').delete().eq('id', parcela.lancamento_id);
+        if (errDel) throw errDel;
+      }
+
       const { error: errorParcela } = await supabase
         .from('parcelas_operacoes')
         .update({
+          lancamento_id: null,
           status: 'pendente',
           valor_pago: 0,
           data_pagamento: null,
@@ -172,7 +201,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
         })
         .eq('id', operacaoId);
 
-      showSuccess('Pagamento estornado com sucesso!');
+      showSuccess(parcela.lancamento_id ? 'Pagamento estornado e lançamento removido do Financeiro!' : 'Pagamento estornado com sucesso!');
       
       // FORÇAR RECARREGAMENTO COMPLETO
       setLoading(true);
