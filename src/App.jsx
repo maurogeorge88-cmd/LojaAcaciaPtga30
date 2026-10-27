@@ -25,6 +25,7 @@ import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Editais from './components/editais/Editais';
 import AuditoriaFinanceira from './components/financeiro/AuditoriaFinanceira';
+import Obrigacoes from './components/financeiro/Obrigacoes';
 import VisaoGeral from './components/sistema/VisaoGeral';
 import LojasVisitantes from './components/irmaos/LojasVisitantes';
 import Comissoes from './components/comissoes/Comissoes';
@@ -199,6 +200,7 @@ function App() {
     'email-irmaos': '📧 Central E-Mail',
     'relatorio-financeiro': '📊 Conferir Finanças',
     'auditoria-financeira': '🔍 Auditoria Financeira',
+    'obrigacoes': '🧾 Obrigações',
     'caridade': '❤️ Caridade',
     'eventos': '🎉 Eventos',
     'aniversariantes': '🎉 Festividades',
@@ -1844,6 +1846,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'email-irmaos' && '📧 Central E-Mail'}
                   {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
                   {currentPage === 'auditoria-financeira' && '🔍 Auditoria Financeira'}
+                  {currentPage === 'obrigacoes' && '🧾 Obrigações'}
                   {currentPage === 'lojas-visitantes' && '🏛️ Lojas Maçônicas'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
@@ -2252,6 +2255,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <RelatorioFinanceiro
             showError={showError}
           />
+        )}
+
+        {currentPage === 'obrigacoes' && (
+          <Obrigacoes userData={userData} showSuccess={showSuccess} showError={showError} />
         )}
 
         {currentPage === 'auditoria-financeira' && (
