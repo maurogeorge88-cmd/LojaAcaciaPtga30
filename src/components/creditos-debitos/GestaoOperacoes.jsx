@@ -126,6 +126,17 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   };
 
   // Parcela sugerida pela divisão; o campo é editável e o que valer é o digitado
+  // Campos de valor no padrão brasileiro: digita só números, exibe 1.111,11
+  const soDigitos = (v) => String(v ?? '').replace(/\D/g, '');
+  const paraMoeda = (valor) => {
+    const n = Number(valor);
+    return isNaN(n) || valor === '' || valor === null ? '' : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  const moedaParaNumero = (txt) => {
+    const d = soDigitos(txt);
+    return d ? (parseInt(d, 10) / 100).toFixed(2) : '';
+  };
+
   const calcularValorParcela = () => {
     const valor = parseFloat(formData.valor_total) || 0;
     const parcelas = parseInt(formData.numero_parcelas) || 1;
@@ -682,16 +693,15 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     Valor Principal (o que foi pego) <span>*</span>
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.valor_principal}
+                    type="text"
+                    inputMode="numeric"
+                    value={paraMoeda(formData.valor_principal)}
                     onChange={(e) => {
-                      const v = e.target.value;
+                      const v = moedaParaNumero(e.target.value);
                       // sem juros informados, o valor final acompanha o principal
                       setFormData(f => ({ ...f, valor_principal: v, valor_total: (!f.valor_total || f.valor_total === f.valor_principal) ? v : f.valor_total }));
                     }}
-                    placeholder="0.00"
+                    placeholder="0,00"
                     className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 1rem",outline:"none"}}
                     required
                   />
@@ -702,12 +712,11 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     Valor Final (com juros) <span>*</span>
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.valor_total}
-                    onChange={(e) => setFormData({ ...formData, valor_total: e.target.value })}
-                    placeholder="0.00"
+                    type="text"
+                    inputMode="numeric"
+                    value={paraMoeda(formData.valor_total)}
+                    onChange={(e) => setFormData({ ...formData, valor_total: moedaParaNumero(e.target.value) })}
+                    placeholder="0,00"
                     className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
@@ -801,12 +810,11 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         Valor da Parcela
                       </label>
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.valor_parcela}
-                        onChange={(e) => setFormData({ ...formData, valor_parcela: e.target.value })}
-                        placeholder={calcularValorParcela()}
+                        type="text"
+                        inputMode="numeric"
+                        value={paraMoeda(formData.valor_parcela)}
+                        onChange={(e) => setFormData({ ...formData, valor_parcela: moedaParaNumero(e.target.value) })}
+                        placeholder={paraMoeda(calcularValorParcela())}
                         className="w-full px-4 py-2 border rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
