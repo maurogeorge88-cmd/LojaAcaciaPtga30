@@ -1,5 +1,5 @@
 import {
-  Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, PageNumber,
+  Document, Packer, Paragraph, TextRun, ImageRun, AlignmentType, Footer, PageNumber, TabStopType,
 } from 'docx';
 import { supabase } from '../supabaseClient';
 import { LOGO_LOJA_B64 } from './logoLoja';
@@ -459,13 +459,24 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     // Escrutinadores assinam a ata da eleição quando o marcador estiver ligado (padrão: ligado)
     ...((ehEleicao && (balaustre.eleicao_glemt?.escrutinadores_assinam ?? true)
          && (balaustre.eleicao_glemt?.escrutinador1_id || balaustre.eleicao_glemt?.escrutinador2_id))
-      ? [[VARS.escrutinador1_nome, 'Escrutinador'], [VARS.escrutinador2_nome, 'Escrutinador']]
-          .filter(([n]) => n && !String(n).startsWith('['))
-          .flatMap(([n, c], i) => [
-            linhaSimples(LINHA, false, 600),
-            linhaSimples(`Ir∴ ${String(n).toUpperCase()}`, true),
-            linhaSimples(c),
-          ])
+      ? (() => {
+          // Dois Escrutinadores na MESMA linha, em tabulações centralizadas (igual ao modelo em Word)
+          const nomes = [VARS.escrutinador1_nome, VARS.escrutinador2_nome].filter(n => n && !String(n).startsWith('['));
+          if (!nomes.length) return [];
+          const TABS = [
+            { type: TabStopType.CENTER, position: 1260 },
+            { type: TabStopType.CENTER, position: 4320 },
+          ].slice(0, Math.max(nomes.length, 1));
+          const linhaTab = (textos, bold = false, before = 0) => new Paragraph({
+            tabStops: TABS, spacing: { before, after: 0, line: 240 },
+            children: textos.flatMap(t => [new TextRun({ text: '\t' }), new TextRun({ text: t, bold })]),
+          });
+          return [
+            linhaTab(nomes.map(() => '________________________________'), false, 600),
+            linhaTab(nomes.map(n => `Ir∴ ${String(n).toUpperCase()}`), true),
+            linhaTab(nomes.map(() => 'Escrutinador')),
+          ];
+        })()
       : []),
     // Cargos das assinaturas vêm do modelo (aba Assinaturas); vazio = padrão
     ...(ehEdital
