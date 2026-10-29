@@ -463,9 +463,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
           // Dois Escrutinadores na MESMA linha, em tabulações centralizadas (igual ao modelo em Word)
           const nomes = [VARS.escrutinador1_nome, VARS.escrutinador2_nome].filter(n => n && !String(n).startsWith('['));
           if (!nomes.length) return [];
+          // Tabulações centralizadas a 4 cm e 12 cm da margem (1 cm ≈ 567 twips)
           const TABS = [
-            { type: TabStopType.CENTER, position: 1260 },
-            { type: TabStopType.CENTER, position: 4320 },
+            { type: TabStopType.CENTER, position: 2268 },
+            { type: TabStopType.CENTER, position: 6804 },
           ].slice(0, Math.max(nomes.length, 1));
           const linhaTab = (textos, bold = false, before = 0) => new Paragraph({
             tabStops: TABS, spacing: { before, after: 0, line: 240 },
@@ -474,7 +475,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
           return [
             linhaTab(nomes.map(() => '________________________________'), false, 600),
             linhaTab(nomes.map(n => `Ir∴ ${String(n).toUpperCase()}`), true),
-            linhaTab(nomes.map(() => 'Escrutinador')),
+            linhaTab(nomes.map((n, i) => `Escrutinador ${i + 1}`)),
           ];
         })()
       : []),
