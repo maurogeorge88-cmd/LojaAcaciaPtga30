@@ -21,7 +21,7 @@ const VAZIA = () => {
   const ano = new Date().getFullYear() + 1;
   return { ativo: true, status: 'realizada', ano_inicio: ano, ano_fim: ano + 3, data_edital: '',
     chapas: [{ nome: '', gm: '', gm_adjunto: '', votos: '' }, { nome: '', gm: '', gm_adjunto: '', votos: '' }],
-    brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '', presentes: [], aptidao_ajustes: {}, bloquear_inaptos: false };
+    brancos: '', nulos: '', votantes: '', escrutinador1_id: '', escrutinador2_id: '', escrutinadores_assinam: true, presentes: [], aptidao_ajustes: {}, bloquear_inaptos: false };
 };
 
 export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSaved, onMarcarRealizada, onVoltarPendente, showSuccess, showError }) {
@@ -389,7 +389,15 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
               </div>
 
               <div style={card}>
-                <strong style={{ fontSize: '0.85rem', color: ROXO }}>Escrutinadores</strong>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <strong style={{ fontSize: '0.85rem', color: ROXO }}>Escrutinadores</strong>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--color-text)', cursor: podeEditar ? 'pointer' : 'default' }}>
+                    <input type="checkbox" disabled={!podeEditar}
+                      checked={el.escrutinadores_assinam ?? true}
+                      onChange={e => setEl({ escrutinadores_assinam: e.target.checked })} />
+                    Assinam a ata
+                  </label>
+                </div>
                 <div style={{ ...g2, marginTop: '0.5rem' }}>
                   {['escrutinador1_id', 'escrutinador2_id'].map((k, i) => (
                     <div key={k}><label style={lab}>Escrutinador {i + 1}</label>
