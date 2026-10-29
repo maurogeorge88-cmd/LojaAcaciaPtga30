@@ -432,6 +432,32 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     };
   }
 
+  // Assinaturas dos Escrutinadores (lado a lado), inseridas após a do Venerável Mestre
+  const escrutinadoresAssinatura = [
+    ...((ehEleicao && (balaustre.eleicao_glemt?.escrutinadores_assinam ?? true)
+         && (balaustre.eleicao_glemt?.escrutinador1_id || balaustre.eleicao_glemt?.escrutinador2_id))
+      ? (() => {
+          // Dois Escrutinadores na MESMA linha, em tabulações centralizadas (igual ao modelo em Word)
+          const nomes = [VARS.escrutinador1_nome, VARS.escrutinador2_nome].filter(n => n && !String(n).startsWith('['));
+          if (!nomes.length) return [];
+          // Tabulações centralizadas a 4 cm e 12 cm da margem (1 cm ≈ 567 twips)
+          const TABS = [
+            { type: TabStopType.CENTER, position: 2268 },
+            { type: TabStopType.CENTER, position: 6804 },
+          ].slice(0, Math.max(nomes.length, 1));
+          const linhaTab = (textos, bold = false, before = 0) => new Paragraph({
+            tabStops: TABS, spacing: { before, after: 0, line: 240 },
+            children: textos.flatMap(t => [new TextRun({ text: '\t' }), new TextRun({ text: t, bold })]),
+          });
+          return [
+            linhaTab(nomes.map(() => '________________________________'), false, 600),
+            linhaTab(nomes.map(n => `Ir∴ ${String(n).toUpperCase()}`), true),
+            linhaTab(nomes.map((n, i) => `Escrutinador ${i + 1}`)),
+          ];
+        })()
+      : [])
+  ];
+
   const children = [
     // Cabeçalho: ata de eleição GLEMT usa o cabeçalho da Loja (logo à esquerda ou só texto);
     // atas de sessão simples mantêm o logo opcional centralizado
@@ -457,28 +483,6 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     ...(ehEdital ? [par([ar(`${VARS.cidade}-${VARS.estado}, ${VARS.data_edital_extenso || ''}.`)], { align: AlignmentType.CENTER, before: 360, after: 0 })] : []),
     // Assinaturas (centralizadas): ata = VM, Orador e Secretário; edital = só o VM
     // Escrutinadores assinam a ata da eleição quando o marcador estiver ligado (padrão: ligado)
-    ...((ehEleicao && (balaustre.eleicao_glemt?.escrutinadores_assinam ?? true)
-         && (balaustre.eleicao_glemt?.escrutinador1_id || balaustre.eleicao_glemt?.escrutinador2_id))
-      ? (() => {
-          // Dois Escrutinadores na MESMA linha, em tabulações centralizadas (igual ao modelo em Word)
-          const nomes = [VARS.escrutinador1_nome, VARS.escrutinador2_nome].filter(n => n && !String(n).startsWith('['));
-          if (!nomes.length) return [];
-          // Tabulações centralizadas a 4 cm e 12 cm da margem (1 cm ≈ 567 twips)
-          const TABS = [
-            { type: TabStopType.CENTER, position: 2268 },
-            { type: TabStopType.CENTER, position: 6804 },
-          ].slice(0, Math.max(nomes.length, 1));
-          const linhaTab = (textos, bold = false, before = 0) => new Paragraph({
-            tabStops: TABS, spacing: { before, after: 0, line: 240 },
-            children: textos.flatMap(t => [new TextRun({ text: '\t' }), new TextRun({ text: t, bold })]),
-          });
-          return [
-            linhaTab(nomes.map(() => '________________________________'), false, 600),
-            linhaTab(nomes.map(n => `Ir∴ ${String(n).toUpperCase()}`), true),
-            linhaTab(nomes.map((n, i) => `Escrutinador ${i + 1}`)),
-          ];
-        })()
-      : []),
     // Cargos das assinaturas vêm do modelo (aba Assinaturas); vazio = padrão
     ...(ehEdital
       ? [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre']]
@@ -487,6 +491,8 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       linhaSimples(LINHA, false, i === 0 ? 700 : 600),
       linhaSimples(`Ir∴ ${String(n).toUpperCase()}`, true),
       linhaSimples(c),
+      // Escrutinadores logo abaixo do Venerável Mestre (primeira assinatura)
+      ...(i === 0 ? escrutinadoresAssinatura : []),
     ]),
   ];
 
