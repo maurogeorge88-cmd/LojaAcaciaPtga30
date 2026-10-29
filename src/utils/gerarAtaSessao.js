@@ -456,6 +456,17 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     // Edital: cidade e data do edital
     ...(ehEdital ? [par([ar(`${VARS.cidade}-${VARS.estado}, ${VARS.data_edital_extenso || ''}.`)], { align: AlignmentType.CENTER, before: 360, after: 0 })] : []),
     // Assinaturas (centralizadas): ata = VM, Orador e Secretário; edital = só o VM
+    // Escrutinadores assinam a ata da eleição quando o marcador estiver ligado (padrão: ligado)
+    ...((ehEleicao && (balaustre.eleicao_glemt?.escrutinadores_assinam ?? true)
+         && (balaustre.eleicao_glemt?.escrutinador1_id || balaustre.eleicao_glemt?.escrutinador2_id))
+      ? [[VARS.escrutinador1_nome, 'Escrutinador'], [VARS.escrutinador2_nome, 'Escrutinador']]
+          .filter(([n]) => n && !String(n).startsWith('['))
+          .flatMap(([n, c], i) => [
+            linhaSimples(LINHA, false, 600),
+            linhaSimples(`Ir∴ ${String(n).toUpperCase()}`, true),
+            linhaSimples(c),
+          ])
+      : []),
     // Cargos das assinaturas vêm do modelo (aba Assinaturas); vazio = padrão
     ...(ehEdital
       ? [[VARS.vm_nome, modelo.assinatura_1_cargo || 'Venerável Mestre']]
