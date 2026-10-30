@@ -294,7 +294,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
           ...g.irmaos.map((v, i) => `§${i + 1}. Ir∴ ${v.nome}${v.cim ? `, CIM nº ${v.cim}` : ''}${gi === todas.length - 1 && i === g.irmaos.length - 1 ? '.' : ';'}`),
           ...(gi === todas.length - 1 ? [] : ['']),
         ].join('\n')).join('\n'),
-      total_votantes_loja: String((chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
+      total_votantes_loja: String((el.presentes || []).length || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos))),
     });
 
     // ── Apuração separada por urna (Loja + cada loja em trânsito) ──────────
@@ -336,7 +336,10 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     const brancosG = num(el.brancos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).brancos), 0) : 0);
     const nulosG = num(el.nulos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).nulos), 0) : 0);
     // Total de votantes da Loja = soma dos votos desta urna (campo automático na tela)
-    const votantesLoja = (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length;
+    // Votantes da Loja = Irmãos marcados como presentes na aba Aptos e Presença.
+    // (antes vinha da soma dos votos, que inclui os de trânsito quando a urna é única)
+    const votantesLoja = (el.presentes || []).length
+      || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos));
     const votantesG = votantesLoja + (separada ? lojasTr.reduce((t, g) => t + (num(urnaDe(g.chave).votantes) || g.qtd), 0) : 0);
     const nomeNossaLoja = `A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`;
 
@@ -393,6 +396,18 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       votantes_loja_extenso: numeroExtenso(votantesLoja),
       votantes_transito_total: String(lojasTr.reduce((t, g) => t + ((chapas.reduce((x, c, i) => x + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) + num(urnaDe(g.chave).brancos) + num(urnaDe(g.chave).nulos)) || g.qtd), 0)),
       votantes_transito_total_extenso: numeroExtenso(lojasTr.reduce((t, g) => t + ((chapas.reduce((x, c, i) => x + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) + num(urnaDe(g.chave).brancos) + num(urnaDe(g.chave).nulos)) || g.qtd), 0)),
+      // Trecho pronto, repetido para CADA Loja em trânsito (quantas forem)
+      trecho_urnas_transito: !lojasTr.length ? '' : lojasTr.map((g) => {
+        const u = urnaDe(g.chave);
+        const v = (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd;
+        return `O mesmo procedimento foi adotado em relação aos votantes da ${g.loja || '[oficina]'}, tendo o Venerável Irmão Secretário informado que haviam exercido o direito de voto ${v} (${numeroExtenso(v)}) ${v === 1 ? 'Venerável Irmão' : 'Veneráveis Irmãos'} daquela Oficina. Após a abertura da respectiva urna, constatou-se igualmente a existência de cédulas eleitorais em número correspondente ao de votantes.`;
+      }).join(' '),
+      // Lista curta: uma Loja por linha, com a quantidade de votantes
+      votantes_transito_por_loja: !lojasTr.length ? '' : lojasTr.map((g, k) => {
+        const u = urnaDe(g.chave);
+        const v = (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd;
+        return `§${g.loja || '[oficina]'}: ${v} (${numeroExtenso(v)}) votante(s)${k === lojasTr.length - 1 ? '.' : ';'}`;
+      }).join('\n'),
       total_votantes_geral: String(votantesG),
       total_votantes_geral_extenso: numeroExtenso(votantesG),
       qtd_lojas_transito: String(lojasTr.length),
