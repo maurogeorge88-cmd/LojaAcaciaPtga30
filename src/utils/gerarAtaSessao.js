@@ -108,14 +108,16 @@ const margensDoModelo = (m = {}) => {
 
 // Modelos de ata disponíveis para o grau (base + extras criados em Modelos de Documentos)
 export const listarModelosAta = async (grau, { eleicao = false } = {}) => {
-  const { data } = await supabase.from('modelos_documentos').select('id, tipo, nome, grau').eq('modulo', 'balaustres');
+  const { data } = await supabase.from('modelos_documentos').select('id, tipo, nome, grau, tipo_base').eq('modulo', 'balaustres');
   const g = String(grau || '').toLowerCase();
+  // Cópias de um modelo guardam o original em tipo_base (ou tipo = "base__timestamp")
+  const tipoReal = (m) => m.tipo_base || String(m.tipo || '').split('__')[0];
   return (data || [])
-    .filter(m => String(m.grau || m.tipo.replace('ata_sessao_', '')).toLowerCase() === g)
-    // Sessão de eleição da GLEMT usa só o modelo de eleição; sessões normais não o mostram
-    .filter(m => (eleicao ? m.tipo === TIPO_ATA_ELEICAO_GLEMT : m.tipo !== TIPO_ATA_ELEICAO_GLEMT))
-    .filter(m => m.tipo !== 'edital_eleicao_glemt' && m.tipo !== 'lista_presenca_glemt') // edital e lista não são atas
-    .sort((a, b) => (a.tipo === `ata_sessao_${g}` ? -1 : b.tipo === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
+    .filter(m => String(m.grau || tipoReal(m).replace('ata_sessao_', '')).toLowerCase() === g)
+    // Sessão de eleição da GLEMT usa só os modelos de eleição (inclusive as cópias)
+    .filter(m => (eleicao ? tipoReal(m) === TIPO_ATA_ELEICAO_GLEMT : tipoReal(m) !== TIPO_ATA_ELEICAO_GLEMT))
+    .filter(m => tipoReal(m) !== 'edital_eleicao_glemt' && tipoReal(m) !== 'lista_presenca_glemt') // edital e lista não são atas
+    .sort((a, b) => (tipoReal(a) === `ata_sessao_${g}` ? -1 : tipoReal(b) === `ata_sessao_${g}` ? 1 : a.nome.localeCompare(b.nome)));
 };
 
 export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = 'ata', comLista = false, aptos = null, retornarTexto = false }) => {
