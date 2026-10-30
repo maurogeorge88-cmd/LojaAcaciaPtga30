@@ -532,7 +532,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={card}>
                 <strong style={{ fontSize: '0.85rem', color: ROXO }}>Votos por chapa</strong>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.6rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max((el.chapas || []).length, 1)}, minmax(0, 1fr))`, gap: '0.6rem', marginTop: '0.5rem' }}>
                   {(el.chapas || []).map((c, i) => (
                     <div key={i}><label style={lab}>Chapa {i + 1}{c.nome ? ` – ${c.nome}` : ''}</label>
                       <input type="number" min="0" style={inp} value={c.votos ?? ''} onChange={e => setChapa(i, { votos: e.target.value })} /></div>
@@ -547,8 +547,10 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                     <input type="text" readOnly style={{ ...inp, opacity: 0.85, cursor: 'default' }} value={totalVotos} /></div>
                 </div>
                 <p style={{ margin: '0.6rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
-                  Soma dos votos: <strong>{totalVotos}</strong> · Presentes marcados: <strong>{pres.length}</strong>
-                  {qtdTransito > 0 && <> · Votos em Trânsito: <strong>{qtdTransito}</strong></>}
+                  Mestres: <strong>{linhas.length}</strong> · Aptos ao Voto: <strong>{aptos.length}</strong> · Presentes: <strong>{pres.length}</strong>
+                </p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
+                  Soma dos votos: <strong>{totalVotos}</strong>
                   {vencedora && num(vencedora.votos) > 0 && <> · Mais votada: <strong style={{ color: '#10b981' }}>Chapa {vencedora.i + 1} – {vencedora.nome}</strong></>}
                 </p>
                 {totalVotos > 0 && pres.length > 0 && totalVotos !== pres.length + (separada ? 0 : qtdTransito) && (
@@ -612,16 +614,20 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
               {separada && (
                 <div style={{ ...card, borderLeft: '4px solid #10b981' }}>
                   <strong style={{ fontSize: '0.85rem', color: '#10b981' }}>Σ Resultado consolidado (Loja + trânsito)</strong>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {/* Resultado na primeira linha */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <div><div style={lab}>Votos Brancos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalBrancos}</div></div>
+                    <div><div style={lab}>Votos Nulos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalNulos}</div></div>
+                    <div><div style={lab}>Total de Votos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{totalGeral}</div></div>
+                  </div>
+                  {/* Chapas na linha de baixo, dividindo todo o espaço */}
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max((el.chapas || []).length, 1)}, minmax(0, 1fr))`, gap: '0.5rem', marginTop: '0.6rem' }}>
                     {(el.chapas || []).map((c, i) => (
                       <div key={i}>
                         <div style={lab}>Chapa {i + 1}{c.nome ? ` – ${c.nome}` : ''}</div>
                         <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalChapa(i)}</div>
                       </div>
                     ))}
-                    <div><div style={lab}>Brancos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalBrancos}</div></div>
-                    <div><div style={lab}>Nulos</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{totalNulos}</div></div>
-                    <div><div style={lab}>Total geral</div><div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{totalGeral}</div></div>
                   </div>
                   {vencedora && num(vencedora.votos) > 0 && (
                     <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
