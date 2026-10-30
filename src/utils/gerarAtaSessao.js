@@ -376,7 +376,25 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
                chapas.map((c, i) => num(u[`chapa${i + 1}`])), 0, 0, 0, false, k === lojasTr.length - 1);
            })].join('\n')
         : blocoUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), 0, 0, 0, false),
+      // Lojas em trânsito, para citar no corpo do texto
+      lojas_transito_nomes: lojasTr.length
+        ? lojasTr.map(g => `${g.loja || '[oficina]'}${g.oriente ? ` – Oriente de ${g.oriente}` : ''}`)
+            .reduce((txt, n, i, arr) => txt + n + (i === arr.length - 2 ? ' e ' : i < arr.length - 1 ? ', ' : ''), '')
+        : '',
+      // Só os nomes das Oficinas, sem o oriente
+      lojas_transito_lista: lojasTr.map(g => g.loja || '[oficina]')
+        .reduce((txt, n, i, arr) => txt + n + (i === arr.length - 2 ? ' e ' : i < arr.length - 1 ? ', ' : ''), ''),
+      // Nossa Loja + as de trânsito ("A∴R∴L∴S∴ Acácia de Paranatinga nº 30 e A∴R∴L∴S∴ Acácia do Rio Manso nº 102")
+      lojas_urnas_nomes: [nomeNossaLoja, ...lojasTr.map(g => g.loja || '[oficina]')]
+        .reduce((txt, n, i, arr) => txt + n + (i === arr.length - 2 ? ' e ' : i < arr.length - 1 ? ', ' : ''), ''),
+      qtd_urnas: String(1 + lojasTr.length),
+      // Eleitores que votaram em cada urna
+      votantes_loja: String(votantesLoja),
+      votantes_loja_extenso: numeroExtenso(votantesLoja),
+      votantes_transito_total: String(lojasTr.reduce((t, g) => t + ((chapas.reduce((x, c, i) => x + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) + num(urnaDe(g.chave).brancos) + num(urnaDe(g.chave).nulos)) || g.qtd), 0)),
+      votantes_transito_total_extenso: numeroExtenso(lojasTr.reduce((t, g) => t + ((chapas.reduce((x, c, i) => x + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) + num(urnaDe(g.chave).brancos) + num(urnaDe(g.chave).nulos)) || g.qtd), 0)),
       total_votantes_geral: String(votantesG),
+      total_votantes_geral_extenso: numeroExtenso(votantesG),
       qtd_lojas_transito: String(lojasTr.length),
     });
     lojasTr.forEach((g, k) => {
@@ -384,6 +402,9 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       VARS[`apuracao_transito${k + 1}`] = descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd);
       VARS[`loja_transito${k + 1}`] = g.loja || '';
       VARS[`oriente_transito${k + 1}`] = g.oriente || '';
+      const votantesU = (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd;
+      VARS[`votantes_transito${k + 1}`] = String(votantesU);
+      VARS[`votantes_transito${k + 1}_extenso`] = numeroExtenso(votantesU);
     });
     // Com urnas separadas, o resultado e a chapa vencedora passam a ser os do consolidado
     if (separada) {
