@@ -59,7 +59,25 @@ export const CORPO_ELEICAO_GLEMT_PADRAO = "Aos {data_sessao} da era vulgar, às 
 
 const UNIDADES = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze',
   'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove', 'vinte'];
-const numeroExtenso = (n) => (n >= 0 && n <= 20 ? (UNIDADES[n] || 'zero') : String(n));
+// Número por extenso até 999 (antes parava em 20 e saía "23 (23)")
+const DEZENAS_EXT = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+const CENTENAS_EXT = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+const numeroExtenso = (valor) => {
+  const n = Math.trunc(Number(valor) || 0);
+  if (n < 0) return String(n);
+  if (n === 0) return 'zero';
+  if (n <= 20) return UNIDADES[n] || String(n);
+  if (n < 100) {
+    const d = Math.floor(n / 10), u = n % 10;
+    return u ? `${DEZENAS_EXT[d]} e ${UNIDADES[u]}` : DEZENAS_EXT[d];
+  }
+  if (n === 100) return 'cem';
+  if (n < 1000) {
+    const c = Math.floor(n / 100), resto = n % 100;
+    return resto ? `${CENTENAS_EXT[c]} e ${numeroExtenso(resto)}` : CENTENAS_EXT[c];
+  }
+  return String(n);
+};
 const diaExtenso = (n) => {
   if (n <= 20) return n === 1 ? 'primeiro' : UNIDADES[n];
   if (n < 30) return `vinte e ${UNIDADES[n - 20]}`;
