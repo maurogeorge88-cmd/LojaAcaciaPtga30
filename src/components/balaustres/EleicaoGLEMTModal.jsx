@@ -267,6 +267,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
       return acc;
     }, []);
   const separada = !!el.apuracao_separada && lojasTransito.length > 0;
+  const qtdTransito = lojasTransito.reduce((t, g) => t + g.qtd, 0);  // votantes em trânsito (todas as lojas)
   // Urna de cada loja em trânsito (votos por chapa, brancos, nulos e votantes)
   const urna = (chave) => (el.urnas_transito || {})[chave] || {};
   const setUrna = (chave, campos) => setEl({ urnas_transito: { ...(el.urnas_transito || {}), [chave]: { ...urna(chave), ...campos } } });
@@ -542,14 +543,18 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: '0.6rem' }}>
                   <div><label style={lab}>Votos em branco</label><input type="number" min="0" style={inp} value={el.brancos ?? ''} onChange={e => setEl({ brancos: e.target.value })} /></div>
                   <div><label style={lab}>Votos nulos</label><input type="number" min="0" style={inp} value={el.nulos ?? ''} onChange={e => setEl({ nulos: e.target.value })} /></div>
-                  <div><label style={lab}>Total de votantes</label><input type="number" min="0" style={inp} value={el.votantes ?? ''} placeholder={String(totalVotos || pres.length)} onChange={e => setEl({ votantes: e.target.value })} /></div>
+                  <div><label style={lab}>Total de votantes (automático)</label>
+                    <input type="text" readOnly style={{ ...inp, opacity: 0.85, cursor: 'default' }} value={totalVotos} /></div>
                 </div>
                 <p style={{ margin: '0.6rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
                   Soma dos votos: <strong>{totalVotos}</strong> · Presentes marcados: <strong>{pres.length}</strong>
+                  {qtdTransito > 0 && <> · Votos em Trânsito: <strong>{qtdTransito}</strong></>}
                   {vencedora && num(vencedora.votos) > 0 && <> · Mais votada: <strong style={{ color: '#10b981' }}>Chapa {vencedora.i + 1} – {vencedora.nome}</strong></>}
                 </p>
-                {totalVotos > 0 && pres.length > 0 && totalVotos !== (num(el.votantes) || pres.length) && (
-                  <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>⚠️ A soma dos votos difere do total de votantes — confira as cédulas.</p>
+                {totalVotos > 0 && pres.length > 0 && totalVotos !== pres.length + (separada ? 0 : qtdTransito) && (
+                  <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>
+                    ⚠️ A soma dos votos ({totalVotos}) difere dos votantes desta urna ({pres.length}{!separada && qtdTransito > 0 ? ` + ${qtdTransito} em trânsito` : ''}) — confira as cédulas.
+                  </p>
                 )}
               </div>
 
@@ -575,25 +580,29 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
                     <p style={{ margin: '0.1rem 0 0.5rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
                       Oriente de {g.oriente || '[oriente]'} · {g.qtd} votante(s) em trânsito
                     </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.6rem' }}>
+                    {/* Chapas na primeira linha (o nome já aparece no quadro de cima) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max((el.chapas || []).length, 1)}, minmax(0, 1fr))`, gap: '0.6rem' }}>
                       {(el.chapas || []).map((c, i) => (
                         <div key={i}>
-                          <label style={lab}>Chapa {i + 1}{c.nome ? ` – ${c.nome}` : ''}</label>
+                          <label style={lab}>Chapa {i + 1}</label>
                           <input type="number" min="0" style={inp} value={u[`chapa${i + 1}`] ?? ''}
                             onChange={e => setUrna(g.chave, { [`chapa${i + 1}`]: e.target.value })} />
                         </div>
                       ))}
+                    </div>
+                    {/* Resultado na segunda linha */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '0.6rem', marginTop: '0.6rem' }}>
                       <div><label style={lab}>Votos em branco</label>
                         <input type="number" min="0" style={inp} value={u.brancos ?? ''} onChange={e => setUrna(g.chave, { brancos: e.target.value })} /></div>
                       <div><label style={lab}>Votos nulos</label>
                         <input type="number" min="0" style={inp} value={u.nulos ?? ''} onChange={e => setUrna(g.chave, { nulos: e.target.value })} /></div>
                       <div><label style={lab}>Total de votantes</label>
-                        <input type="number" min="0" style={inp} value={u.votantes ?? ''} placeholder={String(g.qtd)} onChange={e => setUrna(g.chave, { votantes: e.target.value })} /></div>
+                        <input type="text" readOnly style={{ ...inp, opacity: 0.85, cursor: 'default' }} value={votosUrna(u)} /></div>
                     </div>
                     <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: 'var(--color-text)' }}>
                       Soma desta urna: <strong>{votosUrna(u)}</strong> · Votantes em trânsito desta loja: <strong>{g.qtd}</strong>
                     </p>
-                    {votosUrna(u) > 0 && votosUrna(u) !== (num(u.votantes) || g.qtd) && (
+                    {votosUrna(u) > 0 && votosUrna(u) !== g.qtd && (
                       <p style={{ margin: '0.25rem 0 0', fontSize: '0.75rem', color: '#f59e0b', fontWeight: 700 }}>⚠️ A soma desta urna difere do total de votantes.</p>
                     )}
                   </div>
