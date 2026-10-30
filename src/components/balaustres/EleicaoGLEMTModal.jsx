@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { calcularAptidaoVoto } from '../../utils/calcularAptidaoVoto';
 import { gerarAptosVotarPDF } from '../../utils/gerarAptosVotarPDF';
 import { gerarEditalAptosPDF } from '../../utils/gerarEditalAptosPDF';
-import { gerarAtaSessao, gerarEditalEleicaoGLEMT, gerarListaPresencaEleicaoGLEMT } from '../../utils/gerarAtaSessao';
+import { gerarAtaSessao, gerarEditalEleicaoGLEMT, gerarListaPresencaEleicaoGLEMT, listarModelosAta } from '../../utils/gerarAtaSessao';
 import { LOGO_LOJA_B64 } from '../../utils/logoLoja';
 import { emitirEdital, buscarEdital, formatarNumeroEdital } from '../../utils/editais';
 import VincularEdital from '../editais/VincularEdital';
@@ -37,6 +37,7 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
   const [edital, setEdital] = useState(null);
   const [emitindo, setEmitindo] = useState(false);
   const [vinculando, setVinculando] = useState(false);
+  const [escolhaModelo, setEscolhaModelo] = useState(null); // { modelos } quando há mais de um modelo de ata
   useEffect(() => {
     let vivo = true;
     (async () => {
@@ -185,6 +186,21 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
     }
   };
 
+  const gerarAtaComModelo = async (modeloId) => {
+    setEscolhaModelo(null);
+    setGerando('ata');
+    try {
+      if (alterado) await salvar(true);
+      const r = await gerarAtaSessao({ balaustre: balaustreAtual, modeloId });
+      if (r?.faltando?.length) showError(`Ata gerada, mas falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
+      else showSuccess('✅ Ata gerada!');
+    } catch (e) {
+      showError('Erro ao gerar a ata: ' + e.message);
+    } finally {
+      setGerando('');
+    }
+  };
+
   const ajustar = (l) => {
     const atuais = { ...(el.aptidao_ajustes || {}) };
     if (l.ajuste) delete atuais[String(l.irmao.id)];
@@ -232,7 +248,10 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
       if (qual === 'lista') await gerarListaPresencaEleicaoGLEMT({ balaustre: balaustreAtual });
       if (qual === 'ata') {
         if (pendente) { showError('Sessão pendente: marque como realizada para numerar o balaustre e gerar a ata.'); return; }
-        const r = await gerarAtaSessao({ balaustre: balaustreAtual });
+        // Mais de um modelo de ata da eleição (inclusive cópias): pergunta qual usar
+        const modelos = await listarModelosAta(balaustre.grau_sessao, { eleicao: true });
+        if (modelos.length > 1) { setEscolhaModelo({ modelos }); setGerando(''); return; }
+        const r = await gerarAtaSessao({ balaustre: balaustreAtual, modeloId: modelos[0]?.id || null });
         if (r?.faltando?.length) showError(`Falta no Corpo Administrativo: ${r.faltando.join(', ')}.`);
       }
       if (alterado && podeEditar) salvar(true);
@@ -665,6 +684,29 @@ export default function EleicaoGLEMTModal({ balaustre, podeEditar, onClose, onSa
           )}
         </div>
       </div>
+
+      {/* Qual modelo de ata usar (quando há mais de um) */}
+      {escolhaModelo && (
+        <div onClick={() => setEscolhaModelo(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '460px', padding: '1.1rem' }}>
+            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>Qual modelo de ata usar?</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              {escolhaModelo.modelos.map(m => (
+                <button key={m.id} type="button" onClick={() => gerarAtaComModelo(m.id)}
+                  style={{ textAlign: 'left', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>
+                  📜 {m.nome}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setEscolhaModelo(null)}
+              style={{ width: '100%', marginTop: '0.8rem', height: '36px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)', fontWeight: 700, cursor: 'pointer' }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
