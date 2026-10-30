@@ -250,7 +250,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       resultado_apuracao: chapas.map((c, i) => `Chapa ${i + 1} – ${c.nome || '[nome]'}: ${num(c.votos)} voto(s)`).join('; ') + '.',
       votos_brancos: String(num(el.brancos)),
       votos_nulos: String(num(el.nulos)),
-      total_votantes: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
+      total_votantes: String((chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
       chapa_vencedora: !vencedora ? '[chapa]' : empate ? 'votação empatada entre as chapas' : `Chapa ${vencedora.i + 1} – ${vencedora.nome}`,
     });
     // Voto em trânsito: Irmãos de outras Lojas (contados à parte dos votantes da Loja)
@@ -274,7 +274,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
           ...g.irmaos.map((v, i) => `§Ir∴ ${v.nome}${v.cim ? `, CIM nº ${v.cim}` : ''}${gi === todas.length - 1 && i === g.irmaos.length - 1 ? '.' : ';'}`),
           ...(gi === todas.length - 1 ? [] : ['']),
         ].join('\n')).join('\n'),
-      total_votantes_loja: String(num(el.votantes) || (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
+      total_votantes_loja: String((chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length),
     });
 
     // ── Apuração separada por urna (Loja + cada loja em trânsito) ──────────
@@ -296,7 +296,8 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     const totalChapaG = (i) => num(chapas[i]?.votos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave)[`chapa${i + 1}`]), 0) : 0);
     const brancosG = num(el.brancos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).brancos), 0) : 0);
     const nulosG = num(el.nulos) + (separada ? lojasTr.reduce((t, g) => t + num(urnaDe(g.chave).nulos), 0) : 0);
-    const votantesLoja = num(el.votantes) || (el.presentes || []).length;
+    // Total de votantes da Loja = soma dos votos desta urna (campo automático na tela)
+    const votantesLoja = (chapas.reduce((t, c) => t + num(c.votos), 0) + num(el.brancos) + num(el.nulos)) || (el.presentes || []).length;
     const votantesG = votantesLoja + (separada ? lojasTr.reduce((t, g) => t + (num(urnaDe(g.chave).votantes) || g.qtd), 0) : 0);
     const nomeNossaLoja = `A∴R∴L∴S∴ Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`;
 
@@ -305,7 +306,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
       apuracao_transito_todas: separada
         ? lojasTr.map((g, k) => {
             const u = urnaDe(g.chave);
-            return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd, k === lojasTr.length - 1);
+            return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd, k === lojasTr.length - 1);
           }).join('\n')
         : '',
       apuracao_total: descreveUrna('Resultado geral', chapas.map((c, i) => totalChapaG(i)), brancosG, nulosG, votantesG),
@@ -314,7 +315,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
         ? [descreveUrna(nomeNossaLoja, chapas.map(c => num(c.votos)), num(el.brancos), num(el.nulos), votantesLoja, false),
            ...lojasTr.map((g, k) => {
              const u = urnaDe(g.chave);
-             return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd, k === lojasTr.length - 1);
+             return descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd, k === lojasTr.length - 1);
            })].join('\n')
         : '',
       total_votantes_geral: String(votantesG),
@@ -322,7 +323,7 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     });
     lojasTr.forEach((g, k) => {
       const u = urnaDe(g.chave);
-      VARS[`apuracao_transito${k + 1}`] = descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), num(u.votantes) || g.qtd);
+      VARS[`apuracao_transito${k + 1}`] = descreveUrna(`${g.loja || '[oficina]'}${g.oriente ? `, Oriente de ${g.oriente}` : ''}`, chapas.map((c, i) => num(u[`chapa${i + 1}`])), num(u.brancos), num(u.nulos), (chapas.reduce((t, c, i) => t + num(u[`chapa${i + 1}`]), 0) + num(u.brancos) + num(u.nulos)) || g.qtd);
       VARS[`loja_transito${k + 1}`] = g.loja || '';
       VARS[`oriente_transito${k + 1}`] = g.oriente || '';
     });
