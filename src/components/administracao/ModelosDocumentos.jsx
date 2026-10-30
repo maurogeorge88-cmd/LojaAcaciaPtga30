@@ -419,11 +419,28 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
     const grauIn = window.prompt('Grau da sessão (Aprendiz, Companheiro ou Mestre):', 'Aprendiz');
     const grau = ['Aprendiz', 'Companheiro', 'Mestre'].find(g => g.toLowerCase() === String(grauIn || '').trim().toLowerCase());
     if (!grau) { showError('Grau inválido. Use Aprendiz, Companheiro ou Mestre.'); return; }
-    // Começa como cópia do modelo base do grau
-    const base = modelos.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`) || MODELOS_PADRAO.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`) || {};
+    // Qual documento servirá de base (como na Eleição/Posse): ata do grau, ata da eleição GLEMT…
+    const bases = modelos.filter(m => m.modulo === 'balaustres')
+      .filter(m => {
+        const t = m.tipo_base || String(m.tipo || '').split('__')[0];
+        return t !== 'edital_eleicao_glemt' && t !== 'lista_presenca_glemt';
+      });
+    const listaBases = bases.map((m, i) => `${i + 1} - ${m.nome}`).join('\n');
+    const escolhido = bases.length
+      ? window.prompt(`Novo modelo baseado em qual documento?\n\n${listaBases}\n\nDigite o número (ou deixe vazio para a ata de ${grau}):`)
+      : '';
+    const idx = parseInt(escolhido) - 1;
+    const base = (bases[idx])
+      || modelos.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`)
+      || MODELOS_PADRAO.find(m => m.tipo === `ata_sessao_${grau.toLowerCase()}`) || {};
+    // O tipo de origem define a estrutura (ex.: cópia da ata da eleição GLEMT mantém as regras dela)
+    const tipoOrigem = base.tipo_base || String(base.tipo || '').split('__')[0] || `ata_sessao_${grau.toLowerCase()}`;
     const novo = {
-      modulo: 'balaustres', grau, tipo: `ata_sessao_extra_${Date.now()}`, nome: nome.trim(),
-      titulo_doc: base.titulo_doc || '', corpo: base.corpo || '', corpo_aclamacao: '', corpo_disputa: '', rodape: base.rodape || '',
+      modulo: 'balaustres', grau, tipo: `${tipoOrigem}__${Date.now()}`, tipo_base: tipoOrigem, nome: nome.trim(),
+      titulo_doc: base.titulo_doc || '', corpo: base.corpo || '',
+      corpo_aclamacao: base.corpo_aclamacao || '', corpo_disputa: base.corpo_disputa || '',
+      corpo_voto_transito: base.corpo_voto_transito || null,
+      subtitulo: base.subtitulo || '', rodape: base.rodape || '',
       assinatura_1_cargo: 'Venerável Mestre', assinatura_2_cargo: 'Orador', assinatura_3_cargo: 'Secretário',
       alinhamento_titulo: 'center', alinhamento_corpo: base.alinhamento_corpo || 'justify', alinhamento_assinatura: 'center',
       mostrar_logo: !!base.mostrar_logo,
@@ -432,7 +449,7 @@ export default function ModelosDocumentos({ permissoes, showSuccess, showError, 
     if (error) { showError('Erro ao criar modelo: ' + error.message); return; }
     setModelos(prev => [...prev, data]);
     selecionarModelo(data);
-    showSuccess('Modelo criado a partir da ata de ' + grau + '. Edite o texto e salve.');
+    showSuccess(`Modelo criado a partir de "${base.nome || `ata de ${grau}`}". Edite o texto e salve.`);
   };
   // Eleição e Posse: novo modelo a partir de um existente (ex.: outra versão da Ata para Eleição)
   const BASES_EP = [
