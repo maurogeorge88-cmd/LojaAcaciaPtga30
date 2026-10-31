@@ -204,6 +204,8 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     ordem_dia: balaustre.ordem_dia || '',
     observacoes: balaustre.observacoes || '',
     nome_loja: `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`,
+    // Mesma Loja sem caixa alta: "Acácia de Paranatinga nº 30"
+    nome_loja_normal: `Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}`,
     endereco_loja: dadosLoja.endereco || '[endereço da Loja]',
     cidade: dadosLoja.cidade || 'Paranatinga',
     estado: dadosLoja.estado || 'MT',
