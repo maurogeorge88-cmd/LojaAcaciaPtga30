@@ -250,6 +250,8 @@ const VARIAVEIS_DISPONIVEIS = [
   { var: '{total_votantes_geral}',     desc: 'Eleição GLEMT: total geral de votantes (+ _extenso)' },
   { var: '{apuracao_por_loja}',        desc: 'Eleição GLEMT: apuração POR LOJA no formato da ata (chapas, candidatos, votos e o resumo de brancos/nulos)' },
   { var: '{proclamacao_por_loja}',     desc: 'Eleição GLEMT: mesma apresentação por Loja, SEM o resumo — para proclamar o resultado' },
+  { var: '{proclamacao_chapas}',       desc: 'Eleição GLEMT: só as chapas com os votos do consolidado (sem título, resumo ou vencedora)' },
+  { var: '{proclamacao_geral}',        desc: 'Eleição GLEMT: resultado GERAL somando todas as urnas — chapas, votos válidos, brancos/nulos e a vencedora' },
   { var: '{apuracao_chapas}',          desc: 'Eleição GLEMT: bloco da apuração — uma entrada por chapa cadastrada, com os votos (use em parágrafo próprio)' },
   { var: '{chapas_lista}',             desc: 'Eleição GLEMT: todas as chapas — nome em negrito e uma linha por cargo (use em parágrafo próprio)' },
   { var: '{chapas_lista_corrida}',     desc: 'Eleição GLEMT: todas as chapas em uma linha só (formato corrido)' },
