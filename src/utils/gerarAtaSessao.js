@@ -438,6 +438,35 @@ export const gerarAtaSessao = async ({ balaustre, modeloId = null, documento = '
     }
     // Bloco de apuração: uma entrada por chapa cadastrada (serve para a apuração e para a proclamação).
     // Com apuração separada por loja, os votos já são os do consolidado.
+    // Só as chapas com os votos do consolidado — sem título, resumo ou vencedora
+    VARS.proclamacao_chapas = !chapas.length ? '[chapas].' : chapas.map((c, i, arr) => {
+      const v = Number(VARS[`votos_chapa${i + 1}`] ?? num(c.votos)) || 0;
+      return [
+        `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}*`,
+        '§Para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente:',
+        `§${(c.gm || '[nome]').toUpperCase()} - GRÃO MESTRE e ${(c.gm_adjunto || '[nome]').toUpperCase()} - GRÃO MESTRE ADJUNTO com ${v} (${numeroExtenso(v)}) votos válidos.`,
+        ...(i === arr.length - 1 ? [] : ['']),
+      ].join('\n');
+    }).join('\n');
+
+    // Proclamação GERAL: soma de todas as urnas (Loja + trânsito), no formato da ata
+    VARS.proclamacao_geral = !chapas.length ? '[chapas].' : [
+      '§*RESULTADO GERAL DA ELEIÇÃO*',
+      '',
+      ...chapas.flatMap((c, i) => {
+        const v = Number(VARS[`votos_chapa${i + 1}`] ?? num(c.votos)) || 0;
+        return [
+          `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}*`,
+          '§Para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente:',
+          `§${(c.gm || '[nome]').toUpperCase()} - GRÃO MESTRE e ${(c.gm_adjunto || '[nome]').toUpperCase()} - GRÃO MESTRE ADJUNTO com ${v} (${numeroExtenso(v)}) votos válidos.`,
+          '',
+        ];
+      }),
+      `§Constatou-se, ainda, a existência de ${VARS.votos_brancos} (${numeroExtenso(VARS.votos_brancos)}) votos brancos e ${VARS.votos_nulos} (${numeroExtenso(VARS.votos_nulos)}) votos nulos, totalizando ${VARS.total_votantes} (${numeroExtenso(VARS.total_votantes)}) votos, entre válidos, brancos e nulos.`,
+      '',
+      `§Proclamada vencedora a ${VARS.chapa_vencedora}.`,
+    ].join('\n');
+
     VARS.apuracao_chapas = !chapas.length ? '[chapas].' : chapas.map((c, i, arr) => [
       `§*CHAPA ${String(i + 1).padStart(2, '0')} - ${(c.nome || '[nome]').toUpperCase()}*`,
       '§Para Grão-Mestre e Grão-Mestre-Adjunto, respectivamente:',
