@@ -10,6 +10,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  const margemLateral = 6; // tabela mais larga: pouco espaço nas laterais
 
   // Função auxiliar para formatar data
   const formatarData = (data) => {
@@ -119,7 +120,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   } else {
     periodo = `${meses[mesSelecionado]}/${anoSelecionado}`;
   }
-  doc.text(`Período: ${periodo}`, 10, 36);
+  doc.text(`Período: ${periodo}`, margemLateral, 36);
 
   // Data de geração
   const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
@@ -129,7 +130,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     hour: '2-digit',
     minute: '2-digit'
   });
-  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, 36, { align: 'right' });
+  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - margemLateral, 36, { align: 'right' });
 
   // PREPARAR DADOS DA TABELA
   const headers = [
@@ -138,15 +139,47 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   ];
 
   // Adicionar colunas de datas
-  sessoes.forEach((sessao, index) => {
-    const grauTexto = sessao.grau_sessao_id === 1 ? 'A' : 
-                     sessao.grau_sessao_id === 2 ? 'C' : 
+  const grauDaSessao = (sessao) => sessao.grau_sessao_id === 1 ? 'A' :
+                     sessao.grau_sessao_id === 2 ? 'C' :
                      sessao.grau_sessao_id === 4 ? 'ADM' : 'M';
+  sessoes.forEach((sessao, index) => {
     headers.push({
-      title: `${formatarData(sessao.data_sessao)}\n${grauTexto}`,
+      title: `${formatarData(sessao.data_sessao)}\n${grauDaSessao(sessao)}`,
       dataKey: `sessao_${index}`
     });
   });
+
+  // Cabeçalho em duas linhas: mês mesclado em cima e, embaixo, o dia + grau da sessão
+  const mesesCurtos = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const gruposMes = [];
+  sessoes.forEach((sessao) => {
+    const mes = parseInt(sessao.data_sessao.split('-')[1], 10);
+    const ultimo = gruposMes[gruposMes.length - 1];
+    if (ultimo && ultimo.mes === mes) ultimo.qtd += 1; else gruposMes.push({ mes, qtd: 1 });
+  });
+  // Largura aproximada de cada coluna de sessão, para escolher o nome do mês que cabe
+  const larguraColunaAprox = (pageWidth - 2 * margemLateral - 30 - 12 - 18) / Math.max(sessoes.length, 1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  const rotuloMes = (g) => {
+    const cheio = meses[g.mes];
+    const largura = g.qtd * larguraColunaAprox - 1.5;
+    for (const t of [cheio, mesesCurtos[g.mes], cheio.charAt(0)]) {
+      if (doc.getTextWidth(t) <= largura) return t;
+    }
+    return cheio.charAt(0);
+  };
+  const headMeses = [
+    { content: 'Irmão', rowSpan: 2 },
+    { content: 'Grau', rowSpan: 2 },
+    ...gruposMes.map(g => ({ content: rotuloMes(g), colSpan: g.qtd, styles: { fontSize: 7 } })),
+    { content: 'Total', rowSpan: 2 },
+    { content: '%', rowSpan: 2 },
+  ];
+  const headDias = sessoes.map(sessao => ({
+    content: `${sessao.data_sessao.split('-')[2]}\n${grauDaSessao(sessao)}`,
+    styles: { fontSize: 5.5, cellPadding: 0.3 },
+  }));
 
   headers.push({ title: 'Total', dataKey: 'total' });
   headers.push({ title: '%', dataKey: 'percentual' });
@@ -183,6 +216,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   irmaos.forEach(irmao => {
     const licencas = historicoSituacoes?.filter(sit => {
       if (sit.membro_id !== irmao.id) return false;
+      if (sit.status === 'cancelada') return false; // licença cancelada não vale
       const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return tipo.includes('licen');
     }) || [];
@@ -298,9 +332,14 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         return; // não computa como elegível
       }
 
-      // NOTA: NÃO verificar campo direto situacao='licenciado' aqui
-      // porque ignora a data de início da licença.
-      // A licença com data é tratada corretamente via verificarSituacaoNaData acima.
+      // Licença na data da sessão (dentro do período, com data de início/fim):
+      // fora da conta, igual à grade da tela. Ausência vira "-" (não é falta);
+      // se o irmão compareceu, mostra "P" sem contar na elegibilidade.
+      // NOTA: NÃO usa o campo direto situacao='licenciado' (ignora a data de início).
+      if (mapaLicencas[irmao.id]?.has(index)) {
+        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
+        return;
+      }
 
       // Verificar grau
       const dataExaltacao = irmao.data_exaltacao ? new Date(irmao.data_exaltacao + 'T00:00:00') : null;
@@ -352,7 +391,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     row.total = `${presencas}/${sessoesElegiveis}`;
     row.percentual = sessoesElegiveis > 0 
       ? `${Math.round((presencas / sessoesElegiveis) * 100)}%` 
-      : '0%';
+      : '-';
 
     // Guarda a taxa individual (só quem tem sessão elegível) para o cálculo
     // da "Situação Geral" — mesmo método usado no Dashboard de Presença:
@@ -389,7 +428,8 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // GERAR TABELA
   doc.autoTable({
     startY: 42,
-    head: [headers.map(h => h.title)],
+    head: [headMeses, headDias],
+    margin: { left: margemLateral, right: margemLateral },
     body: rows.map(row => headers.map(h => row[h.dataKey])),
     theme: 'grid',
     styles: {
@@ -431,6 +471,12 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         }
       }
       
+      // Cabeçalho: divisórias brancas entre os meses e os dias
+      if (data.section === 'head') {
+        data.cell.styles.lineColor = [255, 255, 255];
+        data.cell.styles.lineWidth = 0.3;
+      }
+
       // Colunas Total e %
       if (data.column.index >= headers.length - 2) {
         data.cell.styles.fillColor = [220, 240, 255];
