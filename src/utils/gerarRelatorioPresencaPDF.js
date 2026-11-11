@@ -243,7 +243,13 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   const mapaPrerrogativa = {};
   irmaos.forEach(irmao => {
     if (!irmao.data_prerrogativa) return;
-    const dp = new Date(String(irmao.data_prerrogativa).slice(0, 10) + 'T00:00:00');
+    // A grade da tela envia data_prerrogativa como objeto Date (nascimento + 70 anos);
+    // vindo do banco seria texto "AAAA-MM-DD". Os dois formatos são aceitos.
+    const bruto = irmao.data_prerrogativa;
+    const dp = (bruto instanceof Date)
+      ? new Date(bruto.getTime())
+      : (/^\d{4}-\d{2}-\d{2}/.test(String(bruto)) ? new Date(String(bruto).slice(0, 10) + 'T00:00:00') : new Date(bruto));
+    if (isNaN(dp.getTime())) return;
     const indices = new Set();
     sessoes.forEach((sessao, idx) => {
       if (new Date(sessao.data_sessao + 'T00:00:00') >= dp) indices.add(idx);
