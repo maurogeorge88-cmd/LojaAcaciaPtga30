@@ -157,22 +157,26 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     const ultimo = gruposMes[gruposMes.length - 1];
     if (ultimo && ultimo.mes === mes) ultimo.qtd += 1; else gruposMes.push({ mes, qtd: 1 });
   });
-  // Largura aproximada de cada coluna de sessão, para escolher o nome do mês que cabe
+  // Rótulo resumido do mês: 3 primeiras letras + quantidade de sessões, ex.: "Jan (3)".
+  // Largura aproximada de cada coluna de sessão, para ajustar o tamanho da fonte se for estreito.
   const larguraColunaAprox = (pageWidth - 2 * margemLateral - 30 - 12 - 18) / Math.max(sessoes.length, 1);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
   const rotuloMes = (g) => {
-    const cheio = meses[g.mes];
+    const texto = `${mesesCurtos[g.mes]} (${g.qtd})`;
     const largura = g.qtd * larguraColunaAprox - 1.5;
-    for (const t of [cheio, mesesCurtos[g.mes], cheio.charAt(0)]) {
-      if (doc.getTextWidth(t) <= largura) return t;
+    for (const fs of [7, 6, 5.5]) {
+      doc.setFontSize(fs);
+      if (doc.getTextWidth(texto) <= largura) return { content: texto, fontSize: fs };
     }
-    return cheio.charAt(0);
+    return { content: `${mesesCurtos[g.mes]}\n(${g.qtd})`, fontSize: 5.5 }; // mês com 1 sessão: em duas linhas
   };
   const headMeses = [
     { content: 'Irmão', rowSpan: 2 },
     { content: 'Grau', rowSpan: 2 },
-    ...gruposMes.map(g => ({ content: rotuloMes(g), colSpan: g.qtd, styles: { fontSize: 7 } })),
+    ...gruposMes.map(g => {
+      const r = rotuloMes(g);
+      return { content: r.content, colSpan: g.qtd, styles: { fontSize: r.fontSize } };
+    }),
     { content: 'Total', rowSpan: 2 },
     { content: '%', rowSpan: 2 },
   ];
@@ -457,7 +461,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     },
     didParseCell: function(data) {
       // Última linha (total) em negrito e fundo cinza
-      if (data.row.index === rows.length - 1) {
+      if (data.section === 'body' && data.row.index === rows.length - 1) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [230, 230, 230];
       }
