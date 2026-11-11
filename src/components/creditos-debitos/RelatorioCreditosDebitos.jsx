@@ -99,6 +99,7 @@ export default function RelatorioCreditosDebitos({ showError }) {
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [expandidos, setExpandidos] = useState({});
+  const [dadosLoja, setDadosLoja] = useState(null);
 
   useEffect(() => {
     carregar();
@@ -122,6 +123,10 @@ export default function RelatorioCreditosDebitos({ showError }) {
 
       setOperacoes(ops || []);
       setParcelasPorOp(mapa);
+
+      // Cabeçalho do PDF (logo, nome e endereço da Loja). Se falhar, o PDF usa o cabeçalho padrão sem logo.
+      const { data: loja } = await supabase.from('dados_loja').select('*').single();
+      if (loja) setDadosLoja(loja);
     } catch (e) {
       console.error('Erro ao carregar relatório:', e);
       if (showError) showError('Erro ao carregar relatório');
@@ -172,7 +177,7 @@ export default function RelatorioCreditosDebitos({ showError }) {
 
   const gerarPDF = async (lista, titulo) => {
     try {
-      await gerarRelatorioOperacoesPDF(lista, titulo);
+      await gerarRelatorioOperacoesPDF(lista, titulo, dadosLoja);
     } catch (e) {
       console.error('Erro ao gerar PDF:', e);
       if (showError) showError('Erro ao gerar PDF');
@@ -208,7 +213,7 @@ export default function RelatorioCreditosDebitos({ showError }) {
           </p>
         </div>
         <button
-          onClick={() => gerarPDF(resumos, 'Relatorio de Creditos e Debitos')}
+          onClick={() => gerarPDF(resumos, 'Relatório de Créditos e Débitos')}
           disabled={resumos.length === 0}
           style={{
             padding: '0.6rem 1.1rem',
@@ -345,7 +350,7 @@ export default function RelatorioCreditosDebitos({ showError }) {
                   ) : null}
                 </div>
                 <button
-                  onClick={() => gerarPDF([r], 'Extrato da Operacao')}
+                  onClick={() => gerarPDF([r], 'Extrato da Operação')}
                   style={{
                     padding: '0.45rem 0.9rem',
                     borderRadius: 'var(--radius-md)',
