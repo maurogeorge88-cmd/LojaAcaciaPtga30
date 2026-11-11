@@ -259,6 +259,8 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   // Índice de linha por irmão (para usar no didDrawCell)
   const rowIrmaoIds = [];
+  // Informativo de prerrogativa por linha: { total: '+4/18', pct: '+22%' } (só quem tem presença nesse período)
+  const infoPrer = [];
 
   // Acumulador para o quadro-resumo final (sessões/presenças/ausências por grau)
   const porGrau = { 1: { pres: 0, eleg: 0 }, 2: { pres: 0, eleg: 0 }, 3: { pres: 0, eleg: 0 }, 4: { pres: 0, eleg: 0 } };
@@ -314,6 +316,8 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
     let presencas = 0;
     let sessoesElegiveis = 0;
+    let presPrer = 0;      // informativo: presenças em sessões dentro da prerrogativa
+    let sessoesPrer = 0;   // informativo: sessões dentro da prerrogativa
 
     sessoes.forEach((sessao, index) => {
       const reg = grade[irmao.id]?.[sessao.id];
@@ -355,22 +359,6 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         return; // não computa como elegível
       }
 
-      // Licença na data da sessão (dentro do período, com data de início/fim):
-      // fora da conta, igual à grade da tela. Ausência vira "-" (não é falta);
-      // se o irmão compareceu, mostra "P" sem contar na elegibilidade.
-      // NOTA: NÃO usa o campo direto situacao='licenciado' (ignora a data de início).
-      if (mapaLicencas[irmao.id]?.has(index)) {
-        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
-        return;
-      }
-
-      // Prerrogativa (idade): não é obrigado a comparecer — mesma regra da licença
-      // (ausência vira "-", não é falta; se veio, mostra "P" sem contar).
-      if (mapaPrerrogativa[irmao.id]?.has(index)) {
-        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
-        return;
-      }
-
       // Verificar grau
       const dataExaltacao = irmao.data_exaltacao ? new Date(irmao.data_exaltacao + 'T00:00:00') : null;
       const dataElevacao = irmao.data_elevacao ? new Date(irmao.data_elevacao + 'T00:00:00') : null;
@@ -398,6 +386,25 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         return;
       }
 
+      // Licença na data da sessão (dentro do período, com data de início/fim):
+      // fora da conta, igual à grade da tela. Ausência vira "-" (não é falta);
+      // se o irmão compareceu, mostra "P" sem contar na elegibilidade.
+      // NOTA: NÃO usa o campo direto situacao='licenciado' (ignora a data de início).
+      if (mapaLicencas[irmao.id]?.has(index)) {
+        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
+        return;
+      }
+
+      // Prerrogativa (idade): não é obrigado a comparecer — mesma regra da licença
+      // (ausência vira "-", não é falta; se veio, mostra "P" sem contar). As sessões
+      // desse período entram só como INFORMATIVO (presenças/sessões), igual à grade da tela.
+      if (mapaPrerrogativa[irmao.id]?.has(index)) {
+        sessoesPrer++;
+        if (reg?.presente) presPrer++;
+        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
+        return;
+      }
+
       // Contar como elegível
       sessoesElegiveis++;
 
@@ -422,6 +429,18 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     row.percentual = sessoesElegiveis > 0 
       ? `${Math.round((presencas / sessoesElegiveis) * 100)}%` 
       : '-';
+
+    // Prerrogativa: se compareceu a alguma sessão nesse período, mostra também o
+    // resultado informativo (presenças/sessões e %), sem entrar no cálculo oficial.
+    // Sem nenhuma presença, fica só o oficial (ex.: "0/0" e "-").
+    if (presPrer > 0) {
+      infoPrer[rowIrmaoIds.length - 1] = {
+        total: `+${presPrer}/${sessoesPrer}`,
+        pct: `+${Math.round((presPrer / sessoesPrer) * 100)}%`,
+      };
+      row.total += '\n ';       // reserva a 2ª linha, desenhada em roxo no didDrawCell
+      row.percentual += '\n ';
+    }
 
     // Guarda a taxa individual (só quem tem sessão elegível) para o cálculo
     // da "Situação Geral" — mesmo método usado no Dashboard de Presença:
@@ -538,6 +557,21 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       if (data.section !== 'body') return;
       const rowIdx = data.row.index;
       if (rowIdx >= rowIrmaoIds.length) return; // linha de total
+
+      // Informativo de prerrogativa nas colunas Total e % (2ª linha, em roxo)
+      const info = infoPrer[rowIdx];
+      if (info && data.column.index >= headers.length - 2) {
+        const texto = data.column.index === headers.length - 2 ? info.total : info.pct;
+        doc.setFontSize(5.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(124, 58, 237);
+        doc.text(texto, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height - 1.3, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(0);
+        return;
+      }
+
       const irmaoId = rowIrmaoIds[rowIdx];
       if (!mapaLicencas[irmaoId] && !mapaPrerrogativa[irmaoId]) return;
 
