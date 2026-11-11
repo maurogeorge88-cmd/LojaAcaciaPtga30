@@ -238,6 +238,19 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     if (indices.size > 0) mapaLicencas[irmao.id] = indices;
   });
 
+  // ── Mapa de prerrogativa (idade): { irmaoId: Set<sessaoIndex> } ──────────────
+  // A partir da data_prerrogativa o irmão não é obrigado a comparecer.
+  const mapaPrerrogativa = {};
+  irmaos.forEach(irmao => {
+    if (!irmao.data_prerrogativa) return;
+    const dp = new Date(String(irmao.data_prerrogativa).slice(0, 10) + 'T00:00:00');
+    const indices = new Set();
+    sessoes.forEach((sessao, idx) => {
+      if (new Date(sessao.data_sessao + 'T00:00:00') >= dp) indices.add(idx);
+    });
+    if (indices.size > 0) mapaPrerrogativa[irmao.id] = indices;
+  });
+
   // Índice de linha por irmão (para usar no didDrawCell)
   const rowIrmaoIds = [];
 
@@ -323,8 +336,8 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         }
       }
 
-      // REVERTIDO a pedido: prerrogativa de idade não exclui mais a sessão
-      // da conta (volta a contar como elegível normal). O rótulo abaixo do
+      // Prerrogativa de idade: tratada mais abaixo (junto com a licença) —
+      // fora da conta, "-" na grade e "Prer" na célula. O rótulo abaixo do
       // nome ("Prerrogativa") continua aparecendo normalmente.
 
       // Verificar situação via histórico (irregular, suspenso, desligado,
@@ -341,6 +354,13 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       // se o irmão compareceu, mostra "P" sem contar na elegibilidade.
       // NOTA: NÃO usa o campo direto situacao='licenciado' (ignora a data de início).
       if (mapaLicencas[irmao.id]?.has(index)) {
+        row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
+        return;
+      }
+
+      // Prerrogativa (idade): não é obrigado a comparecer — mesma regra da licença
+      // (ausência vira "-", não é falta; se veio, mostra "P" sem contar).
+      if (mapaPrerrogativa[irmao.id]?.has(index)) {
         row[`sessao_${index}`] = reg?.presente ? 'P' : '-';
         return;
       }
@@ -513,19 +533,21 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       const rowIdx = data.row.index;
       if (rowIdx >= rowIrmaoIds.length) return; // linha de total
       const irmaoId = rowIrmaoIds[rowIdx];
-      if (!mapaLicencas[irmaoId]) return;
+      if (!mapaLicencas[irmaoId] && !mapaPrerrogativa[irmaoId]) return;
 
-      // Verificar se esta coluna é uma sessão dentro do período de licença
+      // Esta coluna é uma sessão dentro do período de licença ou de prerrogativa?
       const sessaoIdx = data.column.index - 2; // offset: col 0=nome, 1=grau
-      if (sessaoIdx < 0 || !mapaLicencas[irmaoId].has(sessaoIdx)) return;
+      const rotulo = mapaLicencas[irmaoId]?.has(sessaoIdx) ? 'Lic.'
+        : mapaPrerrogativa[irmaoId]?.has(sessaoIdx) ? 'Prer' : null;
+      if (sessaoIdx < 0 || !rotulo) return;
 
-      // Desenhar "Lic." no canto inferior esquerdo da célula
+      // Desenhar "Lic." / "Prer" no canto inferior esquerdo da célula
       doc.setFontSize(4.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(10, 36, 99); // azul escuro
       const x = data.cell.x + 0.8;
       const y = data.cell.y + data.cell.height - 1.2;
-      doc.text('Lic.', x, y);
+      doc.text(rotulo, x, y);
       // Restaurar
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
