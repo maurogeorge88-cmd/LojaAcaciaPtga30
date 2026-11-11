@@ -632,7 +632,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
               <div style={{ marginTop: '0.2rem' }}>
                 <span title={`Própria ${fmtR(it?.custo)} + custeio famílias ${fmtR(it?.recebeCusteio)}`}
                   style={{ display: 'inline-block', fontSize: '0.68rem', fontWeight: 700, padding: '0.1rem 0.5rem', borderRadius: '999px', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.35)' }}>
-                  Custeador + {fmtR(it?.recebeCusteio)}
+                  Custeador
                 </span>
               </div>
             )}
