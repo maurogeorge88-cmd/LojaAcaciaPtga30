@@ -671,7 +671,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
             <td style={{ ...celConv, fontWeight: 700, color: '#3b82f6' }}>{cotasConv.toFixed(1)}</td>
             {comCusteio && <td style={celConv}>{valorCota > 0 ? fmtR(it?.custoConvidados || 0) : '—'}</td>}
             {comCusteio && <td style={celConv}>100%</td>}
-            <td style={{ ...celConv, fontWeight: 600, color: 'var(--color-text)' }}>{valorCota > 0 ? fmtR(it?.custoConvidados || 0) : '—'}</td>
+            <td style={{ ...celConv, fontWeight: 600, color: '#f59e0b' }}>{valorCota > 0 ? fmtR(it?.custoConvidados || 0) : '—'}</td>
           </tr>
         )}
 
@@ -687,7 +687,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
             <td style={celConv}>—</td>
             <td style={celConv}>—</td>
             <td style={celConv} title="Dividido igualmente entre os custeadores">÷ {rateio?.numCusteadores || 1}</td>
-            <td style={{ ...celConv, fontWeight: 600, color: 'var(--color-text)' }}>{valorCota > 0 ? fmtR(it.recebeCusteio) : '—'}</td>
+            <td style={{ ...celConv, fontWeight: 600, color: '#8b5cf6' }}>{valorCota > 0 ? fmtR(it.recebeCusteio) : '—'}</td>
           </tr>
         )}
       </>
