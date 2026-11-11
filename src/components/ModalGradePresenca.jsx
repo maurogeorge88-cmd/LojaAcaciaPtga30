@@ -301,6 +301,8 @@ export default function ModalGradePresenca({ onFechar }) {
     }
   };
 
+  const MESES_CURTOS = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
   const formatarData = (data) => {
     return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { 
       day: '2-digit', 
@@ -315,7 +317,7 @@ export default function ModalGradePresenca({ onFechar }) {
     
     if (!irmao || !sessao) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -333,7 +335,7 @@ export default function ModalGradePresenca({ onFechar }) {
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de ingressar na loja → não se aplica
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -375,7 +377,7 @@ export default function ModalGradePresenca({ onFechar }) {
     // 4. Se sessão é de grau superior ao do irmão NA DATA DA SESSÃO → não pode participar
     if (grauSessao > grauIrmao) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -427,15 +429,15 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se não computa, mostra - (sem obrigação)
       if (!computa) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-gray-100">
             <span className="text-gray-400">-</span>
           </td>
         );
       }
       // Se computa, mostra ausência (✗ vermelho)
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
-          <span className="text-red-600 text-lg font-bold">✗</span>
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-red-50">
+          <span className="text-red-600 text-base font-bold">✗</span>
         </td>
       );
     }
@@ -445,14 +447,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se veio (presente), mostra ✓ normal
       if (reg.presente) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
-            <span className="text-green-600 text-lg font-bold">✓</span>
+          <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-green-50">
+            <span className="text-green-600 text-base font-bold">✓</span>
           </td>
         );
       }
       // Se ausente (não computa), mostra -
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -461,8 +463,8 @@ export default function ModalGradePresenca({ onFechar }) {
     // Computa normalmente
     if (reg.presente) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
-          <span className="text-green-600 text-lg font-bold">✓</span>
+        <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-green-50">
+          <span className="text-green-600 text-base font-bold">✓</span>
         </td>
       );
     }
@@ -471,17 +473,17 @@ export default function ModalGradePresenca({ onFechar }) {
       return (
         <td 
           key={sessaoId} 
-          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+          className="border border-gray-300 px-0.5 py-2 text-center bg-yellow-50"
           title={reg.justificativa}
         >
-          <span className="text-yellow-600 text-lg font-bold">J</span>
+          <span className="text-yellow-600 text-base font-bold">J</span>
         </td>
       );
     }
 
     return (
-      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
-        <span className="text-red-600 text-lg font-bold">✗</span>
+      <td key={sessaoId} className="border border-gray-300 px-0.5 py-2 text-center bg-red-50">
+        <span className="text-red-600 text-base font-bold">✗</span>
       </td>
     );
   };
@@ -495,6 +497,14 @@ export default function ModalGradePresenca({ onFechar }) {
       </div>
     );
   }
+
+  // Cabeçalho resumido: mês (3 letras + quantidade de sessões) e, embaixo, só o dia
+  const gruposMesTela = [];
+  sessoes.forEach((sess) => {
+    const mes = parseInt(sess.data_sessao.split('-')[1], 10);
+    const ultimo = gruposMesTela[gruposMesTela.length - 1];
+    if (ultimo && ultimo.mes === mes) ultimo.qtd += 1; else gruposMesTela.push({ mes, qtd: 1 });
+  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -604,7 +614,7 @@ export default function ModalGradePresenca({ onFechar }) {
           <table className="w-full border-collapse" style={{fontSize:"clamp(0.7rem,1.8vw,0.75rem)"}}>
             <thead style={{ background: 'var(--color-surface-2)', position: 'sticky', top: 0 }}>
               <tr>
-                <th style={{ 
+                <th rowSpan={2} style={{ 
                   border: '1px solid var(--color-border)', 
                   padding: '0.75rem 1rem', 
                   textAlign: 'left', 
@@ -617,7 +627,7 @@ export default function ModalGradePresenca({ onFechar }) {
                 }}>
                   Irmão
                 </th>
-                <th style={{ 
+                <th rowSpan={2} style={{ 
                   border: '1px solid var(--color-border)', 
                   padding: '0.75rem', 
                   textAlign: 'center', 
@@ -630,24 +640,36 @@ export default function ModalGradePresenca({ onFechar }) {
                 }}>
                   Grau
                 </th>
+                {gruposMesTela.map((g, gi) => (
+                  <th
+                    key={`mes-${g.mes}-${gi}`}
+                    colSpan={g.qtd}
+                    className={`border border-gray-300 px-1 py-1 text-center ${g.qtd < 2 ? 'text-[10px] leading-tight' : 'whitespace-nowrap'}`}
+                    style={{ color: 'var(--color-text)', fontWeight: 700 }}
+                  >
+                    {MESES_CURTOS[g.mes]} ({g.qtd})
+                  </th>
+                ))}
+                <th rowSpan={2} style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>
+                  Total
+                </th>
+                <th rowSpan={2} style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', color: 'var(--color-text)' }}>
+                  %
+                </th>
+              </tr>
+              <tr>
                 {sessoes.map(s => {
                   const grauTexto = s.grau_sessao_id === 1 ? 'A' : 
                                    s.grau_sessao_id === 2 ? 'C' : 
                                    s.grau_sessao_id === 3 ? 'M' :
                                    s.grau_sessao_id === 4 ? 'ADM' : 'A';
                   return (
-                    <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
-                      <div>{formatarData(s.data_sessao)}</div>
-                      <div className="text-xs font-semibold text-blue-600 mt-0.5">{grauTexto}</div>
+                    <th key={s.id} className="border border-gray-300 px-0.5 py-1 text-center whitespace-nowrap">
+                      <div>{s.data_sessao.split('-')[2]}</div>
+                      <div className="text-[10px] font-semibold text-blue-600 leading-none mt-0.5">{grauTexto}</div>
                     </th>
                   );
                 })}
-                <th style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>
-                  Total
-                </th>
-                <th style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', color: 'var(--color-text)' }}>
-                  %
-                </th>
               </tr>
             </thead>
             <tbody>
