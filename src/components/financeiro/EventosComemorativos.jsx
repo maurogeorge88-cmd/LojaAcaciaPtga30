@@ -678,12 +678,14 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
         {ehCust && (
           <tr style={{ borderBottom: '1px solid var(--color-border)', background: 'rgba(139,92,246,0.07)' }}>
             <td title="Parte do custeio das famílias dos irmãos, dividida igualmente entre os custeadores"
-              style={{ ...celConv, textAlign: 'left', fontWeight: 600, color: '#8b5cf6', whiteSpace: 'nowrap' }}>Custeio</td>
+              style={{ ...celConv, textAlign: 'left', fontWeight: 600, color: '#8b5cf6', lineHeight: 1.25, maxWidth: '11rem' }}>
+              Custeio - {Number((rateio?.fatiaCusteio || 0).toFixed(2))}% Família Acácia
+            </td>
             <td style={celConv}>—</td>
             <td style={celConv}>—</td>
             <td style={celConv}>—</td>
             <td style={celConv}>—</td>
-            <td style={celConv}>{valorCota > 0 ? fmtR(it.recebeCusteio) : '—'}</td>
+            <td style={celConv}>—</td>
             <td style={celConv} title="Dividido igualmente entre os custeadores">÷ {rateio?.numCusteadores || 1}</td>
             <td style={{ ...celConv, fontWeight: 600, color: 'var(--color-text)' }}>{valorCota > 0 ? fmtR(it.recebeCusteio) : '—'}</td>
           </tr>
@@ -714,7 +716,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
         <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#3b82f6', fontSize: '0.85rem' }}>{cotas.toFixed(1)}</td>
         {comCusteio && <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>{valorCota > 0 ? fmtR(custoLista) : '—'}</td>}
         {comCusteio && <td />}
-        <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>{valorCota > 0 ? fmtR(valor) : '—'}</td>
+        <td />
         <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981', fontSize: '0.85rem' }}>{valorCota > 0 ? fmtR(valor) : '—'}</td>
         <td />
       </tr>
