@@ -93,30 +93,64 @@ export const montarResumoOperacao = (op, parcelas, hoje = hojeISO()) => {
   };
 };
 
-const TIPO_LABEL = { credito: 'Credito (a receber)', debito: 'Debito (a pagar)' };
+const TIPO_LABEL = { credito: 'Crédito (a receber)', debito: 'Débito (a pagar)' };
 const STATUS_LABEL = { ativo: 'Ativo', quitado: 'Quitado', cancelado: 'Cancelado' };
-const FORMA_LABEL = { unico: 'Pagamento unico', parcelado: 'Parcelado', compensacao: 'Compensacao' };
+const FORMA_LABEL = { unico: 'Pagamento único', parcelado: 'Parcelado', compensacao: 'Compensação' };
+
+// Formato da imagem a partir do data URL (o logo é salvo em base64 no cadastro da Loja)
+const formatoImagem = (url) => {
+  const m = /^data:image\/(png|jpe?g|webp)/i.exec(url || '');
+  if (!m) return 'PNG';
+  const t = m[1].toLowerCase();
+  return t === 'png' ? 'PNG' : (t === 'webp' ? 'WEBP' : 'JPEG');
+};
+
+// "nome_loja" no cadastro já vem com "ARLS ..." incluso — tira o prefixo antes de recolocar
+const nomeDaLoja = (dadosLoja) => {
+  const bruto = dadosLoja?.nome || dadosLoja?.nome_loja;
+  if (!bruto) return 'ARLS Acácia de Paranatinga nº 30';
+  const semPrefixo = sanitizeTexto(bruto)
+    .replace(/^\s*(A[∴.]?\s*R[∴.]?\s*L[∴.]?\s*S[∴.]?\s*|ARLS\s*)/i, '')
+    .trim();
+  const numero = dadosLoja?.numero_loja;
+  const jaTemNumero = /n[ºo°]\s*\d+/i.test(semPrefixo);
+  return 'ARLS ' + semPrefixo + (numero && !jaTemNumero ? ' nº ' + numero : '');
+};
 
 /**
  * PDF de uma ou mais operações (uma operação por seção).
- * @param {Array}  resumos  saída de montarResumoOperacao()
- * @param {string} titulo   título do relatório
+ * Cabeçalho no mesmo padrão da Declaração de Crédito: logo, nome, endereço e linha dupla.
+ * @param {Array}  resumos   saída de montarResumoOperacao()
+ * @param {string} titulo    título do relatório
+ * @param {Object} dadosLoja linha de dados_loja (logo_url, nome_loja, numero_loja, endereco...)
  */
-export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatorio de Creditos e Debitos') => {
+export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatório de Créditos e Débitos', dadosLoja = null) => {
   await import('jspdf-autotable');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 14;
-  let y = 16;
+  let y = 14;
 
   const cabecalho = () => {
+    if (dadosLoja?.logo_url) {
+      try {
+        doc.addImage(dadosLoja.logo_url, formatoImagem(dadosLoja.logo_url), (W - 26) / 2, y, 26, 26);
+        y += 30;
+      } catch (e) { y += 2; }
+    }
+
     doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-    doc.text('ARLS Acacia de Paranatinga no 30', W / 2, y, { align: 'center' }); y += 6;
-    doc.setFontSize(11);
-    doc.text(sanitizeTexto(titulo), W / 2, y, { align: 'center' }); y += 5;
+    doc.text(nomeDaLoja(dadosLoja), W / 2, y, { align: 'center' }); y += 6;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
+    doc.text(sanitizeTexto(dadosLoja?.endereco) || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 6;
+
+    doc.setDrawColor(60); doc.setLineWidth(0.6); doc.line(M, y, W - M, y);
+    doc.setLineWidth(0.2); doc.line(M, y + 1, W - M, y + 1);
+    y += 9;
+
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
+    doc.text(sanitizeTexto(titulo).toUpperCase(), W / 2, y, { align: 'center' }); y += 5;
     doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(90);
-    doc.text('Emitido em ' + fmtData(hojeISO()), W / 2, y, { align: 'center' }); y += 4;
-    doc.setDrawColor(60); doc.setLineWidth(0.4); doc.line(M, y, W - M, y);
-    y += 6;
+    doc.text('Emitido em ' + fmtData(hojeISO()), W / 2, y, { align: 'center' }); y += 7;
     doc.setTextColor(0);
   };
 
@@ -144,7 +178,7 @@ export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatorio de
     doc.setTextColor(0);
 
     const info = [
-      'Lancamento: ' + fmtData(op.data_lancamento),
+      'Lançamento: ' + fmtData(op.data_lancamento),
       'Forma: ' + (FORMA_LABEL[op.forma_pagamento] || op.forma_pagamento || '—') +
         (op.forma_pagamento === 'parcelado' && op.numero_parcelas ? ` (${op.numero_parcelas}x de ${fmtR(op.valor_parcela)})` : ''),
       'Meio: ' + (op.meio_pagamento || '—')
@@ -193,7 +227,7 @@ export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatorio de
         theme: 'striped',
         styles: { fontSize: 8, cellPadding: 1.6 },
         headStyles: { fillColor: [60, 60, 60], textColor: 255 },
-        head: [['N', 'Vencimento', 'Valor', 'Situacao', 'Pago em', 'Valor pago', 'Atraso']],
+        head: [['Nº', 'Vencimento', 'Valor', 'Situação', 'Pago em', 'Valor pago', 'Atraso']],
         body: r.parcelas.map((p) => [
           p.numero_parcela,
           fmtData(p.data_vencimento),
@@ -209,13 +243,13 @@ export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatorio de
 
       if (r.arredondamento) {
         doc.setFontSize(7.5); doc.setTextColor(110);
-        doc.text('Obs.: diferenca de centavos entre a soma das parcelas e o restante decorre do arredondamento das parcelas.', M, y + 2);
+        doc.text('Obs.: diferença de centavos entre a soma das parcelas e o restante decorre do arredondamento das parcelas.', M, y + 2);
         doc.setTextColor(0);
         y += 5;
       }
     } else {
       doc.setFontSize(8.5); doc.setTextColor(90);
-      doc.text('Operacao sem parcelas cadastradas (pagamento unico sem vencimento ou compensacao).', M, y + 3);
+      doc.text('Operação sem parcelas cadastradas (pagamento único sem vencimento ou compensação).', M, y + 3);
       doc.setTextColor(0);
       y += 7;
     }
@@ -237,7 +271,7 @@ export const gerarRelatorioOperacoesPDF = async (resumos, titulo = 'Relatorio de
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
     doc.setFontSize(8); doc.setTextColor(120);
-    doc.text(`Pagina ${i} de ${total}`, W / 2, 290, { align: 'center' });
+    doc.text(`Página ${i} de ${total}`, W / 2, 290, { align: 'center' });
   }
 
   const nome = resumos.length === 1
