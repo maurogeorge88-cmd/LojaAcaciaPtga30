@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import GestaoEntidades from './GestaoEntidades';
 import GestaoOperacoes from './GestaoOperacoes';
+import RelatorioCreditosDebitos from './RelatorioCreditosDebitos';
 
 export default function CreditosDebitos({ permissoes, showSuccess, showError }) {
   const [view, setView] = useState('dashboard');
@@ -235,6 +236,13 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
           >
             💳 Débitos (A Pagar)
           </button>
+
+          <button
+            onClick={() => setView('relatorio')}
+            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='relatorio'?'var(--color-accent)':'var(--color-surface-2)',color:view==='relatorio'?'#fff':'var(--color-text)'}}
+          >
+            📋 Relatório
+          </button>
         </div>
       </div>
 
@@ -413,6 +421,11 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
           showSuccess={showSuccess}
           showError={showError}
         />
+      )}
+
+      {/* RELATÓRIO POR OPERAÇÃO */}
+      {view === 'relatorio' && (
+        <RelatorioCreditosDebitos showError={showError} />
       )}
 
       {/* CRÉDITOS E DÉBITOS */}
