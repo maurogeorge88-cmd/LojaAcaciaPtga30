@@ -289,7 +289,7 @@ export default function DashboardPresenca() {
           const { data: loteHistLoop } = await supabase
             .from('historico_situacoes')
             .select('*')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
           if (loteHistLoop && loteHistLoop.length > 0) {
             historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
@@ -413,7 +413,7 @@ export default function DashboardPresenca() {
           const { data: loteHistLoop } = await supabase
             .from('historico_situacoes')
             .select('*')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
           if (loteHistLoop && loteHistLoop.length > 0) {
             historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
@@ -545,7 +545,7 @@ export default function DashboardPresenca() {
           const { data: loteHistLoop } = await supabase
             .from('historico_situacoes')
             .select('*')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
           if (loteHistLoop && loteHistLoop.length > 0) {
             historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
@@ -745,7 +745,7 @@ export default function DashboardPresenca() {
           const { data: loteHistLoop } = await supabase
             .from('historico_situacoes')
             .select('*')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHistLoop, inicioHistLoop + tamanhoPaginaHistLoop - 1);
           if (loteHistLoop && loteHistLoop.length > 0) {
             historicoSituacoes = [...historicoSituacoes, ...loteHistLoop];
@@ -913,7 +913,7 @@ export default function DashboardPresenca() {
           const { data: loteHist } = await supabase
             .from('historico_situacoes')
             .select('*')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHist, inicioHist + tamanhoPaginaHist - 1);
           if (loteHist && loteHist.length > 0) {
             historicoSituacoes = [...historicoSituacoes, ...loteHist];
