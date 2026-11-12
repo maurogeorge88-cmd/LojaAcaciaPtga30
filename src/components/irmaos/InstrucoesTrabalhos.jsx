@@ -260,7 +260,7 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
       const { data: lote } = await supabase
         .from('historico_situacoes')
         .select('membro_id, tipo_situacao, data_inicio, data_fim, status')
-        .eq('status', 'ativa')
+        .in('status', ['ativa', 'vencida'])
         .eq('membro_id', irmao.id)
         .range(inicio, inicio + tamanhoPagina - 1);
       if (lote && lote.length > 0) {
