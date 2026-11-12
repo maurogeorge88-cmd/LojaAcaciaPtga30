@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { semVinculoNoPeriodo, estaFalecido } from '../utils/vinculoNoPeriodo';
 import { supabase } from '../supabaseClient';
 import ModalGradePresenca from './ModalGradePresenca';
 
@@ -164,7 +165,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja');
+        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja, situacao, status');
 
       // Paginado (blocos de 1000) — evita truncamento silencioso do
       // histórico de situações quando a tabela já passou do limite padrão
@@ -200,7 +201,10 @@ export default function DashboardPresenca() {
       console.log('  Total de registros:', registros?.length);
 
       irmaos?.forEach(irmao => {
-        if (irmao.data_falecimento) return;
+        // Falecido sai de todos os quadros; irregular/desligado/etc. sem retorno e sem
+        // nenhuma sessão do ano antes da situação (ex.: irregular desde 2005) também sai.
+        if (estaFalecido(irmao)) return;
+        if (semVinculoNoPeriodo(irmao.id, historicoSituacoes, sessoes)) return;
         
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         if (idade < 70) return;
@@ -284,7 +288,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_falecimento, situacao, status')
         ;
 
       // Paginado (blocos de 1000) — evita truncamento silencioso do
@@ -318,6 +322,10 @@ export default function DashboardPresenca() {
       const licenciados = [];
 
       irmaos?.forEach(irmao => {
+        // Falecido e afastado sem retorno (irregular/desligado/etc.) não entram no quadro
+        if (estaFalecido(irmao)) return;
+        if (semVinculoNoPeriodo(irmao.id, historicoSituacoes, sessoes)) return;
+
         const estaLicenciado = historicoSituacoes?.some(sit => {
           const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return sit.membro_id === irmao.id &&
@@ -642,7 +650,7 @@ export default function DashboardPresenca() {
       // 3. Buscar irmãos com grau
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_falecimento, situacao, status')
         ;
 
       // 4. Buscar registros com paginação
@@ -680,6 +688,10 @@ export default function DashboardPresenca() {
       const com100 = [];
       
       irmaos?.forEach(irmao => {
+        // Falecido e afastado sem retorno (irregular/desligado/etc.) não entram no quadro
+        if (estaFalecido(irmao)) return;
+        if (semVinculoNoPeriodo(irmao.id, historicoSituacoes, sessoesAno)) return;
+
         // Calcular grau do irmão
         let grauIrmao = 0;
         if (irmao.data_exaltacao) grauIrmao = 3;
@@ -829,7 +841,7 @@ export default function DashboardPresenca() {
       // diferente de "ativo" (desligado, inativo, etc.) entravam na conta.
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, data_ingresso_loja, data_falecimento')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, data_ingresso_loja, data_falecimento, situacao, status')
         .eq('status', 'ativo')
         ;
 
@@ -1048,7 +1060,9 @@ export default function DashboardPresenca() {
         mediaPresenca
       });
 
-      setResumo(resumoCompleto);
+      // Falecido sai de todos os quadros (a média geral acima segue calculada como antes)
+      const idsFalecidos = new Set((irmaos || []).filter(estaFalecido).map(i => i.id));
+      setResumo(resumoCompleto.filter(r => !idsFalecidos.has(r.id)));
 
     } catch (error) {
       console.error('Erro:', error);
