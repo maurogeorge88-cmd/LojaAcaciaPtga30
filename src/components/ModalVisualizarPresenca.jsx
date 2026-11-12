@@ -38,7 +38,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       setSessao(sessaoData);
 
       const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes').select('*').eq('status', 'ativa');
+        .from('historico_situacoes').select('*').in('status', ['ativa', 'vencida']);
 
       const grauMinimo = sessaoData?.graus_sessao?.grau_minimo_requerido
         ? parseInt(sessaoData.graus_sessao.grau_minimo_requerido) : null;
