@@ -43,7 +43,7 @@ export async function calcularPresencaIrmao({ irmao, inicio, fim }) {
   // 2) Situações do irmão (só as ativas, como no Dashboard)
   const historico = await paginar(() => supabase.from('historico_situacoes')
     .select('membro_id, tipo_situacao, data_inicio, data_fim, status')
-    .eq('status', 'ativa').eq('membro_id', irmao.id));
+    .in('status', ['ativa', 'vencida']).eq('membro_id', irmao.id));
 
   // 3) Registros do irmão nessas sessões (em lotes — evita URL gigante)
   const ids = sessoesPerio.map(s => s.id);
