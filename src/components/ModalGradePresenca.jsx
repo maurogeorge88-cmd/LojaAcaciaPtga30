@@ -182,7 +182,7 @@ export default function ModalGradePresenca({ onFechar }) {
       const { data: historicoSituacoesData } = await supabase
         .from('historico_situacoes')
         .select('*')
-        .eq('status', 'ativa');
+        .in('status', ['ativa', 'vencida']);
 
       console.log('🔍 historicoSituacoes carregados:', historicoSituacoesData?.length);
       console.log('🔍 tipos de situacao únicos:', [...new Set(historicoSituacoesData?.map(s => s.tipo_situacao))]);
