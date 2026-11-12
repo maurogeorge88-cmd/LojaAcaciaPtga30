@@ -194,6 +194,12 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         const inicioAno = `${anoAtual}-01-01`;
         const dataHoje = hoje.toISOString().split('T')[0]; // Formato YYYY-MM-DD
 
+        // Critério do quadro (base das comendas de presença): quem entrou na Loja
+        // de MARÇO em diante do ano corrente não aparece — o 100% tem que cobrir
+        // praticamente o ano todo. Para mudar o mês de corte, altere MES_CORTE_ENTRADA.
+        const MES_CORTE_ENTRADA = 3; // março
+        const corteEntrada = `${anoAtual}-${String(MES_CORTE_ENTRADA).padStart(2, '0')}-01`;
+
         // 1. Buscar todas as sessões do ano ATÉ HOJE
         const { data: sessoesAno } = await supabase
           .from('sessoes_presenca')
@@ -261,6 +267,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           else if (irmao.data_iniciacao) grauIrmao = 1;
 
           if (grauIrmao === 0) return;
+
+          // Entrada na Loja (ingresso/filiação > iniciação) de março em diante: fora do quadro
+          const entradaStr = String(irmao.data_ingresso_loja || irmao.data_iniciacao || '').slice(0, 10);
+          if (entradaStr && entradaStr >= corteEntrada) return;
 
           let totalRegistros = 0;
           let presentes = 0;
