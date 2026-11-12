@@ -2,6 +2,114 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { semVinculoNoPeriodo, estaFalecido } from '../utils/vinculoNoPeriodo';
 import { supabase } from '../supabaseClient';
 import ModalGradePresenca from './ModalGradePresenca';
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList,
+} from 'recharts';
+
+// ── Apresentação: indicadores e gráficos ────────────────────────────────────
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const fmtDataBR = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+const corPorPct = (v) => (v >= 75 ? '#10b981' : v >= 50 ? '#f59e0b' : '#ef4444');
+
+// Cores dos graus (mesmo padrão da Matriz de Presença) e das classificações (cadastro de sessões)
+const COR_GRAU = { 1: '#eab308', 2: '#10b981', 3: '#3b82f6', 4: '#8b5cf6' };
+const NOME_GRAU = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre', 4: 'Administrativa' };
+const COR_CLASSIFICACAO = { 'Econômica': '#10b981', 'Especial': '#8b5cf6', 'Magna': '#f59e0b', 'Extraordinária': '#ef4444' };
+
+const tooltipEstilo = {
+  contentStyle: { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 8, color: 'var(--color-text)', fontSize: 12 },
+  labelStyle: { color: 'var(--color-text)', fontWeight: 700 },
+  itemStyle: { color: 'var(--color-text)' },
+};
+
+const KpiCard = ({ cor, rotulo, valor, sub, barra, chips = [] }) => (
+  <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `3px solid ${cor}`, borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', minWidth: 0 }}>
+    <p style={{ margin: 0, fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{rotulo}</p>
+    <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{valor}</p>
+    {sub && <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{sub}</p>}
+    {barra != null && (
+      <div style={{ height: 6, borderRadius: 999, background: 'var(--color-border)', marginTop: '0.6rem', overflow: 'hidden' }}>
+        <div style={{ width: `${Math.min(100, barra)}%`, height: '100%', background: corPorPct(barra) }} />
+      </div>
+    )}
+    {chips.length > 0 && (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.6rem' }}>
+        {chips.map(c => (
+          <span key={c.rotulo} style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }}>
+            {c.rotulo}: <strong style={{ color: 'var(--color-text)' }}>{c.valor}</strong>
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const cartaoGrafico = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', minWidth: 0 };
+const tituloGrafico = { margin: '0 0 0.75rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' };
+
+const GraficoPizza = ({ titulo, dados }) => {
+  const total = dados.reduce((acc, d) => acc + d.valor, 0);
+  return (
+    <div style={cartaoGrafico}>
+      <p style={tituloGrafico}>{titulo}</p>
+      {total === 0 ? (
+        <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0', margin: 0 }}>Sem sessões no período</p>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', width: 170, height: 170, flexShrink: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={52} outerRadius={80} paddingAngle={2} stroke="none">
+                  {dados.map(d => <Cell key={d.nome} fill={d.cor} />)}
+                </Pie>
+                <Tooltip {...tooltipEstilo} formatter={(v, n) => [`${v} sessão(ões)`, n]} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1 }}>{total}</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>sessões</span>
+            </div>
+          </div>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, minWidth: 120 }}>
+            {dados.map(d => (
+              <li key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--color-text)' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: d.cor, flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>{d.nome}</span>
+                <strong>{d.valor}</strong>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.72rem', minWidth: '2.4rem', textAlign: 'right' }}>{Math.round((d.valor / total) * 100)}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const GraficoPresencaMensal = ({ dados }) => (
+  <div style={cartaoGrafico}>
+    <p style={tituloGrafico}>Presença por mês (%)</p>
+    {dados.length === 0 ? (
+      <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0', margin: 0 }}>Sem registros no período</p>
+    ) : (
+      <div style={{ width: '100%', height: 190 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={dados} margin={{ top: 18, right: 6, left: -18, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+            <XAxis dataKey="mes" tick={{ fill: 'var(--color-text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
+            <Tooltip {...tooltipEstilo} cursor={{ fill: 'rgba(148,163,184,0.12)' }} formatter={(v, n, item) => [`${v}% (${item.payload.presentes}/${item.payload.total})`, 'Presença']} />
+            <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
+              {dados.map(d => <Cell key={d.chave} fill={corPorPct(d.pct)} />)}
+              <LabelList dataKey="pct" position="top" formatter={(v) => `${v}%`} style={{ fill: 'var(--color-text)', fontSize: 10, fontWeight: 700 }} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )}
+  </div>
+);
 
 export default function DashboardPresenca() {
   const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
@@ -47,6 +155,8 @@ export default function DashboardPresenca() {
   const [sessoesRecentes, setSessoesRecentes] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [anoSelecionado, setAnoSelecionado] = useState(null); // Inicia null, define depois de buscar
+  const [sessoesPeriodo, setSessoesPeriodo] = useState([]);   // sessões do período (gráficos por grau/classificação)
+  const [presencaMensal, setPresencaMensal] = useState([]);   // presença por mês (gráfico de barras)
 
   // Buscar anos disponíveis na base
   useEffect(() => {
@@ -782,11 +892,12 @@ export default function DashboardPresenca() {
       // 1. Buscar sessões do período ATÉ HOJE
       const { data: sessoesPerio, count: totalSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
+        .select('id, data_sessao, grau_sessao_id, classificacoes_sessao:classificacao_id(nome)', { count: 'exact' })
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim < hoje ? dataFim : hoje); // Não incluir futuras
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
+      setSessoesPeriodo(sessoesPerio || []);
 
       // 2. Buscar histórico de situações (licenças, desligamentos, etc)
       // Paginado (blocos de 1000) — a tabela já acumula anos de histórico de
@@ -878,6 +989,7 @@ export default function DashboardPresenca() {
 
       // Processar cada irmão
       const resumoCompleto = [];
+      const porMes = {}; // { 'AAAA-MM': { total, presentes } } para o gráfico mensal
 
       // Desligado/Irregular/Suspenso/Excluído/Ex-ofício SEM data de retorno:
       // se TODAS as sessões deste período (sessoesPerio) já são depois do
@@ -997,6 +1109,12 @@ export default function DashboardPresenca() {
             // Registro válido
             totalRegistros++;
             if (reg.presente) presentes++;
+
+            // Acumula por mês (gráfico de presença mensal)
+            const chaveMes = String(sessao.data_sessao).slice(0, 7);
+            if (!porMes[chaveMes]) porMes[chaveMes] = { total: 0, presentes: 0 };
+            porMes[chaveMes].total++;
+            if (reg.presente) porMes[chaveMes].presentes++;
           }
         });
 
@@ -1060,6 +1178,16 @@ export default function DashboardPresenca() {
         mediaPresenca
       });
 
+      setPresencaMensal(
+        Object.keys(porMes).sort().map(chave => ({
+          chave,
+          mes: MESES_ABREV[parseInt(chave.split('-')[1], 10) - 1],
+          pct: porMes[chave].total > 0 ? Math.round((porMes[chave].presentes / porMes[chave].total) * 100) : 0,
+          presentes: porMes[chave].presentes,
+          total: porMes[chave].total,
+        }))
+      );
+
       // Falecido sai de todos os quadros (a média geral acima segue calculada como antes)
       const idsFalecidos = new Set((irmaos || []).filter(estaFalecido).map(i => i.id));
       setResumo(resumoCompleto.filter(r => !idsFalecidos.has(r.id)));
@@ -1076,101 +1204,102 @@ export default function DashboardPresenca() {
       minHeight: '100vh' 
     }}>
       
-      {/* Cabeçalho com Título e Filtros */}
-      <div className="card">
-        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1.5rem' }}>Dashboard de Presença</h1>
-        
-        {/* Seletor de Período */}
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium min-w-[60px]" style={{color:"var(--color-text-muted)"}}>Período:</label>
-          <div className="flex gap-3 flex-1">
-            {['mes', 'trimestre', 'semestre'].map(p => (
-              <button
-                key={p}
-                onClick={() => definirPeriodo(p)}
-                style={{flex:1,padding:'1rem',borderRadius:'var(--radius-lg)',fontSize:'1rem',fontWeight:'700',cursor:'pointer',border:'none',transition:'all 0.15s',background:periodo===p?'var(--color-accent)':'var(--color-surface-2)',color:periodo===p?'#fff':'var(--color-text)',transform:periodo===p?'scale(1.02)':'none'}}
-              >
-                {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
-            <select
-              value={anoSelecionado || ''}
-              onChange={(e) => {
-                const ano = Number(e.target.value);
-                setAnoSelecionado(ano);
-                setPeriodo('ano');
-                setDataInicio(`${ano}-01-01`);
-                setDataFim(`${ano}-12-31`);
-              }}
-              disabled={!anoSelecionado}
-              style={{flex:1,padding:'1rem',borderRadius:'var(--radius-lg)',fontSize:'0.875rem',fontWeight:'600',cursor:'pointer',border:'1px solid var(--color-border)',background:periodo==='ano'?'var(--color-accent)':'var(--color-surface-2)',color:periodo==='ano'?'#fff':'var(--color-text)'}}
-            >
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
+      {/* Cabeçalho: título, período e ações */}
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--color-text)', margin: 0 }}>Dashboard de Presença</h1>
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+              📅 <strong style={{ color: 'var(--color-text)' }}>{fmtDataBR(dataInicio)}</strong> até <strong style={{ color: 'var(--color-text)' }}>{fmtDataBR(dataFim)}</strong>
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-lg)' }}>
+              {['mes', 'trimestre', 'semestre'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => definirPeriodo(p)}
+                  style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', background: periodo === p ? 'var(--color-accent)' : 'transparent', color: periodo === p ? '#fff' : 'var(--color-text-muted)' }}
+                >
+                  {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
               ))}
-            </select>
+              <select
+                value={anoSelecionado || ''}
+                onChange={(e) => {
+                  const ano = Number(e.target.value);
+                  setAnoSelecionado(ano);
+                  setPeriodo('ano');
+                  setDataInicio(`${ano}-01-01`);
+                  setDataFim(`${ano}-12-31`);
+                }}
+                disabled={!anoSelecionado}
+                style={{ padding: '0.45rem 0.9rem', borderRadius: 'var(--radius-md)', border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', background: periodo === 'ano' ? 'var(--color-accent)' : 'transparent', color: periodo === 'ano' ? '#fff' : 'var(--color-text-muted)' }}
+              >
+                {anosDisponiveis.map(ano => (
+                  <option key={ano} value={ano} style={{ color: '#111' }}>{ano}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => setMostrarGrade(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent)', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}
+            >
+              <span>📊</span> Matrix Presença
+            </button>
           </div>
         </div>
-
-        <p style={{marginTop:"0.75rem",fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
-          📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
-        </p>
       </div>
-      {/* Cards Totais */}
-      <div className="grid grid-cols-5 gap-6 mb-6">
-        <div style={{ 
-          background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid var(--color-accent)'
-        }}>
-          <p style={{ color:'var(--color-accent)',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Sessões</p>
-          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.sessoes}</p>
-        </div>
-        <div style={{ 
-          background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #10b981'
-        }}>
-          <p style={{ color:'#10b981',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Total de Irmãos</p>
-          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.irmaos}</p>
-          {dados.stats && (
-            <div style={{marginTop:"0.5rem",fontSize:"0.72rem",color:"var(--color-text-muted)",lineHeight:"1.6"}}>
-              <div>✅ Ativos: {dados.stats.ativos}</div>
-              {dados.stats.falecidos > 0 && <div>🕊️ Falecidos: {dados.stats.falecidos}</div>}
-              {dados.stats.irregulares > 0 && <div>⚠️ Irregulares: {dados.stats.irregulares}</div>}
-              {dados.stats.suspensos > 0 && <div>🚫 Suspensos: {dados.stats.suspensos}</div>}
-              {dados.stats.desligados > 0 && <div>📤 Desligados: {dados.stats.desligados}</div>}
-            </div>
-          )}
-        </div>
-        <div style={{ 
-          background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #6366f1'
-        }}>
-          <p style={{ color:'#6366f1',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Irmãos Ativos</p>
-          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.irmaosAtivos || 0}</p>
-          {dados.stats && (
-            <div style={{marginTop:"0.5rem",fontSize:"0.72rem",color:"var(--color-text-muted)",lineHeight:"1.6"}}>
-              <div>✅ Regulares: {dados.stats.regulares}</div>
-              <div>🎫 Licenciados: {dados.stats.licenciados}</div>
-            </div>
-          )}
-        </div>
-        <div style={{ 
-          background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #f59e0b'
-        }}>
-          <p style={{ color:'#f59e0b',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Média Presença</p>
-          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.mediaPresenca || 0}%</p>
-        </div>
-        <div className="card" style={{ textAlign: "center" }}>
-          <button
-            onClick={() => setMostrarGrade(true)}
-            style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:"var(--color-text)"}}
-          >
-            <span className="text-3xl mb-2">📊</span>
-            <span style={{fontWeight:"600",color:"var(--color-text-muted)",fontSize:"0.85rem",marginTop:"0.25rem"}}>Matrix Presença</span>
-          </button>
-        </div>
+
+      {/* Indicadores */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+        <KpiCard cor="var(--color-accent)" rotulo="Sessões" valor={dados.sessoes} sub="no período" />
+        <KpiCard cor="#f59e0b" rotulo="Média de presença" valor={`${dados.mediaPresenca || 0}%`} barra={dados.mediaPresenca || 0} />
+        <KpiCard
+          cor="#6366f1" rotulo="Irmãos ativos" valor={dados.irmaosAtivos || 0}
+          chips={dados.stats ? [
+            { rotulo: 'Regulares', valor: dados.stats.regulares },
+            { rotulo: 'Licenciados', valor: dados.stats.licenciados },
+          ] : []}
+        />
+        <KpiCard
+          cor="#10b981" rotulo="Quadro de irmãos" valor={dados.irmaos}
+          chips={dados.stats ? [
+            { rotulo: 'Ativos', valor: dados.stats.ativos },
+            ...(dados.stats.falecidos > 0 ? [{ rotulo: 'Falecidos', valor: dados.stats.falecidos }] : []),
+            ...(dados.stats.irregulares > 0 ? [{ rotulo: 'Irregulares', valor: dados.stats.irregulares }] : []),
+            ...(dados.stats.suspensos > 0 ? [{ rotulo: 'Suspensos', valor: dados.stats.suspensos }] : []),
+            ...(dados.stats.desligados > 0 ? [{ rotulo: 'Quite Placet', valor: dados.stats.desligados }] : []),
+          ] : []}
+        />
+      </div>
+
+      {/* Gráficos do período */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+        <GraficoPizza
+          titulo="Sessões por grau"
+          dados={[1, 2, 3, 4].map(g => ({ nome: NOME_GRAU[g], cor: COR_GRAU[g], valor: sessoesPeriodo.filter(x => (x.grau_sessao_id || 1) === g).length }))}
+        />
+        <GraficoPizza
+          titulo="Sessões por classificação"
+          dados={(() => {
+            const cont = {};
+            sessoesPeriodo.forEach(x => {
+              const rel = Array.isArray(x.classificacoes_sessao) ? x.classificacoes_sessao[0] : x.classificacoes_sessao;
+              const nome = rel?.nome || 'Sem classificação';
+              cont[nome] = (cont[nome] || 0) + 1;
+            });
+            return Object.entries(cont).map(([nome, valor]) => ({ nome, valor, cor: COR_CLASSIFICACAO[nome] || '#64748b' }));
+          })()}
+        />
+        <GraficoPresencaMensal dados={presencaMensal} />
       </div>
 
       {/* Quadro: Sessões Recentes - largura total */}
       <div className="card" style={{ overflow: "hidden", marginBottom: "1.5rem", padding: 0 }}>
-        <div style={{ background: 'var(--color-accent)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #3b82f6', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>📅</span>
             Sessões Recentes
@@ -1182,11 +1311,11 @@ export default function DashboardPresenca() {
               onChange={(e) => setQtdSessoesRecentes(Number(e.target.value))}
               style={{
                 padding: '0.25rem 0.75rem',
-                background: 'rgba(0,0,0,0.2)',
-                color: 'white',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
-                border: 'none',
+                border: '1px solid var(--color-border-light)',
                 cursor: 'pointer'
               }}
             >
@@ -1256,11 +1385,11 @@ export default function DashboardPresenca() {
       </div>
 
       {/* Quadros lado a lado */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
         {/* Quadro: Presença 100% */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-success)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #10b981', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>🏆</span>
               Presença 100% - {resumoAno.length} {resumoAno.length === 1 ? 'Irmão' : 'Irmãos'}
@@ -1269,12 +1398,12 @@ export default function DashboardPresenca() {
               value={anoPresenca100}
               onChange={(e) => setAnoPresenca100(Number(e.target.value))}
               style={{
-                background: 'rgba(0,0,0,0.2)',
-                color: 'white',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
                 padding: '0.25rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
-                border: 'none',
+                border: '1px solid var(--color-border-light)',
                 cursor: 'pointer'
               }}
             >
@@ -1339,7 +1468,7 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Irmãos com Prerrogativa (70+) */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #f59e0b', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>👴</span>
               Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
@@ -1348,12 +1477,12 @@ export default function DashboardPresenca() {
               value={anoPrerrogativa}
               onChange={(e) => setAnoPrerrogativa(Number(e.target.value))}
               style={{
-                background: 'rgba(0,0,0,0.2)',
-                color: 'white',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
                 padding: '0.25rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
-                border: 'none',
+                border: '1px solid var(--color-border-light)',
                 cursor: 'pointer'
               }}
             >
@@ -1411,7 +1540,7 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Irmãos Licenciados */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #6366f1', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>📋</span>
               Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
@@ -1420,12 +1549,12 @@ export default function DashboardPresenca() {
               value={anoLicenciados}
               onChange={(e) => setAnoLicenciados(Number(e.target.value))}
               style={{
-                background: 'rgba(0,0,0,0.2)',
-                color: 'white',
+                background: 'var(--color-bg)',
+                color: 'var(--color-text)',
                 padding: '0.25rem 0.75rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
-                border: 'none',
+                border: '1px solid var(--color-border-light)',
                 cursor: 'pointer'
               }}
             >
@@ -1483,7 +1612,7 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Ausências acima do percentual configurado */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #ef4444', borderBottom: '1px solid var(--color-border)', padding: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1508,12 +1637,12 @@ export default function DashboardPresenca() {
                     }
                   }}
                   style={{
-                    background: 'rgba(0,0,0,0.2)',
-                    color: 'white',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text)',
                     padding: '0.25rem 0.75rem',
                     borderRadius: 'var(--radius-md)',
                     fontWeight: '600',
-                    border: 'none',
+                    border: '1px solid var(--color-border-light)',
                     cursor: 'pointer'
                   }}
                 >
@@ -1533,12 +1662,12 @@ export default function DashboardPresenca() {
                   style={{
                     width: '4rem',
                     padding: '0.25rem 0.5rem',
-                    background: 'rgba(0,0,0,0.2)',
-                    color: 'white',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text)',
                     borderRadius: 'var(--radius-md)',
                     fontWeight: '600',
                     textAlign: 'center',
-                    border: 'none'
+                    border: '1px solid var(--color-border-light)'
                   }}
                 />
                 <span style={{ fontSize: '0.875rem' }}>%</span>
@@ -1563,7 +1692,7 @@ export default function DashboardPresenca() {
                     setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
                   }
                 }}
-                style={{padding:"0.35rem 0.75rem",background:"#f59e0b",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontWeight:"600",cursor:"pointer"}}
+                style={{padding:"0.35rem 0.75rem",background:"var(--color-bg)",color:"var(--color-text)",border:"1px solid var(--color-border-light)",borderRadius:"var(--radius-md)",fontWeight:"600",cursor:"pointer"}}
               >
                 <option value={0}>Ano todo</option>
                 {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
