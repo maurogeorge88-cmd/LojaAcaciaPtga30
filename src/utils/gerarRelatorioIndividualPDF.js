@@ -17,7 +17,7 @@ const verificarSituacaoNaData = (irmao, dataSessao, historicoSituacoes) => {
   const sit = historicoSituacoes?.find(s => {
     if (s.membro_id !== irmao.id) return false;
     const tipo = s.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const bloqueadoras = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido (revertido)
+    const bloqueadoras = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca']; // licença: fora da conta, aparece como "Lic"
     const ehBloq = bloqueadoras.includes(tipo) || bloqueadoras.some(b => tipo.includes(b));
     if (!ehBloq) return false;
     const di = new Date(s.data_inicio + 'T00:00:00');
@@ -27,6 +27,12 @@ const verificarSituacaoNaData = (irmao, dataSessao, historicoSituacoes) => {
     return df ? ds <= df : true;
   });
   return sit ? sit.tipo_situacao : null;
+};
+
+// Rótulo curto da situação na linha da sessão: licença aparece como "Lic"
+const rotuloSituacao = (tipo) => {
+  const n = String(tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return n.includes('licen') ? 'Lic' : tipo;
 };
 
 // ── Função principal ──────────────────────────────────────────────────────────
@@ -224,9 +230,9 @@ export const gerarRelatorioIndividualPDF = (
         const antesDoIngresso = dataIngresso && dataSessao < dataIngresso;
 
         // ── Verificar situação histórica ──────────────────────────────────────
-        // "licenca" já não bloqueia mais (removida de bloqueadoras acima).
-        // Prerrogativa de idade também não exclui mais — revertido a pedido,
-        // ambos voltam a contar como elegível normal (P/F/J).
+        // Licença (e desligamento, irregular etc.) na data da sessão: fora da conta,
+        // mostrada como "-  Lic" (ou "-  <situação>"), sem contar como falta.
+        // Prerrogativa de idade continua contando como elegível normal (P/F/J).
         const situacaoHist = verificarSituacaoNaData(irmao, s.data_sessao, historicoSituacoes);
 
         // ── Não elegível por grau ou ingresso → "-" sem contar ────────────────
@@ -240,8 +246,8 @@ export const gerarRelatorioIndividualPDF = (
           situacaoLabel = '-'; // não se aplica
           corSit = [180, 180, 180];
         } else if (situacaoHist) {
-          situacaoLabel = '-  ' + situacaoHist;
-          corSit = [156, 163, 175];
+          situacaoLabel = '-  ' + rotuloSituacao(situacaoHist);
+          corSit = rotuloSituacao(situacaoHist) === 'Lic' ? [100, 116, 139] : [156, 163, 175];
         } else if (reg?.presente) {
           situacaoLabel = 'P  Presente';
           corSit = [5, 150, 105];
@@ -298,10 +304,13 @@ export const gerarRelatorioIndividualPDF = (
       doc.setFillColor(239, 246, 255);
       doc.rect(M, y - 2, W - M * 2, 8, 'F');
       doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-      if (pctMes >= 70) doc.setTextColor(5, 150, 105);
+      if (elegMes === 0) doc.setTextColor(107, 114, 128);
+      else if (pctMes >= 70) doc.setTextColor(5, 150, 105);
       else if (pctMes >= 50) doc.setTextColor(217, 119, 6);
       else doc.setTextColor(220, 38, 38);
-      txt(`Total ${MESES_NOMES[parseInt(mes)]}: ${presMes} presença(s) de ${elegMes} sessão(ões) elegíveis — ${pctMes}%`, M + 4, y + 3);
+      txt(elegMes === 0
+        ? `Total ${MESES_NOMES[parseInt(mes)]}: nenhuma sessão elegível no mês`
+        : `Total ${MESES_NOMES[parseInt(mes)]}: ${presMes} presença(s) de ${elegMes} sessão(ões) elegíveis — ${pctMes}%`, M + 4, y + 3);
       doc.setTextColor(0);
       y += 10;
     });
@@ -312,7 +321,9 @@ export const gerarRelatorioIndividualPDF = (
     doc.setFillColor(30, 58, 138);
     doc.rect(M, y - 2, W - M * 2, 9, 'F');
     doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(255);
-    txt(`Total ${ano}: ${totalAno} presença(s) de ${elegAno} sessão(ões) elegíveis — ${pctAno}%`, M + 4, y + 3.5);
+    txt(elegAno === 0
+      ? `Total ${ano}: nenhuma sessão elegível no ano`
+      : `Total ${ano}: ${totalAno} presença(s) de ${elegAno} sessão(ões) elegíveis — ${pctAno}%`, M + 4, y + 3.5);
     doc.setTextColor(0);
     y += 13;
   });
@@ -320,7 +331,7 @@ export const gerarRelatorioIndividualPDF = (
   // ── TOTAL GERAL ─────────────────────────────────────────────────────────────
   checkPage(20);
   const pctGeral = totalEleg > 0 ? Math.round((totalPres / totalEleg) * 100) : 0;
-  const corGeral = pctGeral >= 70 ? [5, 150, 105] : pctGeral >= 50 ? [217, 119, 6] : [220, 38, 38];
+  const corGeral = totalEleg === 0 ? [107, 114, 128] : pctGeral >= 70 ? [5, 150, 105] : pctGeral >= 50 ? [217, 119, 6] : [220, 38, 38];
 
   y += 4;
   linhaDupla(y); y += 6;
@@ -338,7 +349,7 @@ export const gerarRelatorioIndividualPDF = (
   txt(`Sessões no período: ${sessoesPeriodo.length}`, M + 6, y + 14);
 
   doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(corGeral[0], corGeral[1], corGeral[2]);
-  txt(`${pctGeral}%`, W - M - 6, y + 10, { align: 'right' });
+  txt(totalEleg === 0 ? '-' : `${pctGeral}%`, W - M - 6, y + 10, { align: 'right' });
 
   doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
   txt('Taxa de Presença', W - M - 6, y + 15, { align: 'right' });
