@@ -4322,7 +4322,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   step="0.01" 
                   value={formSangria.valor} 
                   onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                   placeholder="0.00"
                   max={troncoTotalGlobal.especie}
                 />
@@ -4334,7 +4334,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   type="date" 
                   value={formSangria.data} 
                   onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                 />
               </div>
               
@@ -4343,7 +4343,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <textarea 
                   value={formSangria.observacao} 
                   onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                   rows="2"
                   placeholder="Ex: Depósito em conta - Tronco"
                 />
@@ -4363,7 +4363,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <button 
                 onClick={() => fazerSangriaTronco()} 
                 disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > troncoTotalGlobal.especie} 
-                className="flex-1 px-4 py-3 text-white rounded-lg font-medium disabled:opacity-50 hover: transition-colors"
+                className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
               >
                 Confirmar
               </button>
