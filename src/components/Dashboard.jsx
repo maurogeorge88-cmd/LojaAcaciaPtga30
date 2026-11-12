@@ -217,7 +217,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         const { data: historicoSituacoes } = await supabase
           .from('historico_situacoes')
           .select('*')
-          .eq('status', 'ativa');
+          .in('status', ['ativa', 'vencida']);
 
         // 3. Buscar irmãos com grau
         const { data: todosIrmaos } = await supabase
