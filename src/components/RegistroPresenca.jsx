@@ -68,7 +68,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       const { data: historicoSituacoes } = await supabase
         .from('historico_situacoes')
         .select('*')
-        .eq('status', 'ativa');
+        .in('status', ['ativa', 'vencida']);
 
       // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
       const grauMinimoRaw = sessaoData.graus_sessao?.grau_minimo_requerido;
