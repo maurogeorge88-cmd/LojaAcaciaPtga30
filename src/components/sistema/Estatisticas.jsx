@@ -277,7 +277,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           const { data: loteHist } = await supabase
             .from('historico_situacoes')
             .select('membro_id,tipo_situacao,data_inicio,data_fim,status')
-            .eq('status', 'ativa')
+            .in('status', ['ativa', 'vencida'])
             .range(inicioHist, inicioHist + tamanhoPaginaHist - 1);
           if (loteHist && loteHist.length > 0) {
             todoHistorico = [...todoHistorico, ...loteHist];
