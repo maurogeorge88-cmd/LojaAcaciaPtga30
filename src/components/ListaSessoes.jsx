@@ -211,7 +211,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
     const { data: situacoes } = await supabase
       .from('historico_situacoes')
       .select('*')
-      .eq('status', 'ativa')
+      .in('status', ['ativa', 'vencida'])
       .is('data_fim', null);
 
     // Filtrar apenas Regular e Licenciado
