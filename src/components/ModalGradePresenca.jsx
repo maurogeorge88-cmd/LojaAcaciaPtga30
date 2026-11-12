@@ -21,6 +21,21 @@ export default function ModalGradePresenca({ onFechar }) {
   const [mesSelecionado, setMesSelecionado] = useState(0);
   const [dadosLoja, setDadosLoja] = useState(null);
 
+  // Tela cheia: Esc fecha (primeiro o relatório individual, se estiver aberto) e a rolagem do fundo fica travada
+  useEffect(() => {
+    const aoTeclar = (e) => {
+      if (e.key !== 'Escape') return;
+      if (modalIndividual) setModalIndividual(false); else onFechar();
+    };
+    window.addEventListener('keydown', aoTeclar);
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', aoTeclar);
+      document.body.style.overflow = overflowAnterior;
+    };
+  }, [modalIndividual, onFechar]);
+
   // Buscar anos disponíveis e dados da loja
   useEffect(() => {
     const buscarAnos = async () => {
@@ -498,6 +513,13 @@ export default function ModalGradePresenca({ onFechar }) {
     );
   }
 
+  // Estilos do cabeçalho (padrão do sistema: campos escuros, ação principal e ação secundária)
+  const campoTema = { height: '2.4rem', padding: '0 0.75rem', background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 600 };
+  const btnBase = { display: 'inline-flex', alignItems: 'center', gap: '0.45rem', height: '2.4rem', padding: '0 1rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' };
+  const btnPrimario = { ...btnBase, background: 'var(--color-accent)', color: '#fff', border: '1px solid var(--color-accent)' };
+  const btnSecundario = { ...btnBase, background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' };
+  const btnFechar = { ...btnBase, padding: 0, width: '2.4rem', justifyContent: 'center', background: 'var(--color-bg)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', fontSize: '1.3rem', lineHeight: 1 };
+
   // Cabeçalho resumido: mês (3 letras + quantidade de sessões) e, embaixo, só o dia
   const gruposMesTela = [];
   sessoes.forEach((sess) => {
@@ -507,37 +529,24 @@ export default function ModalGradePresenca({ onFechar }) {
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="card w-full max-w-[98vw] flex flex-col" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", height: "90vh" }}>
-        
-        {/* Cabeçalho */}
-        <div style={{ background: "var(--color-accent)", color: "white", padding: "1.5rem" }}>
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-2xl font-bold">Grade de Presença</h2>
-              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.9)" }}>
-                {sessoes.length} sessões • {irmaos.length} irmãos
-              </p>
-            </div>
-            <button
-              onClick={onFechar}
-              className="rounded-full p-2 transition-colors"
-              style={{ background: "rgba(0,0,0,0.2)", cursor: "pointer" }}
-              onMouseEnter={(e) => e.target.style.background = "rgba(0,0,0,0.3)"}
-              onMouseLeave={(e) => e.target.style.background = "rgba(0,0,0,0.2)"}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--color-bg)' }} role="dialog" aria-modal="true" aria-label="Grade de Presença">
+
+        {/* Cabeçalho compacto (uma linha) */}
+        <div style={{ background: 'var(--color-surface)', borderTop: '3px solid var(--color-accent)', borderBottom: '1px solid var(--color-border)', padding: '0.75rem 1.25rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem 1rem' }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.2 }}>Grade de Presença</h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>
+              {sessoes.length} sessões • {irmaos.length} irmãos
+            </p>
           </div>
 
           {/* Filtros de Período */}
-          <div className="flex gap-3 mb-4">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <select
               value={anoSelecionado}
               onChange={(e) => setAnoSelecionado(Number(e.target.value))}
-              className="px-4 py-2 rounded text-gray-800 font-semibold"
+              style={campoTema}
+              aria-label="Ano"
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -546,7 +555,8 @@ export default function ModalGradePresenca({ onFechar }) {
             <select
               value={mesSelecionado}
               onChange={(e) => setMesSelecionado(Number(e.target.value))}
-              className="px-4 py-2 rounded text-gray-800 font-semibold"
+              style={campoTema}
+              aria-label="Período"
             >
               <option value={0}>Ano todo</option>
               <option value={-1}>1º Semestre</option>
@@ -564,26 +574,32 @@ export default function ModalGradePresenca({ onFechar }) {
               <option value={11}>Novembro</option>
               <option value={12}>Dezembro</option>
             </select>
-            
-            {/* Botão Gerar PDF Geral */}
-            <button
-              onClick={() => {
-                if (sessoes.length === 0) {
-                  alert('Não há sessões para gerar o relatório');
-                  return;
-                }
-                gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja);
-              }}
-              className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold flex items-center gap-2 transition"
-              title="Gerar relatório geral em PDF"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              Gerar PDF
-            </button>
+          </div>
 
-            {/* Botão Relatório Individual */}
+          {/* Campo de Busca */}
+          <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: '460px' }}>
+            <span aria-hidden="true" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', pointerEvents: 'none' }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar irmão..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{ ...campoTema, width: '100%', paddingLeft: '2.1rem', paddingRight: busca ? '2rem' : '0.75rem' }}
+            />
+            {busca && (
+              <button
+                type="button"
+                onClick={() => setBusca('')}
+                aria-label="Limpar busca"
+                style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '1.15rem', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* Ações */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <button
               onClick={() => {
                 const irmaoBusca = busca.trim()
@@ -592,25 +608,30 @@ export default function ModalGradePresenca({ onFechar }) {
                 setIrmaoIndividual(irmaoBusca || null);
                 setModalIndividual(true);
               }}
-              style={{marginLeft:'0.5rem',padding:'0.5rem 1rem',background:'#6366f1',color:'#fff',borderRadius:'0.375rem',fontWeight:'600',cursor:'pointer',border:'none',display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.875rem'}}
+              style={btnSecundario}
               title="Gerar relatório individual de um irmão"
             >
-              📄 Individual
+              👤 Individual
             </button>
+            <button
+              onClick={() => {
+                if (sessoes.length === 0) {
+                  alert('Não há sessões para gerar o relatório');
+                  return;
+                }
+                gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja);
+              }}
+              style={btnPrimario}
+              title="Gerar relatório geral em PDF"
+            >
+              📄 Gerar PDF
+            </button>
+            <button onClick={onFechar} style={btnFechar} aria-label="Fechar" title="Fechar (Esc)">×</button>
           </div>
-
-          {/* Campo de Busca */}
-          <input
-            type="text"
-            placeholder="🔍 Buscar irmão..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="w-full px-4 py-2 rounded text-gray-800 placeholder-gray-500"
-          />
         </div>
 
         {/* Tabela */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto" style={{ minHeight: 0 }}>
           <table className="w-full border-collapse" style={{fontSize:"clamp(0.7rem,1.8vw,0.75rem)"}}>
             <thead style={{ background: 'var(--color-surface-2)', position: 'sticky', top: 0 }}>
               <tr>
@@ -780,6 +801,13 @@ export default function ModalGradePresenca({ onFechar }) {
                   const percentual = sessoesElegiveis > 0 ? Math.round((presencasIrmao / sessoesElegiveis) * 100) : 0;
                   const percentualPrerrogativa = sessoesPrerrogativa > 0 ? Math.round((presencasPrerrogativa / sessoesPrerrogativa) * 100) : 0;
                   const temPrerrogativa = sessoesPrerrogativa > 0;
+                  // Faixa de cor das colunas Total e %: tons translúcidos que funcionam nos dois temas.
+                  // Sem nenhuma sessão contada (ex.: licença/prerrogativa o período todo) fica neutro.
+                  const tomFaixa = sessoesElegiveis === 0
+                    ? 'var(--color-surface-2)'
+                    : percentual >= 75 ? 'rgba(16,185,129,0.22)'
+                    : percentual >= 50 ? 'rgba(245,158,11,0.22)'
+                    : 'rgba(239,68,68,0.22)';
                   
                   return (
                 <tr key={irmao.id} className="hover:bg-gray-50">
@@ -850,10 +878,10 @@ export default function ModalGradePresenca({ onFechar }) {
                     </span>
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
-                  <td style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', color: 'var(--color-text)' }}>
+                  <td style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '700', background: tomFaixa, fontSize: '0.75rem', color: 'var(--color-text)' }}>
                     {presencasIrmao}/{sessoesElegiveis}
                     {temPrerrogativa && (
-                      <div className="text-purple-600 text-[10px] mt-0.5">
+                      <div className="text-[10px] mt-0.5" style={{ color: '#8b5cf6', fontWeight: 700 }}>
                         +{presencasPrerrogativa}/{sessoesPrerrogativa}
                       </div>
                     )}
@@ -864,12 +892,12 @@ export default function ModalGradePresenca({ onFechar }) {
                     textAlign: 'center', 
                     fontWeight: '600', 
                     fontSize: '0.75rem',
-                    backgroundColor: percentual >= 75 ? '#dcfce7' : percentual >= 50 ? '#fef9c3' : '#fee2e2',
-                    color: '#000'
+                    backgroundColor: tomFaixa,
+                    color: 'var(--color-text)'
                   }}>
-                    {percentual}%
+                    {sessoesElegiveis > 0 ? `${percentual}%` : '-'}
                     {temPrerrogativa && (
-                      <div className="text-purple-600 text-[10px] mt-0.5">
+                      <div className="text-[10px] mt-0.5" style={{ color: '#8b5cf6', fontWeight: 700 }}>
                         +{percentualPrerrogativa}%
                       </div>
                     )}
@@ -881,16 +909,16 @@ export default function ModalGradePresenca({ onFechar }) {
           </table>
         </div>
 
-        {/* Rodapé */}
-        <div className="bg-gray-50 px-6 py-4 border-t">
-          <button
-            onClick={onFechar}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-          >
-            Fechar
-          </button>
+        {/* Rodapé: legenda */}
+        <div style={{ background: 'var(--color-surface)', borderTop: '1px solid var(--color-border)', padding: '0.6rem 1.25rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem 1.25rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+          <span style={{ fontWeight: 700, color: 'var(--color-text)' }}>Legenda</span>
+          <span><strong style={{ color: '#16a34a', fontSize: '0.95rem' }}>✓</strong> Presente</span>
+          <span><strong style={{ color: '#dc2626', fontSize: '0.95rem' }}>✗</strong> Falta</span>
+          <span><strong style={{ color: '#ca8a04', fontSize: '0.95rem' }}>J</strong> Falta justificada</span>
+          <span><strong style={{ color: 'var(--color-text)', fontSize: '0.95rem' }}>–</strong> Não conta (licença, prerrogativa, afastamento, antes do ingresso ou sessão de grau acima do irmão)</span>
+          <span><strong style={{ color: '#8b5cf6' }}>+n/N</strong> Presenças em sessões dentro da prerrogativa (informativo)</span>
+          <span style={{ marginLeft: 'auto' }}>Letra abaixo do dia = grau da sessão: <strong>A</strong> Aprendiz · <strong>C</strong> Companheiro · <strong>M</strong> Mestre · <strong>ADM</strong> Administrativa</span>
         </div>
-      </div>
 
       {/* ── Modal Relatório Individual ── */}
       {modalIndividual && (
