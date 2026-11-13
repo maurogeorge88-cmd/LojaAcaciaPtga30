@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import CalendarioAnual from './CalendarioAnual';
+import { TIPOS_EVENTO, corDoEvento, rotuloDoTipo } from './tiposEvento';
 
 // Imagens decorativas do quadro de evento — bucket público "cronograma" no Supabase Storage
 const IMG_SOL = supabase.storage.from('cronograma').getPublicUrl('sol.png').data.publicUrl;
@@ -260,7 +261,9 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const [eventoVisualizar, setEventoVisualizar] = useState(null);
   const [eventoEditando, setEventoEditando] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('');
-  const [filtroMes, setFiltroMes] = useState('');
+  const [filtroMes, setFiltroMes] = useState(''); // '' = todos os meses; senão 'MM'
+  const anoAtual = new Date().getFullYear();
+  const [anoFiltro, setAnoFiltro] = useState(anoAtual); // 0 = Todos (última opção); padrão = ano atual
   const [mesFiltroInicializado, setMesFiltroInicializado] = useState(false);
   const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
   const [mostrarModalRelatorio, setMostrarModalRelatorio] = useState(false);
@@ -292,18 +295,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     grau_sessao_id: 1 // Padrão: Aprendiz (todos podem participar)
   });
 
-  const tiposEvento = [
-    { value: 'sessao', label: '📜 Sessão', cor: '#3b82f6' },
-    { value: 'trabalho_irmao', label: '📖 Trabalho de Irmão', cor: '#8b5cf6' },
-    { value: 'instrucao', label: '🎓 Instrução', cor: '#10b981' },
-    { value: 'sessao_magna', label: '👑 Sessão Magna', cor: '#ef4444' },
-    { value: 'sessao_posse', label: '📜 Sessão de Posse', cor: '#10b981' },
-    { value: 'sessao_instalacao', label: '👑 Sessão de Instalação', cor: '#3b82f6' },
-    { value: 'sessao_festiva', label: '🥂 Sessão Festiva', cor: '#c9a84c' },
-    { value: 'feriado', label: '🎌 Feriado', cor: '#f97316' },
-    { value: 'evento_externo', label: '🌍 Evento Externo', cor: '#f59e0b' },
-    { value: 'outro', label: '📌 Outro', cor: '#6b7280' }
-  ];
+  const tiposEvento = TIPOS_EVENTO;
 
   const statusEvento = [
     { value: 'planejado', label: '📋 Planejado', cor: ' ',
@@ -366,51 +358,45 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   }, []);
 
   const carregarEventos = async () => {
-    console.log('📥 Carregando eventos...');
     setLoading(true);
-    
-    // Adicionar filtro com timestamp para evitar cache
     const { data, error } = await supabase
       .from('cronograma')
       .select('*')
-      .or(`id.gte.0,updated_at.gte.1970-01-01`)  // Força query nova
       .order('data_evento', { ascending: true });
-    
+
     if (error) {
-      console.error('❌ Erro ao carregar eventos:', error);
+      console.error('Erro ao carregar eventos:', error);
     } else {
-      console.log(`✅ ${data?.length || 0} eventos carregados:`, data);
       setEventos(data || []);
     }
     setLoading(false);
   };
 
-  // ─── Define o filtro de mês inicial: mês vigente, ou o próximo mês que ────
-  // tiver algum evento agendado caso o mês atual esteja vazio. Roda apenas
-  // uma vez, assim que os eventos terminam de carregar.
+  // ─── Ano: só anos com evento cadastrado; padrão = ano atual ───────────────
+  // Se o ano atual ainda não tem evento, mostra o ano anterior mais recente (e avisa).
+  const hojeStr = `${anoAtual}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+  const anoDoEvento = (e) => parseInt(String(e.data_evento).slice(0, 4), 10);
+  const anosDisponiveis = [...new Set(eventos.map(anoDoEvento).filter(Boolean))].sort((a, b) => b - a);
+  const qtdPorAno = {};
+  eventos.forEach(e => { const a = anoDoEvento(e); if (a) qtdPorAno[a] = (qtdPorAno[a] || 0) + 1; });
+  const anoAtualTemEvento = anosDisponiveis.includes(anoAtual);
+  const anoExibido = (anoFiltro === 0 || anosDisponiveis.includes(anoFiltro))
+    ? anoFiltro
+    : (anosDisponiveis.find(a => a < anoAtual) ?? anosDisponiveis[0] ?? 0);
+
+  // ─── Mês inicial: mês vigente, ou o próximo mês com evento, ou o último mês ─────
+  // com evento — só quando o ano exibido é o ano atual. Roda uma vez, ao carregar.
   useEffect(() => {
     if (loading || mesFiltroInicializado) return;
-    if (eventos.length === 0) { setMesFiltroInicializado(true); return; }
-
-    const mesesComEventos = [...new Set(eventos.map(e => e.data_evento.substring(0, 7)))].sort();
-
-    let mesEscolhido = '';
-    if (mesesComEventos.includes(mesAtualKey)) {
-      mesEscolhido = mesAtualKey;
-    } else {
-      // Procura o próximo mês futuro com evento
-      const proximoComEvento = mesesComEventos.find(m => m > mesAtualKey);
-      if (proximoComEvento) {
-        mesEscolhido = proximoComEvento;
-      } else {
-        // Não há eventos futuros: cai para o mês mais recente do passado
-        const passados = mesesComEventos.filter(m => m < mesAtualKey);
-        mesEscolhido = passados.length > 0 ? passados[passados.length - 1] : '';
-      }
-    }
-
-    setFiltroMes(mesEscolhido);
     setMesFiltroInicializado(true);
+    if (eventos.length === 0 || anoExibido !== anoAtual) return;
+
+    const mesesDoAno = [...new Set(eventos.filter(e => anoDoEvento(e) === anoAtual).map(e => e.data_evento.substring(5, 7)))].sort();
+    const mesAtualNum = mesAtualKey.substring(5, 7);
+    let escolhido = '';
+    if (mesesDoAno.includes(mesAtualNum)) escolhido = mesAtualNum;
+    else escolhido = mesesDoAno.find(m => m > mesAtualNum) || mesesDoAno[mesesDoAno.length - 1] || '';
+    setFiltroMes(escolhido);
   }, [eventos, loading, mesFiltroInicializado]);
 
   const limparFormulario = () => {
@@ -532,11 +518,96 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     }
   };
 
-  const eventosFiltrados = eventos.filter(e => {
-    const filtroTipoOk = !filtroTipo || e.tipo === filtroTipo;
-    const filtroMesOk = !filtroMes || e.data_evento.substring(0, 7) === filtroMes;
-    return filtroTipoOk && filtroMesOk;
-  });
+  const podeEditar = !!(permissoes?.canEdit || permissoes?.canEditMembers);
+  const eventosDoAno = eventos.filter(e => anoExibido === 0 || anoDoEvento(e) === anoExibido);
+  const eventosPorTipo = eventosDoAno.filter(e => !filtroTipo || e.tipo === filtroTipo);
+  const eventosFiltrados = eventosPorTipo.filter(e => !filtroMes || e.data_evento.substring(5, 7) === filtroMes);
+  const qtdPorMes = {};
+  eventosPorTipo.forEach(e => { const m = e.data_evento.substring(5, 7); qtdPorMes[m] = (qtdPorMes[m] || 0) + 1; });
+  const filtrosAtivos = !!(filtroTipo || (visualizacao === 'lista' && filtroMes)); // no calendário o mês não se aplica
+  const totalMostrado = visualizacao === 'lista' ? eventosFiltrados.length : eventosPorTipo.length;
+
+  // Indicadores
+  const proximoEvento = eventos.find(e => e.data_evento >= hojeStr && e.status !== 'cancelado') || null;
+  const contagemStatus = {};
+  eventosDoAno.forEach(e => { contagemStatus[e.status] = (contagemStatus[e.status] || 0) + 1; });
+  const sessoesDoAno = eventosDoAno.filter(e => String(e.tipo).startsWith('sessao') && e.status !== 'cancelado');
+  const sessoesRealizadas = sessoesDoAno.filter(e => e.status === 'realizado').length;
+  const pendencias = eventosDoAno.filter(e => e.data_evento < hojeStr && ['planejado', 'confirmado'].includes(e.status));
+  const anoCalendario = anoExibido || anoAtual;
+  const eventosCalendario = eventosPorTipo.map(e => ({ data: e.data_evento, titulo: e.titulo, tipo: e.tipo, cor: corDoEvento(e.tipo, e.cor_destaque) }));
+
+  const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const DIAS_ABREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const DIAS_COMPLETOS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  const diasAte = (dataStr) => Math.round((new Date(dataStr + 'T00:00:00') - new Date(hojeStr + 'T00:00:00')) / 86400000);
+  const relativo = (dataStr) => {
+    const n = diasAte(dataStr);
+    if (n === 0) return 'hoje';
+    if (n === 1) return 'amanhã';
+    return n > 0 ? `em ${n} dias` : `há ${-n} dias`;
+  };
+
+  const rotuloKpi = { margin: 0, fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const cartaoKpi = (cor) => ({ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `3px solid ${cor}`, borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', minWidth: 0 });
+  const chip = { fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' };
+  const btnBaseTela = { height: '2.6rem', padding: '0 1.2rem', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', whiteSpace: 'nowrap' };
+
+  const renderEvento = (evento) => {
+    const cor = corDoEvento(evento.tipo, evento.cor_destaque);
+    const d = new Date(evento.data_evento + 'T00:00:00');
+    const ehHoje = evento.data_evento === hojeStr;
+    const cancelado = evento.status === 'cancelado';
+    return (
+      <div key={evento.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', padding: '0.85rem 1.1rem', borderBottom: '1px solid var(--color-border)', opacity: cancelado ? 0.6 : 1 }}>
+        {/* Bloco de calendário */}
+        <div style={{ width: 54, flexShrink: 0, textAlign: 'center', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-md)', overflow: 'hidden', background: 'var(--color-bg)' }}>
+          <div style={{ background: cor, color: '#fff', fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.06em', padding: '0.1rem 0' }}>{MESES_ABREV[d.getMonth()].toUpperCase()}</div>
+          <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.15 }}>{String(d.getDate()).padStart(2, '0')}</div>
+          <div style={{ fontSize: '0.62rem', color: 'var(--color-text-muted)', paddingBottom: '0.15rem' }}>{DIAS_ABREV[d.getDay()]}</div>
+        </div>
+
+        {/* Conteúdo */}
+        <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' }}>
+            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none', overflowWrap: 'anywhere' }}>{evento.titulo}</h4>
+            {ehHoje && <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.1rem 0.5rem', borderRadius: 999, background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.5)' }}>HOJE</span>}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem' }}>
+            <span style={{ padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(evento.tipo)}</span>
+            <span style={{ ...obterStyleStatus(evento.status), padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{obterLabelStatus(evento.status)}</span>
+            {evento.grau_sessao_id && getGrauNome(evento.grau_sessao_id) && (
+              <span style={{ ...chip, color: 'var(--color-text)' }}>{getGrauNome(evento.grau_sessao_id)}</span>
+            )}
+          </div>
+          {(evento.hora_inicio || evento.local || evento.responsavel) && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.1rem', marginTop: '0.45rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              {evento.hora_inicio && <span>🕐 {formatarHora(evento.hora_inicio)}{evento.hora_fim && ` – ${formatarHora(evento.hora_fim)}`}</span>}
+              {evento.local && <span>📍 {evento.local}</span>}
+              {evento.responsavel && <span>👤 {evento.responsavel}</span>}
+            </div>
+          )}
+          {evento.descricao && (
+            <p style={{ margin: '0.45rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{evento.descricao}</p>
+          )}
+        </div>
+
+        {/* Ações: detalhe para todos; editar/excluir só para quem tem permissão */}
+        <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+          <button onClick={() => { setEventoVisualizar(evento); setModalVisualizacao(true); }} title="Ver detalhes" aria-label="Ver detalhes"
+            style={{ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.12)', cursor: 'pointer', fontSize: '0.9rem' }}>👁️</button>
+          {podeEditar && (
+            <>
+              <button onClick={() => editarEvento(evento)} title="Editar" aria-label="Editar"
+                style={{ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-accent)', background: 'var(--color-accent-bg)', cursor: 'pointer', fontSize: '0.9rem' }}>✏️</button>
+              <button onClick={() => excluirEvento(evento.id)} title="Excluir" aria-label="Excluir"
+                style={{ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.12)', cursor: 'pointer', fontSize: '0.9rem' }}>🗑️</button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const agruparPorMes = (eventos) => {
     const grupos = {};
@@ -641,29 +712,116 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
   return (
     <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
-      {/* Header */}
-      <div 
-        className="text-white rounded-lg p-6"
-        style={{ 
-          background: 'var(--color-accent)'
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold mb-2" style={{color:"#fff"}}>📅 Cronograma Anual</h2>
-            <p className="opacity-90">Eventos, sessões e atividades da loja</p>
-          </div>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+      {/* Cabeçalho */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text)', margin: 0 }}>📅 Cronograma{anoExibido ? ` ${anoExibido}` : ''}</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>
+            {anoExibido === 0 ? 'Todos os anos — eventos, sessões e atividades da Loja' : 'Eventos, sessões e atividades da Loja'}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
+          <select
+            value={anoExibido}
+            onChange={(e) => { setAnoFiltro(parseInt(e.target.value)); setFiltroMes(''); }}
+            aria-label="Ano"
+            style={{ height: '2.6rem', padding: '0 0.9rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-light)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}
+          >
+            {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano} ({qtdPorAno[ano]})</option>)}
+            <option value={0}>Todos ({eventos.length})</option>
+          </select>
+          <button
+            onClick={() => { setTipoRelatorio('mensal'); setRelatorioForm(f => ({ ...f, ano: anoExibido || anoAtual })); setMostrarModalRelatorio(true); }}
+            style={{ ...btnBaseTela, background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }}
+            title="Gerar relatório em PDF (mensal, semestral ou anual)"
+          >
+            📄 Relatório
+          </button>
+          {podeEditar && (
             <button
-              onClick={() => {
-                limparFormulario();
-                setMostrarFormulario(true);
-              }}
-              className="px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-semibold"
-              style={{ color: '#000080' }}
+              onClick={() => { limparFormulario(); setMostrarFormulario(true); }}
+              style={{ ...btnBaseTela, background: 'var(--color-accent)', color: '#fff', border: 'none' }}
             >
               ➕ Novo Evento
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Aviso: ano atual sem eventos no cronograma */}
+      {!anoAtualTemEvento && (
+        <div style={{ padding: '0.85rem 1.1rem', borderRadius: 'var(--radius-lg)', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', borderLeft: '4px solid #f59e0b', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <div>
+            <strong style={{ color: '#f59e0b', fontSize: '0.9rem' }}>⚠️ Ainda não há eventos no cronograma de {anoAtual}</strong>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
+              {anoExibido !== 0 ? `Estão sendo exibidos os eventos de ${anoExibido}. ` : ''}Cadastre o cronograma do ano.
+            </p>
+          </div>
+          {podeEditar && (
+            <button onClick={() => { limparFormulario(); setMostrarFormulario(true); }}
+              style={{ height: '2.2rem', padding: '0 1rem', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+              ➕ Cadastrar evento de {anoAtual}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Indicadores */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <div style={cartaoKpi('var(--color-accent)')}>
+          <p style={rotuloKpi}>Eventos {anoExibido === 0 ? '(todos)' : `em ${anoExibido}`}</p>
+          <p style={{ margin: '0.25rem 0 0.5rem', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{eventosDoAno.length}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {statusEvento.filter(st => contagemStatus[st.value] > 0).map(st => (
+              <span key={st.value} style={chip}>{st.label.replace(/^\S+\s/, '')} <strong style={{ color: 'var(--color-text)' }}>{contagemStatus[st.value]}</strong></span>
+            ))}
+          </div>
+        </div>
+
+        <div style={cartaoKpi('#f59e0b')}>
+          <p style={rotuloKpi}>Próximo evento</p>
+          {proximoEvento ? (
+            <>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.2 }}>{formatarData(proximoEvento.data_evento)}</p>
+              <p style={{ margin: '0.15rem 0 0.4rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                {DIAS_COMPLETOS[new Date(proximoEvento.data_evento + 'T00:00:00').getDay()]} · {relativo(proximoEvento.data_evento)}
+              </p>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={proximoEvento.titulo}>
+                {obterIconeTipo(proximoEvento.tipo)} {proximoEvento.titulo}
+              </p>
+            </>
+          ) : (
+            <p style={{ margin: '0.75rem 0 0', fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Nenhum evento futuro</p>
+          )}
+        </div>
+
+        <div style={cartaoKpi('#3b82f6')}>
+          <p style={rotuloKpi}>Sessões {anoExibido === 0 ? '' : `em ${anoExibido}`}</p>
+          <p style={{ margin: '0.25rem 0 0.5rem', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{sessoesDoAno.length}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            <span style={chip}>🎯 Realizadas <strong style={{ color: 'var(--color-text)' }}>{sessoesRealizadas}</strong></span>
+            <span style={chip}>📋 Previstas <strong style={{ color: 'var(--color-text)' }}>{sessoesDoAno.length - sessoesRealizadas}</strong></span>
+          </div>
+        </div>
+
+        <div style={cartaoKpi(pendencias.length > 0 ? '#ef4444' : '#10b981')}>
+          <p style={rotuloKpi}>Pendências</p>
+          {pendencias.length === 0 ? (
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', fontWeight: 700, color: '#10b981' }}>✅ Tudo em dia</p>
+          ) : (
+            <>
+              <p style={{ margin: '0.25rem 0 0.2rem', fontSize: '2rem', fontWeight: 800, color: '#ef4444', lineHeight: 1.1 }}>{pendencias.length}</p>
+              <p style={{ margin: '0 0 0.4rem', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>já passaram e seguem como Planejado/Confirmado</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                {pendencias.slice(0, 3).map(ev => (
+                  <button key={ev.id} onClick={() => podeEditar && editarEvento(ev)} disabled={!podeEditar} title={podeEditar ? 'Abrir para atualizar a situação' : ev.titulo}
+                    style={{ ...chip, cursor: podeEditar ? 'pointer' : 'default', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {formatarData(ev.data_evento).slice(0, 5)} · {ev.titulo}
+                  </button>
+                ))}
+                {pendencias.length > 3 && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', alignSelf: 'center' }}>+{pendencias.length - 3}</span>}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -912,108 +1070,55 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       )}
 
       {/* Filtros e Visualização */}
-      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex flex-wrap items-end gap-4">
-          {/* Filtro: Tipo */}
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo</label>
-            <select
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              style={estiloCampoFiltro}
-            >
-              <option value="">Todos os Tipos</option>
-              {tiposEvento.map(tipo => (
-                <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-              ))}
-            </select>
+      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '0.9rem 1rem' }}>
+        {visualizacao === 'lista' && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.8rem' }}>
+            {[['', 'Todos', eventosPorTipo.length], ...MESES_ABREV.map((m, i) => [String(i + 1).padStart(2, '0'), m, qtdPorMes[String(i + 1).padStart(2, '0')] || 0])].map(([valor, rotulo, qtd]) => {
+              const ativo = filtroMes === valor;
+              const ehMesAtual = anoExibido === anoAtual && valor !== '' && `${anoAtual}-${valor}` === mesAtualKey;
+              return (
+                <button key={valor || 'todos'} onClick={() => setFiltroMes(valor)}
+                  style={{ height: '2.1rem', padding: '0 0.8rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
+                    border: `1px solid ${ativo ? 'var(--color-accent)' : ehMesAtual ? 'var(--color-accent)' : 'var(--color-border-light)'}`,
+                    background: ativo ? 'var(--color-accent)' : 'var(--color-bg)',
+                    color: ativo ? '#fff' : qtd === 0 ? 'var(--color-text-muted)' : 'var(--color-text)',
+                    opacity: qtd === 0 && !ativo ? 0.55 : 1 }}>
+                  {rotulo}{qtd > 0 && <span style={{ marginLeft: '0.35rem', opacity: 0.85, fontWeight: 600 }}>{qtd}</span>}
+                </button>
+              );
+            })}
           </div>
+        )}
 
-          {/* Filtro: Mês */}
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
-            <input
-              type="month"
-              value={filtroMes}
-              onChange={(e) => setFiltroMes(e.target.value)}
-              style={estiloCampoFiltro}
-            />
-          </div>
-
-          {/* Limpar */}
-          <button
-            onClick={() => {
-              setFiltroTipo('');
-              setFiltroMes('');
-            }}
-            style={estiloBotaoOutline}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            aria-label="Tipo de evento"
+            style={{ height: '2.3rem', padding: '0 0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-light)', background: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', minWidth: '12rem' }}
           >
-            🔄 Limpar
-          </button>
-
-          {/* Divisor */}
-          <div style={{width:"1px",height:"2.5rem",background:"var(--color-border)"}} />
-
-          {/* Toggle Visualização Lista/Calendário */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setVisualizacao('lista')}
-              style={visualizacao === 'lista' ? estiloBotaoAtivo : estiloBotaoOutline}
-            >
-              📋 Lista
+            <option value="">Todos os tipos</option>
+            {tiposEvento.map(tipo => <option key={tipo.value} value={tipo.value}>{tipo.label}</option>)}
+          </select>
+          {filtrosAtivos && (
+            <button onClick={() => { setFiltroTipo(''); setFiltroMes(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--color-accent)', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}>
+              Limpar filtros
             </button>
-            <button
-              onClick={() => setVisualizacao('calendario')}
-              style={visualizacao === 'calendario' ? estiloBotaoAtivo : estiloBotaoOutline}
-            >
-              📅 Calendário
-            </button>
+          )}
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+            <strong style={{ color: 'var(--color-text)' }}>{totalMostrado}</strong> evento(s)
+          </span>
+
+          <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-lg)' }}>
+            {[['lista', '📋 Lista'], ['calendario', '📅 Calendário']].map(([valor, rotulo]) => (
+              <button key={valor} onClick={() => setVisualizacao(valor)}
+                style={{ padding: '0.4rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700,
+                  background: visualizacao === valor ? 'var(--color-accent)' : 'transparent', color: visualizacao === valor ? '#fff' : 'var(--color-text-muted)' }}>
+                {rotulo}
+              </button>
+            ))}
           </div>
-
-          {/* Divisor */}
-          <div style={{width:"1px",height:"2.5rem",background:"var(--color-border)"}} />
-
-          {/* Relatórios PDF */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setTipoRelatorio('mensal');
-                setMostrarModalRelatorio(true);
-              }}
-              style={{ ...estiloBotaoBase, background:"var(--color-accent)", color:"#fff" }}
-              title="Gerar PDF mensal"
-            >
-              📄 Mensal
-            </button>
-            <button
-              onClick={() => {
-                setTipoRelatorio('semestral');
-                setMostrarModalRelatorio(true);
-              }}
-              style={{ ...estiloBotaoBase, background:"#8b5cf6", color:"#fff" }}
-              title="Gerar PDF semestral"
-            >
-              📄 Semestral
-            </button>
-            <button
-              onClick={() => {
-                setTipoRelatorio('anual');
-                setMostrarModalRelatorio(true);
-              }}
-              style={{ ...estiloBotaoBase, background:"#10b981", color:"#fff" }}
-              title="Gerar PDF anual"
-            >
-              📄 Anual
-            </button>
-          </div>
-        </div>
-
-        {/* Contador de resultados */}
-        <div
-          className="mt-4 pt-3 text-sm"
-          style={{ borderTop: "1px solid var(--color-border)", color: "var(--color-text-muted)" }}
-        >
-          <strong style={{color:"var(--color-text)"}}>{eventosFiltrados.length}</strong> evento(s) encontrado(s)
         </div>
       </div>
 
@@ -1021,9 +1126,17 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       {mostrarModalRelatorio && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
-              📄 Gerar Relatório {tipoRelatorio === 'mensal' ? 'Mensal' : tipoRelatorio === 'semestral' ? 'Semestral' : 'Anual'}
-            </h3>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>📄 Gerar Relatório</h3>
+
+            <div style={{display:'flex',gap:'0.25rem',padding:'0.25rem',background:'var(--color-bg)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-lg)',marginBottom:'1rem'}}>
+              {[['mensal','Mensal'],['semestral','Semestral'],['anual','Anual']].map(([valor, rotulo]) => (
+                <button key={valor} onClick={() => setTipoRelatorio(valor)}
+                  style={{flex:1,padding:'0.45rem 0.5rem',borderRadius:'var(--radius-md)',border:'none',cursor:'pointer',fontSize:'0.85rem',fontWeight:700,
+                    background: tipoRelatorio === valor ? 'var(--color-accent)' : 'transparent', color: tipoRelatorio === valor ? '#fff' : 'var(--color-text-muted)'}}>
+                  {rotulo}
+                </button>
+              ))}
+            </div>
 
             <div className="space-y-4">
               {tipoRelatorio === 'mensal' && (
@@ -1135,135 +1248,47 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
       {/* Conteúdo - Lista ou Calendário */}
       {visualizacao === 'lista' ? (
-        /* Lista de Eventos */
-        <div className="space-y-6">
-          {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
-          <div key={mes} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',marginBottom:'0.5rem'}}>
-            <div
-              onClick={() => toggleMes(mes)}
-              style={{padding:'0.85rem 1.25rem',background:mes<mesAtualKey?'var(--color-surface-2)':'var(--color-accent)',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',userSelect:'none'}}
-            >
-              <div>
-                <h3 style={{fontSize:'1.05rem',fontWeight:'700',color:mes<mesAtualKey?'var(--color-text-muted)':'#fff',margin:0}}>
-                  📆 {formatarMesAno(mes)}
-                  {mes < mesAtualKey && <span style={{fontSize:'0.72rem',marginLeft:'0.5rem',opacity:0.7}}>(passado)</span>}
-                </h3>
-                <p style={{fontSize:'0.78rem',color:mes<mesAtualKey?'var(--color-text-muted)':'rgba(255,255,255,0.8)',margin:'0.1rem 0 0'}}>{eventosDoMes.length} evento(s)</p>
-              </div>
-              <span style={{fontSize:'1rem',color:mes<mesAtualKey?'var(--color-text-muted)':'rgba(255,255,255,0.8)',transition:'transform 0.2s',display:'inline-block',transform:isMesAberto(mes)?'rotate(0deg)':'rotate(-90deg)'}}>▼</span>
-            </div>
-
-            {isMesAberto(mes) && <div className="p-4 space-y-3" style={{background:'var(--color-surface)'}}>
-              {eventosDoMes.map((evento, evIdx) => (
+        <div className="space-y-4">
+          {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => {
+            const passado = mes < mesAtualKey;
+            return (
+              <div key={mes} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
                 <div
-                  key={evento.id}
-                  className="border-l-4 rounded-lg p-4 transition-colors"
-                  style={{ borderColor: evento.cor_destaque, background: evIdx%2===0 ? "var(--color-surface)" : "var(--color-surface-2)", marginBottom:"0.5rem" }}
+                  onClick={() => toggleMes(mes)}
+                  style={{ padding: '0.7rem 1.1rem', background: 'var(--color-surface-2)', borderLeft: `4px solid ${passado ? 'var(--color-border-light)' : 'var(--color-accent)'}`, borderBottom: isMesAberto(mes) ? '1px solid var(--color-border)' : 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', userSelect: 'none' }}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-3xl">{obterIconeTipo(evento.tipo)}</span>
-                        <div>
-                          <h4 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",margin:0}}>{evento.titulo}</h4>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            <span style={{...obterStyleStatus(evento.status),padding:"0.15rem 0.55rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",fontWeight:"700"}}>
-                              {obterLabelStatus(evento.status)}
-                            </span>
-                            {evento.grau_sessao_id && (
-                              <span 
-                                className="px-2 py-1 rounded text-xs font-bold"
-                                style={{ 
-                                  backgroundColor: `${tema.cor_primaria}20`,
-                                  color: tema.cor_primaria
-                                }}
-                              >
-                                {getGrauNome(evento.grau_sessao_id)}
-                              </span>
-                            )}
-                            <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>📅 {formatarData(evento.data_evento)}</span>
-                            {evento.hora_inicio && (
-                              <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>🕐 {formatarHora(evento.hora_inicio)}
-                                {evento.hora_fim && ` - ${formatarHora(evento.hora_fim)}`}
-                              </span>
-                            )}
-                            {evento.local && (
-                              <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>📍 {evento.local}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {evento.descricao && (
-                        <p style={{fontSize:"0.82rem",color:"var(--color-text)",margin:"0.4rem 0 0"}}>{evento.descricao}</p>
-                      )}
-
-                      {evento.responsavel && (
-                        <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>
-                          <strong>Responsável:</strong> {evento.responsavel}
-                        </p>
-                      )}
-
-                      {evento.observacoes && (
-                        <p className="text-sm italic mt-1" style={{color:"var(--color-text-muted)"}}>{evento.observacoes}</p>
-                      )}
-                    </div>
-
-                    {(permissoes?.canEdit || permissoes?.canEditMembers) && (
-                      <div className="flex gap-2 ml-4">
-                        <button
-                          onClick={() => {
-                            setEventoVisualizar(evento);
-                            setModalVisualizacao(true);
-                          }}
-                          style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                          title="Visualizar"
-                        >
-                          👁️
-                        </button>
-                        <button
-                          onClick={() => editarEvento(evento)}
-                          style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => excluirEvento(evento.id)}
-                          style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                          title="Excluir"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    )}
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: passado ? 'var(--color-text-muted)' : 'var(--color-text)' }}>
+                      📆 {formatarMesAno(mes)}
+                      {passado && <span style={{ fontSize: '0.7rem', marginLeft: '0.5rem', fontWeight: 600, opacity: 0.8 }}>(passado)</span>}
+                    </h3>
+                    <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{eventosDoMes.length} evento(s)</p>
                   </div>
+                  <span style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', display: 'inline-block', transition: 'transform 0.2s', transform: isMesAberto(mes) ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▾</span>
                 </div>
-              ))}
-            </div>}
-          </div>
-        ))}
+                {isMesAberto(mes) && <div>{eventosDoMes.map(renderEvento)}</div>}
+              </div>
+            );
+          })}
 
-        {eventosFiltrados.length === 0 && (
-          <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="text-6xl mb-4">📅</div>
-            <p className="text-lg font-medium">Nenhum evento cadastrado</p>
-            <p className="text-sm mt-2">Clique em "Novo Evento" para começar</p>
-          </div>
-        )}
-      </div>
+          {eventosFiltrados.length === 0 && (
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '3rem 1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+              <p style={{ fontSize: '2rem', margin: '0 0 0.5rem' }}>📅</p>
+              <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text)' }}>{eventos.length === 0 ? 'Nenhum evento cadastrado' : 'Nenhum evento com esses filtros'}</p>
+              <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem' }}>
+                {eventos.length === 0 && podeEditar ? 'Clique em "Novo Evento" para começar' : anoExibido !== 0 ? `em ${anoExibido}` : ''}
+              </p>
+              {filtrosAtivos && (
+                <button onClick={() => { setFiltroTipo(''); setFiltroMes(''); }}
+                  style={{ marginTop: '0.9rem', height: '2.2rem', padding: '0 1rem', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
-        /* Visualização em Calendário */
-        <CalendarioAnual 
-          eventos={eventos.map(e => ({
-            data: e.data_evento,
-            titulo: e.titulo,
-            tipo: e.tipo,
-            cor: e.cor_destaque
-          }))} 
-          ano={new Date().getFullYear()}
-        />
+        <CalendarioAnual key={anoCalendario} eventos={eventosCalendario} ano={anoCalendario} />
       )}
 
       {/* Modal de Visualização */}
