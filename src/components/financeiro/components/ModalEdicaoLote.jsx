@@ -208,6 +208,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
       // mesma regra do formulário individual: só cria quando é vínculo
       // novo, nunca mexe em quem já tinha uma linha (pode ter sido
       // corrigida manualmente direto na tela de Projetos).
+      let falhasPonte = 0;
       if (campos.projeto_id.ativo && payload.projeto_id) {
         for (const id of ids) {
           const registro = resultados.find(r => r.id === id);
@@ -216,13 +217,14 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
           const tabelaPonte = registro.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
           const { data: pontesExistentes } = await supabase
             .from(tabelaPonte)
-            .select('id')
+            .select('id, projeto_id')
             .eq('lancamento_id', id)
             .limit(1);
 
+          let erroPonte = null;
           if (!pontesExistentes || pontesExistentes.length === 0) {
             if (registro.tipo === 'receita') {
-              await supabase.from('receitas_projeto').insert([{
+              ({ error: erroPonte } = await supabase.from('receitas_projeto').insert([{
                 projeto_id: payload.projeto_id,
                 lancamento_id: id,
                 data_receita: registro.data_lancamento,
@@ -231,22 +233,33 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
                 origem: 'Finanças Loja',
                 forma_pagamento: registro.tipo_pagamento || '',
                 responsavel: registro.irmaos?.nome || '',
-              }]);
+              }]));
             } else {
-              await supabase.from('custos_projeto').insert([{
+              ({ error: erroPonte } = await supabase.from('custos_projeto').insert([{
                 projeto_id: payload.projeto_id,
                 lancamento_id: id,
                 data_custo: registro.data_lancamento,
                 descricao: registro.descricao,
                 valor: registro.valor,
                 categoria: 'Finanças Loja',
-              }]);
+                forma_pagamento: registro.tipo_pagamento || '',
+                responsavel: registro.irmaos?.nome || '',
+              }]));
             }
+          } else if (pontesExistentes[0].projeto_id !== payload.projeto_id) {
+            // ponte antiga apontando para outro projeto: move só o vínculo
+            const { data: movidas, error: errMover } = await supabase
+              .from(tabelaPonte)
+              .update({ projeto_id: payload.projeto_id })
+              .eq('lancamento_id', id)
+              .select('id');
+            erroPonte = errMover || ((!movidas || movidas.length === 0) ? { message: 'sem permissão' } : null);
           }
+          if (erroPonte) falhasPonte++;
         }
       }
 
-      setMsg(`✅ ${ids.length} registro(s) atualizados com sucesso!`); setMsgTipo('ok');
+      setMsg(`✅ ${ids.length} registro(s) atualizados com sucesso!` + (falhasPonte ? ` ⚠️ ${falhasPonte} não foram vinculados ao projeto — use "Sincronizar" na tela do projeto.` : '')); setMsgTipo('ok');
       setSelecionados(new Set());
       // Resetar campos
       setCampos(CAMPOS_INICIAIS);
