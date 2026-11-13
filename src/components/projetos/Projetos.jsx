@@ -492,6 +492,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const totalReceitasModal = receitasDoModal.reduce((s, r) => s + parseFloat(r.valor || 0), 0);
   const totalCustosModal = custosDoModal.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
   const saldoModal = totalReceitasModal - totalCustosModal;
+  const ehCampanhaModal = projetoSelecionado?.tipo === 'campanha';
+  // Campanha: o que sobra é o valor ainda pendente de transferência ao beneficiário
+  const saldoZeradoModal = Math.abs(saldoModal) < 0.005;
+  const corSaldoModal = ehCampanhaModal
+    ? (saldoModal < 0 ? '#ef4444' : saldoZeradoModal ? '#10b981' : '#f59e0b')
+    : (saldoModal >= 0 ? '#10b981' : '#ef4444');
 
   return (
     <div className="max-w-7xl mx-auto -mx-3" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
@@ -859,9 +865,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     transition:"all 0.15s"
                   }}
                 >
-                  💵 Receitas
+                  {ehCampanhaModal ? '💵 Créditos e débitos' : '💵 Receitas'}
                   <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
-                    R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {ehCampanhaModal
+                      ? `${receitasDoModal.length} créd. · ${custosDoModal.length} déb.`
+                      : `R$ ${totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                   </span>
                 </button>
                 {projetoSelecionado?.tipo !== 'campanha' && (
@@ -910,12 +918,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             {/* Rodapé fixo de saldo */}
             <div style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.5rem"}}>
               <span style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
-                Receitas: <strong style={{color:"#10b981"}}>R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                {ehCampanhaModal ? 'Créditos' : 'Receitas'}: <strong style={{color:"#10b981"}}>R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
                 &nbsp;·&nbsp;
-                Custos: <strong style={{color:"#ef4444"}}>R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                {ehCampanhaModal ? 'Débitos' : 'Custos'}: <strong style={{color:"#ef4444"}}>R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
               </span>
-              <span style={{fontWeight:"800",fontSize:"1rem",color:saldoModal>=0?"#10b981":"#ef4444"}}>
-                💳 Saldo: R$ {saldoModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              <span style={{fontWeight:"800",fontSize:"1rem",color:corSaldoModal}}>
+                {ehCampanhaModal
+                  ? `💳 ${saldoModal < 0 ? 'Saldo negativo' : saldoZeradoModal ? 'Totalmente repassado' : 'Pendente de repasse'}: R$ ${saldoModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                  : `💳 Saldo: R$ ${saldoModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
               </span>
             </div>
 
@@ -960,6 +970,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </div>
                   )}
 
+                  {ehCampanhaModal && (
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.55rem 0.8rem',background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:'var(--radius-md) var(--radius-md) 0 0'}}>
+                      <strong style={{color:'#10b981',fontSize:'0.85rem'}}>💵 Créditos — arrecadações</strong>
+                      <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{receitasDoModal.length} lançamento{receitasDoModal.length === 1 ? '' : 's'}</span>
+                    </div>
+                  )}
                   {receitasAgrupadas.length === 0 ? (
                     <div className="text-center py-8"><p>📋 Nenhuma receita registrada para este projeto</p></div>
                   ) : (
@@ -1029,6 +1045,78 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                           </tr>
                         </tfoot>
                       </table>
+                    </div>
+                  )}
+
+                  {/* Campanha: débitos em quadro separado, logo abaixo dos créditos */}
+                  {ehCampanhaModal && (
+                    <div style={{marginTop:'1.75rem'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.55rem 0.8rem',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.35)',borderRadius:'var(--radius-md) var(--radius-md) 0 0'}}>
+                        <strong style={{color:'#ef4444',fontSize:'0.85rem'}}>💸 Débitos — saídas e repasses</strong>
+                        <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{custosDoModal.length} lançamento{custosDoModal.length === 1 ? '' : 's'}</span>
+                      </div>
+                      {custosAgrupados.length === 0 ? (
+                        <div className="text-center py-6"><p style={{color:'var(--color-text-muted)'}}>📋 Nenhuma saída registrada para esta campanha</p></div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table style={{width:'100%', tableLayout:'fixed', borderCollapse:'collapse'}}>
+                            <thead style={{background:"var(--color-surface-2)"}}>
+                              <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
+                                <th style={{width:'10%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Data</th>
+                                <th style={{width:'30%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Descrição</th>
+                                <th style={{width:'12%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Categoria</th>
+                                <th style={{width:'12%',padding:'0.5rem 0.6rem',textAlign:'right',fontSize:'0.72rem',fontWeight:700}}>Valor</th>
+                                <th style={{width:'12%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Pagamento</th>
+                                <th style={{width:'24%',padding:'0.5rem 0.6rem',textAlign:'left',fontSize:'0.72rem',fontWeight:700}}>Responsável</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {custosAgrupados.map((custo) => (
+                                <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",whiteSpace:'nowrap'}}>
+                                    {new Date(custo.data_custo + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                  </td>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                    {custo.descricao}
+                                    {verAgrupado && custo.qtd > 1 && (
+                                      <span style={{marginLeft:'0.4rem',fontSize:'0.65rem',fontWeight:700,color:'var(--color-accent)',whiteSpace:'nowrap'}}>({custo.qtd}x)</span>
+                                    )}
+                                  </td>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.categoria}</td>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',textAlign:'right',fontWeight:700,color:"#ef4444",whiteSpace:'nowrap'}}>
+                                    R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </td>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>{custo.forma_pagamento}</td>
+                                  <td style={{padding:'0.45rem 0.6rem',fontSize:'0.76rem',color:"var(--color-text)",overflowWrap:'break-word'}}>
+                                    {verAgrupado && custo.qtd > 1 ? <span style={{fontStyle:'italic',color:'var(--color-text-muted)'}}>Vários</span> : custo.responsavel}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                                <td colSpan="3" style={{padding:'0.6rem',textAlign:'right',fontWeight:700,fontSize:'0.8rem',whiteSpace:'nowrap'}}>TOTAL DE DÉBITOS:</td>
+                                <td style={{padding:"0.6rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:'0.85rem',whiteSpace:'nowrap'}}>
+                                  R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                                <td colSpan="2"></td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Saldo da campanha: o que ainda falta transferir ao beneficiário */}
+                      <div style={{marginTop:'1rem',padding:'0.8rem 1rem',borderRadius:'var(--radius-md)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',flexWrap:'wrap',
+                        background: saldoModal < 0 ? 'rgba(239,68,68,0.12)' : saldoZeradoModal ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)',
+                        border: `1px solid ${saldoModal < 0 ? 'rgba(239,68,68,0.4)' : saldoZeradoModal ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.45)'}`}}>
+                        <strong style={{color:corSaldoModal,fontSize:'0.88rem'}}>
+                          {saldoModal < 0 ? '⚠️ Saldo negativo (saídas acima do arrecadado)' : saldoZeradoModal ? '✅ Campanha totalmente repassada' : '⏳ Saldo pendente de repasse ao beneficiário'}
+                        </strong>
+                        <strong style={{color:corSaldoModal,fontSize:'1.1rem'}}>
+                          R$ {saldoModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </strong>
+                      </div>
                     </div>
                   )}
                 </>
