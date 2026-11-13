@@ -83,7 +83,11 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   
   // Estados para filtros e navegação
   const [abaAtiva, setAbaAtiva] = useState('interna'); // 'interna' ou 'externa'
-  const [anoFiltro, setAnoFiltro] = useState(0); // 0 = Todos
+  const anoAtual = new Date().getFullYear();
+  const [anoFiltro, setAnoFiltro] = useState(anoAtual); // 0 = Todos (última opção); padrão = ano atual
+  const [modalIntegrantes, setModalIntegrantes] = useState(null); // comissão cujo quadro de integrantes está aberto
+  const [mostrarEncerradas, setMostrarEncerradas] = useState(false);
+  const [integrantesPorComissao, setIntegrantesPorComissao] = useState({}); // { comissao_id: [{irmao_id, funcao}] }
 
   // Contagem de atividades por comissão { [comissao_id]: count }
   const [contagemAtividades, setContagemAtividades] = useState({});
@@ -105,10 +109,42 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     buscarContagem();
   }, []);
   
-  // Obter anos com cadastros
-  const anosDisponiveis = [...new Set(
-    comissoes.map(c => new Date(c.data_inicio).getFullYear())
-  )].sort((a, b) => b - a);
+  // Integrantes de todas as comissões (uma consulta só) — alimenta o botão e o quadro de integrantes
+  useEffect(() => {
+    const buscarIntegrantes = async () => {
+      try {
+        const { data } = await supabase.from('comissoes_integrantes').select('comissao_id, irmao_id, funcao');
+        const mapa = {};
+        (data || []).forEach(r => { (mapa[r.comissao_id] = mapa[r.comissao_id] || []).push(r); });
+        setIntegrantesPorComissao(mapa);
+      } catch {}
+    };
+    buscarIntegrantes();
+  }, [comissoes]);
+
+  // Esc fecha o que estiver aberto (integrantes primeiro, depois a visualização)
+  useEffect(() => {
+    const aoTeclar = (e) => {
+      if (e.key !== 'Escape') return;
+      if (modalIntegrantes) setModalIntegrantes(null);
+      else if (modalVisualizar) setModalVisualizar(false);
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [modalIntegrantes, modalVisualizar]);
+
+  // Ano da comissão = ano da DATA DE INÍCIO (lido direto do texto AAAA-MM-DD; evita o erro de fuso de 1 dia)
+  const anoDaComissao = (c) => (c?.data_inicio ? parseInt(String(c.data_inicio).slice(0, 4), 10) : null);
+
+  // Anos que têm comissão cadastrada (mais recente primeiro)
+  const anosDisponiveis = [...new Set(comissoes.map(anoDaComissao).filter(a => a))].sort((a, b) => b - a);
+  const qtdPorAno = {};
+  comissoes.forEach(c => { const a = anoDaComissao(c); if (a) qtdPorAno[a] = (qtdPorAno[a] || 0) + 1; });
+  const anoAtualTemComissao = anosDisponiveis.includes(anoAtual);
+  // Padrão = ano atual; se ainda não há comissão nele, mostra o ano anterior mais recente
+  const anoExibido = (anoFiltro === 0 || anosDisponiveis.includes(anoFiltro))
+    ? anoFiltro
+    : (anosDisponiveis.find(a => a < anoAtual) ?? anosDisponiveis[0] ?? 0);
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -390,6 +426,90 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     }
   };
 
+  // ── Dados da listagem ──────────────────────────────────────────────────────
+  const podeEditar = !!(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes);
+  const comissoesDoAno = comissoes.filter(c => anoExibido === 0 || anoDaComissao(c) === anoExibido);
+  const qtdInternas = comissoesDoAno.filter(c => c.origem === 'interna').length;
+  const qtdExternas = comissoesDoAno.filter(c => c.origem === 'externa').length;
+  const comissoesAba = comissoesDoAno.filter(c => c.origem === abaAtiva);
+  const emAndamento = comissoesAba.filter(c => c.status === 'em_andamento');
+  const encerradas = comissoesAba.filter(c => c.status !== 'em_andamento'); // inclui status antigos (ex.: concluída)
+  const totalEmAndamento = comissoesDoAno.filter(c => c.status === 'em_andamento').length;
+  const totalAtividadesAno = comissoesDoAno.reduce((soma, c) => soma + (contagemAtividades[c.id] || 0), 0);
+  const encerradasVisiveis = mostrarEncerradas || emAndamento.length === 0;
+
+  const FUNCOES = {
+    'Presidente':      { cor: '#f59e0b', ordem: 0, icone: '⭐' },
+    'Vice-Presidente': { cor: '#f97316', ordem: 1, icone: '' },
+    'Relator':         { cor: '#8b5cf6', ordem: 2, icone: '' },
+    'Secretário':      { cor: '#3b82f6', ordem: 3, icone: '' },
+    'Membro':          { cor: '#64748b', ordem: 4, icone: '' },
+  };
+  const infoFuncao = (f) => FUNCOES[f] || { cor: '#64748b', ordem: 9, icone: '' };
+  const iniciais = (nome) => {
+    const partes = String(nome || '?').split(/\s+/).filter(p => p && !['de', 'da', 'do', 'das', 'dos', 'e'].includes(p.toLowerCase()));
+    return ((partes[0]?.[0] || '?') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+  };
+  const integrantesOrdenados = (comissaoId) => (integrantesPorComissao[comissaoId] || [])
+    .map(r => ({ ...r, irmao: irmaos.find(i => i.id === r.irmao_id) }))
+    .sort((a, b) => infoFuncao(a.funcao).ordem - infoFuncao(b.funcao).ordem || String(a.irmao?.nome || '').localeCompare(String(b.irmao?.nome || '')));
+  const nomePresidente = (comissaoId) => integrantesOrdenados(comissaoId).find(r => r.funcao === 'Presidente')?.irmao?.nome;
+
+  const rotuloKpi = { margin: 0, fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const cartaoKpi = (cor) => ({ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `3px solid ${cor}`, borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', minWidth: 0 });
+  const btnCartao = (cor) => ({ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', height: '2rem', padding: '0 0.75rem', borderRadius: 'var(--radius-md)', border: `1px solid ${cor}55`, background: `${cor}1f`, color: cor, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' });
+  const btnIcone = (cor) => ({ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', border: `1px solid ${cor}55`, background: `${cor}1f`, cursor: 'pointer', fontSize: '0.85rem' });
+
+  const renderCartao = (comissao) => {
+    const andamento = comissao.status === 'em_andamento';
+    const cor = andamento ? '#10b981' : '#64748b';
+    const qtdInt = (integrantesPorComissao[comissao.id] || []).length;
+    const qtdAtiv = contagemAtividades[comissao.id] || 0;
+    const presidente = nomePresidente(comissao.id);
+    return (
+      <div key={comissao.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `3px solid ${cor}`, borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <button onClick={() => handleVisualizar(comissao)} title="Ver detalhes"
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'var(--color-text)', fontWeight: 800, fontSize: '1rem', lineHeight: 1.3, minWidth: 0, overflowWrap: 'anywhere' }}>
+            {comissao.nome}
+          </button>
+          <span style={{ flexShrink: 0, padding: '0.15rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, background: `${cor}22`, color: cor, border: `1px solid ${cor}55` }}>
+            {andamento ? '🔄 Em andamento' : '✅ Encerrada'}
+          </span>
+        </div>
+
+        {comissao.objetivo && (
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {comissao.objetivo}
+          </p>
+        )}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem 1rem', fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>
+          <span>📅 {formatarData(comissao.data_inicio)}{comissao.data_fim && ` → ${formatarData(comissao.data_fim)}`}</span>
+          {presidente && <span title="Presidente da comissão">⭐ {presidente}</span>}
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem', marginTop: 'auto', paddingTop: '0.7rem', borderTop: '1px solid var(--color-border)' }}>
+          <button onClick={() => setModalIntegrantes(comissao)} style={btnCartao('#3b82f6')} title="Ver os integrantes">
+            👥 Integrantes <strong>{qtdInt}</strong>
+          </button>
+          <button onClick={() => { setComissaoAtividades(comissao); setModalAtividades(true); }} style={btnCartao('#6366f1')} title="Gerenciar atividades">
+            📋 Atividades <strong>{qtdAtiv}</strong>
+          </button>
+          <button onClick={() => handleVisualizar(comissao)} style={btnCartao('#10b981')} title="Visualizar detalhes">
+            👁️ Detalhes
+          </button>
+          {podeEditar && (
+            <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: '0.35rem' }}>
+              <button onClick={() => handleEditar(comissao)} style={btnIcone('#3b82f6')} title="Editar" aria-label="Editar comissão">✏️</button>
+              <button onClick={() => handleExcluir(comissao.id)} style={btnIcone('#ef4444')} title="Excluir" aria-label="Excluir comissão">🗑️</button>
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
 
@@ -524,258 +644,142 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
         </div>
       )}
 
-      {/* LISTAGEM */}
-      <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div style={{padding:"1rem 1.25rem",background:"var(--color-accent)",display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div>
-            <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Comissões Cadastradas</h3>
-            <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
-          </div>
-          {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
+      {/* CABEÇALHO */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text)', margin: 0 }}>🏛️ Comissões</h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>
+            {anoExibido === 0 ? 'Todas as comissões cadastradas' : `Comissões de ${anoExibido}`}
+          </p>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.6rem' }}>
+          <select
+            value={anoExibido}
+            onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
+            aria-label="Ano"
+            style={{ height: '2.6rem', padding: '0 0.9rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-light)', background: 'var(--color-surface)', color: 'var(--color-text)', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}
+          >
+            {anosDisponiveis.map(ano => (
+              <option key={ano} value={ano}>{ano} ({qtdPorAno[ano]})</option>
+            ))}
+            <option value={0}>Todos ({comissoes.length})</option>
+          </select>
+          {podeEditar && (
             <button onClick={() => { limparFormulario(); setModalComissaoAberto(true); }}
-              style={{height:'38px',padding:'0 1rem',background:'rgba(255,255,255,0.15)',color:'#fff',border:'1px solid rgba(255,255,255,0.3)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',display:'flex',alignItems:'center',gap:'0.4rem',whiteSpace:'nowrap'}}>
+              style={{ height: '2.6rem', padding: '0 1.2rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               ➕ Nova Comissão
             </button>
           )}
         </div>
+      </div>
 
-        {/* ABAS E FILTRO */}
-        <div className="-b px-4 py-3" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-          <div className="flex items-center justify-between">
-            {/* Abas */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setAbaAtiva('interna')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  abaAtiva === 'interna'
-                    ? 'bg-primary-600 text-white'
-                    : '  hover:'
-                }`}
-              >
-                🏛️ Internas (Loja)
-              </button>
-              <button
-                onClick={() => setAbaAtiva('externa')}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  abaAtiva === 'externa'
-                    ? 'aba-ativa-placeholder'
-                    : '  hover:'
-                }`}
-              >
-                🌐 Externas (Participação)
-              </button>
-            </div>
+      {/* AVISO: ano atual sem comissões cadastradas */}
+      {!anoAtualTemComissao && (
+        <div style={{ marginBottom: '1rem', padding: '0.85rem 1.1rem', borderRadius: 'var(--radius-lg)', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', borderLeft: '4px solid #f59e0b', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+          <div>
+            <strong style={{ color: '#f59e0b', fontSize: '0.9rem' }}>⚠️ Ainda não há comissões cadastradas para {anoAtual}</strong>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--color-text)' }}>
+              {anoExibido !== 0 ? `Estão sendo exibidas as comissões de ${anoExibido}. ` : ''}Cadastre as novas comissões do ano.
+            </p>
+          </div>
+          {podeEditar && (
+            <button onClick={() => { limparFormulario(); setModalComissaoAberto(true); }}
+              style={{ height: '2.2rem', padding: '0 1rem', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+              ➕ Cadastrar comissão de {anoAtual}
+            </button>
+          )}
+        </div>
+      )}
 
-            {/* Filtro de Ano */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Ano:</label>
-              <select
-                value={anoFiltro}
-                onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
-                className="px-3 py-1.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              >
-                <option value={0}>Todos</option>
-                {anosDisponiveis.map(ano => (
-                  <option key={ano} value={ano}>{ano}</option>
-                ))}
-              </select>
-            </div>
+      {/* INDICADORES */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+        <div style={cartaoKpi('var(--color-accent)')}>
+          <p style={rotuloKpi}>Comissões {anoExibido === 0 ? '(todas)' : `em ${anoExibido}`}</p>
+          <p style={{ margin: '0.25rem 0 0.5rem', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{comissoesDoAno.length}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }}>🏛️ Internas <strong style={{ color: 'var(--color-text)' }}>{qtdInternas}</strong></span>
+            <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' }}>🌐 Externas <strong style={{ color: 'var(--color-text)' }}>{qtdExternas}</strong></span>
           </div>
         </div>
-
-        <div className="divide-y">
-          {(() => {
-            // Filtrar por aba e ano
-            const comissoesFiltradas = comissoes.filter(c => {
-              const anoInicio = new Date(c.data_inicio).getFullYear();
-              const origemMatch = c.origem === abaAtiva;
-              const anoMatch = anoFiltro === 0 || anoInicio === anoFiltro;
-              return origemMatch && anoMatch;
-            });
-
-            // Separar por status
-            const emAndamento = comissoesFiltradas.filter(c => c.status === 'em_andamento');
-            const encerradas = comissoesFiltradas.filter(c => c.status === 'encerrada');
-
-            if (comissoesFiltradas.length === 0) {
-              return (
-                <div className="p-8 text-center">
-                  <p className="text-lg">📋 Nenhuma comissão encontrada</p>
-                  <p className="text-sm mt-2">
-                    {abaAtiva === 'interna' ? 'Não há comissões internas' : 'Não há comissões externas'} 
-                    {anoFiltro !== 0 && ` no ano de ${anoFiltro}`}
-                  </p>
-                </div>
-              );
-            }
-
-            return (
-              <>
-                {/* COMISSÕES EM ANDAMENTO */}
-                {emAndamento.length > 0 && (
-                  <div>
-                    <div style={{padding:"0.6rem 1rem",borderBottom:"1px solid var(--color-border)",background:"var(--color-surface-2)"}}>
-                      <h4 className="font-bold" style={{color:"var(--color-text)"}}>🔄 Em Andamento ({emAndamento.length})</h4>
-                    </div>
-                    {emAndamento.map((comissao, ci) => (
-                      <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-accent)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem"}}>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1" style={{position:'relative'}}>
-                            <h4 className="font-bold text-lg">{comissao.nome}</h4>
-                            <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
-                            <div className="flex gap-4 mt-2 text-sm" style={{flexWrap:'wrap',alignItems:'center'}}>
-                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",fontWeight:"600",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
-                                Em Andamento
-                              </span>
-                              {contagemAtividades[comissao.id] > 0 && (
-                                <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'800',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
-                                  📋 {contagemAtividades[comissao.id]} ativ.
-                                </span>
-                              )}
-                              <span>
-                                📅 {formatarData(comissao.data_inicio)} 
-                                {comissao.data_fim && ` - ${formatarData(comissao.data_fim)}`}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 ml-4">
-                            <button
-                              onClick={() => handleVisualizar(comissao)}
-                              style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                              title="Visualizar detalhes"
-                            >
-                              👁️ Ver
-                            </button>
-                            <button
-                              onClick={() => {
-                                setComissaoAtividades(comissao);
-                                setModalAtividades(true);
-                              }}
-                              style={{padding:"0.25rem 0.55rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                              title="Gerenciar atividades"
-                            >
-                              📋 Atividades
-                            </button>
-                            {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
-                              <>
-                                <button
-                                  onClick={() => handleEditar(comissao)}
-                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                                  title="Editar"
-                                >
-                                  ✏️ Editar
-                                </button>
-                                <button
-                                  onClick={() => handleExcluir(comissao.id)}
-                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                                  title="Excluir"
-                                >
-                                  🗑️ Excluir
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* COMISSÕES ENCERRADAS */}
-                {encerradas.length > 0 && (
-                  <div>
-                    <div className="px-4 py-2 -b" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                      <h4 className="font-bold">✓ Encerradas ({encerradas.length})</h4>
-                    </div>
-                    {encerradas.map((comissao, ci) => (
-                      <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-text-faint)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem",opacity:0.8}}>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1" style={{position:'relative'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-                              <h4 className="font-bold text-lg">{comissao.nome}</h4>
-                              {contagemAtividades[comissao.id] > 0 && (
-                                <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'800',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
-                                  📋 {contagemAtividades[comissao.id]} ativ.
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
-                            <div className="flex gap-4 mt-2 text-sm">
-                              <span className="px-2 py-1 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                                Encerrada
-                              </span>
-                              <span>
-                                📅 {formatarData(comissao.data_inicio)} - {formatarData(comissao.data_fim)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 ml-4">
-                            <button
-                              onClick={() => handleVisualizar(comissao)}
-                              style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                              title="Visualizar detalhes"
-                            >
-                              👁️ Ver
-                            </button>
-                            <button
-                              onClick={() => {
-                                setComissaoAtividades(comissao);
-                                setModalAtividades(true);
-                              }}
-                              style={{padding:"0.25rem 0.55rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                              title="Gerenciar atividades"
-                            >
-                              📋 Atividades
-                            </button>
-                            {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
-                              <>
-                                <button
-                                  onClick={() => handleEditar(comissao)}
-                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                                  title="Editar"
-                                >
-                                  ✏️ Editar
-                                </button>
-                                <button
-                                  onClick={() => handleExcluir(comissao.id)}
-                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                                  title="Excluir"
-                                >
-                                  🗑️ Excluir
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            );
-          })()}
+        <div style={cartaoKpi('#10b981')}>
+          <p style={rotuloKpi}>Em andamento</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: '#10b981', lineHeight: 1.1 }}>{totalEmAndamento}</p>
+        </div>
+        <div style={cartaoKpi('#64748b')}>
+          <p style={rotuloKpi}>Encerradas</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{comissoesDoAno.length - totalEmAndamento}</p>
+        </div>
+        <div style={cartaoKpi('#6366f1')}>
+          <p style={rotuloKpi}>Atividades registradas</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: '#6366f1', lineHeight: 1.1 }}>{totalAtividadesAno}</p>
         </div>
       </div>
+
+      {/* ABAS */}
+      <div style={{ display: 'inline-flex', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-surface)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-lg)', marginBottom: '1rem' }}>
+        {[['interna', '🏛️ Internas (Loja)', qtdInternas], ['externa', '🌐 Externas (Participação)', qtdExternas]].map(([valor, rotulo, qtd]) => (
+          <button key={valor} onClick={() => setAbaAtiva(valor)}
+            style={{ padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700,
+              background: abaAtiva === valor ? 'var(--color-accent)' : 'transparent', color: abaAtiva === valor ? '#fff' : 'var(--color-text-muted)' }}>
+            {rotulo} <span style={{ opacity: 0.85 }}>({qtd})</span>
+          </button>
+        ))}
+      </div>
+
+      {/* LISTAGEM */}
+      {comissoesAba.length === 0 ? (
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '3rem 1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <p style={{ fontSize: '2rem', margin: '0 0 0.5rem' }}>📋</p>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text)' }}>Nenhuma comissão {abaAtiva === 'interna' ? 'interna' : 'externa'} encontrada</p>
+          <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem' }}>{anoExibido !== 0 ? `em ${anoExibido}` : ''}</p>
+        </div>
+      ) : (
+        <>
+          {emAndamento.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 0.6rem', fontSize: '0.78rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                🔄 Em andamento ({emAndamento.length})
+              </p>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {emAndamento.map(renderCartao)}
+              </div>
+            </div>
+          )}
+
+          {encerradas.length > 0 && (
+            <div>
+              <button onClick={() => setMostrarEncerradas(v => !v)} disabled={emAndamento.length === 0}
+                style={{ background: 'none', border: 'none', padding: 0, margin: '0 0 0.6rem', cursor: emAndamento.length === 0 ? 'default' : 'pointer', fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                ✅ Encerradas ({encerradas.length}) {emAndamento.length > 0 && (encerradasVisiveis ? '▾' : '▸')}
+              </button>
+              {encerradasVisiveis && (
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {encerradas.map(renderCartao)}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
 
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && comissaoVisualizar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
-            <div style={{background:"var(--color-accent)",padding:"1.25rem 1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 style={{fontSize:"1.25rem",fontWeight:"800",color:"#fff",margin:"0 0 0.5rem"}}>📋 {comissaoVisualizar.nome}</h3>
+            <div style={{background:"var(--color-surface)",borderTop:"3px solid var(--color-accent)",borderBottom:"1px solid var(--color-border)",padding:"1.1rem 1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
+              <div className="flex justify-between items-start" style={{gap:'1rem'}}>
+                <div style={{minWidth:0}}>
+                  <h3 style={{fontSize:"1.2rem",fontWeight:"800",color:"var(--color-text)",margin:"0 0 0.5rem",overflowWrap:'anywhere'}}>📋 {comissaoVisualizar.nome}</h3>
                   <div className="flex gap-2 flex-wrap">
                     <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:"700",
-                      background:comissaoVisualizar.status==='em_andamento'?'rgba(16,185,129,0.2)':comissaoVisualizar.status==='concluida'?'rgba(59,130,246,0.2)':'rgba(148,163,184,0.2)',
-                      color:comissaoVisualizar.status==='em_andamento'?'#10b981':comissaoVisualizar.status==='concluida'?'#3b82f6':'#94a3b8',
+                      background:comissaoVisualizar.status==='em_andamento'?'rgba(16,185,129,0.15)':'rgba(100,116,139,0.18)',
+                      color:comissaoVisualizar.status==='em_andamento'?'#10b981':'#94a3b8',
                       border:'1px solid currentColor'}}>
-                      {comissaoVisualizar.status === 'em_andamento' ? '🔄 Em Andamento' : 
-                       comissaoVisualizar.status === 'concluida' ? '✅ Concluída' : '⏸️ Suspensa'}
+                      {comissaoVisualizar.status === 'em_andamento' ? '🔄 Em Andamento' : '✅ Encerrada'}
                     </span>
                     <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:"700",
-                      background:comissaoVisualizar.origem==='interna'?'rgba(59,130,246,0.2)':'rgba(139,92,246,0.2)',
+                      background:comissaoVisualizar.origem==='interna'?'rgba(59,130,246,0.15)':'rgba(139,92,246,0.15)',
                       color:comissaoVisualizar.origem==='interna'?'#3b82f6':'#8b5cf6',
                       border:'1px solid currentColor'}}>
                       {comissaoVisualizar.origem === 'interna' ? '🏢 Interna' : '🌐 Externa'}
@@ -784,8 +788,9 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 </div>
                 <button
                   onClick={() => setModalVisualizar(false)}
-                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}
-                  title="Fechar"
+                  aria-label="Fechar"
+                  style={{background:"var(--color-bg)",border:"1px solid var(--color-border-light)",color:"var(--color-text-muted)",borderRadius:"var(--radius-md)",width:"2.2rem",height:"2.2rem",fontSize:"1.3rem",lineHeight:1,cursor:"pointer",flexShrink:0}}
+                  title="Fechar (Esc)"
                 >
                   ×
                 </button>
@@ -929,19 +934,21 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
             </div>
 
             {/* Footer do Modal */}
-            <div className="px-6 py-4 rounded-b-xl flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setModalVisualizar(false);
-                  handleEditar(comissaoVisualizar);
-                }}
-                className="px-4 py-2 text-white rounded-lg hover: font-semibold"
-              >
-                ✏️ Editar
-              </button>
+            <div className="px-6 py-4 flex justify-end gap-3" style={{borderTop:"1px solid var(--color-border)"}}>
+              {podeEditar && (
+                <button
+                  onClick={() => {
+                    setModalVisualizar(false);
+                    handleEditar(comissaoVisualizar);
+                  }}
+                  style={{height:"2.5rem",padding:"0 1.1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontWeight:700,fontSize:"0.875rem",cursor:"pointer"}}
+                >
+                  ✏️ Editar
+                </button>
+              )}
               <button
                 onClick={() => setModalVisualizar(false)}
-                className="px-4 py-2 rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                style={{height:"2.5rem",padding:"0 1.1rem",background:"transparent",color:"var(--color-text-muted)",border:"1px solid var(--color-border-light)",borderRadius:"var(--radius-md)",fontWeight:600,fontSize:"0.875rem",cursor:"pointer"}}
               >
                 Fechar
               </button>
@@ -949,6 +956,76 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
           </div>
         </div>
       )}
+
+      {/* MODAL DE INTEGRANTES */}
+      {modalIntegrantes && (() => {
+        const lista = integrantesOrdenados(modalIntegrantes.id);
+        const porFuncao = {};
+        lista.forEach(r => { porFuncao[r.funcao] = (porFuncao[r.funcao] || 0) + 1; });
+        return (
+          <div onClick={() => setModalIntegrantes(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: '3px solid #3b82f6', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '520px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.4)' }}>
+
+              {/* Cabeçalho */}
+              <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-text)' }}>👥 Integrantes</h3>
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)', overflowWrap: 'anywhere' }}>{modalIntegrantes.nome}</p>
+                </div>
+                <button onClick={() => setModalIntegrantes(null)} aria-label="Fechar" title="Fechar (Esc)"
+                  style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)', borderRadius: 'var(--radius-md)', width: '2.2rem', height: '2.2rem', fontSize: '1.3rem', lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
+              </div>
+
+              {/* Resumo por função */}
+              {lista.length > 0 && (
+                <div style={{ padding: '0.75rem 1.4rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-surface-2)' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.65rem', borderRadius: 999, background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', color: 'var(--color-text)' }}>
+                    {lista.length} integrante{lista.length === 1 ? '' : 's'}
+                  </span>
+                  {Object.entries(porFuncao).sort((x, y) => infoFuncao(x[0]).ordem - infoFuncao(y[0]).ordem).map(([f, n]) => (
+                    <span key={f} style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.65rem', borderRadius: 999, background: `${infoFuncao(f).cor}1f`, color: infoFuncao(f).cor, border: `1px solid ${infoFuncao(f).cor}55` }}>
+                      {f} · {n}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Lista */}
+              <div style={{ padding: '0.9rem 1.4rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {lista.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--color-text-muted)' }}>
+                    <p style={{ fontSize: '2rem', margin: '0 0 0.4rem' }}>👥</p>
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>Nenhum integrante cadastrado nesta comissão</p>
+                  </div>
+                ) : lista.map((r, idx) => {
+                  const f = infoFuncao(r.funcao);
+                  return (
+                    <div key={`${r.irmao_id}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-lg)', background: r.funcao === 'Presidente' ? `${f.cor}14` : 'var(--color-bg)', border: `1px solid ${r.funcao === 'Presidente' ? f.cor + '55' : 'var(--color-border)'}` }}>
+                      <div style={{ width: '2.4rem', height: '2.4rem', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: f.cor, background: `${f.cor}22`, border: `1px solid ${f.cor}55` }}>
+                        {iniciais(r.irmao?.nome)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.88rem', color: 'var(--color-text)', overflowWrap: 'anywhere' }}>{r.irmao?.nome || 'Irmão não encontrado'}</p>
+                        {r.irmao?.cim && <p style={{ margin: '0.1rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>CIM {r.irmao.cim}</p>}
+                      </div>
+                      <span style={{ flexShrink: 0, padding: '0.18rem 0.7rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, color: f.cor, background: `${f.cor}1f`, border: `1px solid ${f.cor}55` }}>
+                        {f.icone} {r.funcao}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ padding: '0.85rem 1.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => setModalIntegrantes(null)}
+                  style={{ height: '2.5rem', padding: '0 1.2rem', background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}>
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* MODAL DE ATIVIDADES */}
       {modalAtividades && comissaoAtividades && (
