@@ -262,11 +262,15 @@ const CadastroSessao = ({ onSuccess }) => {
 
   // Cadastrar a partir de uma sessão prevista no Cronograma
   const cadastrarDoCronograma = (ev) => {
-    const grauValido = ev.grau_sessao_id && ev.grau_sessao_id !== 4 && graus.some(g => g.id === ev.grau_sessao_id);
+    // Códigos de grau do Cronograma → grau da sessão (presença). No Cronograma o 4 é "Evento Loja"
+    // (não é grau de sessão) e a Administrativa é o 5; na presença a Administrativa é o 4.
+    const GRAU_CRONOGRAMA_PARA_SESSAO = { 1: 1, 2: 2, 3: 3, 5: 4 };
+    const grauMapeado = GRAU_CRONOGRAMA_PARA_SESSAO[ev.grau_sessao_id];
+    const grauValido = !!grauMapeado && graus.some(g => g.id === grauMapeado);
     const classMagna = ev.tipo === 'sessao_magna' ? classificacoes.find(c => /magna/i.test(c.nome)) : null;
     abrirModalNovo({
       dataSessao: ev.data_evento,
-      grauSessao: grauValido ? ev.grau_sessao_id : undefined,
+      grauSessao: grauValido ? grauMapeado : undefined,
       classificacaoId: classMagna?.id || '',
       observacoes: ev.titulo || '',
     });
