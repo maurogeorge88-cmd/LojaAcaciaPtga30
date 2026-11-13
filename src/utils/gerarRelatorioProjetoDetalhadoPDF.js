@@ -155,86 +155,83 @@ export const gerarRelatorioProjetoDetalhadoPDF = ({ projeto, tipoLabel, statusLa
   y += alturaBox + 6;
   doc.setTextColor(0);
 
-  // ── Movimentação detalhada ──────────────────────────────────────────────
-  const movimentos = [
-    ...receitas.map((r) => ({ tipo: 'R', data: r.data_receita, desc: r.descricao, obs: r.observacao, cat: r.origem, forma: r.forma_pagamento, resp: r.responsavel, valor: parseFloat(r.valor) || 0 })),
-    ...custos.map((c) => ({ tipo: 'C', data: c.data_custo, desc: c.descricao, obs: c.observacao, cat: c.categoria, forma: c.forma_pagamento, resp: c.responsavel, valor: parseFloat(c.valor) || 0 })),
-  ].sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || (a.tipo === b.tipo ? 0 : a.tipo === 'R' ? -1 : 1));
+  // ── Créditos e Débitos: dois quadros separados ─────────────────────────────
+  const porData = (x, z) => String(x.data || '').localeCompare(String(z.data || ''));
+  const creditos = receitas
+    .map((r) => ({ data: r.data_receita, desc: r.descricao, obs: r.observacao, cat: r.origem, forma: r.forma_pagamento, resp: r.responsavel, valor: parseFloat(r.valor) || 0 }))
+    .sort(porData);
+  const debitos = custos
+    .map((c) => ({ data: c.data_custo, desc: c.descricao, obs: c.observacao, cat: c.categoria, forma: c.forma_pagamento, resp: c.responsavel, valor: parseFloat(c.valor) || 0 }))
+    .sort(porData);
 
-  novaPaginaSe(30);
-  doc.setFillColor(...NAVY); doc.rect(M, y, LARG, 7.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255);
-  txt('MOVIMENTAÇÃO FINANCEIRA', M + 4, y + 5.2);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-  txt(`${movimentos.length} lançamento${movimentos.length === 1 ? '' : 's'}`, W - M - 4, y + 5.2, { align: 'right' });
-  doc.setTextColor(0);
-  y += 9;
-
-  if (movimentos.length === 0) {
-    doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-    txt('Nenhuma movimentação financeira registrada até o momento.', W / 2, y + 8, { align: 'center' });
+  const quadro = ({ titulo, cor, linhas, rotuloCategoria, rotuloTotal, total, vazio }) => {
+    novaPaginaSe(32);
+    doc.setFillColor(...cor); doc.rect(M, y, LARG, 7.5, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255);
+    txt(titulo, M + 4, y + 5.2);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    txt(`${linhas.length} lançamento${linhas.length === 1 ? '' : 's'}`, W - M - 4, y + 5.2, { align: 'right' });
     doc.setTextColor(0);
-    y += 18;
-  } else {
-    const temEntrada = receitas.length > 0;
-    const temSaida = custos.length > 0;
-    const nValores = (temEntrada ? 1 : 0) + (temSaida ? 1 : 0);
-    const wValor = nValores === 2 ? 22 : 26;
-    const wData = 18, wCat = 27, wForma = 20, wResp = 25;
-    const wDesc = LARG - (wData + wCat + wForma + wResp + wValor * nValores);
+    y += 9;
 
-    const cabecalho = ['Data', 'Descrição', 'Origem / Categoria', 'Pagamento', 'Responsável',
-      ...(temEntrada ? ['Entrada'] : []), ...(temSaida ? ['Saída'] : [])];
-    const corpo = movimentos.map((m) => [
-      fmtD(m.data),
-      limpar(m.desc) + (m.obs ? `\n${limpar(m.obs)}` : ''),
-      limpar(m.cat),
-      limpar(m.forma),
-      limpar(m.resp),
-      ...(temEntrada ? [m.tipo === 'R' ? fmtR(m.valor) : ''] : []),
-      ...(temSaida ? [m.tipo === 'C' ? fmtR(m.valor) : ''] : []),
-    ]);
-    const rodape = [[
-      { content: 'TOTAIS', colSpan: 5, styles: { halign: 'right' } },
-      ...(temEntrada ? [fmtR(totalReceitas)] : []),
-      ...(temSaida ? [fmtR(totalCustos)] : []),
-    ]];
-    const idxEntrada = temEntrada ? 5 : -1;
-    const idxSaida = temSaida ? (temEntrada ? 6 : 5) : -1;
-    const estilosColunas = {
-      0: { cellWidth: wData }, 1: { cellWidth: wDesc }, 2: { cellWidth: wCat }, 3: { cellWidth: wForma }, 4: { cellWidth: wResp },
-    };
-    if (idxEntrada >= 0) estilosColunas[idxEntrada] = { cellWidth: wValor, halign: 'right' };
-    if (idxSaida >= 0) estilosColunas[idxSaida] = { cellWidth: wValor, halign: 'right' };
+    if (linhas.length === 0) {
+      doc.setFillColor(250, 251, 253); doc.rect(M, y - 1.5, LARG, 12, 'F');
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(...CINZA);
+      txt(vazio, W / 2, y + 5, { align: 'center' });
+      doc.setTextColor(0);
+      y += 15;
+      return;
+    }
 
+    const wData = 18, wCat = 28, wForma = 22, wResp = 28, wValor = 26;
+    const wDesc = LARG - (wData + wCat + wForma + wResp + wValor);
     autoTable(doc, {
       startY: y,
-      head: [cabecalho],
-      body: corpo,
-      foot: rodape,
+      head: [['Data', 'Descrição', rotuloCategoria, 'Pagamento', 'Responsável', 'Valor']],
+      body: linhas.map((m) => [
+        fmtD(m.data),
+        limpar(m.desc) + (m.obs ? `\n${limpar(m.obs)}` : ''),
+        limpar(m.cat),
+        limpar(m.forma),
+        limpar(m.resp),
+        fmtR(m.valor),
+      ]),
+      foot: [[{ content: rotuloTotal, colSpan: 5, styles: { halign: 'right' } }, fmtR(total)]],
       showFoot: 'lastPage',
       theme: 'grid',
       rowPageBreak: 'avoid',
       margin: { left: M, right: M, bottom: 18 },
       styles: { font: 'helvetica', fontSize: 7.5, cellPadding: 1.8, lineColor: [226, 232, 240], lineWidth: 0.2, textColor: [40, 40, 40], valign: 'middle', overflow: 'linebreak' },
       headStyles: { fillColor: [241, 245, 249], textColor: NAVY, fontStyle: 'bold', fontSize: 7.5, halign: 'left' },
-      footStyles: { fillColor: [232, 240, 254], textColor: NAVY, fontStyle: 'bold', fontSize: 8.5 },
+      footStyles: { fillColor: [232, 240, 254], textColor: cor, fontStyle: 'bold', fontSize: 8.5 },
       alternateRowStyles: { fillColor: [250, 251, 253] },
-      columnStyles: estilosColunas,
+      columnStyles: {
+        0: { cellWidth: wData }, 1: { cellWidth: wDesc }, 2: { cellWidth: wCat }, 3: { cellWidth: wForma }, 4: { cellWidth: wResp },
+        5: { cellWidth: wValor, halign: 'right' },
+      },
       didParseCell: (d) => {
-        const col = d.column.index;
-        if (d.section === 'head' && (col === idxEntrada || col === idxSaida)) d.cell.styles.halign = 'right';
-        if (d.section === 'body' && col === idxEntrada && d.cell.raw) { d.cell.styles.textColor = VERDE; d.cell.styles.fontStyle = 'bold'; }
-        if (d.section === 'body' && col === idxSaida && d.cell.raw) { d.cell.styles.textColor = VERM; d.cell.styles.fontStyle = 'bold'; }
-        if (d.section === 'foot' && col === idxEntrada) d.cell.styles.textColor = VERDE;
-        if (d.section === 'foot' && col === idxSaida) d.cell.styles.textColor = VERM;
+        if (d.column.index === 5 && d.section === 'head') d.cell.styles.halign = 'right';
+        if (d.column.index === 5 && d.section === 'body') { d.cell.styles.textColor = cor; d.cell.styles.fontStyle = 'bold'; }
       },
     });
-    y = doc.lastAutoTable.finalY + 6;
-  }
+    y = doc.lastAutoTable.finalY + 7;
+  };
+
+  quadro({
+    titulo: ehCampanha ? 'CRÉDITOS — ARRECADAÇÕES' : 'CRÉDITOS — RECEITAS',
+    cor: VERDE, linhas: creditos, rotuloCategoria: 'Origem',
+    rotuloTotal: 'TOTAL DE CRÉDITOS', total: totalReceitas,
+    vazio: 'Nenhum crédito registrado até o momento.',
+  });
+  quadro({
+    titulo: ehCampanha ? 'DÉBITOS — SAÍDAS E REPASSES' : 'DÉBITOS — CUSTOS E DESPESAS',
+    cor: VERM, linhas: debitos, rotuloCategoria: 'Categoria',
+    rotuloTotal: 'TOTAL DE DÉBITOS', total: totalCustos,
+    vazio: 'Nenhuma saída registrada até o momento.',
+  });
 
   // ── Resumo / soma final ─────────────────────────────────────────────────
-  const mostrarCustos = totalCustos > 0 || !ehCampanha;
+  const mostrarCustos = true; // créditos e débitos sempre aparecem no resumo
   const metaDefinida = valorPrevisto > 0;
   const pct = ehCampanha
     ? (metaDefinida ? (totalReceitas / valorPrevisto) * 100 : 0)
@@ -263,17 +260,24 @@ export const gerarRelatorioProjetoDetalhadoPDF = ({ projeto, tipoLabel, statusLa
     yr += 7.5;
   };
   if (mostrarCustos) {
-    linhaResumo(ehCampanha ? 'Total arrecadado' : 'Total de receitas', fmtR(totalReceitas), VERDE);
-    linhaResumo(ehCampanha ? 'Total de despesas da campanha' : 'Total de custos', fmtR(totalCustos), VERM);
+    linhaResumo(ehCampanha ? 'Total arrecadado (créditos)' : 'Total de receitas (créditos)', fmtR(totalReceitas), VERDE);
+    linhaResumo(ehCampanha ? 'Total de saídas e repasses (débitos)' : 'Total de custos (débitos)', fmtR(totalCustos), VERM);
   }
 
   // Faixa do saldo (a soma final)
-  const corSaldo = saldo >= 0 ? VERDE : VERM;
+  // Campanha: o que sobra é o valor ainda pendente de transferência ao beneficiário
+  const saldoZerado = Math.abs(saldo) < 0.005;
+  const corSaldo = ehCampanha
+    ? (saldo < 0 ? VERM : saldoZerado ? VERDE : AMBAR)
+    : (saldo >= 0 ? VERDE : VERM);
+  const rotuloSaldo = ehCampanha
+    ? (saldo < 0 ? 'SALDO NEGATIVO (saídas acima do arrecadado)' : saldoZerado ? 'CAMPANHA TOTALMENTE REPASSADA' : 'SALDO PENDENTE DE REPASSE AO BENEFICIÁRIO')
+    : 'SALDO (créditos - débitos)';
   doc.setFillColor(...corSaldo); doc.roundedRect(M + 4, yr - 4.5, LARG - 8, 9.5, 1.5, 1.5, 'F');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(255);
-  txt(mostrarCustos ? 'SALDO (receitas - custos)' : 'TOTAL ARRECADADO', M + 8, yr + 1.6);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255);
+  txt(rotuloSaldo, M + 8, yr + 1.6);
   doc.setFontSize(13);
-  txt(fmtR(mostrarCustos ? saldo : totalReceitas), W - M - 8, yr + 1.8, { align: 'right' });
+  txt(fmtR(saldo), W - M - 8, yr + 1.8, { align: 'right' });
   yr += 11;
 
   // Progresso da meta / orçamento
