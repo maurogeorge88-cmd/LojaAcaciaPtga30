@@ -25,6 +25,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [custosDoModal, setCustosDoModal] = useState([]);
   const [arquivosDoModal, setArquivosDoModal] = useState([]);
   const [enviandoArquivo, setEnviandoArquivo] = useState(false);
+  const [lancamentosVinculados, setLancamentosVinculados] = useState([]); // lançamentos do Financeiro ligados ao projeto aberto
+  const [sincronizando, setSincronizando] = useState(false);
   const [receitasDoModal, setReceitasDoModal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -195,6 +197,62 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     if (!error) setReceitasDoModal(data || []);
   };
 
+  // Lançamentos do Financeiro da Loja que apontam para este projeto (fonte da verdade do vínculo)
+  const carregarLancamentosVinculados = async (projetoId) => {
+    const { data, error } = await supabase
+      .from('lancamentos_loja')
+      .select('id, tipo, descricao, valor, data_lancamento, tipo_pagamento, origem_irmao_id')
+      .eq('projeto_id', projetoId);
+    if (!error) setLancamentosVinculados(data || []);
+  };
+
+  // Traz para o projeto os lançamentos vinculados no Financeiro que ficaram sem a "ponte"
+  // (receitas_projeto / custos_projeto). Se já existir uma ponte apontando para OUTRO projeto,
+  // só move o vínculo. Qualquer falha aparece na tela (não é mais silenciosa).
+  const sincronizarComFinanceiro = async () => {
+    if (!projetoSelecionado) return;
+    const projetoId = projetoSelecionado.id;
+    const faltando = lancamentosVinculados.filter(l => !idsComPonte.has(l.id));
+    if (faltando.length === 0) return;
+    setSincronizando(true);
+    try {
+      const idsIrmaos = [...new Set(faltando.map(l => l.origem_irmao_id).filter(Boolean))];
+      const nomes = {};
+      if (idsIrmaos.length > 0) {
+        const { data: irm } = await supabase.from('irmaos').select('id, nome').in('id', idsIrmaos);
+        (irm || []).forEach(i => { nomes[i.id] = i.nome; });
+      }
+      for (const l of faltando) {
+        const ehReceita = l.tipo === 'receita';
+        const tabela = ehReceita ? 'receitas_projeto' : 'custos_projeto';
+        const { data: existentes, error: errBusca } = await supabase.from(tabela).select('id').eq('lancamento_id', l.id);
+        if (errBusca) throw errBusca;
+        let erro = null;
+        if (existentes && existentes.length > 0) {
+          const { data: movidas, error: errMover } = await supabase.from(tabela).update({ projeto_id: projetoId }).eq('lancamento_id', l.id).select('id');
+          erro = errMover || ((!movidas || movidas.length === 0) ? new Error('sem permissão para atualizar o vínculo') : null);
+        } else if (ehReceita) {
+          ({ error: erro } = await supabase.from('receitas_projeto').insert([{
+            projeto_id: projetoId, lancamento_id: l.id, data_receita: l.data_lancamento, descricao: l.descricao,
+            valor: l.valor, origem: 'Finanças Loja', forma_pagamento: l.tipo_pagamento || '', responsavel: nomes[l.origem_irmao_id] || '',
+          }]));
+        } else {
+          ({ error: erro } = await supabase.from('custos_projeto').insert([{
+            projeto_id: projetoId, lancamento_id: l.id, data_custo: l.data_lancamento, descricao: l.descricao,
+            valor: l.valor, categoria: 'Finanças Loja', forma_pagamento: l.tipo_pagamento || '', responsavel: nomes[l.origem_irmao_id] || '',
+          }]));
+        }
+        if (erro) throw erro;
+      }
+      showSuccess?.(`${faltando.length} lançamento(s) sincronizado(s) com o Financeiro!`);
+      await Promise.all([carregarReceitas(projetoId), carregarCustos(projetoId), carregarProjetos()]);
+    } catch (e) {
+      showError?.('Erro ao sincronizar com o Financeiro: ' + (e?.message || e));
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   const carregarArquivos = async (projetoId) => {
     const { data, error } = await supabase
       .from('projeto_arquivos')
@@ -272,6 +330,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     setAbaAtiva(aba);
     carregarReceitas(projeto.id);
     carregarCustos(projeto.id);
+    carregarLancamentosVinculados(projeto.id);
     carregarArquivos(projeto.id);
     setMostrarFinanceiro(true);
   };
@@ -281,6 +340,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     setProjetoSelecionado(null);
     setReceitasDoModal([]);
     setCustosDoModal([]);
+    setLancamentosVinculados([]);
     setArquivosDoModal([]);
     setReceitaForm({});
     setCustoForm({});
@@ -493,6 +553,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const totalCustosModal = custosDoModal.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
   const saldoModal = totalReceitasModal - totalCustosModal;
   const ehCampanhaModal = projetoSelecionado?.tipo === 'campanha';
+  // Lançamentos vinculados no Financeiro que não têm "ponte" neste projeto (não aparecem nos quadros)
+  const idsComPonte = new Set([...receitasDoModal, ...custosDoModal].map(x => x.lancamento_id).filter(Boolean));
+  const lancamentosFora = lancamentosVinculados.filter(l => !idsComPonte.has(l.id));
   // Campanha: o que sobra é o valor ainda pendente de transferência ao beneficiário
   const saldoZeradoModal = Math.abs(saldoModal) < 0.005;
   const corSaldoModal = ehCampanhaModal
@@ -763,6 +826,25 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </span>
                   </div>
 
+                  {projeto.tipo === 'campanha' && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">💸 Já repassado:</span>
+                        <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>
+                          R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2" style={{borderTop:"1px solid var(--color-border)",background:"var(--color-surface-2)",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)"}}>
+                        <span className="font-bold">
+                          {saldo < 0 ? '⚠️ Saldo negativo:' : Math.abs(saldo) < 0.005 ? '✅ Totalmente repassada' : '⏳ Saldo a repassar:'}
+                        </span>
+                        <span style={{fontSize:"1.25rem",fontWeight:"800",color: saldo < 0 ? "#ef4444" : Math.abs(saldo) < 0.005 ? "#10b981" : "#f59e0b"}}>
+                          R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
                   {projeto.tipo !== 'campanha' && (
                     <>
                       <div className="flex justify-between items-center">
@@ -930,6 +1012,28 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </div>
 
             <div className="p-6">
+
+              {/* Aviso: lançamento vinculado no Financeiro que não aparece nos quadros */}
+              {permissoes?.canEdit && lancamentosFora.length > 0 && (
+                <div style={{marginBottom:'1rem',padding:'0.8rem 1rem',borderRadius:'var(--radius-md)',background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.45)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',flexWrap:'wrap'}}>
+                    <strong style={{color:'#f59e0b',fontSize:'0.85rem'}}>
+                      ⚠️ {lancamentosFora.length} lançamento{lancamentosFora.length === 1 ? '' : 's'} do Financeiro da Loja {lancamentosFora.length === 1 ? 'está vinculado' : 'estão vinculados'} a este projeto, mas não {lancamentosFora.length === 1 ? 'aparece' : 'aparecem'} nos quadros
+                    </strong>
+                    <button onClick={sincronizarComFinanceiro} disabled={sincronizando}
+                      style={{padding:'0.4rem 1rem',background:'#f59e0b',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.82rem',cursor:sincronizando?'wait':'pointer',opacity:sincronizando?0.6:1}}>
+                      {sincronizando ? 'Sincronizando...' : '🔄 Sincronizar agora'}
+                    </button>
+                  </div>
+                  <ul style={{margin:'0.5rem 0 0',paddingLeft:'1.1rem',fontSize:'0.78rem',color:'var(--color-text)'}}>
+                    {lancamentosFora.map(l => (
+                      <li key={l.id}>
+                        {new Date(String(l.data_lancamento).substring(0, 10) + 'T00:00:00').toLocaleDateString('pt-BR')} · {l.tipo === 'receita' ? 'Crédito' : 'Débito'} · {l.descricao} · <strong>R$ {parseFloat(l.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Alterna Agrupado (padrão, só leitura) x Detalhado (editável) */}
               <div style={{display:'flex',alignItems:'center',gap:'0.6rem',marginBottom:'1rem',padding:'0.6rem 0.8rem',borderRadius:'var(--radius-md)',background:'var(--color-surface-2)',border:'1px solid var(--color-border)'}}>
