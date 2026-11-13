@@ -837,16 +837,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Se a edição vinculou um projeto que esse lançamento NUNCA teve
-        // (não existe nenhuma linha em receitas_projeto/custos_projeto pra
-        // ele ainda), cria agora — é um vínculo novo, não uma correção de
-        // algo que já existia, então não atropela nada que tenha sido
-        // ajustado manualmente na tela de Projetos.
+        // Vínculo com projeto na edição:
+        //  • sem ponte ainda → cria (com os mesmos campos do lançamento novo);
+        //  • ponte existente apontando para OUTRO projeto → move só o projeto_id
+        //    (não mexe em valor/descrição, que podem ter sido corrigidos na tela de Projetos);
+        //  • qualquer falha vira aviso — antes era silenciosa e o lançamento ficava fora do projeto.
+        let erroPonte = null;
         if (dados.projeto_id) {
+          const projetoAlvo = parseInt(dados.projeto_id);
           const tabelaPonte = dados.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
           const { data: pontesExistentes } = await supabase
             .from(tabelaPonte)
-            .select('id')
+            .select('id, projeto_id')
             .eq('lancamento_id', editando)
             .limit(1);
 
@@ -855,8 +857,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
               : '';
             if (dados.tipo === 'receita') {
-              await supabase.from('receitas_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
+              ({ error: erroPonte } = await supabase.from('receitas_projeto').insert([{
+                projeto_id: projetoAlvo,
                 lancamento_id: editando,
                 data_receita: dados.data_lancamento,
                 descricao: dados.descricao,
@@ -864,21 +866,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 origem: 'Finanças Loja',
                 forma_pagamento: dados.tipo_pagamento || '',
                 responsavel: irmaoNome,
-              }]);
+              }]));
             } else {
-              await supabase.from('custos_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
+              ({ error: erroPonte } = await supabase.from('custos_projeto').insert([{
+                projeto_id: projetoAlvo,
                 lancamento_id: editando,
                 data_custo: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
                 categoria: 'Finanças Loja',
-              }]);
+                forma_pagamento: dados.tipo_pagamento || '',
+                responsavel: irmaoNome,
+              }]));
             }
+          } else if (pontesExistentes[0].projeto_id !== projetoAlvo) {
+            const { data: movidas, error: errMover } = await supabase
+              .from(tabelaPonte)
+              .update({ projeto_id: projetoAlvo })
+              .eq('lancamento_id', editando)
+              .select('id');
+            erroPonte = errMover || ((!movidas || movidas.length === 0) ? { message: 'sem permissão para atualizar o vínculo' } : null);
+          }
+          if (erroPonte) {
+            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonte.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
 
-        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
+        if (!erroPonte) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { data: novoLanc, error } = await supabase
           .from('lancamentos_loja')
@@ -906,13 +920,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Criar vínculo com projeto (novo lançamento)
+        // Criar vínculo com projeto (novo lançamento) — falha deixa de ser silenciosa
+        let erroPonteNovo = null;
         if (dados.projeto_id && novoLanc?.id) {
           const irmaoNome = dados.origem_irmao_id
             ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
             : '';
           if (dados.tipo === 'receita') {
-            await supabase.from('receitas_projeto').insert([{
+            ({ error: erroPonteNovo } = await supabase.from('receitas_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_receita: dados.data_lancamento,
@@ -921,9 +936,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               origem: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
               responsavel: irmaoNome,
-            }]);
+            }]));
           } else {
-            await supabase.from('custos_projeto').insert([{
+            ({ error: erroPonteNovo } = await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_custo: dados.data_lancamento,
@@ -931,14 +946,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               valor: parseFloat(dados.valor),
               categoria: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
-              responsavel: dados.origem_irmao_id
-                ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-                : '',
-            }]);
+              responsavel: irmaoNome,
+            }]));
+          }
+          if (erroPonteNovo) {
+            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonteNovo.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
 
-        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
+        if (!erroPonteNovo) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
       }
 
       limparFormulario();
