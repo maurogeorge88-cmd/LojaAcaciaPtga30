@@ -357,8 +357,9 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     // ── Elegibilidade sessão-a-sessão — mesma lógica do relatório em PDF,
     // da Matrix de Presença, do Dashboard e do boletim por e-mail: grau na
     // data, data de entrada, falecimento e situação bloqueadora por data real
-    // (sem nada fixo). REVERTIDO a pedido: licença e prerrogativa de idade
-    // não excluem mais ninguém da conta — voltam a contar como elegível normal.
+    // (sem nada fixo). Licença retira a obrigação de presença no período dela
+    // (inclusive licença já encerrada: o período antigo NÃO vira falta). Prerrogativa
+    // de idade segue contando como elegível normal.
     const unaccentLower = (s) => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     const elegivelNaData = (irmao, dataSessao, grauSessaoId) => {
       const grauMin = grauSessaoId === 4 ? 1 : grauSessaoId; // Administrativa tratada como Aprendiz
@@ -376,7 +377,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       const bloqueado = historicoSituacoes.some(sit => {
         if (sit.membro_id !== irmao.id) return false;
         const tipo = unaccentLower(sit.tipo_situacao);
-        const tipos = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio']; // "licenca" removida a pedido
+        const tipos = ['desligado','desligamento','irregular','suspenso','excluido','ex-oficio','licenca']; // licença: fora da conta no período
         const ehBloq = tipos.includes(tipo) || tipos.some(t=>tipo.includes(t));
         if (!ehBloq) return false;
         const di = new Date(sit.data_inicio + 'T00:00:00');
@@ -500,13 +501,26 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     // (já filtrado por elegibilidade real: grau na data, entrada,
     // falecimento, situação bloqueadora), em vez de contar toda sessão que
     // tenha registro, mesmo as que o grau do irmão nem participava.
+    // Neófito (identificação nos rankings), considerando o ano analisado:
+    //  • iniciado de julho a dezembro → sempre marca "(Neófitos)";
+    //  • iniciado de março a junho → marca só enquanto julho não terminou (passado julho, a marca sai).
+    const ehNeofito = (iniciacao) => {
+      if (!iniciacao || String(iniciacao).slice(0, 4) !== String(anoSel)) return false;
+      const mesIni = parseInt(String(iniciacao).slice(5, 7), 10);
+      if (mesIni >= 7) return true;
+      if (mesIni >= 3) return hojeStr <= `${anoSel}-07-31`;
+      return false;
+    };
+
     const presencaIrmao = {};
     ativos.forEach(i=>{
       const t = totaisIndividuaisAno[i.id] || { eleg: 0, pres: 0, faltas: 0, justificadas: 0 };
       presencaIrmao[i.id]={
         nome:i.nome, pres:t.pres, faltas:t.faltas, justificadas:t.justificadas, total:t.eleg,
         temPrerrogativa:(calcIdade(i.data_nascimento)||0) >= 70,
-        licenciado:(i.situacao||'').toLowerCase()==='licenciado'
+        licenciado:(i.situacao||'').toLowerCase()==='licenciado',
+        neofito: ehNeofito(i.data_iniciacao),
+        iniciacao: i.data_iniciacao
       };
     });
     const rankingPresenca = Object.values(presencaIrmao)
@@ -803,7 +817,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
               {stats.rankingPresenca.slice(0,5).map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
                   <span style={{fontWeight:700,fontSize:'0.75rem',color:DOURADO,minWidth:'18px'}}>{idx+1}º</span>
-                  <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.nome}</span>
+                  <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.neofito && <span title={`Iniciado em ${String(i.iniciacao).slice(0,10).split('-').reverse().join('/')}`} style={{color:'#f59e0b',fontWeight:700,fontSize:'0.68rem',marginRight:'0.35rem'}}>(Neófitos)</span>}{i.nome}</span>
                   <span style={{fontWeight:700,fontSize:'0.8rem',color:VERDE}}>{fmtP(i.taxa)}</span>
                 </div>
               ))}
@@ -822,7 +836,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 .filter(i=>!i.temPrerrogativa && !i.licenciado)
                 .slice(-5).reverse().map((i,idx)=>(
                 <div key={i.nome} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.35rem'}}>
-                  <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.nome}</span>
+                  <span style={{flex:1,fontSize:'0.78rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{i.neofito && <span title={`Iniciado em ${String(i.iniciacao).slice(0,10).split('-').reverse().join('/')}`} style={{color:'#f59e0b',fontWeight:700,fontSize:'0.68rem',marginRight:'0.35rem'}}>(Neófitos)</span>}{i.nome}</span>
                   <span style={{width:'52px',textAlign:'right',fontWeight:700,fontSize:'0.8rem',color:'#f59e0b'}}>{fmtP(i.taxaJustificada)}</span>
                   <span style={{width:'52px',textAlign:'right',fontWeight:700,fontSize:'0.8rem',color:VERMELHO}}>{fmtP(i.taxaFalta)}</span>
                 </div>
