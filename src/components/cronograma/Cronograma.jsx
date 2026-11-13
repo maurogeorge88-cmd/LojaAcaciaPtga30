@@ -130,7 +130,7 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null)
       
       // Tipo + Grau
       const tipo = tipos[evento.tipo] || evento.tipo;
-      const grau = getGrauNome(evento.grau_sessao_id);
+      const grau = evento.tipo === 'feriado' ? '' : getGrauNome(evento.grau_sessao_id); // feriado não tem grau
       const tipoGrau = grau ? `${tipo}\n${grau}` : tipo;
       
       return [
@@ -528,12 +528,15 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const totalMostrado = visualizacao === 'lista' ? eventosFiltrados.length : eventosPorTipo.length;
 
   // Indicadores
-  const proximoEvento = eventos.find(e => e.data_evento >= hojeStr && e.status !== 'cancelado') || null;
+  // Feriado é só informativo: não tem sessão a registrar, então fica fora das pendências,
+  // dos chips de situação e do "próximo evento".
+  const proximoEvento = eventos.find(e => e.data_evento >= hojeStr && e.status !== 'cancelado' && e.tipo !== 'feriado') || null;
   const contagemStatus = {};
-  eventosDoAno.forEach(e => { contagemStatus[e.status] = (contagemStatus[e.status] || 0) + 1; });
+  eventosDoAno.filter(e => e.tipo !== 'feriado').forEach(e => { contagemStatus[e.status] = (contagemStatus[e.status] || 0) + 1; });
+  const qtdFeriados = eventosDoAno.filter(e => e.tipo === 'feriado').length;
   const sessoesDoAno = eventosDoAno.filter(e => String(e.tipo).startsWith('sessao') && e.status !== 'cancelado');
   const sessoesRealizadas = sessoesDoAno.filter(e => e.status === 'realizado').length;
-  const pendencias = eventosDoAno.filter(e => e.data_evento < hojeStr && ['planejado', 'confirmado'].includes(e.status));
+  const pendencias = eventosDoAno.filter(e => e.tipo !== 'feriado' && e.data_evento < hojeStr && ['planejado', 'confirmado'].includes(e.status));
   const anoCalendario = anoExibido || anoAtual;
   const eventosCalendario = eventosPorTipo.map(e => ({ data: e.data_evento, titulo: e.titulo, tipo: e.tipo, cor: corDoEvento(e.tipo, e.cor_destaque) }));
 
@@ -575,8 +578,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem' }}>
             <span style={{ padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(evento.tipo)}</span>
-            <span style={{ ...obterStyleStatus(evento.status), padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{obterLabelStatus(evento.status)}</span>
-            {evento.grau_sessao_id && getGrauNome(evento.grau_sessao_id) && (
+            {evento.tipo !== 'feriado' && (
+              <span style={{ ...obterStyleStatus(evento.status), padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{obterLabelStatus(evento.status)}</span>
+            )}
+            {evento.tipo !== 'feriado' && evento.grau_sessao_id && getGrauNome(evento.grau_sessao_id) && (
               <span style={{ ...chip, color: 'var(--color-text)' }}>{getGrauNome(evento.grau_sessao_id)}</span>
             )}
           </div>
@@ -775,6 +780,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             {statusEvento.filter(st => contagemStatus[st.value] > 0).map(st => (
               <span key={st.value} style={chip}>{st.label.replace(/^\S+\s/, '')} <strong style={{ color: 'var(--color-text)' }}>{contagemStatus[st.value]}</strong></span>
             ))}
+            {qtdFeriados > 0 && <span style={chip}>🎌 Feriados <strong style={{ color: 'var(--color-text)' }}>{qtdFeriados}</strong></span>}
           </div>
         </div>
 
@@ -882,7 +888,9 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     setEventoForm({ 
                       ...eventoForm, 
                       tipo: e.target.value,
-                      cor_destaque: tipo ? tipo.cor : '#3b82f6'
+                      cor_destaque: tipo ? tipo.cor : '#3b82f6',
+                      // feriado: sem situação a acompanhar (fica "confirmado" por trás)
+                      ...(e.target.value === 'feriado' ? { status: 'confirmado' } : (eventoForm.tipo === 'feriado' ? { status: 'planejado' } : {}))
                     });
                   }}
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
@@ -893,6 +901,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 </select>
               </div>
 
+              {eventoForm.tipo === 'feriado' ? (
+                <div className="md:col-span-2" style={{padding:'0.7rem 0.9rem',borderRadius:'var(--radius-md)',background:'rgba(249,115,22,0.1)',border:'1px solid rgba(249,115,22,0.35)',fontSize:'0.82rem',color:'var(--color-text)'}}>
+                  🎌 <strong>Feriado</strong> é só informativo: não tem grau nem situação a acompanhar e não entra nas pendências.
+                </div>
+              ) : (
+                <>
               {/* Grau da Sessão */}
               <div>
                 <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
@@ -927,6 +941,9 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   ))}
                 </select>
               </div>
+
+                </>
+              )}
 
               {/* Data */}
               <div>
@@ -1357,7 +1374,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   <p style={{fontSize:'1.15rem',fontWeight:'800',color:'#1e3a8a',fontFamily:'Georgia, serif',margin:0,lineHeight:'1.3'}}>
                     {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label.replace(/^[^\s]+\s/, '') || eventoVisualizar.titulo}
                   </p>
-                  {eventoVisualizar.grau_sessao_id && (
+                  {eventoVisualizar.tipo !== 'feriado' && eventoVisualizar.grau_sessao_id && (
                     <p style={{fontSize:'1.05rem',fontWeight:'800',color:'#1a1a1a',textTransform:'uppercase',letterSpacing:'0.02em',margin:'0.15rem 0 0'}}>
                       {getGrauNome(eventoVisualizar.grau_sessao_id).replace(/^[^\s]+\s/, '')}
                     </p>
@@ -1407,15 +1424,15 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               </div>
             </div>
 
-            {/* Status (mantido do modal original) */}
-            <div style={{padding:'0 1rem 1rem',textAlign:'center'}}>
+            {/* Status (mantido do modal original) — feriado não tem situação */}
+            {eventoVisualizar.tipo !== 'feriado' && <div style={{padding:'0 1rem 1rem',textAlign:'center'}}>
               <span 
                 className="inline-block px-3 py-1 rounded-full text-xs font-medium"
                 style={statusEvento.find(s => s.value === eventoVisualizar.status)?.style || {}}
               >
                 {statusEvento.find(s => s.value === eventoVisualizar.status)?.label || eventoVisualizar.status}
               </span>
-            </div>
+            </div>}
             </div>{/* fim #quadro-evento */}
           </div>
         </div>
