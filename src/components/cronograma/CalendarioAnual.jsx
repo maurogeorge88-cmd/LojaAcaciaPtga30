@@ -194,7 +194,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>{evento.titulo}</h4>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem' }}>
                       <span style={{ padding: '0.15rem 0.65rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(evento.tipo)}</span>
-                      {evento.grau_sessao_id && NOME_GRAU_CRONOGRAMA[evento.grau_sessao_id] && (
+                      {evento.tipo !== 'feriado' && evento.grau_sessao_id && NOME_GRAU_CRONOGRAMA[evento.grau_sessao_id] && (
                         <span style={{ padding: '0.15rem 0.65rem', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)' }}>
                           {NOME_GRAU_CRONOGRAMA[evento.grau_sessao_id]}
                         </span>
