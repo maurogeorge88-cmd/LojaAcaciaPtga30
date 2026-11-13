@@ -23,17 +23,12 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   const [filtroStatus, setFiltroStatus] = useState('aguardando');
 
   useEffect(() => {
-    console.log('🔍 FilaEspera montado');
-    console.log('📚 Livros recebidos:', livros?.length || 0);
-    console.log('👥 Irmãos recebidos:', irmaos?.length || 0);
     carregarFilas();
   }, []);
 
   const carregarFilas = async () => {
     setLoading(true);
     try {
-      console.log('⏳ Carregando filas...');
-      
       // Buscar direto da tabela
       const { data, error } = await supabase
         .from('fila_espera_livros')
@@ -45,8 +40,6 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
         console.error('❌ Erro ao carregar filas:', error);
         throw error;
       }
-      
-      console.log('✅ Filas carregadas:', data?.length || 0);
       
       // Enriquecer com dados de livros e irmãos
       const filasEnriquecidas = (data || []).map(fila => {
@@ -222,7 +215,9 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
 
   // Usar livros e irmãos das props
   const livrosDisponiveis = livros || [];
-  const irmaosDisponiveis = irmaos || [];
+  const irmaosAptos = (irmaos || [])
+    .filter(i => ['regular', 'licenciado'].includes(String(i?.situacao || 'regular').toLowerCase()))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
 
   // Filtrar filas
   const filasFiltradas = filas.filter(f => {
@@ -235,14 +230,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   const filasAgrupadas = filasFiltradas.reduce((acc, fila) => {
     const livroId = fila.livro_id;
     if (!acc[livroId]) {
-      acc[livroId] = {
-        livro: {
-          id: fila.livro_id,
-          titulo: fila.livro_titulo,
-          autor: fila.livro_autor
-        },
-        filas: []
-      };
+      acc[livroId] = { livro: { id: fila.livro_id, titulo: fila.livro_titulo, autor: fila.livro_autor }, filas: [] };
     }
     acc[livroId].filas.push(fila);
     return acc;
@@ -251,7 +239,19 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   // Estatísticas
   const totalAguardando = filas.filter(f => f.status === 'aguardando').length;
   const totalAtendidos = filas.filter(f => f.status === 'atendido').length;
-  const livrosComFila = Object.keys(filasAgrupadas).length;
+  const totalCancelados = filas.filter(f => f.status === 'cancelado').length;
+  const livrosComFila = new Set(filas.filter(f => f.status === 'aguardando').map(f => f.livro_id)).size;
+  const podeEditar = !!(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca);
+
+  const COR_STATUS = { aguardando: '#f59e0b', atendido: '#10b981', cancelado: '#94a3b8' };
+  const ROTULO_STATUS = { aguardando: '⏳ Aguardando', atendido: '✅ Atendido', cancelado: '❌ Cancelado' };
+  const rotuloKpi = { margin: 0, fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const cartaoKpi = (cor) => ({ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `3px solid ${cor}`, borderRadius: 'var(--radius-xl)', padding: '1rem 1.1rem', minWidth: 0 });
+  const campo = { width: '100%', height: '2.5rem', padding: '0 0.8rem', borderRadius: 'var(--radius-md)', background: 'var(--color-bg)', color: 'var(--color-text)', border: '1px solid var(--color-border-light)', fontSize: '0.875rem', boxSizing: 'border-box' };
+  const rotuloCampo = { display: 'block', fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' };
+  const btnIcone = (cor) => ({ width: '2rem', height: '2rem', borderRadius: 'var(--radius-md)', border: `1px solid ${cor}66`, background: `${cor}1f`, cursor: 'pointer', fontSize: '0.85rem' });
+
+  const fecharModal = () => { setModalAdicionar(false); limparForm(); };
 
   if (loading) {
     return (
@@ -262,273 +262,146 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   }
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="rounded-lg p-6" style={{background:"var(--color-accent)",border:"1px solid var(--color-border)"}}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>⏳ Fila de Espera</h2>
-            <p className="text-orange-100">Controle de Reservas e Solicitações</p>
-            <p className="text-orange-200 text-sm mt-1" style={{color:"var(--color-text-muted)"}}>
-              📚 {livrosDisponiveis.length} livros • 👥 {irmaosDisponiveis.length} irmãos • 
-              📋 {filas.length} na fila
-            </p>
-          </div>
-          {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca) && (
-            <button
-              onClick={() => setModalAdicionar(true)}
-              className="px-6 py-3 text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
-            >
-              ➕ Adicionar à Fila
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* CARDS DE RESUMO */}
+    <div className="space-y-4">
+      {/* Indicadores */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm">Aguardando</p>
-              <p className="text-3xl font-bold text-orange-600">{totalAguardando}</p>
-            </div>
-            <div className="text-4xl">⏳</div>
-          </div>
+        <div style={cartaoKpi('#f59e0b')}>
+          <p style={rotuloKpi}>Aguardando</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: '#f59e0b', lineHeight: 1.1 }}>{totalAguardando}</p>
         </div>
-
-        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm">Atendidos</p>
-              <p className="text-3xl font-bold text-green-600">{totalAtendidos}</p>
-            </div>
-            <div className="text-4xl">✅</div>
-          </div>
+        <div style={cartaoKpi('#10b981')}>
+          <p style={rotuloKpi}>Atendidos</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: '#10b981', lineHeight: 1.1 }}>{totalAtendidos}</p>
         </div>
-
-        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm">Livros com Fila</p>
-              <p className="text-3xl font-bold text-blue-600">{livrosComFila}</p>
-            </div>
-            <div className="text-4xl">📚</div>
-          </div>
+        <div style={cartaoKpi('var(--color-accent)')}>
+          <p style={rotuloKpi}>Livros com fila</p>
+          <p style={{ margin: '0.25rem 0 0', fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.1 }}>{livrosComFila}</p>
         </div>
       </div>
 
-      {/* FILTROS */}
-      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Filtrar por Livro</label>
-            <select
-              value={filtroLivro}
-              onChange={(e) => setFiltroLivro(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value="todos">Todos os livros</option>
-              {livrosDisponiveis.map(livro => (
-                <option key={livro.id} value={livro.id}>
-                  {livro.titulo}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Status</label>
-            <select
-              value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value="aguardando">Aguardando</option>
-              <option value="atendido">Atendidos</option>
-              <option value="cancelado">Cancelados</option>
-              <option value="todos">Todos</option>
-            </select>
-          </div>
+      {/* Filtros e ação */}
+      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '0.9rem 1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem' }}>
+        <select value={filtroLivro} onChange={(e) => setFiltroLivro(e.target.value)} aria-label="Filtrar por livro" style={{ ...campo, width: 'auto', minWidth: '14rem', maxWidth: '22rem' }}>
+          <option value="todos">Todos os livros</option>
+          {livrosDisponiveis.map(livro => <option key={livro.id} value={livro.id}>{livro.titulo}</option>)}
+        </select>
+        <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+          {[['aguardando', 'Aguardando', totalAguardando], ['atendido', 'Atendidos', totalAtendidos], ['cancelado', 'Cancelados', totalCancelados], ['todos', 'Todos', filas.length]].map(([valor, rotulo, qtd]) => {
+            const ativo = filtroStatus === valor;
+            return (
+              <button key={valor} onClick={() => setFiltroStatus(valor)}
+                style={{ height: '2.2rem', padding: '0 0.85rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
+                  border: `1px solid ${ativo ? 'var(--color-accent)' : 'var(--color-border-light)'}`, background: ativo ? 'var(--color-accent)' : 'var(--color-bg)', color: ativo ? '#fff' : 'var(--color-text)' }}>
+                {rotulo} <span style={{ opacity: 0.85, fontWeight: 600 }}>{qtd}</span>
+              </button>
+            );
+          })}
         </div>
+        {podeEditar && (
+          <button onClick={() => setModalAdicionar(true)}
+            style={{ marginLeft: 'auto', height: '2.6rem', padding: '0 1.2rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            ➕ Adicionar à Fila
+          </button>
+        )}
       </div>
 
-      {/* LISTA DE FILAS */}
+      {/* Lista agrupada por livro */}
       {Object.keys(filasAgrupadas).length === 0 ? (
-        <div className="text-center py-12 rounded-lg">
-          <div className="text-6xl mb-4">📚</div>
-          <p>Nenhuma solicitação encontrada</p>
-          <p className="text-sm mt-2">
-            Clique em "➕ Adicionar à Fila" para começar
-          </p>
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '3rem 1rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <p style={{ fontSize: '2rem', margin: '0 0 0.5rem' }}>📚</p>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text)' }}>Nenhuma solicitação encontrada</p>
+          {podeEditar && <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem' }}>Use "Adicionar à Fila" para registrar uma reserva</p>}
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.values(filasAgrupadas).map(({ livro, filas }) => (
-            <div key={livro.id} className="rounded-lg overflow-hidden">
-              <div className="bg-orange-600 text-white p-4">
-                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>{livro.titulo}</h3>
-                <p className="text-orange-100 text-sm">{livro.autor}</p>
-                <p className="text-orange-200 text-xs mt-1">
-                  {filas.filter(f => f.status === 'aguardando').length} aguardando
-                </p>
+        <div className="space-y-4">
+          {Object.values(filasAgrupadas).map(({ livro, filas: filasDoLivro }) => (
+            <div key={livro.id} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+              <div style={{ padding: '0.75rem 1.1rem', background: 'var(--color-surface-2)', borderLeft: '4px solid #f59e0b', borderBottom: '1px solid var(--color-border)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-text)', overflowWrap: 'anywhere' }}>{livro.titulo}</h3>
+                  {livro.autor && <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{livro.autor}</p>}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{filasDoLivro.filter(f => f.status === 'aguardando').length} aguardando</span>
               </div>
 
-              <div className="divide-y">
-                {filas.map((fila) => (
-                  <div key={fila.id} className={`p-4 ${
-                    fila.status === 'aguardando' ? '' :
-                    fila.status === 'atendido' ? 'bg-green-50' : ''
-                  }`}>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          {fila.status === 'aguardando' && (
-                            <span className="flex items-center justify-center w-8 h-8 bg-orange-600 text-white rounded-full font-bold text-sm">
-                              {fila.posicao}
-                            </span>
-                          )}
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            fila.status === 'aguardando' ? 'bg-yellow-100 text-yellow-800' :
-                            fila.status === 'atendido' ? 'bg-green-100 text-green-800' :
-                            ' '
-                          }`}>
-                            {fila.status === 'aguardando' ? '⏳ Aguardando' :
-                             fila.status === 'atendido' ? '✅ Atendido' : '❌ Cancelado'}
-                          </span>
-                        </div>
-
-                        <div className="mb-2">
-                          <p className="font-semibold">{fila.irmao_nome}</p>
-                          <p className="text-sm">CIM: {fila.irmao_cim}</p>
-                        </div>
-
-                        <p className="text-xs">
-                          📅 {new Date(fila.data_solicitacao || fila.created_at).toLocaleString('pt-BR')}
-                        </p>
-
-                        {fila.observacoes && (
-                          <p className="text-sm mt-2 italic">💬 {fila.observacoes}</p>
-                        )}
+              <div>
+                {filasDoLivro.map((fila) => {
+                  const cor = COR_STATUS[fila.status] || '#94a3b8';
+                  return (
+                    <div key={fila.id} style={{ display: 'flex', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem 1rem', padding: '0.85rem 1.1rem', borderBottom: '1px solid var(--color-border)', opacity: fila.status === 'cancelado' ? 0.7 : 1 }}>
+                      <div style={{ width: '2.2rem', height: '2.2rem', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>
+                        {fila.status === 'aguardando' ? fila.posicao : fila.status === 'atendido' ? '✓' : '×'}
                       </div>
 
-                      {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca) && (
-                        <div className="flex gap-2 ml-4">
+                      <div style={{ flex: '1 1 240px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)' }}>{fila.irmao_nome}</p>
+                          <span style={{ display: 'inline-flex', justifyContent: 'center', width: '7.5rem', boxSizing: 'border-box', fontSize: '0.7rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: 999, background: `${cor}22`, color: cor, border: `1px solid ${cor}66` }}>
+                            {ROTULO_STATUS[fila.status] || fila.status}
+                          </span>
+                        </div>
+                        <p style={{ margin: '0.2rem 0 0', fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>
+                          {fila.irmao_cim ? `CIM ${fila.irmao_cim} · ` : ''}📅 {new Date(fila.data_solicitacao || fila.created_at).toLocaleString('pt-BR')}
+                        </p>
+                        {fila.observacoes && <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>💬 {fila.observacoes}</p>}
+                      </div>
+
+                      {podeEditar && (
+                        <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
                           {fila.status === 'aguardando' && (
                             <>
-                              <button
-                                onClick={() => handleAtender(fila.id, fila.irmao_nome)}
-                                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm whitespace-nowrap"
-                              >
+                              <button onClick={() => handleAtender(fila.id, fila.irmao_nome)}
+                                style={{ height: '2rem', padding: '0 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.12)', color: '#10b981', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                                 ✅ Atender
                               </button>
-                              <button
-                                onClick={() => handleCancelar(fila.id, fila.irmao_nome)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                              >
-                                ❌
-                              </button>
+                              <button onClick={() => handleCancelar(fila.id, fila.irmao_nome)} title="Cancelar solicitação" aria-label="Cancelar solicitação" style={btnIcone('#f59e0b')}>❌</button>
                             </>
                           )}
-                          <button
-                            onClick={() => handleExcluir(fila.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                          >
-                            🗑️
-                          </button>
+                          <button onClick={() => handleExcluir(fila.id)} title="Excluir" aria-label="Excluir registro" style={btnIcone('#ef4444')}>🗑️</button>
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* MODAL */}
+      {/* Janela: adicionar à fila */}
       {modalAdicionar && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-lg max-w-2xl w-full" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
-            <div className="p-5 rounded-t-lg" style={{background:"var(--color-accent)",borderBottom:"1px solid var(--color-border)"}}>
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold" style={{color:"#fff"}}>➕ Adicionar à Fila de Espera</h3>
-                <button
-                  onClick={() => {
-                    setModalAdicionar(false);
-                    limparForm();
-                  }}
-                  className="text-white hover:bg-orange-700 rounded-full p-2"
-                >
-                  ✖️
-                </button>
-              </div>
+        <div onClick={fecharModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: '3px solid #f59e0b', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '520px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 25px 50px rgba(0,0,0,0.4)' }}>
+            <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-text)' }}>⏳ Adicionar à Fila de Espera</h3>
+              <button onClick={fecharModal} aria-label="Fechar"
+                style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)', borderRadius: 'var(--radius-md)', width: '2.2rem', height: '2.2rem', fontSize: '1.3rem', lineHeight: 1, cursor: 'pointer' }}>×</button>
             </div>
 
-            <form onSubmit={handleAdicionar} className="p-6 space-y-4" style={{background:"var(--color-surface)"}}>
+            <form onSubmit={handleAdicionar} style={{ padding: '1.2rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Livro *</label>
-                <select
-                  value={filaForm.livro_id}
-                  onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                  required
-                >
+                <label style={rotuloCampo}>Livro *</label>
+                <select value={filaForm.livro_id} onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })} style={campo} required>
                   <option value="">Selecione o livro</option>
-                  {livrosDisponiveis.map(livro => (
-                    <option key={livro.id} value={livro.id}>
-                      {livro.titulo}
-                    </option>
-                  ))}
+                  {livrosDisponiveis.map(livro => <option key={livro.id} value={livro.id}>{livro.titulo}</option>)}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Irmão *</label>
-                <select
-                  value={filaForm.irmao_id}
-                  onChange={(e) => setFilaForm({ ...filaForm, irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                  required
-                >
+                <label style={rotuloCampo}>Irmão *</label>
+                <select value={filaForm.irmao_id} onChange={(e) => setFilaForm({ ...filaForm, irmao_id: e.target.value })} style={campo} required>
                   <option value="">Selecione o irmão</option>
-                  {irmaosDisponiveis.map(irmao => (
-                    <option key={irmao.id} value={irmao.id}>
-                      {irmao.nome} - CIM: {irmao.cim}
-                    </option>
-                  ))}
+                  {irmaosAptos.map(irmao => <option key={irmao.id} value={irmao.id}>{irmao.nome}{irmao.cim ? ` - CIM: ${irmao.cim}` : ''}</option>)}
                 </select>
               </div>
-
               <div>
-                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Observações</label>
-                <textarea
-                  value={filaForm.observacoes}
-                  onChange={(e) => setFilaForm({ ...filaForm, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                  rows="3"
-                  placeholder="Ex: Preciso urgente para estudo"
-                />
+                <label style={rotuloCampo}>Observações</label>
+                <textarea value={filaForm.observacoes} onChange={(e) => setFilaForm({ ...filaForm, observacoes: e.target.value })} rows="3" placeholder="Ex: Preciso para estudo"
+                  style={{ ...campo, height: 'auto', padding: '0.6rem 0.8rem', fontFamily: 'inherit', resize: 'vertical' }} />
               </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-accent)",color:"#fff"}}
-                >
-                  ➕ Adicionar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalAdicionar(false);
-                    limparForm();
-                  }}
-                  className="px-6 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                >
-                  ❌ Cancelar
-                </button>
+              <div style={{ display: 'flex', gap: '0.65rem', paddingTop: '0.25rem' }}>
+                <button type="button" onClick={fecharModal} style={{ flex: 1, height: '2.6rem', background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-md)', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+                <button type="submit" style={{ flex: 2, height: '2.6rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, cursor: 'pointer' }}>➕ Adicionar</button>
               </div>
             </form>
           </div>
