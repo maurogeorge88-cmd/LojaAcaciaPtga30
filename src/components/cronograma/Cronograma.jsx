@@ -556,6 +556,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const chip = { fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text-muted)' };
   const btnBaseTela = { height: '2.6rem', padding: '0 1.2rem', borderRadius: 'var(--radius-lg)', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.45rem', whiteSpace: 'nowrap' };
 
+  // Selos alinhados em colunas: cada coluna tem a largura do maior texto possível
+  // (tipo: "Sessão de Instalação"; situação: "Confirmado"; grau: "Sessão Administrativa").
+  const selo = (largura) => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', width: largura, maxWidth: '100%', padding: '0.15rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' });
+  const LARG_TIPO = '10.4rem', LARG_STATUS = '7rem', LARG_GRAU = '10.8rem';
+  const celulaMeta = (largura) => ({ width: largura, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
+
   const renderEvento = (evento) => {
     const cor = corDoEvento(evento.tipo, evento.cor_destaque);
     const d = new Date(evento.data_evento + 'T00:00:00');
@@ -577,19 +583,19 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             {ehHoje && <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.1rem 0.5rem', borderRadius: 999, background: 'rgba(245,158,11,0.18)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.5)' }}>HOJE</span>}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem' }}>
-            <span style={{ padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(evento.tipo)}</span>
+            <span style={{ ...selo(LARG_TIPO), color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(evento.tipo)}</span>
             {evento.tipo !== 'feriado' && (
-              <span style={{ ...obterStyleStatus(evento.status), padding: '0.15rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700 }}>{obterLabelStatus(evento.status)}</span>
+              <span style={{ ...obterStyleStatus(evento.status), ...selo(LARG_STATUS) }}>{obterLabelStatus(evento.status)}</span>
             )}
             {evento.tipo !== 'feriado' && evento.grau_sessao_id && getGrauNome(evento.grau_sessao_id) && (
-              <span style={{ ...chip, color: 'var(--color-text)' }}>{getGrauNome(evento.grau_sessao_id)}</span>
+              <span style={{ ...selo(LARG_GRAU), background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)', color: 'var(--color-text)' }}>{getGrauNome(evento.grau_sessao_id)}</span>
             )}
           </div>
           {(evento.hora_inicio || evento.local || evento.responsavel) && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.1rem', marginTop: '0.45rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-              {evento.hora_inicio && <span>🕐 {formatarHora(evento.hora_inicio)}{evento.hora_fim && ` – ${formatarHora(evento.hora_fim)}`}</span>}
-              {evento.local && <span>📍 {evento.local}</span>}
-              {evento.responsavel && <span>👤 {evento.responsavel}</span>}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1rem', marginTop: '0.45rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              <span style={celulaMeta('7.6rem')}>{evento.hora_inicio ? `🕐 ${formatarHora(evento.hora_inicio)}${evento.hora_fim ? ` – ${formatarHora(evento.hora_fim)}` : ''}` : ''}</span>
+              <span style={celulaMeta('11.5rem')} title={evento.local || ''}>{evento.local ? `📍 ${evento.local}` : ''}</span>
+              <span style={{ ...celulaMeta('16rem'), flex: '1 1 9rem' }} title={evento.responsavel || ''}>{evento.responsavel ? `👤 ${evento.responsavel}` : ''}</span>
             </div>
           )}
           {evento.descricao && (
