@@ -142,6 +142,7 @@ const obterLabelTipo = (tipo) => {
     'sessao': 'Sessão',
     'trabalho_irmao': 'Trabalho',
     'instrucao': 'Instrução',
+    'treinamento': 'Treinamento',
     'sessao_magna': 'Sessão Magna',
     'sessao_posse': 'Sessão de Posse',
     'sessao_instalacao': 'Sessão de Instalação',
