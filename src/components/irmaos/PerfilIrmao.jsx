@@ -6,13 +6,21 @@ import VidaMaconica from '../vida-maconica/VidaMaconica';
 import GestaoSituacoes from './GestaoSituacoes';
 import InstrucoesTrabalhos from './InstrucoesTrabalhos';
 import QuadrosComendas from './QuadrosComendas';
+import { gerarRelatorioIndividualPDF } from '../../utils/gerarRelatorioIndividualPDF';
 
 export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError, permissoes, userEmail, userData }) {
   const boxCard = { background: "var(--color-surface-2)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "1.25rem" };
-  const boxTitle = { fontSize: "0.72rem", fontWeight: 700, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.85rem" };
+  const boxTitle = { fontSize: "0.95rem", fontWeight: 700, color: "var(--color-text)", marginBottom: "1rem", paddingBottom: "0.6rem", borderBottom: "1px solid var(--color-border)" };
+  const rotuloCampo = { display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-text-muted)", marginBottom: "0.25rem" };
+  const vazioCampo = { color: "var(--color-text-muted)", opacity: 0.6, fontStyle: "italic", fontWeight: 400 };
+  const COR_GRAU_PERFIL = { 'Aprendiz': '#eab308', 'Companheiro': '#10b981', 'Mestre': '#3b82f6', 'Mestre Instalado': '#3b82f6' };
   const [irmao, setIrmao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modoEdicao, setModoEdicao] = useState(false);
+  const [modalRelatorio, setModalRelatorio] = useState(false);
+  const [relInicio, setRelInicio] = useState(`${new Date().getFullYear()}-01-01`);
+  const [relFim, setRelFim] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+  const [gerandoRelatorio, setGerandoRelatorio] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal');
   const [irmaoForm, setIrmaoForm] = useState({});
   const [familiares, setFamiliares] = useState({
@@ -397,6 +405,81 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     }
   }, [irmaoId, abaSelecionada]);
 
+
+  // ── Derivados para o cabeçalho ──
+  const dataLocalPerfil = (d) => (d ? new Date(String(d).slice(0, 10) + 'T00:00:00') : null);
+  const fmtDataPerfil = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '');
+  const mesesEntre = (a, b) => {
+    const i = dataLocalPerfil(a); const f = b ? dataLocalPerfil(b) : new Date();
+    if (!i || !f) return null;
+    let m = (f.getFullYear() - i.getFullYear()) * 12 + (f.getMonth() - i.getMonth());
+    if (f.getDate() < i.getDate()) m--;
+    return Math.max(m, 0);
+  };
+  const fmtMeses = (m) => (m == null ? '' : m < 1 ? 'menos de 1 mês' : `${Math.floor(m / 12) ? Math.floor(m / 12) + 'a ' : ''}${m % 12}m`.trim());
+  const grauAtualPerfil = irmao ? (irmao.data_exaltacao ? (irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre') : irmao.data_elevacao ? 'Companheiro' : irmao.data_iniciacao ? 'Aprendiz' : 'Não iniciado') : '';
+  const corGrauPerfil = COR_GRAU_PERFIL[grauAtualPerfil] || '#94a3b8';
+  const idadePerfil = irmao?.data_nascimento ? parseInt(calcularIdade(irmao.data_nascimento), 10) : null;
+  const pendenciasPerfil = irmao ? [
+    !irmao.estado_civil && 'Estado civil',
+    irmao.estado_civil && uniaoEstavelPendente(irmao.estado_civil, irmao.uniao_estavel) && 'União estável',
+    !irmao.cpf && 'CPF',
+    !irmao.data_nascimento && 'Data de nascimento',
+    !irmao.telefone && 'Telefone',
+    !irmao.email && 'E-mail',
+  ].filter(Boolean) : [];
+  const situacaoPerfil = (irmao?.situacao || 'regular');
+  const COR_SIT_PERFIL = { regular: '#10b981', licenciado: '#eab308', irregular: '#f97316', suspenso: '#ef4444', excluido: '#ef4444', falecido: '#64748b', desligado: '#94a3b8', ex_oficio: '#8b5cf6' };
+  const corSitPerfil = COR_SIT_PERFIL[String(situacaoPerfil).toLowerCase().replace(/[-\s]/g, '_')] || '#64748b';
+  const chipPerfil = (texto, cor) => (
+    <span style={{ display: 'inline-block', padding: '0.2rem 0.65rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700, background: cor + '26', color: cor, border: `1px solid ${cor}`, whiteSpace: 'nowrap' }}>{texto}</span>
+  );
+
+  const gerarRelatorioPresenca = async () => {
+    setGerandoRelatorio(true);
+    try {
+      const { data: sessoesPeriodo } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
+        .gte('data_sessao', relInicio).lte('data_sessao', relFim).order('data_sessao');
+      const ids = (sessoesPeriodo || []).map(x => x.id);
+      let registros = [];
+      if (ids.length > 0) {
+        let ini = 0; let continuar = true;
+        while (continuar) {
+          const { data: lote } = await supabase.from('registros_presenca')
+            .select('membro_id, sessao_id, presente, justificativa')
+            .eq('membro_id', irmaoId).in('sessao_id', ids).range(ini, ini + 999);
+          if (lote && lote.length > 0) { registros = [...registros, ...lote]; ini += 1000; if (lote.length < 1000) continuar = false; } else continuar = false;
+        }
+      }
+      const grade = {};
+      registros.forEach(r => { if (!grade[r.membro_id]) grade[r.membro_id] = {}; grade[r.membro_id][r.sessao_id] = { presente: r.presente, justificativa: r.justificativa }; });
+      const { data: hist } = await supabase.from('historico_situacoes').select('*').in('status', ['ativa', 'vencida']);
+      const { data: loja } = await supabase.from('dados_loja').select('*').limit(1).maybeSingle();
+      const irmaoRel = { ...irmao, idade: idadePerfil, data_prerrogativa: null };
+      if (idadePerfil != null && idadePerfil >= 70) {
+        const nasc = dataLocalPerfil(irmao.data_nascimento);
+        nasc.setFullYear(nasc.getFullYear() + 70);
+        irmaoRel.data_prerrogativa = nasc;
+      }
+      gerarRelatorioIndividualPDF(irmaoRel, sessoesPeriodo || [], grade, hist || [], loja, relInicio, relFim);
+      setModalRelatorio(false);
+    } catch (e) {
+      console.error('Erro ao gerar relatório individual:', e);
+      if (showError) showError('Erro ao gerar o relatório. Tente novamente.');
+    } finally {
+      setGerandoRelatorio(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!modalRelatorio) return;
+    const esc = (e) => { if (e.key === 'Escape') setModalRelatorio(false); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [modalRelatorio]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -415,147 +498,107 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
   return (
     <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
-      {/* Header com foto e nome */}
-      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",overflow:"hidden"}}>
-        <div className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex gap-6 items-start">
-              <div className="flex flex-col items-center gap-2">
-                {irmao.foto_url ? (
-                  <img
-                    src={irmao.foto_url}
-                    alt={irmao.nome}
-                    className="w-24 h-24 rounded-full border-4 object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full border-4 flex items-center justify-center">
-                    <span style={{fontSize:"2.5rem"}}>👤</span>
-                  </div>
-                )}
-                
-                {/* Botão upload foto */}
-                {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
-                  <label style={{cursor:"pointer",color:"var(--color-text-muted)",padding:"0.15rem 0.75rem",borderRadius:"var(--radius-md)",fontSize:"0.75rem",fontWeight:"600",border:"1px solid var(--color-border)",background:"var(--color-surface-2)"}}>
-                    📷 Alterar Foto
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleUploadFoto}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-              
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{irmao.nome}</h1>
-                <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">CIM:</span>
-                    <span>{irmao.cim || 'Não informado'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Grau:</span>
-                    <span>
-                      {irmao.data_exaltacao ? (irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre') : irmao.data_elevacao ? 'Companheiro' : 'Aprendiz'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Status:</span>
-                    <span style={{padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.72rem',fontWeight:'700',color:'#fff',background:irmao.status==='ativo'?'#10b981':'var(--color-surface-3)'}}>
-                      {irmao.status?.toUpperCase() || 'ATIVO'}
-                    </span>
-                  </div>
+      {/* Cartão de identificação */}
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderTop:`5px solid ${corGrauPerfil}`,borderRadius:"var(--radius-lg)",overflow:"hidden"}}>
+        <div style={{padding:"1.25rem 1.5rem",display:"flex",flexWrap:"wrap",gap:"1.25rem",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",gap:"1.25rem",alignItems:"center",minWidth:0,flexWrap:"wrap"}}>
+            <div style={{position:"relative",flexShrink:0}}>
+              {irmao.foto_url ? (
+                <img src={irmao.foto_url} alt={irmao.nome}
+                  style={{width:112,height:112,borderRadius:"50%",objectFit:"cover",border:`4px solid ${corGrauPerfil}`,display:"block"}} />
+              ) : (
+                <div style={{width:112,height:112,borderRadius:"50%",border:`4px solid ${corGrauPerfil}`,background:corGrauPerfil+"26",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"2.4rem",fontWeight:800,color:corGrauPerfil}}>
+                  {(irmao.nome || '?').trim().split(/\s+/).filter(Boolean).map((p,i,a)=> (i===0||i===a.length-1)?p[0]:'').join('').toUpperCase()}
                 </div>
-              </div>
+              )}
+              {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
+                <label title="Alterar foto" style={{position:"absolute",right:-2,bottom:-2,width:34,height:34,borderRadius:"50%",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--color-accent)",color:"#fff",border:"3px solid var(--color-surface)",fontSize:"0.95rem"}}>
+                  📷
+                  <input type="file" accept="image/*" onChange={handleUploadFoto} style={{display:"none"}} />
+                </label>
+              )}
             </div>
 
-            <div className="flex gap-2">
-              {/* Botão Editar - apenas se for o próprio irmão */}
-              {userEmail === irmao.email && !modoEdicao && (
-                <button
-                  onClick={() => setModoEdicao(true)}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
-                >
-                  ✏️ Editar Meu Perfil
-                </button>
-              )}
-              
-              {/* Botões de salvar/cancelar quando em edição */}
-              {modoEdicao && (
-                <>
-                  <button
-                    onClick={handleSalvarEdicao}
-                    style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
-                  >
-                    ✓ Salvar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setModoEdicao(false);
-                      carregarIrmao(); // Recarrega dados originais
-                    }}
-                    style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
-                  >
-                    ✕ Cancelar
-                  </button>
-                </>
-              )}
-              
-              <button
-                onClick={onVoltar}
-                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
-              >
-                ← Voltar
-              </button>
+            <div style={{minWidth:0}}>
+              <h1 style={{margin:0,fontSize:"1.75rem",fontWeight:800,color:"var(--color-text)",lineHeight:1.2}}>{irmao.nome}</h1>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"0.5rem",marginTop:"0.6rem",alignItems:"center"}}>
+                {chipPerfil(grauAtualPerfil, corGrauPerfil)}
+                {chipPerfil(String(situacaoPerfil).charAt(0).toUpperCase() + String(situacaoPerfil).slice(1), corSitPerfil)}
+                {irmao.status && irmao.status !== 'ativo' && chipPerfil(irmao.status.toUpperCase(), '#64748b')}
+                {idadePerfil != null && idadePerfil >= 70 && chipPerfil('Prerrogativa 70+', '#f59e0b')}
+                {pendenciasPerfil.length > 0 && (
+                  <span title={'Dados pendentes: ' + pendenciasPerfil.join(', ')}
+                    style={{fontSize:"0.72rem",fontWeight:700,color:"#f59e0b",cursor:"help"}}>
+                    ⚠ {pendenciasPerfil.length} dado(s) pendente(s)
+                  </span>
+                )}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:"1.25rem",marginTop:"0.75rem",fontSize:"0.82rem",color:"var(--color-text-muted)"}}>
+                <span>🪪 CIM <strong style={{color:"var(--color-text)"}}>{irmao.cim || '-'}</strong></span>
+                {idadePerfil != null && <span>🎂 <strong style={{color:"var(--color-text)"}}>{idadePerfil} anos</strong></span>}
+                {irmao.data_iniciacao && <span>🔨 Iniciado em <strong style={{color:"var(--color-text)"}}>{fmtDataPerfil(irmao.data_iniciacao)}</strong></span>}
+                {irmao.data_iniciacao && <span>⏳ <strong style={{color:"var(--color-text)"}}>{fmtMeses(mesesEntre(irmao.data_iniciacao))}</strong> de maçonaria</span>}
+              </div>
             </div>
+          </div>
+
+          <div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>
+            {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && !modoEdicao && (
+              <button onClick={() => setModalRelatorio(true)}
+                style={{padding:"0.5rem 1rem",background:"#dc2626",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                📄 Relatório de Presença
+              </button>
+            )}
+            {userEmail === irmao.email && !modoEdicao && (
+              <button onClick={() => setModoEdicao(true)}
+                style={{padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                ✏️ Editar Meu Perfil
+              </button>
+            )}
+            <button onClick={onVoltar}
+              style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
+              ← Voltar
+            </button>
           </div>
         </div>
       </div>
 
+      {modoEdicao && (
+        <div style={{padding:"0.75rem 1rem",borderRadius:"var(--radius-lg)",background:"rgba(245,158,11,0.12)",border:"1px solid #f59e0b",color:"var(--color-text)",fontSize:"0.85rem"}}>
+          ✏️ <strong>Modo edição:</strong> as alterações só são gravadas ao clicar em <strong>Salvar</strong> (barra no rodapé da tela).
+        </div>
+      )}
+
       {/* Abas */}
       <div className="rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex border-b overflow-x-auto">
-          <button
-            onClick={() => setAbaSelecionada('pessoal')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='pessoal'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='pessoal'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            📋 Dados Pessoais
-          </button>
-          <button
-            onClick={() => setAbaSelecionada('maconico')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='maconico'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='maconico'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            🔨 Dados Maçônicos
-          </button>
-          <button
-            onClick={() => setAbaSelecionada('familiar')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='familiar'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='familiar'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            👨‍👩‍👧 Dados Familiares
-          </button>
-          <button
-            onClick={() => setAbaSelecionada('vida-maconica')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='vida-maconica'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='vida-maconica'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            🔺 Vida Maçônica
-          </button>
-          <button
-            onClick={() => setAbaSelecionada('situacoes')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='situacoes'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='situacoes'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            📋 Situações
-          </button>
-          <button
-            onClick={() => setAbaSelecionada('documentos')}
-            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='documentos'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='documentos'?'var(--color-accent)':'var(--color-text-muted)'}}
-          >
-            📄 Documentos
-          </button>
+        <div style={{display:"flex",gap:"0.4rem",overflowX:"auto",padding:"0.6rem 0.75rem",borderBottom:"1px solid var(--color-border)"}}>
+          {[
+            ['pessoal','📋','Dados Pessoais'],
+            ['maconico','🔨','Dados Maçônicos'],
+            ['familiar','👨‍👩‍👧','Dados Familiares'],
+            ['vida-maconica','🔺','Vida Maçônica'],
+            ['situacoes','🗓️','Situações'],
+            ['documentos','📄','Documentos'],
+          ].map(([chave, icone, rotulo]) => {
+            const ativa = abaSelecionada === chave;
+            return (
+              <button key={chave} onClick={() => setAbaSelecionada(chave)}
+                style={{padding:"0.5rem 1rem",borderRadius:"999px",fontSize:"0.82rem",fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",
+                  border:`1px solid ${ativa ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                  background: ativa ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                  color: ativa ? '#fff' : 'var(--color-text-muted)'}}>
+                {icone} {rotulo}{chave === 'documentos' && documentos.length > 0 ? ` (${documentos.length})` : ''}
+              </button>
+            );
+          })}
         </div>
 
         {/* Conteúdo das Abas */}
-        <div className="p-6">
+        <style>{`
+          .perfil-dados p { font-size: 0.95rem; font-weight: 600; color: var(--color-text); margin: 0; overflow-wrap: anywhere; }
+          .perfil-dados p.text-xs { font-size: 0.75rem; font-weight: 500; color: var(--color-text-muted); margin-top: 2px; }
+        `}</style>
+        <div className="p-6 perfil-dados">
           {/* ABA: Dados Pessoais */}
           {abaSelecionada === 'pessoal' && (
             <div className="space-y-6">
@@ -565,7 +608,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Nome Completo */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome Completo</label>
+                  <label style={rotuloCampo}>Nome Completo</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -580,7 +623,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
                 {/* CPF */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CPF</label>
+                  <label style={rotuloCampo}>CPF</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -589,13 +632,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.cpf || 'Não informado'}</p>
+                    <p>{irmao.cpf || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* RG */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>RG</label>
+                  <label style={rotuloCampo}>RG</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -604,13 +647,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.rg || 'Não informado'}</p>
+                    <p>{irmao.rg || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* Data de Nascimento */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Nascimento</label>
+                  <label style={rotuloCampo}>Data de Nascimento</label>
                   {modoEdicao ? (
                     <input
                       type="date"
@@ -621,7 +664,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   ) : (
                     <div>
                       <p>
-                        {irmao.data_nascimento ? irmao.data_nascimento.split('-').reverse().join('/') : 'Não informado'}
+                        {irmao.data_nascimento ? irmao.data_nascimento.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                       </p>
                       {irmao.data_nascimento && (
                         <p className="text-xs">{calcularIdade(irmao.data_nascimento)}</p>
@@ -638,7 +681,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Email</label>
+                  <label style={rotuloCampo}>Email</label>
                   {modoEdicao ? (
                     <input
                       type="email"
@@ -647,13 +690,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.email || 'Não informado'}</p>
+                    <p>{irmao.email || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* Telefone */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Telefone</label>
+                  <label style={rotuloCampo}>Telefone</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -662,7 +705,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.telefone || 'Não informado'}</p>
+                    <p>{irmao.telefone || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
                 </div>
@@ -674,7 +717,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Profissão */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Profissão</label>
+                  <label style={rotuloCampo}>Profissão</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -683,13 +726,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.profissao || 'Não informado'}</p>
+                    <p>{irmao.profissao || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* Estado Civil */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado Civil</label>
+                  <label style={rotuloCampo}>Estado Civil</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.estado_civil || ''}
@@ -700,11 +743,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {ESTADOS_CIVIS.map(ec => <option key={ec.value} value={ec.value}>{ec.label}</option>)}
                     </select>
                   ) : (
-                    <p>{rotuloEstadoCivilCompleto(irmao.estado_civil, irmao.uniao_estavel) || 'Não informado'}</p>
+                    <p>{rotuloEstadoCivilCompleto(irmao.estado_civil, irmao.uniao_estavel) || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                   {modoEdicao && (
                     <div style={{ marginTop: '0.5rem' }}>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>União Estável *</label>
+                      <label style={rotuloCampo}>União Estável *</label>
                       <CampoUniaoEstavel
                         estadoCivil={irmaoForm.estado_civil}
                         valor={irmaoForm.uniao_estavel}
@@ -717,7 +760,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
                 {/* Naturalidade */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Naturalidade</label>
+                  <label style={rotuloCampo}>Naturalidade</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -727,13 +770,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.naturalidade || 'Não informado'}</p>
+                    <p>{irmao.naturalidade || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* Formação */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Formação Acadêmica</label>
+                  <label style={rotuloCampo}>Formação Acadêmica</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -743,13 +786,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.formacao || 'Não informado'}</p>
+                    <p>{irmao.formacao || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 {/* Escolaridade */}
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Escolaridade</label>
+                  <label style={rotuloCampo}>Escolaridade</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.escolaridade || ''}
@@ -767,7 +810,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <option value="doutorado">Doutorado</option>
                     </select>
                   ) : (
-                    <p>{irmao.escolaridade?.replace(/_/g, ' ') || 'Não informado'}</p>
+                    <p>{irmao.escolaridade?.replace(/_/g, ' ') || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
                 </div>
@@ -778,7 +821,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <h4 style={boxTitle}>📍 Endereço</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CEP</label>
+                      <label style={rotuloCampo}>CEP</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -787,11 +830,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
-                        <p>{irmao.cep || 'Não informado'}</p>
+                        <p>{irmao.cep || <span style={vazioCampo}>Não informado</span>}</p>
                       )}
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Logradouro</label>
+                      <label style={rotuloCampo}>Logradouro</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -800,11 +843,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
-                        <p>{irmao.endereco || 'Não informado'}</p>
+                        <p>{irmao.endereco || <span style={vazioCampo}>Não informado</span>}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Número</label>
+                      <label style={rotuloCampo}>Número</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -817,7 +860,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Complemento</label>
+                      <label style={rotuloCampo}>Complemento</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -830,7 +873,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Bairro</label>
+                      <label style={rotuloCampo}>Bairro</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -839,11 +882,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
-                        <p>{irmao.bairro || 'Não informado'}</p>
+                        <p>{irmao.bairro || <span style={vazioCampo}>Não informado</span>}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Cidade</label>
+                      <label style={rotuloCampo}>Cidade</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -852,11 +895,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
-                        <p>{irmao.cidade || 'Não informado'}</p>
+                        <p>{irmao.cidade || <span style={vazioCampo}>Não informado</span>}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado</label>
+                      <label style={rotuloCampo}>Estado</label>
                       {modoEdicao ? (
                         <input
                           type="text"
@@ -866,7 +909,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
-                        <p>{irmao.estado || 'Não informado'}</p>
+                        <p>{irmao.estado || <span style={vazioCampo}>Não informado</span>}</p>
                       )}
                     </div>
                   </div>
@@ -877,11 +920,50 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {/* ABA: Dados Maçônicos */}
           {abaSelecionada === 'maconico' && (
             <div className="space-y-6">
+              {!modoEdicao && (() => {
+                const etapas = [
+                  { chave: 'ini', icone: '🔨', rotulo: 'Iniciação', data: irmao.data_iniciacao, cor: COR_GRAU_PERFIL['Aprendiz'] },
+                  { chave: 'ele', icone: '📐', rotulo: 'Elevação', data: irmao.data_elevacao, cor: COR_GRAU_PERFIL['Companheiro'] },
+                  { chave: 'exa', icone: '⚒️', rotulo: 'Exaltação', data: irmao.data_exaltacao, cor: COR_GRAU_PERFIL['Mestre'] },
+                  ...(irmao.mestre_instalado || irmao.data_instalacao ? [{ chave: 'ins', icone: '⭐', rotulo: 'Instalação', data: irmao.data_instalacao, cor: COR_GRAU_PERFIL['Mestre Instalado'] }] : []),
+                ];
+                return (
+                  <div style={boxCard}>
+                    <h4 style={boxTitle}>🧭 Linha do Tempo Maçônica</h4>
+                    <div style={{display:"grid",gridTemplateColumns:`repeat(${etapas.length}, minmax(140px, 1fr))`,gap:0,overflowX:"auto"}}>
+                      {etapas.map((e, idx) => {
+                        const feito = !!e.data;
+                        const anterior = idx > 0 ? etapas[idx - 1].data : null;
+                        const intervalo = feito && anterior ? fmtMeses(mesesEntre(anterior, e.data)) : '';
+                        return (
+                          <div key={e.chave} style={{textAlign:"center",position:"relative"}}>
+                            <div style={{display:"flex",alignItems:"center"}}>
+                              <div style={{flex:1,height:3,background: idx === 0 ? 'transparent' : (feito ? e.cor : 'var(--color-border)')}} />
+                              <div style={{width:44,height:44,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.2rem",
+                                background: feito ? e.cor + '26' : 'var(--color-surface)', border:`3px solid ${feito ? e.cor : 'var(--color-border)'}`, opacity: feito ? 1 : 0.55}}>{e.icone}</div>
+                              <div style={{flex:1,height:3,background: idx === etapas.length - 1 ? 'transparent' : (etapas[idx + 1].data && feito ? etapas[idx + 1].cor : 'var(--color-border)')}} />
+                            </div>
+                            <div style={{marginTop:"0.5rem",fontWeight:700,fontSize:"0.85rem",color:"var(--color-text)"}}>{e.rotulo}</div>
+                            <div style={{fontSize:"0.82rem",color: feito ? 'var(--color-text)' : 'var(--color-text-muted)'}}>{feito ? fmtDataPerfil(e.data) : 'Pendente'}</div>
+                            {intervalo && <div style={{fontSize:"0.7rem",color:"var(--color-text-muted)"}}>após {intervalo}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {irmao.data_iniciacao && (
+                      <div style={{marginTop:"1rem",paddingTop:"0.75rem",borderTop:"1px solid var(--color-border)",fontSize:"0.8rem",color:"var(--color-text-muted)",textAlign:"center"}}>
+                        Tempo total de maçonaria: <strong style={{color:"var(--color-text)"}}>{fmtMeses(mesesEntre(irmao.data_iniciacao))}</strong>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Quadro: CIM e Situação */}
               <div style={boxCard}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CIM</label>
+                  <label style={rotuloCampo}>CIM</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -890,12 +972,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p className="font-medium text-lg">{irmao.cim || 'Não informado'}</p>
+                    <p className="font-medium text-lg">{irmao.cim || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Situação</label>
+                  <label style={rotuloCampo}>Situação</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.situacao || ''}
@@ -930,7 +1012,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   {/* Data de Licença */}
                   {/* {(modoEdicao ? irmaoForm.situacao === 'licenciado' : irmao.situacao === 'licenciado') && (
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                      <label style={rotuloCampo}>
                         Data de Início da Licença
                         {modoEdicao && (
                           <span className="block text-xs font-normal mt-0.5">
@@ -947,7 +1029,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         />
                       ) : (
                         <p>
-                          {irmao.data_licenca ? irmao.data_licenca.split('-').reverse().join('/') : 'Não informado'}
+                          {irmao.data_licenca ? irmao.data_licenca.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                         </p>
                       )}
                     </div>
@@ -959,7 +1041,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     : (irmao.situacao === 'desligado' || irmao.situacao === 'ex_oficio')
                   ) && (
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                      <label style={rotuloCampo}>
                         Data do Desligamento
                         {modoEdicao && (
                           <span className="block text-xs font-normal mt-0.5">
@@ -978,7 +1060,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         />
                       ) : (
                         <p>
-                          {irmao.data_desligamento ? irmao.data_desligamento.split('-').reverse().join('/') : 'Não informado'}
+                          {irmao.data_desligamento ? irmao.data_desligamento.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                         </p>
                       )}
                     </div>
@@ -987,7 +1069,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   {/* Data de Falecimento */}
                   {(modoEdicao ? irmaoForm.situacao === 'falecido' : irmao.situacao === 'falecido') && (
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                      <label style={rotuloCampo}>
                         Data do Falecimento
                         {modoEdicao && (
                           <span className="block text-xs font-normal mt-0.5">
@@ -1004,7 +1086,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         />
                       ) : (
                         <p>
-                          {irmao.data_falecimento ? irmao.data_falecimento.split('-').reverse().join('/') : 'Não informado'}
+                          {irmao.data_falecimento ? irmao.data_falecimento.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                         </p>
                       )}
                     </div>
@@ -1050,7 +1132,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
               <div className="border-l-4 p-4 rounded-lg" style={{background:"var(--color-accent-bg)",borderLeftColor:"var(--color-accent)"}}>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                  <label style={rotuloCampo}>
                     ➡️ Data de Ingresso na Loja
                     <span className="block text-xs font-normal">Quando veio transferido de outra loja</span>
                   </label>
@@ -1079,7 +1161,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <h4 style={boxTitle}>🕐 Datas Maçônicas</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🔨 Data de Iniciação</label>
+                  <label style={rotuloCampo}>🔨 Data de Iniciação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
@@ -1090,7 +1172,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   ) : (
                     <div>
                       <p>
-                        {irmao.data_iniciacao ? irmao.data_iniciacao.split('-').reverse().join('/') : 'Não informado'}
+                        {irmao.data_iniciacao ? irmao.data_iniciacao.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                       </p>
                       {irmao.data_iniciacao && (
                         <p className="text-xs">{calcularTempoMaconaria(irmao.data_iniciacao)}</p>
@@ -1100,7 +1182,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>📐 Data de Elevação</label>
+                  <label style={rotuloCampo}>📐 Data de Elevação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
@@ -1110,13 +1192,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     />
                   ) : (
                     <p>
-                      {irmao.data_elevacao ? irmao.data_elevacao.split('-').reverse().join('/') : 'Não informado'}
+                      {irmao.data_elevacao ? irmao.data_elevacao.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🏛️ Data de Exaltação</label>
+                  <label style={rotuloCampo}>🏛️ Data de Exaltação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
@@ -1126,7 +1208,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     />
                   ) : (
                     <p>
-                      {irmao.data_exaltacao ? irmao.data_exaltacao.split('-').reverse().join('/') : 'Não informado'}
+                      {irmao.data_exaltacao ? irmao.data_exaltacao.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                     </p>
                   )}
                 </div>
@@ -1165,7 +1247,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
                 {(modoEdicao ? irmaoForm.mestre_instalado : irmao.mestre_instalado) && (
                   <div className="md:col-span-3">
-                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>📅 Data de Instalação</label>
+                    <label style={rotuloCampo}>📅 Data de Instalação</label>
                     {modoEdicao ? (
                       <input
                         type="date"
@@ -1175,7 +1257,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     ) : (
                       <p>
-                        {irmao.data_instalacao ? irmao.data_instalacao.split('-').reverse().join('/') : 'Não informado'}
+                        {irmao.data_instalacao ? irmao.data_instalacao.split('-').reverse().join('/') : <span style={vazioCampo}>Não informado</span>}
                       </p>
                     )}
                   </div>
@@ -1188,7 +1270,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <h4 style={boxTitle}>🏛️ Loja de Origem</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Loja de Origem</label>
+                  <label style={rotuloCampo}>Loja de Origem</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -1197,12 +1279,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.loja_origem || 'Não informado'}</p>
+                    <p>{irmao.loja_origem || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Oriente</label>
+                  <label style={rotuloCampo}>Oriente</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -1211,12 +1293,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.oriente || 'Não informado'}</p>
+                    <p>{irmao.oriente || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Potência</label>
+                  <label style={rotuloCampo}>Potência</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -1225,7 +1307,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
-                    <p>{irmao.grande_oriente || 'Não informado'}</p>
+                    <p>{irmao.grande_oriente || <span style={vazioCampo}>Não informado</span>}</p>
                   )}
                 </div>
                 </div>
@@ -1260,7 +1342,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <div className="p-4 rounded-lg mb-4" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                       <div className="md:col-span-3">
-                        <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
+                        <label style={rotuloCampo}>Ano</label>
                         <input
                           type="number"
                           id="cargo-ano"
@@ -1271,7 +1353,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         />
                       </div>
                       <div className="md:col-span-7">
-                        <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                        <label style={rotuloCampo}>
                           Cargo(s) <span className="text-xs">(separe por vírgula se houver mais de um)</span>
                         </label>
                         <input
@@ -1418,7 +1500,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 {modoEdicao ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome</label>
+                      <label style={rotuloCampo}>Nome</label>
                       <input
                         type="text"
                         value={familiares.conjuge?.nome || ''}
@@ -1430,7 +1512,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Nascimento</label>
+                      <label style={rotuloCampo}>Data Nascimento</label>
                       <input
                         type="date"
                         value={familiares.conjuge?.data_nascimento || ''}
@@ -1442,7 +1524,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Casamento</label>
+                      <label style={rotuloCampo}>Data Casamento</label>
                       <input
                         type="date"
                         value={familiares.conjuge?.data_casamento || ''}
@@ -1454,7 +1536,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Profissão</label>
+                      <label style={rotuloCampo}>Profissão</label>
                       <input
                         type="text"
                         value={familiares.conjuge?.profissao || ''}
@@ -1466,7 +1548,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>E-mail</label>
+                      <label style={rotuloCampo}>E-mail</label>
                       <input
                         type="email"
                         placeholder="email@exemplo.com"
@@ -1571,7 +1653,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Data Óbito - aparece se falecido */}
                       {familiares.pais.pai?.falecido && (
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
+                          <label style={rotuloCampo}>Data de Óbito</label>
                           <input
                             type="date"
                             value={familiares.pais.pai?.data_obito || ''}
@@ -1631,7 +1713,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Data Óbito - aparece se falecida */}
                       {familiares.pais.mae?.falecido && (
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
+                          <label style={rotuloCampo}>Data de Óbito</label>
                           <input
                             type="date"
                             value={familiares.pais.mae?.data_obito || ''}
@@ -1734,7 +1816,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",display:"flex",flexDirection:"column",gap:"0.75rem",marginBottom:"1rem"}}>
                       <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:"0.75rem"}}>
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome *</label>
+                          <label style={rotuloCampo}>Nome *</label>
                           <input 
                             type="text" 
                             value={filhoForm.nome}
@@ -1744,7 +1826,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Nascimento</label>
+                          <label style={rotuloCampo}>Data Nascimento</label>
                           <input 
                             type="date" 
                             value={filhoForm.data_nascimento}
@@ -1753,7 +1835,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Sexo</label>
+                          <label style={rotuloCampo}>Sexo</label>
                           <select 
                             value={filhoForm.sexo}
                             onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
@@ -1764,7 +1846,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo de Vínculo</label>
+                          <label style={rotuloCampo}>Tipo de Vínculo</label>
                           <select 
                             value={filhoForm.tipo_vinculo}
                             onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
@@ -1794,7 +1876,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         </label>
                         {!filhoForm.vivo && (
                           <div style={{flex:1,maxWidth:"200px"}}>
-                            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
+                            <label style={rotuloCampo}>Data de Óbito</label>
                             <input
                               type="date"
                               value={filhoForm.data_obito}
@@ -2050,6 +2132,42 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               )}
             </>
           )}
+        </div>
+      )}
+      {modoEdicao && (
+        <div style={{position:"sticky",bottom:0,zIndex:20,display:"flex",justifyContent:"flex-end",gap:"0.5rem",padding:"0.75rem 1rem",background:"var(--color-surface)",borderTop:"2px solid var(--color-accent)",borderRadius:"var(--radius-lg)",boxShadow:"0 -4px 12px rgba(0,0,0,0.25)"}}>
+          <button onClick={() => { setModoEdicao(false); carregarIrmao(); }}
+            style={{padding:"0.55rem 1.1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>✕ Cancelar</button>
+          <button onClick={handleSalvarEdicao}
+            style={{padding:"0.55rem 1.4rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>✓ Salvar</button>
+        </div>
+      )}
+
+      {modalRelatorio && (
+        <div onClick={() => setModalRelatorio(false)} style={{position:"fixed",inset:0,zIndex:60,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}}>
+          <div onClick={(e) => e.stopPropagation()} style={{width:"100%",maxWidth:420,background:"var(--color-surface)",border:"1px solid var(--color-border)",borderTop:"4px solid #dc2626",borderRadius:"var(--radius-lg)",padding:"1.25rem"}}>
+            <h3 style={{margin:0,fontSize:"1.1rem",fontWeight:800,color:"var(--color-text)"}}>📄 Relatório de Presença</h3>
+            <div style={{fontSize:"0.8rem",color:"var(--color-text-muted)",margin:"0.25rem 0 1rem"}}>{irmao.nome}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem"}}>
+              <div>
+                <label style={rotuloCampo}>De</label>
+                <input type="date" value={relInicio} onChange={(e) => setRelInicio(e.target.value)}
+                  style={{width:"100%",padding:"0.5rem",borderRadius:"var(--radius-md)",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} />
+              </div>
+              <div>
+                <label style={rotuloCampo}>Até</label>
+                <input type="date" value={relFim} onChange={(e) => setRelFim(e.target.value)}
+                  style={{width:"100%",padding:"0.5rem",borderRadius:"var(--radius-md)",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} />
+              </div>
+            </div>
+            <div style={{display:"flex",justifyContent:"flex-end",gap:"0.5rem",marginTop:"1.25rem"}}>
+              <button onClick={() => setModalRelatorio(false)} style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:600}}>Cancelar</button>
+              <button onClick={gerarRelatorioPresenca} disabled={gerandoRelatorio || !relInicio || !relFim || relInicio > relFim}
+                style={{padding:"0.5rem 1.1rem",background:"#dc2626",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:gerandoRelatorio?"wait":"pointer",fontWeight:700,opacity:(gerandoRelatorio || !relInicio || !relFim || relInicio > relFim)?0.6:1}}>
+                {gerandoRelatorio ? '⏳ Gerando...' : 'Gerar PDF'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
