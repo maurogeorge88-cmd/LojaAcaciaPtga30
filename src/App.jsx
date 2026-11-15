@@ -1981,7 +1981,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* QUADRO DE IRMÃOS */}
         {currentPage === 'quadro' && (
-          <QuadroIrmaos irmaos={irmaos} />
+          <QuadroIrmaos
+            irmaos={irmaos}
+            onViewPerfilCompleto={(irmaoId) => {
+              setIrmaoIdPerfilCompleto(irmaoId);
+              setModalPerfilCompletoAberto(true);
+            }}
+          />
         )}
 
         {/* LICENÇAS E SITUAÇÕES */}
