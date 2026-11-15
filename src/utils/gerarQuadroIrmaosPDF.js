@@ -4,19 +4,21 @@ import { calcularIdade, formatarData } from './formatters';
 
 // Mesmo esquema de cores já usado na tela do Quadro de Irmãos.
 const CORES_GRAU = {
-  'Aprendiz':      [59, 130, 246],   // azul
-  'Companheiro':   [16, 185, 129],   // verde
-  'Mestre':        [139, 92, 246],   // roxo
-  'Nao iniciado':  [148, 163, 184],  // cinza
+  'Aprendiz':         [234, 179, 8],    // amarelo
+  'Companheiro':      [16, 185, 129],   // verde
+  'Mestre':           [59, 130, 246],   // azul
+  'Mestre Instalado': [59, 130, 246],   // azul
+  'Nao iniciado':     [148, 163, 184],  // cinza
 };
 
 const corSituacao = (situacao) => {
   const sit = (situacao || 'regular').toLowerCase();
-  return sit === 'regular' ? [16, 185, 129] : [59, 130, 246]; // verde=regular, azul=qualquer outra
+  const mapa = { regular: [16, 185, 129], licenciado: [202, 138, 4], irregular: [249, 115, 22], suspenso: [239, 68, 68], excluido: [239, 68, 68], falecido: [100, 116, 139], desligado: [148, 163, 184] };
+  return mapa[sit.replace(/[-\s]/g, '_')] || [100, 116, 139];
 };
 
 const obterGrau = (irmao) => {
-  if (irmao.data_exaltacao) return 'Mestre';
+  if (irmao.data_exaltacao) return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
   if (irmao.data_elevacao) return 'Companheiro';
   if (irmao.data_iniciacao) return 'Aprendiz';
   return 'Nao iniciado';
@@ -28,6 +30,7 @@ const calcularTempoMaconaria = (dataIniciacao) => {
   const hoje = new Date();
   let anos = hoje.getFullYear() - inicio.getFullYear();
   let meses = hoje.getMonth() - inicio.getMonth();
+  if (hoje.getDate() < inicio.getDate()) meses--;
   if (meses < 0) { anos--; meses = 12 + meses; }
   return `${anos}a ${meses}m`;
 };
@@ -36,7 +39,17 @@ const LABELS_ORDENACAO = {
   nome: 'Nome (A-Z)',
   cim: 'CIM',
   idade: 'Idade (Crescente)',
-  tempo: 'Tempo de Maçonaria (Decrescente)',
+  tempo: 'Tempo de Maçonaria',
+  grau: 'Grau',
+  iniciacao: 'Data de Iniciação',
+  elevacao: 'Data de Elevação',
+  exaltacao: 'Data de Exaltação',
+  situacao: 'Situação',
+};
+
+const hojeLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
 /**
@@ -49,7 +62,8 @@ const LABELS_ORDENACAO = {
  * @param {string} grauSelecionado  'todos' | 'Mestre' | 'Companheiro' | 'Aprendiz' | 'Nao iniciado'
  * @param {string} ordenacao        'nome' | 'cim' | 'idade' | 'tempo'
  */
-export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado, ordenacao) => {
+export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado, ordenacao, extra = {}) => {
+  const { direcao = 'asc', situacaoLabel = '' } = extra;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 15;
   let y = 10;
@@ -77,7 +91,11 @@ export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado
 
   doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(100);
   const filtroLabel = grauSelecionado === 'todos' ? 'Todos os Graus' : grauSelecionado;
-  txt(`Grau: ${filtroLabel}   •   Ordenado por: ${LABELS_ORDENACAO[ordenacao] || ordenacao}   •   Total: ${irmaosOrdenados.length}`, W / 2, y, { align: 'center' }); y += 4;
+  const setaOrdem = direcao === 'desc' ? 'decrescente' : 'crescente';
+  const partes = [`Grau: ${filtroLabel}`];
+  if (situacaoLabel) partes.push(`Situação: ${situacaoLabel}`);
+  partes.push(`Ordenado por: ${LABELS_ORDENACAO[ordenacao] || ordenacao} (${setaOrdem})`, `Total: ${irmaosOrdenados.length}`);
+  txt(partes.join('   •   '), W / 2, y, { align: 'center', maxWidth: W - 2 * M }); y += 4;
   doc.setFontSize(7.5);
   txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, W / 2, y, { align: 'center' }); y += 4;
   doc.setTextColor(0);
@@ -92,7 +110,7 @@ export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado
       irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '—',
       irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '—',
       calcularTempoMaconaria(irmao.data_iniciacao),
-      irmao.situacao || 'regular',
+      (irmao.situacao || 'regular').replace(/^./, c => c.toUpperCase()),
     ];
   });
 
@@ -139,5 +157,5 @@ export const gerarQuadroIrmaosPDF = (irmaosOrdenados, dadosLoja, grauSelecionado
 
   const sufixoFiltro = grauSelecionado === 'todos' ? 'Todos' : grauSelecionado.replace(/\s+/g, '_');
   const sufixoOrdem = ordenacao;
-  doc.save(`Quadro_Irmaos_${sufixoFiltro}_${sufixoOrdem}_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`Quadro_Irmaos_${sufixoFiltro}_${sufixoOrdem}_${hojeLocal()}.pdf`);
 };
