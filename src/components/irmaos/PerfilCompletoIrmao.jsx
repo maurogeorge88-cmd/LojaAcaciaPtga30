@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { calcularPresencaIrmao } from '../../utils/calcularPresencaIrmao';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioIndividualPDF } from '../../utils/gerarRelatorioIndividualPDF';
 
 const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [irmao, setIrmao]                           = useState(null);
@@ -17,6 +18,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   const [comissoesInativas, setComissoesInativas]   = useState([]);
   const [eventosParticipados, setEventosParticipados] = useState([]);
   const [loading, setLoading]                       = useState(true);
+  const [gerandoRelatorio, setGerandoRelatorio]   = useState(false);
 
   const podeVerOutros =
     userData?.nivel_acesso === 'admin' ||
@@ -31,6 +33,12 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
     }
     carregarDados();
   }, [irmaoId, anoPresenca, mesFinanceiro, anoFinanceiro]);
+
+  useEffect(() => {
+    const aoTeclar = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [onClose]);
 
   const carregarDados = async () => {
     try {
@@ -143,10 +151,65 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
 
   // ── Estilos reutilizáveis ─────────────────────────────────────────────────
   const sSelect = { padding:'0.35rem 0.65rem', background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', fontSize:'0.8rem', cursor:'pointer' };
-  const sSection = { marginBottom:'1.75rem' };
-  const sSecTitle = { fontSize:'1.05rem', fontWeight:'700', color:'var(--color-text)', marginBottom:'0.75rem', display:'flex', alignItems:'center', gap:'0.4rem' };
+  const sSection = { marginBottom:'1rem', background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', padding:'1rem 1.25rem' };
+  const sSecTitle = { fontSize:'0.95rem', fontWeight:'700', color:'var(--color-text)', margin:0, marginBottom:'0.85rem', paddingBottom:'0.6rem', borderBottom:'1px solid var(--color-border)', display:'flex', alignItems:'center', gap:'0.4rem' };
   const sMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const anoAtual = new Date().getFullYear();
+
+  // ── Derivados do cabeçalho ──
+  const COR_GRAU = { 'Aprendiz':'#eab308', 'Companheiro':'#10b981', 'Mestre':'#3b82f6', 'Mestre Instalado':'#3b82f6' };
+  const dLocal = d => d ? new Date(String(d).slice(0,10)+'T00:00:00') : null;
+  const mesesEntre = (a, b) => {
+    const i = dLocal(a); const f = b ? dLocal(b) : new Date();
+    if (!i || !f) return null;
+    let m = (f.getFullYear()-i.getFullYear())*12 + (f.getMonth()-i.getMonth());
+    if (f.getDate() < i.getDate()) m--;
+    return Math.max(m, 0);
+  };
+  const fmtMeses = m => m == null ? '' : m < 1 ? 'menos de 1 mês' : `${Math.floor(m/12) ? Math.floor(m/12)+'a ' : ''}${m%12}m`.trim();
+  const idadeAnos = (() => {
+    const n = dLocal(irmao?.data_nascimento); if (!n) return null;
+    const h = new Date(); let a = h.getFullYear()-n.getFullYear();
+    if (h.getMonth()<n.getMonth() || (h.getMonth()===n.getMonth() && h.getDate()<n.getDate())) a--;
+    return a;
+  })();
+  const chip = (texto, cor) => (
+    <span style={{display:'inline-block',padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.72rem',fontWeight:700,background:cor+'26',color:cor,border:`1px solid ${cor}`,whiteSpace:'nowrap'}}>{texto}</span>
+  );
+  const COR_SIT = { regular:'#10b981', licenciado:'#eab308', irregular:'#f97316', suspenso:'#ef4444', excluido:'#ef4444', falecido:'#64748b', desligado:'#94a3b8', ex_oficio:'#8b5cf6' };
+
+  const gerarRelatorioPresenca = async () => {
+    setGerandoRelatorio(true);
+    try {
+      const h = new Date();
+      const hojeStr = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-${String(h.getDate()).padStart(2,'0')}`;
+      const ini = anoPresenca === 'todos' ? '1900-01-01' : `${anoPresenca}-01-01`;
+      const fimAno = anoPresenca === 'todos' ? hojeStr : `${anoPresenca}-12-31`;
+      const fim = fimAno > hojeStr ? hojeStr : fimAno;
+      const { data: sessoes } = await supabase.from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
+        .gte('data_sessao', ini).lte('data_sessao', fim).order('data_sessao');
+      const ids = (sessoes||[]).map(x => x.id);
+      let regs = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: lote } = await supabase.from('registros_presenca')
+          .select('membro_id, sessao_id, presente, justificativa').eq('membro_id', irmaoId).in('sessao_id', ids.slice(i, i+200));
+        regs = regs.concat(lote || []);
+      }
+      const grade = {};
+      regs.forEach(r => { if (!grade[r.membro_id]) grade[r.membro_id] = {}; grade[r.membro_id][r.sessao_id] = { presente: r.presente, justificativa: r.justificativa }; });
+      const { data: hist } = await supabase.from('historico_situacoes').select('*').in('status', ['ativa','vencida']);
+      const { data: loja } = await supabase.from('dados_loja').select('*').limit(1).maybeSingle();
+      const irmaoRel = { ...irmao, idade: idadeAnos, data_prerrogativa: null };
+      if (idadeAnos != null && idadeAnos >= 70) { const n = dLocal(irmao.data_nascimento); n.setFullYear(n.getFullYear()+70); irmaoRel.data_prerrogativa = n; }
+      gerarRelatorioIndividualPDF(irmaoRel, sessoes || [], grade, hist || [], loja, ini, fim);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar o relatório. Tente novamente.');
+    } finally {
+      setGerandoRelatorio(false);
+    }
+  };
 
   const taxaCor = t => t>=90?'#10b981':t>=70?'#3b82f6':t>=50?'#f59e0b':'#ef4444';
 
@@ -161,33 +224,92 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
   if (!irmao) return null;
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,padding:'1rem'}}>
-      <div style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-2xl)',width:'100%',maxWidth:'1100px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',border:'1px solid var(--color-border)'}}>
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,padding:'1rem'}}>
+      <div onClick={(e)=>e.stopPropagation()} style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',boxShadow:'var(--shadow-2xl)',width:'100%',maxWidth:'1100px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',border:'1px solid var(--color-border)'}}>
 
-        {/* Header */}
-        <div style={{background:'var(--color-accent)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-          <div style={{display:'flex',gap:'1rem',alignItems:'center'}}>
-            {irmao.foto_url && <img src={irmao.foto_url} alt={irmao.nome} style={{width:'60px',height:'60px',borderRadius:'50%',objectFit:'cover',border:'3px solid rgba(255,255,255,0.6)'}} />}
-            <div>
-              <h2 style={{color:'#fff',fontWeight:'800',fontSize:'1.25rem',margin:0}}>{irmao.nome}</h2>
-              <p style={{color:'rgba(255,255,255,0.85)',fontSize:'0.82rem',margin:'0.2rem 0 0'}}>CIM: {irmao.cim||'Não informado'}</p>
-              <p style={{color:'rgba(255,255,255,0.85)',fontSize:'0.82rem',margin:'0.1rem 0 0'}}>Grau: {grauAtual()} | Iniciado em: {fmtData(irmao.data_iniciacao)}</p>
+        {/* Cartão de identificação */}
+        {(() => {
+          const corG = COR_GRAU[grauAtual()] || '#94a3b8';
+          const sit = String(irmao.situacao || 'regular');
+          const corS = COR_SIT[sit.toLowerCase().replace(/[-\s]/g,'_')] || '#64748b';
+          const iniciais = (irmao.nome||'?').trim().split(/\s+/).filter(Boolean).map((p,i,a)=>(i===0||i===a.length-1)?p[0]:'').join('').toUpperCase();
+          return (
+            <div style={{borderTop:`5px solid ${corG}`,borderBottom:'1px solid var(--color-border)',padding:'1.1rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',flexShrink:0,background:'var(--color-surface)'}}>
+              <div style={{display:'flex',gap:'1rem',alignItems:'center',minWidth:0}}>
+                {irmao.foto_url
+                  ? <img src={irmao.foto_url} alt={irmao.nome} style={{width:84,height:84,borderRadius:'50%',objectFit:'cover',border:`4px solid ${corG}`,flexShrink:0}} />
+                  : <div style={{width:84,height:84,borderRadius:'50%',border:`4px solid ${corG}`,background:corG+'26',color:corG,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.8rem',fontWeight:800,flexShrink:0}}>{iniciais}</div>}
+                <div style={{minWidth:0}}>
+                  <h2 style={{color:'var(--color-text)',fontWeight:800,fontSize:'1.4rem',margin:0,lineHeight:1.2}}>{irmao.nome}</h2>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'0.4rem',marginTop:'0.5rem'}}>
+                    {chip(grauAtual(), corG)}
+                    {chip(sit.charAt(0).toUpperCase()+sit.slice(1), corS)}
+                    {idadeAnos != null && idadeAnos >= 70 && chip('Prerrogativa 70+', '#f59e0b')}
+                  </div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'1rem',marginTop:'0.6rem',fontSize:'0.8rem',color:'var(--color-text-muted)'}}>
+                    <span>🪪 CIM <strong style={{color:'var(--color-text)'}}>{irmao.cim||'-'}</strong></span>
+                    {idadeAnos != null && <span>🎂 <strong style={{color:'var(--color-text)'}}>{idadeAnos} anos</strong></span>}
+                    {irmao.data_iniciacao && <span>🔨 Iniciado em <strong style={{color:'var(--color-text)'}}>{fmtData(irmao.data_iniciacao)}</strong></span>}
+                    {irmao.data_iniciacao && <span>⏳ <strong style={{color:'var(--color-text)'}}>{fmtMeses(mesesEntre(irmao.data_iniciacao))}</strong> de maçonaria</span>}
+                  </div>
+                </div>
+              </div>
+              <button onClick={onClose} title="Fechar (Esc)" style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',color:'var(--color-text)',borderRadius:'50%',width:'2.2rem',height:'2.2rem',fontSize:'1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
             </div>
-          </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.3)',color:'#fff',borderRadius:'50%',width:'2rem',height:'2rem',fontSize:'1rem',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700'}}>✕</button>
-        </div>
+          );
+        })()}
 
         {/* Conteúdo */}
-        <div style={{padding:'1.25rem 1.5rem',overflowY:'auto',flex:1}}>
+        <div style={{padding:'1.25rem 1.5rem',overflowY:'auto',flex:1,background:'var(--color-bg)'}}>
+
+          {/* ── Linha do tempo maçônica ──────────────────────────────────── */}
+          <section style={sSection}>
+            <h3 style={sSecTitle}>🧭 Linha do Tempo Maçônica</h3>
+            {(() => {
+              const etapas = [
+                { k:'ini', ic:'🔨', r:'Iniciação', d:irmao.data_iniciacao, c:COR_GRAU['Aprendiz'] },
+                { k:'ele', ic:'📐', r:'Elevação',  d:irmao.data_elevacao,  c:COR_GRAU['Companheiro'] },
+                { k:'exa', ic:'⚒️', r:'Exaltação', d:irmao.data_exaltacao, c:COR_GRAU['Mestre'] },
+                ...(irmao.mestre_instalado || irmao.data_instalacao ? [{ k:'ins', ic:'⭐', r:'Instalação', d:irmao.data_instalacao, c:COR_GRAU['Mestre Instalado'] }] : []),
+              ];
+              return (
+                <div style={{display:'grid',gridTemplateColumns:`repeat(${etapas.length}, minmax(110px, 1fr))`,overflowX:'auto'}}>
+                  {etapas.map((e, idx) => {
+                    const feito = !!e.d;
+                    const ant = idx > 0 ? etapas[idx-1].d : null;
+                    const inter = feito && ant ? fmtMeses(mesesEntre(ant, e.d)) : '';
+                    return (
+                      <div key={e.k} style={{textAlign:'center'}}>
+                        <div style={{display:'flex',alignItems:'center'}}>
+                          <div style={{flex:1,height:3,background: idx===0 ? 'transparent' : (feito ? e.c : 'var(--color-border)')}} />
+                          <div style={{width:42,height:42,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.15rem',background: feito ? e.c+'26' : 'var(--color-surface)',border:`3px solid ${feito ? e.c : 'var(--color-border)'}`,opacity: feito ? 1 : 0.55}}>{e.ic}</div>
+                          <div style={{flex:1,height:3,background: idx===etapas.length-1 ? 'transparent' : (etapas[idx+1].d && feito ? etapas[idx+1].c : 'var(--color-border)')}} />
+                        </div>
+                        <div style={{marginTop:'0.45rem',fontWeight:700,fontSize:'0.82rem',color:'var(--color-text)'}}>{e.r}</div>
+                        <div style={{fontSize:'0.8rem',color: feito ? 'var(--color-text)' : 'var(--color-text-muted)'}}>{feito ? fmtData(e.d) : 'Pendente'}</div>
+                        {inter && <div style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>após {inter}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </section>
 
           {/* ── Presença ─────────────────────────────────────────────────── */}
           <section style={sSection}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.75rem'}}>
-              <h3 style={sSecTitle}>📊 Presença</h3>
-              <select value={anoPresenca} onChange={e=>setAnoPresenca(e.target.value)} style={sSelect}>
-                <option value="todos">Todos os anos</option>
-                {anosDisponiveis.map(a=><option key={a} value={a}>{a}</option>)}
-              </select>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.85rem',paddingBottom:'0.6rem',borderBottom:'1px solid var(--color-border)'}}>
+              <h3 style={{...sSecTitle, marginBottom:0, paddingBottom:0, borderBottom:'none'}}>📊 Presença</h3>
+              <div style={{display:'flex',gap:'0.4rem',alignItems:'center'}}>
+                <select value={anoPresenca} onChange={e=>setAnoPresenca(e.target.value)} style={sSelect}>
+                  <option value="todos">Todos os anos</option>
+                  {anosDisponiveis.map(a=><option key={a} value={a}>{a}</option>)}
+                </select>
+                <button onClick={gerarRelatorioPresenca} disabled={gerandoRelatorio} title="Gera o PDF de presença do período selecionado"
+                  style={{padding:'0.35rem 0.8rem',background:'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontSize:'0.8rem',fontWeight:700,cursor:gerandoRelatorio?'wait':'pointer',opacity:gerandoRelatorio?0.7:1}}>
+                  {gerandoRelatorio ? '⏳ Gerando...' : '📄 Relatório PDF'}
+                </button>
+              </div>
             </div>
             {dadosPresenca && (
               <>
@@ -223,8 +345,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
 
           {/* ── Financeiro ────────────────────────────────────────────────── */}
           <section style={sSection}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.75rem',flexWrap:'wrap',gap:'0.5rem'}}>
-              <h3 style={sSecTitle}>💰 Situação Financeira</h3>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.85rem',paddingBottom:'0.6rem',borderBottom:'1px solid var(--color-border)',flexWrap:'wrap',gap:'0.5rem'}}>
+              <h3 style={{...sSecTitle, marginBottom:0, paddingBottom:0, borderBottom:'none'}}>💰 Situação Financeira</h3>
               <div style={{display:'flex',gap:'0.4rem'}}>
                 <select value={anoFinanceiro} onChange={e=>setAnoFinanceiro(e.target.value)} style={sSelect}>
                   <option value="todos">Todos os anos</option>
