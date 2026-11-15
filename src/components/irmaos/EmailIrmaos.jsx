@@ -34,7 +34,7 @@ const OPCOES_CONTEUDO = [
 const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const GRAU_LABEL = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre', 4: 'Evento Loja' };
-const TIPO_LABEL = { sessao: 'Sessão', trabalho_irmao: 'Trabalho', instrucao: 'Instrução',
+const TIPO_LABEL = { sessao: 'Sessão', trabalho_irmao: 'Trabalho', instrucao: 'Instrução', treinamento: 'Treinamento',
   sessao_magna: 'Sessão Magna', sessao_posse: 'Sessão de Posse', sessao_instalacao: 'Instalação',
   evento_externo: 'Evento Externo', outro: 'Outro' };
 const MESES_ABR_FE = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
