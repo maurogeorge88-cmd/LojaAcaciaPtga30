@@ -3,6 +3,7 @@ export const TIPOS_EVENTO = [
   { value: 'sessao',            label: '📜 Sessão',               cor: '#3b82f6' },
   { value: 'trabalho_irmao',    label: '📖 Trabalho de Irmão',    cor: '#8b5cf6' },
   { value: 'instrucao',         label: '🎓 Instrução',            cor: '#10b981' },
+  { value: 'treinamento',       label: '🏋️ Treinamento',          cor: '#ec4899' },
   { value: 'sessao_magna',      label: '👑 Sessão Magna',         cor: '#ef4444' },
   { value: 'sessao_posse',      label: '📜 Sessão de Posse',      cor: '#14b8a6' },
   { value: 'sessao_instalacao', label: '👑 Sessão de Instalação', cor: '#6366f1' },
@@ -14,7 +15,7 @@ export const TIPOS_EVENTO = [
 
 // Cores padrão que cada tipo tinha antes (Sessão e Instalação eram iguais; Posse e Instrução também).
 const COR_PADRAO_ANTIGA = {
-  sessao: '#3b82f6', trabalho_irmao: '#8b5cf6', instrucao: '#10b981', sessao_magna: '#ef4444',
+  sessao: '#3b82f6', trabalho_irmao: '#8b5cf6', instrucao: '#10b981', treinamento: '#ec4899', sessao_magna: '#ef4444',
   sessao_posse: '#10b981', sessao_instalacao: '#3b82f6', sessao_festiva: '#c9a84c',
   feriado: '#f97316', evento_externo: '#f59e0b', outro: '#6b7280',
 };
