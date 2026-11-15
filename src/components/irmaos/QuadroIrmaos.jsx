@@ -1,23 +1,232 @@
-import { useState, useEffect } from 'react';
-import { formatarData, calcularIdade } from '../../utils/formatters';
+import { useState, useEffect, useMemo } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { formatarData } from '../../utils/formatters';
 import { supabase } from '../../supabaseClient';
 import { gerarRelatorioSituacoesPDF } from '../../utils/gerarRelatorioSituacoesPDF';
 import { gerarQuadroIrmaosPDF } from '../../utils/gerarQuadroIrmaosPDF';
 
-const QuadroIrmaos = ({ irmaos }) => {
-  const [grauSelecionado, setGrauSelecionado] = useState('todos');
-  const [ordenacao, setOrdenacao] = useState('nome');
+// ════════════════════════════════════════════════════════════════════════
+// Quadro de Irmãos — visão geral do quadro da loja (KPIs, gráficos,
+// tabela ordenável e cartões). Cores de grau no padrão do sistema.
+// ════════════════════════════════════════════════════════════════════════
+
+const COR_GRAU = {
+  'Aprendiz': '#eab308',
+  'Companheiro': '#10b981',
+  'Mestre': '#3b82f6',
+  'Mestre Instalado': '#3b82f6',
+  'Não iniciado': '#94a3b8',
+};
+const ROTULO_GRAU_CURTO = { 'Mestre Instalado': 'M. Instalado' };
+
+const COR_SITUACAO = {
+  regular: '#10b981',
+  licenciado: '#eab308',
+  irregular: '#f97316',
+  suspenso: '#ef4444',
+  desligado: '#94a3b8',
+  excluido: '#ef4444',
+  falecido: '#64748b',
+  ex_oficio: '#8b5cf6',
+};
+const corSituacao = (s) => COR_SITUACAO[(s || 'regular').toLowerCase().replace(/[-\s]/g, '_')] || '#64748b';
+const rotuloSituacao = (s) => {
+  const v = (s || 'regular').toLowerCase().replace(/[-\s]/g, '_');
+  const mapa = { desligado: 'Quite Placet', ex_oficio: 'Ex-Ofício', excluido: 'Excluído' };
+  return mapa[v] || v.charAt(0).toUpperCase() + v.slice(1);
+};
+
+const dataLocal = (s) => (s ? new Date(String(s).slice(0, 10) + 'T00:00:00') : null);
+
+const idadeEmAnos = (nasc) => {
+  const n = dataLocal(nasc);
+  if (!n) return null;
+  const h = new Date();
+  let a = h.getFullYear() - n.getFullYear();
+  if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) a--;
+  return a;
+};
+
+// Meses completos desde a iniciação (considera o dia)
+const mesesDesde = (ini) => {
+  const i = dataLocal(ini);
+  if (!i) return null;
+  const h = new Date();
+  let m = (h.getFullYear() - i.getFullYear()) * 12 + (h.getMonth() - i.getMonth());
+  if (h.getDate() < i.getDate()) m--;
+  return Math.max(m, 0);
+};
+const formatarMeses = (m) => (m == null ? '-' : `${Math.floor(m / 12)}a ${m % 12}m`);
+
+const obterGrau = (i) => {
+  if (i.data_exaltacao) return i.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+  if (i.data_elevacao) return 'Companheiro';
+  if (i.data_iniciacao) return 'Aprendiz';
+  return 'Não iniciado';
+};
+const grauBase = (g) => (g === 'Mestre Instalado' ? 'Mestre' : g);
+
+const iniciais = (nome) => {
+  const p = (nome || '?').trim().split(/\s+/).filter(Boolean);
+  return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+};
+
+const Chip = ({ texto, cor, largura }) => (
+  <span style={{
+    display: 'inline-block', width: largura, textAlign: 'center', boxSizing: 'border-box',
+    padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700,
+    background: cor + '26', color: cor, border: `1px solid ${cor}`, whiteSpace: 'nowrap',
+  }}>{texto}</span>
+);
+
+const COLUNAS = [
+  { chave: 'cim', rotulo: 'CIM', largura: '70px', alinha: 'left' },
+  { chave: 'nome', rotulo: 'Irmão', largura: 'minmax(220px, 1fr)', alinha: 'left' },
+  { chave: 'grau', rotulo: 'Grau', largura: '120px', alinha: 'center' },
+  { chave: 'idade', rotulo: 'Idade', largura: '70px', alinha: 'center' },
+  { chave: 'iniciacao', rotulo: 'Iniciação', largura: '100px', alinha: 'center' },
+  { chave: 'elevacao', rotulo: 'Elevação', largura: '100px', alinha: 'center' },
+  { chave: 'exaltacao', rotulo: 'Exaltação', largura: '100px', alinha: 'center' },
+  { chave: 'tempo', rotulo: 'Tempo', largura: '80px', alinha: 'center' },
+  { chave: 'situacao', rotulo: 'Situação', largura: '110px', alinha: 'center' },
+];
+const GRID = COLUNAS.map(c => c.largura).join(' ');
+const ORDEM_GRAU = { 'Mestre Instalado': 0, 'Mestre': 1, 'Companheiro': 2, 'Aprendiz': 3, 'Não iniciado': 4 };
+
+const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
+  const [grauSel, setGrauSel] = useState('todos');
+  const [situacaoSel, setSituacaoSel] = useState('ativos');
+  const [busca, setBusca] = useState('');
+  const [ordem, setOrdem] = useState({ chave: 'nome', dir: 'asc' });
+  const [visao, setVisao] = useState('tabela');
   const [dadosLoja, setDadosLoja] = useState(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [gerandoQuadroPdf, setGerandoQuadroPdf] = useState(false);
 
   useEffect(() => {
-    const carregarDadosLoja = async () => {
-      const { data } = await supabase.from('dados_loja').select('*').single();
+    (async () => {
+      const { data } = await supabase.from('dados_loja').select('*').limit(1).maybeSingle();
       if (data) setDadosLoja(data);
-    };
-    carregarDadosLoja();
+    })();
   }, []);
+
+  // ── Enriquece cada irmão com valores derivados ──
+  const lista = useMemo(() => (irmaos || []).map(i => {
+    const sit = (i.situacao || 'regular').toLowerCase().replace(/[-\s]/g, '_');
+    const idade = idadeEmAnos(i.data_nascimento);
+    const nasc = dataLocal(i.data_nascimento);
+    return {
+      ...i,
+      _grau: obterGrau(i),
+      _sit: sit,
+      _idade: idade,
+      _meses: mesesDesde(i.data_iniciacao),
+      _prerrogativa: idade != null && idade >= 70,
+      _aniversarioMes: !!nasc && nasc.getMonth() === new Date().getMonth(),
+    };
+  }), [irmaos]);
+
+  const ativos = useMemo(() => lista.filter(i => i._sit === 'regular' || i._sit === 'licenciado'), [lista]);
+  const outras = useMemo(() => lista.filter(i => i._sit !== 'regular' && i._sit !== 'licenciado'), [lista]);
+
+  // ── KPIs (sempre sobre o quadro ativo) ──
+  const kpi = useMemo(() => {
+    const por = (g) => ativos.filter(i => grauBase(i._grau) === g).length;
+    const idades = ativos.map(i => i._idade).filter(v => v != null);
+    const tempos = ativos.map(i => i._meses).filter(v => v != null);
+    return {
+      total: ativos.length,
+      mestres: por('Mestre'),
+      companheiros: por('Companheiro'),
+      aprendizes: por('Aprendiz'),
+      idadeMedia: idades.length ? Math.round(idades.reduce((a, b) => a + b, 0) / idades.length) : null,
+      tempoMedio: tempos.length ? Math.round(tempos.reduce((a, b) => a + b, 0) / tempos.length) : null,
+      prerrogativa: ativos.filter(i => i._prerrogativa).length,
+      licenciados: ativos.filter(i => i._sit === 'licenciado').length,
+    };
+  }, [ativos]);
+
+  const dadosPizza = [
+    { nome: 'Mestres', valor: kpi.mestres, cor: COR_GRAU.Mestre },
+    { nome: 'Companheiros', valor: kpi.companheiros, cor: COR_GRAU.Companheiro },
+    { nome: 'Aprendizes', valor: kpi.aprendizes, cor: COR_GRAU.Aprendiz },
+  ].filter(d => d.valor > 0);
+
+  const dadosFaixa = useMemo(() => {
+    const faixas = [
+      { f: 'até 30', min: 0, max: 30 }, { f: '31–40', min: 31, max: 40 }, { f: '41–50', min: 41, max: 50 },
+      { f: '51–60', min: 51, max: 60 }, { f: '61–69', min: 61, max: 69 }, { f: '70+', min: 70, max: 200 },
+    ];
+    return faixas.map(x => ({
+      faixa: x.f,
+      irmaos: ativos.filter(i => i._idade != null && i._idade >= x.min && i._idade <= x.max).length,
+    }));
+  }, [ativos]);
+
+  // ── Filtros ──
+  const baseSituacao = useMemo(() => {
+    switch (situacaoSel) {
+      case 'licenciados': return ativos.filter(i => i._sit === 'licenciado');
+      case 'prerrogativa': return ativos.filter(i => i._prerrogativa);
+      case 'outras': return outras;
+      case 'todas': return lista;
+      default: return ativos;
+    }
+  }, [situacaoSel, ativos, outras, lista]);
+
+  const contaGrau = (g) => baseSituacao.filter(i => g === 'todos' || grauBase(i._grau) === g).length;
+
+  const exibidos = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    const filtrados = baseSituacao.filter(i => {
+      if (grauSel !== 'todos' && grauBase(i._grau) !== grauSel) return false;
+      if (!q) return true;
+      return (i.nome || '').toLowerCase().includes(q) || String(i.cim || '').toLowerCase().includes(q);
+    });
+    const { chave, dir } = ordem;
+    const val = (i) => {
+      switch (chave) {
+        case 'cim': return parseInt(i.cim, 10) || 0;
+        case 'nome': return (i.nome || '').toLowerCase();
+        case 'grau': return ORDEM_GRAU[i._grau] ?? 9;
+        case 'idade': return i._idade ?? -1;
+        case 'iniciacao': return i.data_iniciacao || '';
+        case 'elevacao': return i.data_elevacao || '';
+        case 'exaltacao': return i.data_exaltacao || '';
+        case 'tempo': return i._meses ?? -1;
+        case 'situacao': return i._sit;
+        default: return '';
+      }
+    };
+    return [...filtrados].sort((a, b) => {
+      const va = val(a), vb = val(b);
+      // vazios sempre por último
+      const ea = va === '' || va === -1, eb = vb === '' || vb === -1;
+      if (ea && !eb) return 1;
+      if (!ea && eb) return -1;
+      const r = va < vb ? -1 : va > vb ? 1 : (a.nome || '').localeCompare(b.nome || '');
+      return dir === 'asc' ? r : -r;
+    });
+  }, [baseSituacao, grauSel, busca, ordem]);
+
+  const alternarOrdem = (chave) =>
+    setOrdem(o => (o.chave === chave ? { chave, dir: o.dir === 'asc' ? 'desc' : 'asc' } : { chave, dir: chave === 'tempo' || chave === 'idade' ? 'desc' : 'asc' }));
+
+  const ROTULO_SITUACAO_FILTRO = {
+    ativos: 'Ativos (Regular + Licenciado)', licenciados: 'Licenciados', prerrogativa: 'Prerrogativa (70+)',
+    outras: 'Outras situações', todas: 'Todas as situações',
+  };
+
+  const handleGerarQuadroPdf = () => {
+    setGerandoQuadroPdf(true);
+    try {
+      gerarQuadroIrmaosPDF(exibidos, dadosLoja, grauSel, ordem.chave, { direcao: ordem.dir, situacaoLabel: ROTULO_SITUACAO_FILTRO[situacaoSel] });
+    } catch (e) {
+      console.error('Erro ao gerar PDF do quadro:', e);
+    } finally {
+      setGerandoQuadroPdf(false);
+    }
+  };
 
   const handleGerarRelatorioSituacoes = async () => {
     setGerandoPdf(true);
@@ -30,351 +239,255 @@ const QuadroIrmaos = ({ irmaos }) => {
     }
   };
 
-  // Gera o PDF exatamente como a tela está — mesmo grau filtrado e mesma
-  // ordenação (nome/CIM/idade/tempo) selecionados no momento.
-  const handleGerarQuadroPdf = () => {
-    setGerandoQuadroPdf(true);
-    try {
-      gerarQuadroIrmaosPDF(irmaosOrdenados, dadosLoja, grauSelecionado, ordenacao);
-    } catch (e) {
-      console.error('Erro ao gerar PDF do quadro:', e);
-    } finally {
-      setGerandoQuadroPdf(false);
-    }
-  };
+  const abrirPerfil = (i) => { if (onViewPerfilCompleto) onViewPerfilCompleto(i.id); };
 
-  const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) return 'Mestre';
-    if (irmao.data_elevacao) return 'Companheiro';
-    if (irmao.data_iniciacao) return 'Aprendiz';
-    return 'Nao iniciado';
-  };
-
-  const calcularTempoMaconariaMeses = (dataIniciacao) => {
-    if (!dataIniciacao) return 0;
-    const inicio = new Date(dataIniciacao + 'T00:00:00');
-    const hoje = new Date();
-    const anos = hoje.getFullYear() - inicio.getFullYear();
-    const meses = hoje.getMonth() - inicio.getMonth();
-    return (anos * 12) + meses;
-  };
-
-  const formatarTempoMaconaria = (dataIniciacao) => {
-    if (!dataIniciacao) return '-';
-    const inicio = new Date(dataIniciacao + 'T00:00:00');
-    const hoje = new Date();
-    let anos = hoje.getFullYear() - inicio.getFullYear();
-    let meses = hoje.getMonth() - inicio.getMonth();
-    if (meses < 0) {
-      anos--;
-      meses = 12 + meses;
-    }
-    return anos + 'a ' + meses + 'm';
-  };
-
-  const irmaosAtivos = irmaos.filter(irmao => {
-    const situacao = (irmao.situacao || 'regular').toLowerCase();
-    return situacao === 'regular' || situacao === 'licenciado';
+  // ── Estilos base ──
+  const card = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' };
+  const segBtn = (ativo, cor) => ({
+    padding: '0.4rem 0.85rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+    border: `1px solid ${ativo ? (cor || 'var(--color-accent)') : 'var(--color-border)'}`,
+    background: ativo ? (cor || 'var(--color-accent)') : 'var(--color-surface-2)',
+    color: ativo ? '#fff' : 'var(--color-text-muted)', whiteSpace: 'nowrap',
   });
+  const tooltipStyle = { background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 8, color: 'var(--color-text)', fontSize: 12 };
 
-  const irmaosPorGrau = {
-    'Mestre': irmaosAtivos.filter(i => obterGrau(i) === 'Mestre'),
-    'Companheiro': irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro'),
-    'Aprendiz': irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz'),
-    'Nao iniciado': irmaosAtivos.filter(i => obterGrau(i) === 'Nao iniciado')
+  const KpiGrau = ({ titulo, valor, cor }) => {
+    const pct = kpi.total ? Math.round((valor / kpi.total) * 100) : 0;
+    return (
+      <div style={{ ...card, borderTop: `4px solid ${cor}`, padding: '1rem 1.25rem' }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{titulo}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
+          <span style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)' }}>{valor}</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{pct}%</span>
+        </div>
+        <div style={{ height: 6, borderRadius: 999, background: 'var(--color-surface-2)', marginTop: '0.5rem', overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: cor }} />
+        </div>
+      </div>
+    );
   };
 
-  const ordenarIrmaos = (lista) => {
-    const copia = [...lista];
-    
-    switch (ordenacao) {
-      case 'nome':
-        return copia.sort((a, b) => a.nome.localeCompare(b.nome));
-      case 'cim':
-        return copia.sort((a, b) => (a.cim || '').toString().localeCompare((b.cim || '').toString()));
-      case 'idade':
-        return copia.sort((a, b) => {
-          if (!a.data_nascimento) return 1;
-          if (!b.data_nascimento) return -1;
-          return new Date(a.data_nascimento) - new Date(b.data_nascimento);
-        });
-      case 'tempo':
-        return copia.sort((a, b) => {
-          const tempoA = calcularTempoMaconariaMeses(a.data_iniciacao);
-          const tempoB = calcularTempoMaconariaMeses(b.data_iniciacao);
-          return tempoB - tempoA;
-        });
-      default:
-        return copia;
-    }
-  };
+  const KpiMini = ({ icone, titulo, valor, sub }) => (
+    <div style={{ ...card, padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div style={{ fontSize: '1.5rem' }}>{icone}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{titulo}</div>
+        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{valor}</div>
+        {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{sub}</div>}
+      </div>
+    </div>
+  );
 
-  const gerarQuadro = () => {
-    let conteudo = '\n========================================================\n';
-    conteudo += '           QUADRO GERAL DE IRMAOS\n';
-    conteudo += '    ARLS Acacia de Paranatinga no 30\n';
-    conteudo += '========================================================\n\n';
-    conteudo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\n';
-    conteudo += 'Total de Irmaos Ativos: ' + irmaosAtivos.length + '\n\n';
-
-    const graus = grauSelecionado === 'todos' 
-      ? ['Mestre', 'Companheiro', 'Aprendiz', 'Nao iniciado']
-      : [grauSelecionado];
-
-    graus.forEach(grau => {
-      const irmaosGrau = ordenarIrmaos(irmaosPorGrau[grau]);
-      
-      if (irmaosGrau.length > 0) {
-        conteudo += '\n========================================================\n';
-        conteudo += grau.toUpperCase() + ' (' + irmaosGrau.length + ')\n';
-        conteudo += '========================================================\n\n';
-        
-        conteudo += 'CIM'.padEnd(8) + ' | ' + 'NOME'.padEnd(35) + ' | ' + 'IDADE'.padEnd(10) + ' | ' + 'INICIACAO'.padEnd(12) + ' | ' + 'TEMPO'.padEnd(10) + '\n';
-        conteudo += '-'.repeat(90) + '\n';
-
-        irmaosGrau.forEach(irmao => {
-          const cim = (irmao.cim || '-').toString().padEnd(8);
-          const nome = (irmao.nome || '-').substring(0, 35).padEnd(35);
-          const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento).padEnd(10) : '-'.padEnd(10);
-          const iniciacao = irmao.data_iniciacao ? formatarData(irmao.data_iniciacao).padEnd(12) : '-'.padEnd(12);
-          const tempo = formatarTempoMaconaria(irmao.data_iniciacao).padEnd(10);
-
-          conteudo += cim + ' | ' + nome + ' | ' + idade + ' | ' + iniciacao + ' | ' + tempo + '\n';
-        });
-
-        conteudo += '\n';
-      }
-    });
-
-    conteudo += '\n========================================================\n';
-    conteudo += 'LEGENDA:\n';
-    conteudo += '- Tempo: Xxa Xxm = X anos e X meses na Maconaria\n';
-    conteudo += '- Idade: Calculada com base na data de nascimento\n';
-    conteudo += '========================================================\n';
-
-    const blob = new Blob([conteudo], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Quadro_Irmaos_' + grauSelecionado + '_' + new Date().toISOString().split('T')[0] + '.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  };
-
-  const irmaosExibir = grauSelecionado === 'todos' 
-    ? irmaosAtivos 
-    : irmaosPorGrau[grauSelecionado];
-
-  const irmaosOrdenados = ordenarIrmaos(irmaosExibir);
-
-  const totalMestres = irmaosPorGrau['Mestre'].length;
-  const totalCompanheiros = irmaosPorGrau['Companheiro'].length;
-  const totalAprendizes = irmaosPorGrau['Aprendiz'].length;
-
-  const obterCorGrau = (grau) => {
-    const cores = {
-      'Aprendiz': 'aprendiz-ph',
-      'Companheiro': 'companheiro-ph',
-      'Mestre': 'mestre-ph',
-      'Nao iniciado': ' '
-    };
-    return cores[grau] || ' ';
-  };
-
-  const obterCorSituacao = (situacao) => {
-    const sit = (situacao || 'regular').toLowerCase();
-    if (sit === 'regular') return 'situacao-regular-ph';
-    return 'situacao-outro-ph';
-  };
+  const Marcadores = ({ i }) => (
+    <>
+      {i._prerrogativa && <span title="Prerrogativa (70+)" style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px', borderRadius: 4, background: '#f59e0b26', color: '#f59e0b', border: '1px solid #f59e0b' }}>70+</span>}
+      {i._aniversarioMes && <span title="Aniversariante do mês" style={{ marginLeft: 6, fontSize: '0.8rem' }}>🎂</span>}
+    </>
+  );
 
   return (
-    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div style={{background:"#8b5cf6",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
-          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalMestres}</div>
-          <div className="text-purple-100 mt-2">Mestres</div>
-          <div style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.7)",marginTop:"0.25rem"}}>
-            {totalMestres > 0 ? ((totalMestres / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
+    <div style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '0.5rem', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+      {/* Cabeçalho */}
+      <div style={{ ...card, borderTop: '4px solid var(--color-accent)', padding: '1rem 1.25rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-text)' }}>📋 Quadro de Irmãos</h2>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: 2 }}>
+            {kpi.total} irmãos ativos · posição em {new Date().toLocaleDateString('pt-BR')}
           </div>
         </div>
-
-        <div style={{background:"#10b981",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
-          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalCompanheiros}</div>
-          <div style={{color:"rgba(255,255,255,0.8)",marginTop:"0.5rem"}}>Companheiros</div>
-          <div className="text-sm text-green-200 mt-1">
-            {totalCompanheiros > 0 ? ((totalCompanheiros / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
-          </div>
-        </div>
-
-        <div style={{background:"#3b82f6",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
-          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalAprendizes}</div>
-          <div style={{color:"rgba(255,255,255,0.8)",marginTop:"0.5rem"}}>Aprendizes</div>
-          <div className="text-sm text-blue-200 mt-1">
-            {totalAprendizes > 0 ? ((totalAprendizes / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
-          </div>
-        </div>
-
-        <div className="text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{irmaosAtivos.length}</div>
-          <div className="text-gray-100 mt-2">Total Ativos</div>
-          <div className="text-sm text-gray-200 mt-1">Regular + Licenciado</div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button onClick={handleGerarQuadroPdf} disabled={gerandoQuadroPdf}
+            title="PDF igual à tela: mesmos filtros e mesma ordenação"
+            style={{ padding: '0.5rem 1rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: gerandoQuadroPdf ? 'wait' : 'pointer', opacity: gerandoQuadroPdf ? 0.7 : 1 }}>
+            {gerandoQuadroPdf ? '⏳ Gerando...' : '📄 PDF do Quadro'}
+          </button>
+          <button onClick={handleGerarRelatorioSituacoes} disabled={gerandoPdf}
+            style={{ padding: '0.5rem 1rem', background: 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 700, cursor: gerandoPdf ? 'wait' : 'pointer', opacity: gerandoPdf ? 0.7 : 1 }}>
+            {gerandoPdf ? '⏳ Gerando...' : '📄 Relatório de Situações'}
+          </button>
         </div>
       </div>
 
-      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
-              Filtrar por Grau
-            </label>
-            <select
-              value={grauSelecionado}
-              onChange={(e) => setGrauSelecionado(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value="todos">Todos os Graus ({irmaosAtivos.length})</option>
-              <option value="Mestre">Mestres ({totalMestres})</option>
-              <option value="Companheiro">Companheiros ({totalCompanheiros})</option>
-              <option value="Aprendiz">Aprendizes ({totalAprendizes})</option>
-            </select>
-          </div>
+      {/* KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
+        <div style={{ ...card, borderTop: '4px solid var(--color-text-muted)', padding: '1rem 1.25rem' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>Total ativos</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', marginTop: '0.25rem' }}>{kpi.total}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>Regular + Licenciado</div>
+        </div>
+        <KpiGrau titulo="Mestres" valor={kpi.mestres} cor={COR_GRAU.Mestre} />
+        <KpiGrau titulo="Companheiros" valor={kpi.companheiros} cor={COR_GRAU.Companheiro} />
+        <KpiGrau titulo="Aprendizes" valor={kpi.aprendizes} cor={COR_GRAU.Aprendiz} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
+        <KpiMini icone="🎂" titulo="Idade média" valor={kpi.idadeMedia != null ? `${kpi.idadeMedia} anos` : '-'} />
+        <KpiMini icone="⏳" titulo="Tempo médio de loja" valor={formatarMeses(kpi.tempoMedio)} />
+        <KpiMini icone="🧓" titulo="Prerrogativa (70+)" valor={kpi.prerrogativa} />
+        <KpiMini icone="🗓️" titulo="Licenciados" valor={kpi.licenciados} />
+      </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
-              Ordenar por
-            </label>
-            <select
-              value={ordenacao}
-              onChange={(e) => setOrdenacao(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value="nome">Nome (A-Z)</option>
-              <option value="cim">CIM</option>
-              <option value="idade">Idade (Crescente)</option>
-              <option value="tempo">Tempo na Maconaria</option>
-            </select>
+      {/* Gráficos */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.75rem' }}>
+        <div style={{ ...card, padding: '1rem 1.25rem' }}>
+          <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Composição por grau</div>
+          <div style={{ height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={dadosPizza} dataKey="valor" nameKey="nome" innerRadius={55} outerRadius={85} paddingAngle={2} stroke="none">
+                  {dadosPizza.map(d => <Cell key={d.nome} fill={d.cor} />)}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} itemStyle={{ color: 'var(--color-text)' }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={gerarQuadro}
-              style={{width:"100%",padding:"0.5rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
-            >
-              Exportar Quadro
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+            {dadosPizza.map(d => (
+              <span key={d.nome} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: d.cor }} />{d.nome} ({d.valor})
+              </span>
+            ))}
           </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={handleGerarQuadroPdf}
-              disabled={gerandoQuadroPdf}
-              title="Gera o PDF igual à tela: mesmo grau filtrado e mesma ordenação selecionada"
-              style={{width:"100%",padding:"0.5rem 1.5rem",background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:gerandoQuadroPdf?"wait":"pointer",fontWeight:"700",opacity:gerandoQuadroPdf?0.7:1}}
-            >
-              {gerandoQuadroPdf ? '⏳ Gerando...' : '📄 Gerar PDF (Quadro)'}
-            </button>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              onClick={handleGerarRelatorioSituacoes}
-              disabled={gerandoPdf}
-              style={{width:"100%",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:gerandoPdf?"wait":"pointer",fontWeight:"700",opacity:gerandoPdf?0.7:1}}
-            >
-              {gerandoPdf ? '⏳ Gerando...' : '📄 Relatório de Situações (PDF)'}
-            </button>
+        </div>
+        <div style={{ ...card, padding: '1rem 1.25rem' }}>
+          <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Faixa etária</div>
+          <div style={{ height: 250 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dadosFaixa} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                <XAxis dataKey="faixa" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(148,163,184,0.12)' }} formatter={(v) => [v, 'Irmãos']} />
+                <Bar dataKey="irmaos" fill="var(--color-accent)" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: 'var(--color-text-muted)', fontSize: 12 }} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",overflow:"hidden"}}>
-          <div className="p-3 space-y-2">
-            {irmaosOrdenados.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">📋</div>
-                <div className="text-xl font-semibold" style={{color:'var(--color-text)'}}>Nenhum irmão encontrado</div>
-                <div className="text-sm mt-2" style={{color:'var(--color-text-muted)'}}>Ajuste os filtros ou adicione novos irmãos</div>
+      {/* Barra de filtros */}
+      <div style={{ ...card, padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Buscar por nome ou CIM..."
+            style={{ flex: '1 1 240px', padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-lg)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)' }}
+          />
+          <div style={{ display: 'inline-flex', gap: 4, padding: 3, borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+            {[['tabela', '☰ Tabela'], ['cartoes', '▦ Cartões']].map(([v, r]) => (
+              <button key={v} onClick={() => setVisao(v)} style={{ ...segBtn(visao === v), border: 'none' }}>{r}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', width: 64 }}>GRAU</span>
+          <button onClick={() => setGrauSel('todos')} style={segBtn(grauSel === 'todos')}>Todos ({contaGrau('todos')})</button>
+          {[['Mestre', 'Mestres'], ['Companheiro', 'Companheiros'], ['Aprendiz', 'Aprendizes']].map(([g, r]) => (
+            <button key={g} onClick={() => setGrauSel(g)} style={segBtn(grauSel === g, COR_GRAU[g])}>{r} ({contaGrau(g)})</button>
+          ))}
+          {situacaoSel !== 'ativos' && contaGrau('Não iniciado') > 0 && (
+            <button onClick={() => setGrauSel('Não iniciado')} style={segBtn(grauSel === 'Não iniciado', COR_GRAU['Não iniciado'])}>Não iniciados ({contaGrau('Não iniciado')})</button>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', width: 64 }}>SITUAÇÃO</span>
+          {[
+            ['ativos', `Ativos (${ativos.length})`],
+            ['licenciados', `Licenciados (${kpi.licenciados})`],
+            ['prerrogativa', `Prerrogativa 70+ (${kpi.prerrogativa})`],
+            ['outras', `Outras situações (${outras.length})`],
+            ['todas', `Todas (${lista.length})`],
+          ].map(([v, r]) => (
+            <button key={v} onClick={() => { setSituacaoSel(v); setGrauSel('todos'); }} style={segBtn(situacaoSel === v)}>{r}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Lista */}
+      <div style={{ ...card, overflow: 'hidden' }}>
+        {exibidos.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+            <div style={{ fontSize: '3rem' }}>📋</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text)' }}>Nenhum irmão encontrado</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: 4 }}>Ajuste a busca ou os filtros</div>
+          </div>
+        ) : visao === 'tabela' ? (
+          <div style={{ overflow: 'auto', maxHeight: '70vh' }}>
+            <div style={{ minWidth: 1000 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: GRID, gap: '0.5rem', padding: '0.65rem 1rem', position: 'sticky', top: 0, zIndex: 2, background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
+                {COLUNAS.map(c => {
+                  const ativo = ordem.chave === c.chave;
+                  return (
+                    <button key={c.chave} onClick={() => alternarOrdem(c.chave)}
+                      style={{ textAlign: c.alinha, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: ativo ? 'var(--color-accent)' : 'var(--color-text-muted)', padding: 0 }}>
+                      {c.rotulo}{ativo ? (ordem.dir === 'asc' ? ' ▲' : ' ▼') : ''}
+                    </button>
+                  );
+                })}
               </div>
-            ) : (
-              irmaosOrdenados.map((irmao, index) => {
-                const grau = obterGrau(irmao);
-                const corGrau = obterCorGrau(grau);
-                const corSituacao = obterCorSituacao(irmao.situacao);
-                return (
-                  <div key={irmao.id}
-                    className="rounded-lg border-l-4 flex items-center gap-3 px-4 py-3 transition-opacity hover:opacity-90"
-                    style={{borderLeftColor:'var(--color-accent)',background:index%2===0?'var(--color-surface)':'var(--color-surface-2)'}}>
-                    {/* CIM */}
-                    <div style={{flexShrink:0,width:'55px'}}>
-                      <span className="font-mono font-bold text-sm" style={{color:'var(--color-accent)'}}>{irmao.cim}</span>
+              {exibidos.map((i, idx) => (
+                <div key={i.id} onClick={() => abrirPerfil(i)}
+                  style={{ display: 'grid', gridTemplateColumns: GRID, gap: '0.5rem', alignItems: 'center', padding: '0.6rem 1rem', cursor: onViewPerfilCompleto ? 'pointer' : 'default',
+                    borderLeft: `4px solid ${COR_GRAU[i._grau] || 'var(--color-border)'}`, background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-accent)' }}>{i.cim || '-'}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {i.nome}<Marcadores i={i} />
                     </div>
-                    {/* Nome + profissão */}
-                    <div style={{flex:2,minWidth:0,width:0,overflow:'hidden'}}>
-                      <p className="font-semibold text-sm" style={{color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{irmao.nome}</p>
-                      {irmao.profissao&&<p className="text-xs" style={{color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{irmao.profissao}</p>}
-                    </div>
-                    {/* Grau */}
-                    <div style={{flexShrink:0}}>
-                      <span style={{display:'inline-block',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
-                        background:corGrau==='aprendiz-ph'?'rgba(59,130,246,0.15)':corGrau==='companheiro-ph'?'rgba(16,185,129,0.15)':corGrau==='mestre-ph'?'rgba(139,92,246,0.15)':'var(--color-surface-2)',
-                        color:corGrau==='aprendiz-ph'?'#3b82f6':corGrau==='companheiro-ph'?'#10b981':corGrau==='mestre-ph'?'#8b5cf6':'var(--color-text-muted)',
-                        border:'1px solid currentColor'}}>{grau}</span>
-                    </div>
-                    {/* Idade */}
-                    <div style={{flexShrink:0,width:'40px',textAlign:'center'}}>
-                      <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{irmao.data_nascimento?calcularIdade(irmao.data_nascimento):'-'}</p>
-                    </div>
-                    {/* Iniciação */}
-                    <div style={{flexShrink:0,width:'80px',textAlign:'center'}}>
-                      <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{irmao.data_iniciacao?formatarData(irmao.data_iniciacao):'-'}</p>
-                    </div>
-                    {/* Tempo */}
-                    <div style={{flexShrink:0,width:'65px',textAlign:'center'}}>
-                      <p className="text-xs font-medium" style={{color:'var(--color-text-muted)'}}>{formatarTempoMaconaria(irmao.data_iniciacao)}</p>
-                    </div>
-                    {/* Situação */}
-                    <div style={{flexShrink:0}}>
-                      <span style={{display:'inline-block',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
-                        background:corSituacao==='situacao-regular-ph'?'rgba(16,185,129,0.15)':'rgba(59,130,246,0.15)',
-                        color:corSituacao==='situacao-regular-ph'?'#10b981':'#3b82f6',
-                        border:'1px solid currentColor'}}>{irmao.situacao||'Regular'}</span>
-                    </div>
+                    {i.profissao && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.profissao}</div>}
                   </div>
-                );
-              })
-            )}
-          </div>
-
-        {irmaosOrdenados.length > 0 && (
-          <div className="px-6 py-4 border-t">
-            <div className="flex justify-between items-center text-sm">
-              <div>
-                Exibindo <strong>{irmaosOrdenados.length}</strong> irmao(s)
-                {grauSelecionado !== 'todos' && ' de grau ' + grauSelecionado}
-              </div>
-              <div>
-                Ordenado por: <strong>{
-                  ordenacao === 'nome' ? 'Nome' :
-                  ordenacao === 'cim' ? 'CIM' :
-                  ordenacao === 'idade' ? 'Idade' :
-                  'Tempo na Maconaria'
-                }</strong>
-              </div>
+                  <div style={{ textAlign: 'center' }}><Chip texto={ROTULO_GRAU_CURTO[i._grau] || i._grau} cor={COR_GRAU[i._grau]} largura={104} /></div>
+                  <span style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{i._idade != null ? `${i._idade} anos` : '-'}</span>
+                  <span style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{i.data_iniciacao ? formatarData(i.data_iniciacao) : '-'}</span>
+                  <span style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{i.data_elevacao ? formatarData(i.data_elevacao) : '-'}</span>
+                  <span style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{i.data_exaltacao ? formatarData(i.data_exaltacao) : '-'}</span>
+                  <span style={{ textAlign: 'center', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>{formatarMeses(i._meses)}</span>
+                  <div style={{ textAlign: 'center' }}><Chip texto={rotuloSituacao(i.situacao)} cor={corSituacao(i.situacao)} largura={94} /></div>
+                </div>
+              ))}
             </div>
           </div>
+        ) : (
+          <div style={{ padding: '0.85rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem', maxHeight: '75vh', overflow: 'auto' }}>
+            {exibidos.map(i => {
+              const cor = COR_GRAU[i._grau] || '#94a3b8';
+              return (
+                <div key={i.id} onClick={() => abrirPerfil(i)}
+                  style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderTop: `4px solid ${cor}`, borderRadius: 'var(--radius-lg)', padding: '0.9rem', cursor: onViewPerfilCompleto ? 'pointer' : 'default' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: cor, background: cor + '26', border: `2px solid ${cor}` }}>
+                      {iniciais(i.nome)}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.nome}<Marcadores i={i} /></div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        CIM {i.cim || '-'}{i.profissao ? ` · ${i.profissao}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.7rem' }}>
+                    <Chip texto={ROTULO_GRAU_CURTO[i._grau] || i._grau} cor={cor} largura={104} />
+                    <Chip texto={rotuloSituacao(i.situacao)} cor={corSituacao(i.situacao)} largura={94} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', marginTop: '0.7rem', textAlign: 'center' }}>
+                    {[['Idade', i._idade != null ? `${i._idade} anos` : '-'], ['Iniciação', i.data_iniciacao ? formatarData(i.data_iniciacao) : '-'], ['Tempo', formatarMeses(i._meses)]].map(([r, v]) => (
+                      <div key={r}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{r}</div>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--color-text)' }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
-      </div>
 
-      <div style={{background:"var(--color-accent-bg)",borderLeft:"4px solid var(--color-accent)",padding:"1rem",borderRadius:"var(--radius-md)"}}>
-        <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>Legenda</h4>
-        <div style={{fontSize:"0.85rem",color:"var(--color-text)",lineHeight:"1.7"}}>
-          <div>Tempo Maconaria: Formato Xa Xm = X anos e X meses desde a iniciacao</div>
-          <div>Idade: Calculada com base na data de nascimento</div>
-          <div>Grau: Determinado automaticamente pelas datas de iniciacao, elevacao e exaltacao</div>
-          <div>Situacao: Apenas irmaos Regulares e Licenciados sao exibidos no quadro</div>
-        </div>
+        {exibidos.length > 0 && (
+          <div style={{ padding: '0.7rem 1rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+            <span>Exibindo <strong style={{ color: 'var(--color-text)' }}>{exibidos.length}</strong> irmão(s) · {ROTULO_SITUACAO_FILTRO[situacaoSel]}</span>
+            <span>🎂 aniversariante do mês · <strong style={{ color: '#f59e0b' }}>70+</strong> prerrogativa · clique na linha para abrir o perfil</span>
+          </div>
+        )}
       </div>
     </div>
   );
