@@ -119,6 +119,7 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null)
         'sessao': 'Sessao', 
         'trabalho_irmao': 'Trabalho', 
         'instrucao': 'Instrucao', 
+        'treinamento': 'Treinamento',
         'sessao_magna': 'Sessao Magna',
         'sessao_posse': 'Sessao de Posse',
         'sessao_instalacao': 'Sessao de Instalacao',
