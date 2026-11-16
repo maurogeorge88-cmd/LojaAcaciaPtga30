@@ -35,8 +35,9 @@ const corStatus = (status) => {
  *                           (já filtrados pelo exercício escolhido)
  * @param {Object} dadosLoja registro de dados_loja (nome_loja, endereco, logo_url)
  * @param {string} filtroAno 'todos' ou o ano (ex.: '2026')
+ * @param {string} [escopo] 'campanha' | 'projeto' (aba de origem); omitido = ambos
  */
-export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
+export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno, escopo) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 15, LARG = W - M * 2;
   const LIMITE_Y = 275;
@@ -64,7 +65,7 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
 
   const rotuloAno = filtroAno === 'todos' ? 'Todos os Exercícios' : (filtroAno === 'Sem data' ? 'Sem data de início' : `Exercício ${filtroAno}`);
   doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
-  txt('PROJETOS E CAMPANHAS', W / 2, y, { align: 'center' }); y += 5.5;
+  txt(escopo === 'campanha' ? 'CAMPANHAS' : escopo === 'projeto' ? 'PROJETOS' : 'PROJETOS E CAMPANHAS', W / 2, y, { align: 'center' }); y += 5.5;
   doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...NAVY);
   txt(rotuloAno.toUpperCase(), W / 2, y, { align: 'center' }); y += 4.5;
   doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(110);
@@ -77,7 +78,18 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
   const somaReceitas = projetos.reduce((s, p) => s + (p.totalReceitas || 0), 0);
   const somaCustos = projetos.reduce((s, p) => s + (p.totalCustos || 0), 0);
 
-  const cards = [
+  const somaPrevisto = projetos.reduce((s, p) => s + (p.valorPrevisto || 0), 0);
+  const cards = escopo === 'campanha' ? [
+    { label: 'CAMPANHAS', valor: String(qtdCampanhas), cor: AMBAR },
+    { label: 'ARRECADADO', valor: fmtR(somaReceitas), cor: VERDE },
+    { label: 'JÁ REPASSADO', valor: fmtR(somaCustos), cor: VERM },
+    { label: 'A REPASSAR', valor: fmtR(somaReceitas - somaCustos), cor: AZUL },
+  ] : escopo === 'projeto' ? [
+    { label: 'PROJETOS', valor: String(qtdProjetos), cor: AZUL },
+    { label: 'ORÇAMENTO PREVISTO', valor: fmtR(somaPrevisto), cor: AMBAR },
+    { label: 'RECEITAS', valor: fmtR(somaReceitas), cor: VERDE },
+    { label: 'CUSTOS', valor: fmtR(somaCustos), cor: VERM },
+  ] : [
     { label: 'PROJETOS', valor: String(qtdProjetos), cor: AZUL },
     { label: 'CAMPANHAS', valor: String(qtdCampanhas), cor: AMBAR },
     { label: 'RECEITAS / ARRECADADO', valor: fmtR(somaReceitas), cor: VERDE },
@@ -98,7 +110,7 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
 
   if (projetos.length === 0) {
     doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(...CINZA);
-    txt('Nenhum projeto ou campanha neste exercício.', W / 2, y + 6, { align: 'center' });
+    txt(escopo === 'campanha' ? 'Nenhuma campanha neste exercício.' : escopo === 'projeto' ? 'Nenhum projeto neste exercício.' : 'Nenhum projeto ou campanha neste exercício.', W / 2, y + 6, { align: 'center' });
   }
 
   // ── Agrupa por exercício (faixa só quando há mais de um ano) ───────────
@@ -238,5 +250,8 @@ export const gerarRelatorioProjetosPDF = (projetos, dadosLoja, filtroAno) => {
     txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, W - M, 290, { align: 'right' });
   }
 
-  doc.save(`Projetos_Campanhas_${filtroAno === 'todos' ? 'Todos' : filtroAno.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  const hj = new Date();
+  const hojeLocal = `${hj.getFullYear()}-${String(hj.getMonth() + 1).padStart(2, '0')}-${String(hj.getDate()).padStart(2, '0')}`;
+  const nomeBase = escopo === 'campanha' ? 'Campanhas' : escopo === 'projeto' ? 'Projetos' : 'Projetos_Campanhas';
+  doc.save(`${nomeBase}_${filtroAno === 'todos' ? 'Todos' : filtroAno.replace(/\s+/g, '_')}_${hojeLocal}.pdf`);
 };
