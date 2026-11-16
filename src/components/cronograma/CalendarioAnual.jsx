@@ -187,7 +187,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             {ev.local && <span>📍 {ev.local}</span>}
             {ev.responsavel && <span>👤 {ev.responsavel}</span>}
           </div>
-          {(ev.descricao || ev.observacoes) && <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.6rem', paddingTop: '0.6rem' }}>
+          {(ev.descricao || ev.observacoes) && <div style={{ marginTop: '0.6rem' }}>
+            <div style={{ width: '4cm', maxWidth: '100%', height: '1px', background: 'var(--color-border-light)', marginBottom: '0.6rem' }} />
             {ev.descricao && <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{ev.descricao}</p>}
             {ev.observacoes && <p style={{ margin: ev.descricao ? '0.5rem 0 0' : 0, fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' }}>📝 {ev.observacoes}</p>}
           </div>}
