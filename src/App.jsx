@@ -510,6 +510,15 @@ function App() {
       } else {
         // Admin e cargos têm acesso total (Mestre)
         setGrauUsuarioLogado('Mestre');
+        // Mesmo assim, identifica o irmão pelo e-mail (ex.: nome nos downloads da Biblioteca Online)
+        try {
+          const { data: irmaoProprio } = await supabase
+            .from('irmaos')
+            .select('id')
+            .eq('email', userEmail)
+            .maybeSingle();
+          if (irmaoProprio) setIrmaoLogadoId(irmaoProprio.id);
+        } catch (e) { /* sem vínculo com um irmão: segue sem id */ }
       }
       
       // Definir permissões - VERIFICAR CARGO PRIMEIRO!
