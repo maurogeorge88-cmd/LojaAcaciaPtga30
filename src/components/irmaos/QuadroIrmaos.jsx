@@ -353,10 +353,10 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
           <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Faixa etária</div>
           <div style={{ height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosFaixa} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={dadosFaixa} margin={{ top: 24, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="faixa" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} domain={[0, (max) => Math.ceil((max + 1) / 3) * 3]} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(148,163,184,0.12)' }} formatter={(v) => [v, 'Irmãos']} />
                 <Bar dataKey="irmaos" fill="var(--color-accent)" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: 'var(--color-text-muted)', fontSize: 12 }} />
               </BarChart>
