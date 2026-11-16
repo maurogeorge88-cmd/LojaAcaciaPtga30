@@ -172,8 +172,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           {ehHoje && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: 'var(--color-accent)', borderRadius: 999, marginTop: '0.25rem', padding: '0.05rem 0' }}>HOJE</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
-            <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
+          <h4 style={{ margin: '0 0 0.45rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.45rem' }}>
             <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(ev.tipo)}</span>
             {ev.tipo !== 'feriado' && ev.grau_sessao_id && NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id] && (
               <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)' }}>{NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]}</span>
@@ -187,8 +187,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             {ev.local && <span>📍 {ev.local}</span>}
             {ev.responsavel && <span>👤 {ev.responsavel}</span>}
           </div>
-          {ev.descricao && <p style={{ margin: '0.45rem 0 0', fontSize: '0.84rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{ev.descricao}</p>}
-          {ev.observacoes && <p style={{ margin: '0.4rem 0 0', fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>📝 {ev.observacoes}</p>}
+          {(ev.descricao || ev.observacoes) && <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '0.6rem', paddingTop: '0.6rem' }}>
+            {ev.descricao && <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{ev.descricao}</p>}
+            {ev.observacoes && <p style={{ margin: ev.descricao ? '0.5rem 0 0' : 0, fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' }}>📝 {ev.observacoes}</p>}
+          </div>}
         </div>
         {podeEditar && (
           <div style={{ display: 'flex', gap: '0.4rem', alignSelf: 'flex-start', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
