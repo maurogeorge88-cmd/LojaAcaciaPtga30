@@ -34,8 +34,8 @@ export default function MenuLoja({
     { tipo: 'grupo', chave: 'irmaos', icone: '👥', label: 'Controle de Irmãos', itens: [
       { pagina: 'cadastro', icone: '➕', label: 'Cadastrar', mostrar: editar('cadastro_irmaos') },
       { pagina: 'visualizar', icone: '👁️', label: 'Visualizar', mostrar: true },
-      { pagina: 'quadro', icone: '📋', label: 'Quadro', mostrar: ver('cadastro_irmaos') },
-      { pagina: 'licencas-situacoes', icone: '🗓️', label: 'Licenças e Situações', mostrar: ver('cadastro_irmaos') },
+      { pagina: 'quadro', icone: '📋', label: 'Quadro', mostrar: true },
+      { pagina: 'licencas-situacoes', icone: '🗓️', label: 'Licenças e Situações', mostrar: true },
       { pagina: 'comendas', icone: '🎖️', label: 'Comendas', mostrar: ver('comendas') },
       { pagina: 'altos-graus', icone: '🔺', label: 'Altos Graus', mostrar: true },
       { pagina: 'gerenciar-graus', icone: '⚙️', label: 'Gerenciar Graus', mostrar: editar('usuarios') },
@@ -85,7 +85,7 @@ export default function MenuLoja({
 
     { tipo: 'item', pagina: 'corpo-admin', icone: '👔', label: 'Administração', mostrar: ver('corpo_admin') },
     { tipo: 'item', pagina: 'eleicao-posse', icone: '🗳️', label: 'Eleição e Posse', mostrar: ver('corpo_admin') },
-    { tipo: 'item', pagina: 'sindicancia', icone: '🔍', label: 'Sindicância', mostrar: true },
+    { tipo: 'item', pagina: 'sindicancia', icone: '🔍', label: 'Sindicância', mostrar: !ehIrmao }, // fechada para o acesso simples
 
     { tipo: 'grupo', chave: 'sistema', icone: '⚙️', label: 'Gestão do Sistema', itens: [
       { pagina: 'gestao-sistema-usuarios', icone: '👤', label: 'Gerenciar Usuários', mostrar: editar('usuarios') },
