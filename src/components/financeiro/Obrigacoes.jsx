@@ -4,6 +4,7 @@ import {
   PERIODICIDADES, podeGerirObrigacoes, proximosVencimentos,
   darBaixa, desfazerBaixa, dataBR,
 } from './utils/obrigacoes';
+import { confirmar } from '../common/ConfirmDialog';
 
 // ════════════════════════════════════════════════════════════════════════
 // OBRIGAÇÕES — lembretes de contas recorrentes (água, energia, IPTU…).
@@ -96,7 +97,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
   };
 
   const excluir = async (o) => {
-    if (!window.confirm(`Excluir a obrigação "${o.nome}"?\nO histórico de baixas dela também será apagado.`)) return;
+    if (!(await confirmar({ titulo: 'Excluir obrigação', mensagem: 'O histórico de baixas dela também será apagado.', detalhe: o.nome }))) return;
     try {
       const { data, error } = await supabase.from('obrigacoes').delete().eq('id', o.id).select();
       if (error) throw error;
@@ -115,7 +116,7 @@ export default function Obrigacoes({ userData, showSuccess, showError }) {
   };
 
   const desfazer = async (b) => {
-    if (!window.confirm('Desfazer esta baixa? A obrigação volta a aparecer nos avisos.')) return;
+    if (!(await confirmar({ titulo: 'Desfazer baixa', mensagem: 'Desfazer esta baixa? A obrigação volta a aparecer nos avisos.', confirmarTexto: 'Desfazer', perigo: false }))) return;
     try {
       await desfazerBaixa(b.obrigacao_id, b.competencia);
       showSuccess?.('Baixa desfeita!');
