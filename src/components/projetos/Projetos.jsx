@@ -34,6 +34,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
   const [mostrarFinanceiro, setMostrarFinanceiro] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('receitas');
+  // Abas principais da lista (Campanhas x Projetos) + filtros
+  const [aba, setAbaState] = useState(() => { try { return localStorage.getItem('projetos_aba') === 'projeto' ? 'projeto' : 'campanha'; } catch { return 'campanha'; } });
+  const setAba = (v) => { setAbaState(v); try { localStorage.setItem('projetos_aba', v); } catch { /* sem storage */ } };
+  const [filtroAno, setFiltroAno] = useState({ campanha: null, projeto: null }); // null = automático (ano atual, ou o mais recente)
+  const [filtroStatus, setFiltroStatus] = useState('andamento'); // andamento | concluido | suspcanc | todos
+  const [filtroSubtipo, setFiltroSubtipo] = useState('todos');
+  const [busca, setBusca] = useState('');
   // Visualização Agrupada (padrão) x Detalhada. Agrupada é só leitura —
   // edição fica bloqueada nela de propósito, porque uma linha agrupada
   // pode somar vários registros reais, e editar ali corrompe o registro
@@ -108,6 +115,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     if (!permissoes?.canEdit) return; // relatório só para quem edita projetos
     try {
       const lista = projetos
+        .filter(ehDaAba)
         .filter(p => anoRelatorio === 'todos' || anoDoProjeto(p) === anoRelatorio)
         .map(p => {
           const totalCustos = calcularTotalCustos(p);
@@ -125,7 +133,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             pct: ehCampanha ? (meta > 0 ? (totalReceitas / meta) * 100 : 0) : calcularPercentual(p, totalCustos),
           };
         });
-      gerarRelatorioProjetosPDF(lista, dadosLoja, anoRelatorio);
+      gerarRelatorioProjetosPDF(lista, dadosLoja, anoRelatorio, aba);
       setModalRelatorio(false);
     } catch (e) {
       showError?.('Erro ao gerar relatório: ' + e.message);
@@ -134,8 +142,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const abrirModalRelatorio = () => {
     if (!permissoes?.canEdit) return; // relatório só para quem edita projetos
-    const anosReais = [...new Set(projetos.map(anoDoProjeto).filter(a => a !== 'Sem data'))].sort((a, b) => b.localeCompare(a));
-    setAnoRelatorio(anosReais[0] || 'todos');
+    setAnoRelatorio(anoEfetivo);
     setModalRelatorio(true);
   };
 
@@ -510,6 +517,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const calcularSaldo = (projeto, totalCustos, totalReceitas) => totalReceitas - totalCustos;
 
+  // Campanha x Projeto (projeto = tudo que não é campanha)
+  const ehDaAba = (p) => (aba === 'campanha' ? p.tipo === 'campanha' : p.tipo !== 'campanha');
+
   const calcularPercentual = (projeto, totalCustos) => {
     const valorPrevisto = parseFloat(projeto.valor_previsto) || 0;
     if (valorPrevisto === 0) return 0;
@@ -562,31 +572,136 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     ? (saldoModal < 0 ? '#ef4444' : saldoZeradoModal ? '#10b981' : '#f59e0b')
     : (saldoModal >= 0 ? '#10b981' : '#ef4444');
 
+  // ── Abas, filtros e resumo ──
+  const fmtR = (v) => `R$ ${(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  const ordemAnos = (a, b) => (a === 'Sem data' ? 1 : b === 'Sem data' ? -1 : b.localeCompare(a));
+  const grupoStatus = (st) => (st === 'em_andamento' ? 'andamento' : st === 'concluido' ? 'concluido' : 'suspcanc');
+  const baseAba = projetos.filter(ehDaAba);
+  const anosAba = [...new Set(baseAba.map(anoDoProjeto))].sort(ordemAnos);
+  const anoAtualStr = String(new Date().getFullYear());
+  const anoEfetivo = filtroAno[aba] ?? (anosAba.includes(anoAtualStr) ? anoAtualStr : (anosAba[0] || 'todos'));
+  const doAnoAba = baseAba.filter(p => anoEfetivo === 'todos' || anoDoProjeto(p) === anoEfetivo);
+  const escopoAba = doAnoAba.filter(p => {
+    if (aba === 'projeto' && filtroSubtipo !== 'todos' && p.tipo !== filtroSubtipo) return false;
+    const q = busca.trim().toLowerCase();
+    return !q || (p.nome || '').toLowerCase().includes(q) || (p.responsavel || '').toLowerCase().includes(q);
+  });
+  const contaStatus = (g) => escopoAba.filter(p => g === 'todos' || grupoStatus(p.status) === g).length;
+  const ORDEM_STATUS = { andamento: 0, suspcanc: 1, concluido: 2 };
+  const visiveis = escopoAba
+    .filter(p => filtroStatus === 'todos' || grupoStatus(p.status) === filtroStatus)
+    .sort((a, b) => (ORDEM_STATUS[grupoStatus(a.status)] - ORDEM_STATUS[grupoStatus(b.status)]) || String(b.data_inicio || '').localeCompare(String(a.data_inicio || '')));
+  const resumo = (() => {
+    const rec = doAnoAba.reduce((t, p) => t + calcularTotalReceitas(p), 0);
+    const cus = doAnoAba.reduce((t, p) => t + calcularTotalCustos(p), 0);
+    return {
+      andamento: doAnoAba.filter(p => p.status === 'em_andamento').length,
+      previsto: doAnoAba.reduce((t, p) => t + (parseFloat(p.valor_previsto) || 0), 0),
+      receitas: rec, custos: cus, saldo: rec - cus,
+    };
+  })();
+  const subtiposProjeto = tiposProjeto.filter(t => t.value !== 'campanha');
+  const segBtn = (ativo) => ({
+    padding: '0.4rem 0.85rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+    border: `1px solid ${ativo ? 'var(--color-accent)' : 'var(--color-border)'}`,
+    background: ativo ? 'var(--color-accent)' : 'var(--color-surface-2)', color: ativo ? '#fff' : 'var(--color-text-muted)',
+  });
+  const kpiCard = (titulo, valor, cor, sub) => (
+    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: `4px solid ${cor}`, borderRadius: 'var(--radius-lg)', padding: '0.9rem 1.1rem' }}>
+      <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{titulo}</div>
+      <div style={{ fontSize: '1.45rem', fontWeight: 800, color: cor, marginTop: '0.2rem' }}>{valor}</div>
+      {sub && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{sub}</div>}
+    </div>
+  );
+  const rotuloExercicio = anoEfetivo === 'todos' ? 'todos os exercícios' : anoEfetivo === 'Sem data' ? 'sem data de início' : `exercício ${anoEfetivo}`;
+
   return (
     <div className="max-w-7xl mx-auto -mx-3" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 px-3">
-        <div>
-          <h2 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>🎯 Projetos/Campanhas da Loja</h2>
-          <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Gerencie os projetos, campanhas e seus custos</p>
+      <div className="px-3 mb-4">
+        <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderTop:'4px solid var(--color-accent)',borderRadius:'var(--radius-lg)',padding:'1rem 1.25rem',display:'flex',flexWrap:'wrap',gap:'0.75rem',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <h2 style={{margin:0,fontSize:'1.5rem',fontWeight:800,color:'var(--color-text)'}}>🎯 Projetos e Campanhas da Loja</h2>
+            <p style={{margin:'0.2rem 0 0',fontSize:'0.82rem',color:'var(--color-text-muted)'}}>Gerencie os projetos, as campanhas e seus créditos e custos</p>
+          </div>
+          <div className="flex gap-2 flex-wrap justify-end">
+            {permissoes?.canEdit && (
+              <button onClick={abrirModalRelatorio}
+                style={{padding:"0.6rem 1.25rem",background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                📄 Relatório de {aba === 'campanha' ? 'Campanhas' : 'Projetos'}
+              </button>
+            )}
+            {permissoes?.canEdit && (
+              <button
+                onClick={() => {
+                  if (!mostrarFormulario && !projetoEditando) setProjetoForm(f => ({ ...f, tipo: aba === 'campanha' ? 'campanha' : (f.tipo === 'campanha' ? 'social' : f.tipo) }));
+                  setMostrarFormulario(!mostrarFormulario);
+                }}
+                style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                {mostrarFormulario ? '❌ Cancelar' : (aba === 'campanha' ? '➕ Nova Campanha' : '➕ Novo Projeto')}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
-          {permissoes?.canEdit && (
-            <button
-              onClick={abrirModalRelatorio}
-              style={{padding:"0.6rem 1.25rem",background:"#1e3a5f",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
-            >
-              📄 Relatório
-            </button>
-          )}
-          {permissoes?.canEdit && (
-            <button
-              onClick={() => setMostrarFormulario(!mostrarFormulario)}
-              style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
-            >
-              {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto/Campanha'}
-            </button>
-          )}
+      </div>
+
+      {/* Abas principais */}
+      <div className="px-3 mb-4" style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
+        {[['campanha','🎗️ Campanhas', projetos.filter(p => p.tipo === 'campanha').length],['projeto','📁 Projetos', projetos.filter(p => p.tipo !== 'campanha').length]].map(([k, r, n]) => (
+          <button key={k} onClick={() => { setAba(k); setFiltroSubtipo('todos'); setBusca(''); }}
+            style={{padding:'0.6rem 1.4rem',borderRadius:'999px',fontSize:'0.92rem',fontWeight:800,cursor:'pointer',
+              border:`2px solid ${aba === k ? (k === 'campanha' ? '#f59e0b' : 'var(--color-accent)') : 'var(--color-border)'}`,
+              background: aba === k ? (k === 'campanha' ? '#f59e0b' : 'var(--color-accent)') : 'var(--color-surface)',
+              color: aba === k ? '#fff' : 'var(--color-text-muted)'}}>
+            {r} ({n})
+          </button>
+        ))}
+      </div>
+
+      {/* Resumo da aba */}
+      <div className="px-3 mb-4" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(190px, 1fr))',gap:'0.75rem'}}>
+        {aba === 'campanha' ? (
+          <>
+            {kpiCard('Em andamento', resumo.andamento, '#3b82f6', rotuloExercicio)}
+            {kpiCard('Arrecadado', fmtR(resumo.receitas), '#10b981', 'créditos recebidos')}
+            {kpiCard('Já repassado', fmtR(resumo.custos), '#ef4444', 'débitos / repasses')}
+            {kpiCard('Saldo a repassar', fmtR(resumo.saldo), resumo.saldo < 0 ? '#ef4444' : resumo.saldo < 0.005 ? '#10b981' : '#f59e0b', 'arrecadado - repassado')}
+          </>
+        ) : (
+          <>
+            {kpiCard('Em andamento', resumo.andamento, '#3b82f6', rotuloExercicio)}
+            {kpiCard('Orçamento previsto', fmtR(resumo.previsto), '#8b5cf6', 'soma dos valores previstos')}
+            {kpiCard('Custos realizados', fmtR(resumo.custos), '#ef4444', 'despesas lançadas')}
+            {kpiCard('Saldo', fmtR(resumo.saldo), resumo.saldo >= 0 ? '#10b981' : '#ef4444', 'receitas - custos')}
+          </>
+        )}
+      </div>
+
+      {/* Filtros */}
+      <div className="px-3 mb-4">
+        <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.85rem 1rem',display:'flex',flexDirection:'column',gap:'0.65rem'}}>
+          <div style={{display:'flex',gap:'0.6rem',flexWrap:'wrap',alignItems:'center'}}>
+            <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="🔍 Buscar por nome ou responsável..."
+              style={{flex:'1 1 240px',padding:'0.5rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)'}} />
+            <select value={anoEfetivo} onChange={(e) => setFiltroAno(f => ({ ...f, [aba]: e.target.value }))}
+              style={{padding:'0.5rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontWeight:700}}>
+              {anosAba.map(a => <option key={a} value={a}>{a === 'Sem data' ? 'Sem data' : a}</option>)}
+              <option value="todos">Todos</option>
+            </select>
+            {aba === 'projeto' && (
+              <select value={filtroSubtipo} onChange={(e) => setFiltroSubtipo(e.target.value)}
+                style={{padding:'0.5rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}>
+                <option value="todos">Todos os tipos</option>
+                {subtiposProjeto.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            )}
+          </div>
+          <div style={{display:'flex',gap:'0.4rem',flexWrap:'wrap',alignItems:'center'}}>
+            <span style={{fontSize:'0.72rem',fontWeight:700,color:'var(--color-text-muted)',width:64}}>STATUS</span>
+            {[['andamento','🔄 Em andamento'],['concluido','✅ Concluídos'],['suspcanc','⏸️ Suspensos/Cancelados'],['todos','Todos']].map(([k, r]) => (
+              <button key={k} onClick={() => setFiltroStatus(k)} style={segBtn(filtroStatus === k)}>{r} ({contaStatus(k)})</button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -686,48 +801,22 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Lista de Projetos */}
       <div key={refreshKey} className="px-3">
-        {projetos.length === 0 ? (
-          <div className="col-span-2 text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <p className="text-lg">📋 Nenhum projeto cadastrado</p>
-            {permissoes?.canEdit && (
-              <button onClick={() => setMostrarFormulario(true)}
+        {visiveis.length === 0 ? (
+          <div className="text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <p className="text-lg">{aba === 'campanha' ? '🎗️' : '📁'} Nenhum{aba === 'campanha' ? 'a campanha' : ' projeto'} encontrad{aba === 'campanha' ? 'a' : 'o'}</p>
+            <p style={{fontSize:'0.82rem',color:'var(--color-text-muted)',marginTop:'0.4rem'}}>
+              {baseAba.length === 0 ? 'Ainda não há registros nesta aba.' : `Ajuste os filtros (${rotuloExercicio}${filtroStatus !== 'todos' ? ', status selecionado' : ''}).`}
+            </p>
+            {permissoes?.canEdit && baseAba.length === 0 && (
+              <button onClick={() => { setProjetoForm(f => ({ ...f, tipo: aba === 'campanha' ? 'campanha' : 'social' })); setMostrarFormulario(true); }}
                 style={{marginTop:"1rem",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer"}}>
-                ➕ Cadastrar Primeiro Projeto
+                ➕ {aba === 'campanha' ? 'Cadastrar primeira campanha' : 'Cadastrar primeiro projeto'}
               </button>
             )}
           </div>
         ) : (
           (() => {
-            const porAno = {};
-            projetos.forEach(p => {
-              const ano = anoDoProjeto(p);
-              if (!porAno[ano]) porAno[ano] = [];
-              porAno[ano].push(p);
-            });
-            const anos = Object.keys(porAno).sort((a, b) => {
-              if (a === 'Sem data') return 1;
-              if (b === 'Sem data') return -1;
-              return b.localeCompare(a);
-            });
-
-            return anos.map((ano) => {
-              const doAno = porAno[ano];
-              const qtdCampanhas = doAno.filter(p => p.tipo === 'campanha').length;
-              const qtdProjetos = doAno.length - qtdCampanhas;
-              return (
-              <div key={ano} className="mb-8">
-                {/* Faixa do exercício */}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.5rem',padding:'0.65rem 1.1rem',marginBottom:'1rem',borderRadius:'var(--radius-lg)',background:'linear-gradient(90deg, var(--color-accent) 0%, #4338ca 100%)',color:'#fff',boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
-                  <span style={{fontSize:'1.3rem',fontWeight:'800',letterSpacing:'0.04em'}}>
-                    📅 {ano === 'Sem data' ? 'Sem data de início' : `Exercício ${ano}`}
-                  </span>
-                  <span style={{fontSize:'0.8rem',fontWeight:'600',opacity:0.9}}>
-                    {qtdProjetos} projeto(s) · {qtdCampanhas} campanha(s)
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {doAno.map((projeto) => {
+            const renderCard = (projeto) => {
             const tipoInfo = tiposProjeto.find(t => t.value === projeto.tipo);
             const statusInfo = statusLabels[projeto.status];
             const totalCustos = calcularTotalCustos(projeto);
@@ -736,14 +825,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
-              <div key={projeto.id} className="rounded-xl p-6 hover:shadow-xl transition" style={
+              <div key={projeto.id} className="rounded-xl p-5 hover:shadow-xl transition" style={
                 projeto.tipo === 'campanha'
                   ? {background:"var(--color-surface)",border:"2px solid #f59e0b",boxShadow:"0 0 0 1px rgba(245,158,11,0.15)"}
                   : {background:"var(--color-surface)",border:"1px solid var(--color-border)"}
               }>
                 {/* Header do Card */}
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
+                <div className="flex justify-between items-start gap-3 mb-4">
+                  <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-bold mb-2" style={{color:"var(--color-text)"}}>{projeto.nome}</h3>
                     <div className="flex flex-wrap gap-2 mb-2">
                       <span style={{...tipoInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
@@ -898,11 +987,34 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
               </div>
             );
-          })}
+            };
+
+            const porAno = {};
+            visiveis.forEach(p => { const a = anoDoProjeto(p); (porAno[a] = porAno[a] || []).push(p); });
+            const anos = Object.keys(porAno).sort(ordemAnos);
+            const mostrarFaixaAno = anoEfetivo === 'todos' && anos.length > 0;
+
+            return anos.map((ano) => (
+              <div key={ano} className="mb-8">
+                {mostrarFaixaAno && (
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.5rem',padding:'0.6rem 1rem',marginBottom:'1rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface)',border:'1px solid var(--color-border)',borderLeft:'5px solid var(--color-accent)'}}>
+                    <span style={{fontSize:'1.1rem',fontWeight:800,color:'var(--color-text)'}}>
+                      📅 {ano === 'Sem data' ? 'Sem data de início' : `Exercício ${ano}`}
+                    </span>
+                    <span style={{fontSize:'0.8rem',fontWeight:600,color:'var(--color-text-muted)'}}>
+                      {porAno[ano].length} {aba === 'campanha' ? 'campanha(s)' : 'projeto(s)'}
+                    </span>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {porAno[ano].map(projeto => (
+                    <div key={projeto.id} style={{opacity: projeto.status === 'em_andamento' ? 1 : 0.82}}>
+                      {renderCard(projeto)}
+                    </div>
+                  ))}
                 </div>
               </div>
-              );
-            });
+            ));
           })()
         )}
       </div>
@@ -1538,16 +1650,16 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Relatório PDF — escolher o exercício */}
       {modalRelatorio && (() => {
-        const anosReais = [...new Set(projetos.map(anoDoProjeto))].sort((a, b) => {
+        const anosReais = [...new Set(projetos.filter(ehDaAba).map(anoDoProjeto))].sort((a, b) => {
           if (a === 'Sem data') return 1;
           if (b === 'Sem data') return -1;
           return b.localeCompare(a);
         });
-        const qtd = projetos.filter(p => anoRelatorio === 'todos' || anoDoProjeto(p) === anoRelatorio).length;
+        const qtd = projetos.filter(ehDaAba).filter(p => anoRelatorio === 'todos' || anoDoProjeto(p) === anoRelatorio).length;
         return (
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{background:'rgba(0,0,0,0.6)'}} onClick={() => setModalRelatorio(false)}>
             <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'400px',width:'100%'}} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)',margin:'0 0 0.25rem'}}>📄 Relatório de Projetos e Campanhas</h3>
+              <h3 style={{fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)',margin:'0 0 0.25rem'}}>📄 Relatório de {aba === 'campanha' ? 'Campanhas' : 'Projetos'}</h3>
               <p style={{fontSize:'0.8rem',color:'var(--color-text-muted)',margin:'0 0 1rem'}}>Resumo em PDF, pronto pra enviar aos irmãos.</p>
 
               <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Exercício</label>
@@ -1556,7 +1668,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <option value="todos">Todos os exercícios</option>
                 {anosReais.map(a => <option key={a} value={a}>{a === 'Sem data' ? 'Sem data de início' : `Exercício ${a}`}</option>)}
               </select>
-              <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:'0 0 1.25rem'}}>{qtd} projeto(s)/campanha(s) neste filtro</p>
+              <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:'0 0 1.25rem'}}>{qtd} {aba === 'campanha' ? 'campanha(s)' : 'projeto(s)'} neste filtro</p>
 
               <div style={{display:'flex',gap:'0.5rem'}}>
                 <button onClick={() => setModalRelatorio(false)}
