@@ -175,6 +175,36 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
     return { novo, velho };
   }, [ativos]);
 
+  // ── Tempo de maçonaria (desde a iniciação) ──
+  const dadosTempo = useMemo(() => {
+    const faixas = [
+      { f: '< 1 ano', min: 0, max: 0 }, { f: '1–2', min: 1, max: 2 }, { f: '3–5', min: 3, max: 5 },
+      { f: '6–10', min: 6, max: 10 }, { f: '11–20', min: 11, max: 20 }, { f: '21+', min: 21, max: 200 },
+    ];
+    return faixas.map(x => ({
+      faixa: x.f,
+      irmaos: ativos.filter(i => i._meses != null && Math.floor(i._meses / 12) >= x.min && Math.floor(i._meses / 12) <= x.max).length,
+    }));
+  }, [ativos]);
+
+  const extremosTempo = useMemo(() => {
+    const com = ativos.filter(i => i._meses != null);
+    if (!com.length) return null;
+    return {
+      recente: com.reduce((a, b) => (b._meses < a._meses ? b : a)),
+      antigo: com.reduce((a, b) => (b._meses > a._meses ? b : a)),
+    };
+  }, [ativos]);
+
+  const fmtTempo = (m) => {
+    const a = Math.floor(m / 12), r = m % 12;
+    if (a === 0) return `${r} ${r === 1 ? 'mês' : 'meses'}`;
+    return `${a} ${a === 1 ? 'ano' : 'anos'}${r ? ` e ${r} ${r === 1 ? 'mês' : 'meses'}` : ''}`;
+  };
+
+  const topoTempo = Math.max(3, Math.ceil((Math.max(0, ...dadosTempo.map(d => d.irmaos)) + 1) / 3) * 3);
+  const ticksTempo = Array.from({ length: topoTempo / 3 + 1 }, (_, i) => i * 3);
+
   const topoFaixa = Math.max(3, Math.ceil((Math.max(0, ...dadosFaixa.map(d => d.irmaos)) + 1) / 3) * 3);
   const ticksFaixa = Array.from({ length: topoFaixa / 3 + 1 }, (_, i) => i * 3);
 
@@ -384,6 +414,30 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
               </div>
               <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremos.velho.nome}>
                 🏛️ Mais velho: <strong style={{ color: 'var(--color-text)' }}>{extremos.velho.nome}</strong> ({extremos.velho._idade} anos)
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ ...card, padding: '1rem 1.25rem' }}>
+          <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Tempo de maçonaria</div>
+          <div style={{ height: 196 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dadosTempo} margin={{ top: 24, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                <XAxis dataKey="faixa" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} domain={[0, topoTempo]} ticks={ticksTempo} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(148,163,184,0.12)' }} formatter={(v) => [v, 'Irmãos']} labelFormatter={(l) => `${l}${/\d$|\+$/.test(l) ? ' anos' : ''}`} />
+                <Bar dataKey="irmaos" fill="#10b981" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: 'var(--color-text-muted)', fontSize: 12 }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {extremosTempo && (
+            <div style={{ marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.recente.nome}>
+                🌱 Mais recente: <strong style={{ color: 'var(--color-text)' }}>{extremosTempo.recente.nome}</strong> ({fmtTempo(extremosTempo.recente._meses)})
+              </div>
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.antigo.nome}>
+                🏛️ Mais antigo: <strong style={{ color: 'var(--color-text)' }}>{extremosTempo.antigo.nome}</strong> ({fmtTempo(extremosTempo.antigo._meses)})
               </div>
             </div>
           )}
