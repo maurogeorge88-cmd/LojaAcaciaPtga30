@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { confirmar } from '../common/ConfirmDialog';
 
 export default function CategoriasFinanceiras({ showSuccess, showError, permissoes }) {
   const somenteLeitura = permissoes && !permissoes.canEditFinancial;
@@ -137,7 +138,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError, permisso
       return;
     }
 
-    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+    if (!(await confirmar({ titulo: 'Excluir categoria', mensagem: 'Deseja realmente excluir esta categoria?' }))) return;
     
     try {
       const { error } = await supabase
