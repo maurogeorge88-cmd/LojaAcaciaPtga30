@@ -539,7 +539,6 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const sessoesRealizadas = sessoesDoAno.filter(e => e.status === 'realizado').length;
   const pendencias = eventosDoAno.filter(e => e.tipo !== 'feriado' && e.data_evento < hojeStr && ['planejado', 'confirmado'].includes(e.status));
   const anoCalendario = anoExibido || anoAtual;
-  const eventosCalendario = eventosPorTipo.map(e => ({ data: e.data_evento, titulo: e.titulo, tipo: e.tipo, cor: corDoEvento(e.tipo, e.cor_destaque) }));
 
   const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
   const DIAS_ABREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -1312,7 +1311,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           )}
         </div>
       ) : (
-        <CalendarioAnual key={anoCalendario} eventos={eventosCalendario} ano={anoCalendario} />
+        <CalendarioAnual key={anoCalendario} eventos={eventosPorTipo} ano={anoCalendario} podeEditar={podeEditar} onEditar={editarEvento} onExcluir={excluirEvento} />
       )}
 
       {/* Modal de Visualização */}
