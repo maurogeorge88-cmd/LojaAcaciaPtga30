@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { confirmar } from '../common/ConfirmDialog';
 
 // ── Constantes ─────────────────────────────────────────────────────────────
 const STATUS = {
@@ -106,7 +107,7 @@ export default function EventosArrecadacao({ permissoes, showSuccess, showError 
   };
 
   const excluirEvento = async (ev) => {
-    if (!window.confirm(`Excluir "${ev.nome}"? Todos os itens, gastos e parceiros serão removidos.`)) return;
+    if (!(await confirmar({ titulo: 'Excluir evento', mensagem: 'Todos os itens, gastos e parceiros serão removidos.', detalhe: ev.nome }))) return;
     const { error } = await supabase.from('eventos_arrecadacao').delete().eq('id', ev.id);
     if (error) { showError(error.message); return; }
     showSuccess('Evento excluído.');
@@ -136,7 +137,7 @@ export default function EventosArrecadacao({ permissoes, showSuccess, showError 
   };
 
   const excluirItem = async (id) => {
-    if (!window.confirm('Excluir este item?')) return;
+    if (!(await confirmar({ titulo: 'Excluir item', mensagem: 'Excluir este item?' }))) return;
     await supabase.from('eventos_itens').delete().eq('id', id);
     carregarDetalhe(eventoSel.id);
   };
@@ -159,7 +160,7 @@ export default function EventosArrecadacao({ permissoes, showSuccess, showError 
   };
 
   const excluirGasto = async (id) => {
-    if (!window.confirm('Excluir este gasto?')) return;
+    if (!(await confirmar({ titulo: 'Excluir gasto', mensagem: 'Excluir este gasto?' }))) return;
     await supabase.from('eventos_gastos').delete().eq('id', id);
     carregarDetalhe(eventoSel.id);
   };
@@ -182,7 +183,7 @@ export default function EventosArrecadacao({ permissoes, showSuccess, showError 
   };
 
   const excluirParc = async (id) => {
-    if (!window.confirm('Remover parceiro?')) return;
+    if (!(await confirmar({ titulo: 'Remover parceiro', mensagem: 'Remover este parceiro?', confirmarTexto: 'Remover' }))) return;
     await supabase.from('eventos_parceiros').delete().eq('id', id);
     carregarDetalhe(eventoSel.id);
   };
