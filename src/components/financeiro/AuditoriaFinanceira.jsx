@@ -6,6 +6,7 @@ import {
   podeConferirFinanceiro, dataBR, buscarFechamentos, snapshotFinanceiro,
   compararComFechamento,
 } from './utils/conferencia';
+import { confirmar } from '../common/ConfirmDialog';
 
 // ════════════════════════════════════════════════════════════════════════
 // AUDITORIA FINANCEIRA — histórico de inclusões, alterações e exclusões de lançamentos
@@ -140,7 +141,7 @@ export default function AuditoriaFinanceira({ userData, showSuccess, showError }
 
   const desfazerUltima = async () => {
     if (!ultimo || !podeVer) return;
-    if (!window.confirm(`Desfazer a conferência até ${dataBR(ultimo.data_corte)}?`)) return;
+    if (!(await confirmar({ titulo: 'Desfazer conferência', mensagem: `Desfazer a conferência até ${dataBR(ultimo.data_corte)}?`, confirmarTexto: 'Desfazer', perigo: false }))) return;
     try {
       const { data, error } = await supabase.from('fechamentos_financeiros').delete().eq('id', ultimo.id).select();
       if (error) throw error;
