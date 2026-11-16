@@ -73,6 +73,7 @@ export default function MenuLoja({
     { tipo: 'item', pagina: 'cronograma', icone: '📅', label: 'Cronograma', mostrar: ver('cronograma') },
     { tipo: 'item', pagina: 'email-irmaos', icone: '📧', label: 'Central E-Mail', mostrar: ver('email') },
     { tipo: 'item', pagina: 'estatisticas', icone: '📊', label: 'Estatísticas', mostrar: true },
+    { tipo: 'item', pagina: 'dashboard-presenca', icone: '✅', label: 'Dashboard de Presença', mostrar: !editar('presenca') },
     { tipo: 'item', pagina: 'lojas-visitantes', icone: '🏛️', label: 'Lojas Maçônicas', mostrar: true },
     { tipo: 'item', pagina: 'visao-geral', icone: '🗓️', label: 'Visão Geral', mostrar: true },
     { tipo: 'item', pagina: 'aniversariantes', icone: '🎉', label: 'Festividades', mostrar: true },
