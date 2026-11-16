@@ -101,41 +101,60 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
     return parcelas;
   };
 
-  const parcelas = calcParcelas();
+  const parcelasBase = calcParcelas();
+
+  // Grupos por categoria de origem (cada categoria mantém seu próprio valor)
+  const grupos = (() => {
+    const mapa = {};
+    lancSelecionados.forEach(l => {
+      const k = l.categoria_id;
+      if (!mapa[k]) mapa[k] = { categoria_id: k, categoria: l.categorias_financeiras?.nome || 'Sem categoria', lancs: [], total: 0 };
+      mapa[k].lancs.push(l);
+      mapa[k].total += Number(l.valor || 0);
+    });
+    return Object.values(mapa).map(g => ({ ...g, total: Math.round(g.total * 100) / 100 }));
+  })();
+
+  const descricaoOrigem = (g) => {
+    const descs = [...new Set(g.lancs.map(l => (l.descricao || '').trim()).filter(Boolean))];
+    const txt = descs.join(' + ');
+    return txt && txt.length <= 150 ? txt : `${g.categoria}${g.lancs.length > 1 ? ` (${g.lancs.length} lançamentos)` : ''}`;
+  };
+
+  // Divide cada parcela entre as categorias, proporcional ao total de cada uma.
+  // Usa valores acumulados para que a soma de cada categoria feche exatamente.
+  const linhas = (() => {
+    const out = [];
+    if (!parcelasBase.length || totalSel <= 0) return out;
+    const acumAnt = {};
+    let cumGeral = 0;
+    parcelasBase.forEach(p => {
+      cumGeral = Math.round((cumGeral + p.val) * 100) / 100;
+      grupos.forEach(g => {
+        const alvo = p.num === p.total ? g.total : Math.round(g.total * cumGeral / totalSel * 100) / 100;
+        const val = Math.round((alvo - (acumAnt[g.categoria_id] || 0)) * 100) / 100;
+        acumAnt[g.categoria_id] = alvo;
+        out.push({ ...p, val, grupo: g, descricao: `Parc ${p.num}/${p.total} - ${descricaoOrigem(g)}` });
+      });
+    });
+    return out;
+  })();
+
+  // Total de cada parcela (soma das categorias)
+  const parcelas = parcelasBase.map(p => ({ ...p, val: Math.round(linhas.filter(x => x.num === p.num).reduce((a, x) => a + x.val, 0) * 100) / 100 }));
   const qtdParcelas = parcelas.length;
+
+  const observacaoOrigem = (g) => {
+    const hoje = new Date();
+    const dh = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+    const itens = g.lancs.map(l => `${(l.descricao || g.categoria).trim()} (venc. ${fmtData(l.data_vencimento)}) ${fmtR(l.valor)}`).join('; ');
+    return `Renegociado em ${dh}. Origem: ${g.categoria} - ${itens}. Total original: ${fmtR(g.total)}.`;
+  };
 
   const confirmar = async () => {
     if (!parcelas.length) { showError('Configure as parcelas corretamente.'); return; }
     setSalvando(true);
     try {
-      // 1. Buscar subcategoria "Renegociação" nas categorias existentes
-      // Estrutura esperada: categoria pai (Mensalidade/Agape/Peculio) > subcategoria "Renegociação"
-      const { data: todasCats } = await supabase
-        .from('categorias_financeiras')
-        .select('id, nome, tipo, categoria_pai_id')
-        .eq('tipo', 'receita');
-
-      // Procurar subcategoria chamada "Renegociação" (qualquer variação)
-      const subReneg = (todasCats || []).find(c =>
-        c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes('renegociacao') ||
-        c.nome.toLowerCase().includes('renegoci')
-      );
-
-      let catId = subReneg?.id;
-
-      // Se não encontrou, criar como subcategoria da primeira categoria pai de receita disponível
-      if (!catId) {
-        const catPai = (todasCats || []).find(c => !c.categoria_pai_id && c.tipo === 'receita');
-        const { data: catNova, error: errCat } = await supabase
-          .from('categorias_financeiras')
-          .insert({ nome: 'Renegociação', tipo: 'receita', categoria_pai_id: catPai?.id || null })
-          .select('id')
-          .single();
-        if (errCat) throw new Error('Não foi possível criar a subcategoria Renegociação: ' + errCat.message);
-        catId = catNova?.id;
-      }
-      if (!catId) throw new Error('Não foi possível localizar ou criar a categoria Renegociação.');
-
       // 2. Excluir lançamentos selecionados
       const ids = lancSelecionados.map(l => l.id);
       const { error: errDel } = await supabase
@@ -147,12 +166,13 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
       // 3. Inserir parcelas com todos os campos obrigatórios
       const hoje2 = new Date();
       const hojeISO = hoje2.getFullYear() + '-' + String(hoje2.getMonth()+1).padStart(2,'0') + '-' + String(hoje2.getDate()).padStart(2,'0');
-      const inserts = parcelas.map(p => ({
+      const inserts = linhas.map(p => ({
         tipo:            'receita',
-        categoria_id:    catId,
+        categoria_id:    p.grupo.categoria_id,
         origem_irmao_id: parseInt(irmaoId),
         origem_tipo:     'Irmao',
-        descricao:       'Renegociação - Parcela ' + p.num + '/' + p.total,
+        descricao:       p.descricao,
+        observacoes:     observacaoOrigem(p.grupo),
         valor:           p.val,
         status:          'pendente',
         data_lancamento: hojeISO,
@@ -165,7 +185,7 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
       const { error: errIns } = await supabase.from('lancamentos_loja').insert(inserts);
       if (errIns) throw errIns;
 
-      showSuccess(`✅ ${ids.length} lançamentos excluídos e ${qtdParcelas} parcelas criadas!`);
+      showSuccess(`✅ ${ids.length} lançamentos excluídos e ${inserts.length} lançamentos de parcela criados!`);
       onConcluido?.();
       onClose();
     } catch(e) {
@@ -245,6 +265,7 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
                             <input type="checkbox" checked={pendentes.every(l => selecionados[l.id])} onChange={toggleTodos} />
                           </th>
                           <th style={sTh}>Vencimento</th>
+                          <th style={sTh}>Categoria</th>
                           <th style={sTh}>Descrição</th>
                           <th style={{ ...sTh, textAlign: 'right' }}>Valor</th>
                         </tr>
@@ -256,6 +277,7 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
                               <input type="checkbox" checked={!!selecionados[l.id]} onChange={() => toggleSel(l.id)} onClick={e => e.stopPropagation()} />
                             </td>
                             <td style={{ ...sTd, color: 'var(--color-text-muted)' }}>{fmtData(l.data_vencimento)}</td>
+                            <td style={{ ...sTd, color: 'var(--color-text-muted)' }}>{l.categorias_financeiras?.nome || '—'}</td>
                             <td style={{ ...sTd, color: 'var(--color-text)' }}>{l.descricao}</td>
                             <td style={{ ...sTd, textAlign: 'right', fontWeight: '700', color: '#dc2626' }}>{fmtR(l.valor)}</td>
                           </tr>
@@ -336,24 +358,26 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
               {parcelas.length > 0 && (
                 <div>
                   <p style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
-                    Preview — {parcelas.length} parcela(s)
+                    Preview — {parcelas.length} parcela(s){grupos.length > 1 ? ` × ${grupos.length} categorias` : ''}
                   </p>
-                  <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', maxHeight: '220px', overflowY: 'auto' }}>
+                  <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', maxHeight: '260px', overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                       <thead>
                         <tr style={{ background: 'var(--color-surface-2)' }}>
                           <th style={sTh}>Parcela</th>
                           <th style={sTh}>Vencimento</th>
+                          <th style={sTh}>Categoria</th>
                           <th style={sTh}>Descrição</th>
                           <th style={{ ...sTh, textAlign: 'right' }}>Valor</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {parcelas.map(p => (
-                          <tr key={p.num} style={{ background: p.num % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)' }}>
+                        {linhas.map((p, idx) => (
+                          <tr key={idx} style={{ background: p.num % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)' }}>
                             <td style={{ ...sTd, color: '#7c3aed', fontWeight: '700' }}>{p.num}/{p.total}</td>
                             <td style={{ ...sTd, color: 'var(--color-text-muted)' }}>{fmtData(p.dtVenc)}</td>
-                            <td style={{ ...sTd, color: 'var(--color-text)' }}>Renegociação - Parcela {p.num}/{p.total}</td>
+                            <td style={{ ...sTd, color: 'var(--color-text-muted)' }}>{p.grupo.categoria}</td>
+                            <td style={{ ...sTd, color: 'var(--color-text)' }}>{p.descricao}</td>
                             <td style={{ ...sTd, textAlign: 'right', fontWeight: '700', color: '#7c3aed' }}>{fmtR(p.val)}</td>
                           </tr>
                         ))}
@@ -381,8 +405,8 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
                   <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#dc2626' }}>{lancSelecionados.length}</p>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.85rem', textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 0.3rem', fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Parcelas criadas</p>
-                  <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#7c3aed' }}>{parcelas.length}</p>
+                  <p style={{ margin: '0 0 0.3rem', fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Lançamentos de parcela</p>
+                  <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#7c3aed' }}>{linhas.length}</p>
                 </div>
                 <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.85rem', textAlign: 'center' }}>
                   <p style={{ margin: '0 0 0.3rem', fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Valor por parcela</p>
@@ -395,7 +419,11 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
               </div>
 
               <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.75rem 1rem' }}>
-                <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)' }}>Categoria criada: <span style={{ color: '#7c3aed' }}>Renegociação</span></p>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)' }}>Categorias de origem mantidas:</p>
+                <ul style={{ margin: '0 0 0.5rem', paddingLeft: '1.1rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                  {grupos.map(g => <li key={g.categoria_id}><span style={{ color: '#7c3aed', fontWeight: 700 }}>{g.categoria}</span> — {fmtR(g.total)}</li>)}
+                </ul>
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>Os valores originais ficam registrados em Obs. de cada parcela.</p>
                 <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
                   Vencimento: todo dia <strong>{diaVenc}</strong>, a partir de <strong>{fmtData(dataPrimeira)}</strong>
                 </p>
