@@ -153,8 +153,12 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
   ].filter(d => d.valor > 0);
 
   const dadosFaixa = useMemo(() => {
+    // Primeira faixa começa na menor idade do quadro (ex.: 21–30)
+    const idadesAtivas = ativos.map(i => i._idade).filter(v => v != null);
+    const menorIdade = idadesAtivas.length ? Math.min(...idadesAtivas) : null;
+    const rotuloPrimeira = menorIdade != null && menorIdade <= 30 ? (menorIdade === 30 ? '30' : `${menorIdade}–30`) : 'até 30';
     const faixas = [
-      { f: 'até 30', min: 0, max: 30 }, { f: '31–40', min: 31, max: 40 }, { f: '41–50', min: 41, max: 50 },
+      { f: rotuloPrimeira, min: 0, max: 30 }, { f: '31–40', min: 31, max: 40 }, { f: '41–50', min: 41, max: 50 },
       { f: '51–60', min: 51, max: 60 }, { f: '61–69', min: 61, max: 69 }, { f: '70+', min: 70, max: 200 },
     ];
     return faixas.map(x => ({
@@ -162,6 +166,9 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
       irmaos: ativos.filter(i => i._idade != null && i._idade >= x.min && i._idade <= x.max).length,
     }));
   }, [ativos]);
+
+  const topoFaixa = Math.max(3, Math.ceil((Math.max(0, ...dadosFaixa.map(d => d.irmaos)) + 1) / 3) * 3);
+  const ticksFaixa = Array.from({ length: topoFaixa / 3 + 1 }, (_, i) => i * 3);
 
   // ── Filtros ──
   const baseSituacao = useMemo(() => {
@@ -356,7 +363,7 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
               <BarChart data={dadosFaixa} margin={{ top: 24, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="faixa" tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} domain={[0, (max) => Math.ceil((max + 1) / 3) * 3]} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} domain={[0, topoFaixa]} ticks={ticksFaixa} tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(148,163,184,0.12)' }} formatter={(v) => [v, 'Irmãos']} />
                 <Bar dataKey="irmaos" fill="var(--color-accent)" radius={[6, 6, 0, 0]} label={{ position: 'top', fill: 'var(--color-text-muted)', fontSize: 12 }} />
               </BarChart>
