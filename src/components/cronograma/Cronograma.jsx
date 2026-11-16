@@ -246,6 +246,8 @@ const gerarRelatorioAnual = async (eventos, ano) => {
   await gerarRelatorioCronograma(eventosAno, periodo, dadosLoja?.logo_url);
 };
 
+const MOSTRAR_SELETOR_VISAO = false;
+
 export default function Cronograma({ showSuccess, showError, userEmail, permissoes }) {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +268,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const anoAtual = new Date().getFullYear();
   const [anoFiltro, setAnoFiltro] = useState(anoAtual); // 0 = Todos (última opção); padrão = ano atual
   const [mesFiltroInicializado, setMesFiltroInicializado] = useState(false);
-  const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
+  const [visualizacao, setVisualizacao] = useState('calendario'); // 'lista' ou 'calendario' (Lista oculta por enquanto)
   const [mostrarModalRelatorio, setMostrarModalRelatorio] = useState(false);
   const [tipoRelatorio, setTipoRelatorio] = useState('mensal'); // 'mensal', 'semestral', 'anual'
   const [tema, setTema] = useState({
@@ -1133,7 +1135,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             <strong style={{ color: 'var(--color-text)' }}>{totalMostrado}</strong> evento(s)
           </span>
 
-          <div style={{ marginLeft: 'auto', display: 'inline-flex', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-lg)' }}>
+          {/* Seletor Lista/Calendário oculto por enquanto: mude MOSTRAR_SELETOR_VISAO para true para reexibir */}
+          <div style={{ display: MOSTRAR_SELETOR_VISAO ? 'inline-flex' : 'none', marginLeft: 'auto', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-bg)', border: '1px solid var(--color-border-light)', borderRadius: 'var(--radius-lg)' }}>
             {[['lista', '📋 Lista'], ['calendario', '📅 Calendário']].map(([valor, rotulo]) => (
               <button key={valor} onClick={() => setVisualizacao(valor)}
                 style={{ padding: '0.4rem 1rem', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700,
