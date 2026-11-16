@@ -29,6 +29,7 @@ import ModalEdicaoLote from './components/ModalEdicaoLote';
 import { ehAjusteInternoTronco } from './utils/ajusteTronco';
 import { buscarAvisosObrigacoes } from './utils/obrigacoes';
 import MarcoConferencia from './components/MarcoConferencia';
+import { confirmar } from '../common/ConfirmDialog';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -710,7 +711,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       return;
     }
     const nomeMes = meses[filtros.mes - 1];
-    if (!window.confirm(`Fechar ${nomeMes}/${filtros.ano}? Novos lançamentos neste mês serão bloqueados.`)) return;
+    if (!(await confirmar({ titulo: 'Fechar mês', mensagem: `Fechar ${nomeMes}/${filtros.ano}? Novos lançamentos neste mês serão bloqueados.`, confirmarTexto: 'Fechar mês', perigo: false }))) return;
 
     setFechandoMes(true);
     try {
@@ -738,7 +739,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (somenteLeitura) { showError?.('Você tem acesso somente de visualização ao Financeiro.'); return; }
     if (!filtros.mes || !filtros.ano) return;
     const nomeMes = meses[filtros.mes - 1];
-    if (!window.confirm(`Reabrir ${nomeMes}/${filtros.ano}? Lançamentos voltarão a ser permitidos.`)) return;
+    if (!(await confirmar({ titulo: 'Reabrir mês', mensagem: `Reabrir ${nomeMes}/${filtros.ano}? Lançamentos voltarão a ser permitidos.`, confirmarTexto: 'Reabrir', perigo: false }))) return;
 
     setFechandoMes(true);
     try {
@@ -837,18 +838,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Vínculo com projeto na edição:
-        //  • sem ponte ainda → cria (com os mesmos campos do lançamento novo);
-        //  • ponte existente apontando para OUTRO projeto → move só o projeto_id
-        //    (não mexe em valor/descrição, que podem ter sido corrigidos na tela de Projetos);
-        //  • qualquer falha vira aviso — antes era silenciosa e o lançamento ficava fora do projeto.
-        let erroPonte = null;
+        // Se a edição vinculou um projeto que esse lançamento NUNCA teve
+        // (não existe nenhuma linha em receitas_projeto/custos_projeto pra
+        // ele ainda), cria agora — é um vínculo novo, não uma correção de
+        // algo que já existia, então não atropela nada que tenha sido
+        // ajustado manualmente na tela de Projetos.
         if (dados.projeto_id) {
-          const projetoAlvo = parseInt(dados.projeto_id);
           const tabelaPonte = dados.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
           const { data: pontesExistentes } = await supabase
             .from(tabelaPonte)
-            .select('id, projeto_id')
+            .select('id')
             .eq('lancamento_id', editando)
             .limit(1);
 
@@ -857,8 +856,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
               : '';
             if (dados.tipo === 'receita') {
-              ({ error: erroPonte } = await supabase.from('receitas_projeto').insert([{
-                projeto_id: projetoAlvo,
+              await supabase.from('receitas_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
                 lancamento_id: editando,
                 data_receita: dados.data_lancamento,
                 descricao: dados.descricao,
@@ -866,33 +865,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 origem: 'Finanças Loja',
                 forma_pagamento: dados.tipo_pagamento || '',
                 responsavel: irmaoNome,
-              }]));
+              }]);
             } else {
-              ({ error: erroPonte } = await supabase.from('custos_projeto').insert([{
-                projeto_id: projetoAlvo,
+              await supabase.from('custos_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
                 lancamento_id: editando,
                 data_custo: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
                 categoria: 'Finanças Loja',
-                forma_pagamento: dados.tipo_pagamento || '',
-                responsavel: irmaoNome,
-              }]));
+              }]);
             }
-          } else if (pontesExistentes[0].projeto_id !== projetoAlvo) {
-            const { data: movidas, error: errMover } = await supabase
-              .from(tabelaPonte)
-              .update({ projeto_id: projetoAlvo })
-              .eq('lancamento_id', editando)
-              .select('id');
-            erroPonte = errMover || ((!movidas || movidas.length === 0) ? { message: 'sem permissão para atualizar o vínculo' } : null);
-          }
-          if (erroPonte) {
-            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonte.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
 
-        if (!erroPonte) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
+        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { data: novoLanc, error } = await supabase
           .from('lancamentos_loja')
@@ -920,14 +907,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Criar vínculo com projeto (novo lançamento) — falha deixa de ser silenciosa
-        let erroPonteNovo = null;
+        // Criar vínculo com projeto (novo lançamento)
         if (dados.projeto_id && novoLanc?.id) {
           const irmaoNome = dados.origem_irmao_id
             ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
             : '';
           if (dados.tipo === 'receita') {
-            ({ error: erroPonteNovo } = await supabase.from('receitas_projeto').insert([{
+            await supabase.from('receitas_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_receita: dados.data_lancamento,
@@ -936,9 +922,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               origem: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
               responsavel: irmaoNome,
-            }]));
+            }]);
           } else {
-            ({ error: erroPonteNovo } = await supabase.from('custos_projeto').insert([{
+            await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_custo: dados.data_lancamento,
@@ -946,15 +932,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               valor: parseFloat(dados.valor),
               categoria: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
-              responsavel: irmaoNome,
-            }]));
-          }
-          if (erroPonteNovo) {
-            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonteNovo.message + ' — use "Sincronizar" na tela do projeto.');
+              responsavel: dados.origem_irmao_id
+                ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+                : '',
+            }]);
           }
         }
 
-        if (!erroPonteNovo) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
+        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
       }
 
       limparFormulario();
@@ -1229,7 +1214,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser excluídos.`);
       return;
     }
-    if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
+    if (!(await confirmar({ titulo: 'Excluir lançamento', mensagem: 'Excluir este lançamento permanentemente?', detalhe: lancamento ? `${lancamento.descricao || 'Lançamento'} — R$ ${Number(lancamento.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : undefined }))) return;
 
     try {
       // Busca os dados atuais direto do banco (com o nome do irmão já
@@ -3353,11 +3338,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             const misto = temReceita && temDespesa;
                             const corGrupo = misto ? '#f59e0b' : temReceita ? '#ef4444' : '#3b82f6';
 
-                            const quitarGrupo = () => {
+                            const quitarGrupo = async () => {
                               const msg = misto
                                 ? `Este grupo contém receitas e despesas. Deseja quitar todos os ${grupo.lancamentos.length} lançamentos?`
                                 : `Quitar todos os ${grupo.lancamentos.length} lançamentos deste dia?`;
-                              if (!window.confirm(msg)) return;
+                              if (!(await confirmar({ titulo: 'Quitar lançamentos', mensagem: msg, confirmarTexto: 'Quitar', perigo: false }))) return;
                               grupo.lancamentos.forEach(l => abrirModalQuitacao(l));
                             };
 
@@ -3432,7 +3417,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                               style={{padding:'0.2rem 0.45rem',background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer'}}>
                                               ✏️
                                             </button>
-                                            <button onClick={() => { if (window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id); }}
+                                            <button onClick={() => excluirLancamento(lanc.id)}
                                               style={{padding:'0.2rem 0.45rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer'}}>
                                               🗑
                                             </button>
@@ -3529,9 +3514,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                       fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
                                     ✏️
                                   </button>
-                                  <button onClick={() => {
-                                      if (window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id);
-                                    }}
+                                  <button onClick={() => excluirLancamento(lanc.id)}
                                     style={{padding:'0.35rem 0.7rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',
                                       border:'1px solid rgba(239,68,68,0.4)',borderRadius:'var(--radius-md)',
                                       fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
@@ -3768,7 +3751,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   style={{padding:'0.18rem 0.4rem',background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
                                   ✏️
                                 </button>
-                                <button onClick={() => { if(window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id); }}
+                                <button onClick={() => excluirLancamento(lanc.id)}
                                   style={{padding:'0.18rem 0.4rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
                                   🗑
                                 </button>
@@ -4338,7 +4321,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   step="0.01" 
                   value={formSangria.valor} 
                   onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
+                  className="w-full px-4 py-2 border rounded-lg" 
                   placeholder="0.00"
                   max={troncoTotalGlobal.especie}
                 />
@@ -4350,7 +4333,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   type="date" 
                   value={formSangria.data} 
                   onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
+                  className="w-full px-4 py-2 border rounded-lg" 
                 />
               </div>
               
@@ -4359,7 +4342,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <textarea 
                   value={formSangria.observacao} 
                   onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
+                  className="w-full px-4 py-2 border rounded-lg" 
                   rows="2"
                   placeholder="Ex: Depósito em conta - Tronco"
                 />
@@ -4379,7 +4362,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <button 
                 onClick={() => fazerSangriaTronco()} 
                 disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > troncoTotalGlobal.especie} 
-                className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
+                className="flex-1 px-4 py-3 text-white rounded-lg font-medium disabled:opacity-50 hover: transition-colors"
               >
                 Confirmar
               </button>
