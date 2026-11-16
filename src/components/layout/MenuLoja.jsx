@@ -35,7 +35,7 @@ export default function MenuLoja({
       { pagina: 'cadastro', icone: '➕', label: 'Cadastrar', mostrar: editar('cadastro_irmaos') },
       { pagina: 'visualizar', icone: '👁️', label: 'Visualizar', mostrar: true },
       { pagina: 'quadro', icone: '📋', label: 'Quadro', mostrar: true },
-      { pagina: 'licencas-situacoes', icone: '🗓️', label: 'Licenças e Situações', mostrar: true },
+      { pagina: 'licencas-situacoes', icone: '🗓️', label: 'Licenças e Situações', mostrar: ver('licencas') },
       { pagina: 'comendas', icone: '🎖️', label: 'Comendas', mostrar: ver('comendas') },
       { pagina: 'altos-graus', icone: '🔺', label: 'Altos Graus', mostrar: true },
       { pagina: 'gerenciar-graus', icone: '⚙️', label: 'Gerenciar Graus', mostrar: editar('usuarios') },
@@ -84,8 +84,8 @@ export default function MenuLoja({
     ]},
 
     { tipo: 'item', pagina: 'corpo-admin', icone: '👔', label: 'Administração', mostrar: ver('corpo_admin') },
-    { tipo: 'item', pagina: 'eleicao-posse', icone: '🗳️', label: 'Eleição e Posse', mostrar: ver('corpo_admin') },
-    { tipo: 'item', pagina: 'sindicancia', icone: '🔍', label: 'Sindicância', mostrar: !ehIrmao }, // fechada para o acesso simples
+    { tipo: 'item', pagina: 'eleicao-posse', icone: '🗳️', label: 'Eleição e Posse', mostrar: ver('eleicao_posse') },
+    { tipo: 'item', pagina: 'sindicancia', icone: '🔍', label: 'Sindicância', mostrar: editar('sindicancia') },
 
     { tipo: 'grupo', chave: 'sistema', icone: '⚙️', label: 'Gestão do Sistema', itens: [
       { pagina: 'gestao-sistema-usuarios', icone: '👤', label: 'Gerenciar Usuários', mostrar: editar('usuarios') },
