@@ -2374,6 +2374,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* DASHBOARD DE PRESENÇA */}
         {currentPage === 'dashboard-presenca' && (
           <DashboardPresenca 
+            somenteDashboard={!pode(mapaPermissoes, 'presenca', 'editar')}
             onEditarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
               setOrigemRegistroPresenca('dashboard-presenca');
