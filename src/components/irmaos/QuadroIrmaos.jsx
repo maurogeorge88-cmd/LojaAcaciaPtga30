@@ -188,13 +188,28 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
   }, [ativos]);
 
   const extremosTempo = useMemo(() => {
-    const com = ativos.filter(i => i._meses != null);
+    const com = ativos.filter(i => i._meses != null && i.data_iniciacao);
     if (!com.length) return null;
-    return {
-      recente: com.reduce((a, b) => (b._meses < a._meses ? b : a)),
-      antigo: com.reduce((a, b) => (b._meses > a._meses ? b : a)),
-    };
+    const datas = com.map(i => String(i.data_iniciacao).substring(0, 10));
+    const maisNova = datas.reduce((a, b) => (b > a ? b : a));
+    const maisAntiga = datas.reduce((a, b) => (b < a ? b : a));
+    const noDia = (d) => com.filter(i => String(i.data_iniciacao).substring(0, 10) === d);
+    return { recentes: noDia(maisNova), antigos: noDia(maisAntiga) };
   }, [ativos]);
+
+  // Dois primeiros nomes, respeitando preposições (ex.: "Clebson de Paula", "José Augusto")
+  const PREPOSICOES = ['de', 'da', 'do', 'das', 'dos', 'e'];
+  const nomeCurto = (nome) => {
+    const p = String(nome || '').trim().split(/\s+/);
+    if (p.length <= 2) return p.join(' ');
+    if (PREPOSICOES.includes(p[1].toLowerCase())) return p.slice(0, 3).join(' ');
+    return p.slice(0, 2).join(' ');
+  };
+  const rotuloExtremo = (lista) => {
+    if (lista.length === 1) return lista[0].nome;
+    const nomes = lista.slice(0, 2).map(i => nomeCurto(i.nome)).join(' e ');
+    return lista.length > 2 ? `${nomes} +${lista.length - 2}` : nomes;
+  };
 
   const fmtTempo = (m) => {
     const a = Math.floor(m / 12), r = m % 12;
@@ -433,11 +448,11 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
           </div>
           {extremosTempo && (
             <div style={{ marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.recente.nome}>
-                🌱 Mais recente: <strong style={{ color: 'var(--color-text)' }}>{extremosTempo.recente.nome}</strong> ({fmtTempo(extremosTempo.recente._meses)})
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.recentes.map(i => i.nome).join(', ')}>
+                🌱 Mais recente: <strong style={{ color: 'var(--color-text)' }}>{rotuloExtremo(extremosTempo.recentes)}</strong> ({fmtTempo(extremosTempo.recentes[0]._meses)})
               </div>
-              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.antigo.nome}>
-                🏛️ Mais antigo: <strong style={{ color: 'var(--color-text)' }}>{extremosTempo.antigo.nome}</strong> ({fmtTempo(extremosTempo.antigo._meses)})
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremosTempo.antigos.map(i => i.nome).join(', ')}>
+                🏛️ Mais antigo: <strong style={{ color: 'var(--color-text)' }}>{rotuloExtremo(extremosTempo.antigos)}</strong> ({fmtTempo(extremosTempo.antigos[0]._meses)})
               </div>
             </div>
           )}
