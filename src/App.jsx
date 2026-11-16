@@ -1995,7 +1995,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* LICENÇAS E SITUAÇÕES */}
         {currentPage === 'licencas-situacoes' && (
           <LicencasSituacoes
-            podeEditar={pode(mapaPermissoes, 'cadastro_irmaos', 'editar')}
+            podeEditar={pode(mapaPermissoes, 'licencas', 'editar') || pode(mapaPermissoes, 'cadastro_irmaos', 'editar')}
             showSuccess={showSuccess}
             showError={showError}
           />
@@ -2120,7 +2120,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* SINDICÂNCIA */}
-        {currentPage === 'sindicancia' && userData?.nivel_acesso !== 'irmao' && (
+        {currentPage === 'sindicancia' && (
           <Sindicancia
             grauUsuario={grauUsuarioLogado}
             userData={userData}
@@ -2143,7 +2143,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EleicaoPosse
             irmaos={irmaos}
             userData={userData}
-            permissoes={permissoes}
+            permissoes={{ ...permissoes, pode_editar_corpo_admin: permissoes.pode_editar_corpo_admin || pode(mapaPermissoes, 'eleicao_posse', 'editar') }}
             podeEditarModelos={pode(mapaPermissoes, 'modelos', 'editar')}
             onAbrirModelos={() => { setRetornoModelos('eleicao-posse'); setCurrentPage('modelos-documentos'); }}
             onAbrirBalaustres={() => setCurrentPage('balaustres')}
