@@ -16,8 +16,11 @@ const ORDEM_NIVEL = { nenhum: 0, ver: 1, editar: 2 };
 // niveis = opções exibidas na tela de Usuários; base = mínimo que todos têm
 export const MODULOS = [
   { id: 'cadastro_irmaos',     label: 'Cadastro de Irmãos',        icone: '👥', grupo: 'Irmãos',        niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Ver = Quadro de irmãos · Editar = cadastrar/editar irmãos' },
+  { id: 'licencas',            label: 'Licenças e Situações',      icone: '🗓️', grupo: 'Irmãos',        niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Ver = consultar licenças/situações · Editar = encerrar, prorrogar e registrar' },
   { id: 'comendas',            label: 'Comendas',                  icone: '🎖️', grupo: 'Irmãos',        niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'corpo_admin',         label: 'Administração / Eleição',   icone: '📋', grupo: 'Irmãos',        niveis: ['ver', 'editar'],           base: 'ver' },
+  { id: 'eleicao_posse',       label: 'Eleição e Posse',           icone: '🗳️', grupo: 'Irmãos',        niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Abrir a tela de Eleição e Posse (Editar = conduzir/gravar a eleição)' },
+  { id: 'sindicancia',         label: 'Sindicância',               icone: '🔍', grupo: 'Irmãos',        niveis: ['nenhum', 'editar'],        base: 'nenhum', ajuda: 'Libera a tela de Sindicância (o grau do irmão continua valendo dentro dela)' },
   { id: 'balaustres',          label: 'Balaustres',                icone: '📜', grupo: 'Expedientes',   niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'pranchas',            label: 'Pranchas',                  icone: '📄', grupo: 'Expedientes',   niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'financeiro',          label: 'Controle Financeiro',       icone: '💰', grupo: 'Financeiro',    niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Inclui edição do Ágape & Festas' },
@@ -52,6 +55,9 @@ export const derivarDoLegado = (u = {}) => {
   const c = normCargo(u.cargo);
   const m = {
     cadastro_irmaos: u.pode_editar_cadastros ? 'editar' : (u.nivel_acesso === 'cargo' ? 'ver' : 'nenhum'),
+    licencas: u.pode_editar_cadastros ? 'editar' : (u.nivel_acesso === 'cargo' ? 'ver' : 'nenhum'),
+    eleicao_posse: u.nivel_acesso === 'irmao' ? 'nenhum' : (u.pode_editar_corpo_admin ? 'editar' : 'ver'),
+    sindicancia: u.nivel_acesso === 'irmao' ? 'nenhum' : 'editar',
     comendas: ['veneravel', 'veneravel mestre', 'orador', 'secretario', 'administrador'].includes(c) ? 'editar' : 'ver',
     corpo_admin: ed(u.pode_editar_corpo_admin),
     balaustres: ed(u.pode_editar_balaustres),
@@ -147,6 +153,9 @@ export const colunasLegadoDoMapa = (mapa = {}) => {
 // Página → [módulo, nível mínimo]. Página fora da lista = livre (dashboard, meu cadastro, etc.)
 export const PAGINAS = {
   'cadastro': ['cadastro_irmaos', 'editar'],
+  'licencas-situacoes': ['licencas', 'ver'],
+  'eleicao-posse': ['eleicao_posse', 'ver'],
+  'sindicancia': ['sindicancia', 'editar'],
   'gerenciar-graus': ['usuarios', 'editar'],
   'financas-loja': ['financeiro', 'ver'],
   'lancamentos-lote': ['financeiro', 'ver'],
