@@ -162,7 +162,6 @@ export const PAGINAS = {
   'creditos-debitos': ['financeiro', 'ver'],
   'categorias-financeiras': ['financeiro', 'ver'],
   'relatorio-financeiro': ['financeiro', 'ver'],
-  'dashboard-presenca': ['presenca', 'editar'],
   'cadastro-sessao': ['presenca', 'editar'],
   'lista-sessoes': ['presenca', 'editar'],
   'registro-presenca': ['presenca', 'editar'],
