@@ -825,57 +825,29 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
-              <div key={projeto.id} className="rounded-xl p-5 hover:shadow-xl transition" style={
+              <div key={projeto.id} className="rounded-xl p-5 hover:shadow-xl transition" style={{display:"flex",flexDirection:"column",height:"100%",...(
                 projeto.tipo === 'campanha'
                   ? {background:"var(--color-surface)",border:"2px solid #f59e0b",boxShadow:"0 0 0 1px rgba(245,158,11,0.15)"}
                   : {background:"var(--color-surface)",border:"1px solid var(--color-border)"}
-              }>
-                {/* Header do Card */}
-                <div className="flex justify-between items-start gap-3 mb-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl font-bold mb-2" style={{color:"var(--color-text)"}}>{projeto.nome}</h3>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <span style={{...tipoInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
-                        {tipoInfo?.label || projeto.tipo}
-                      </span>
-                      <span style={{...statusInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
-                        {statusInfo?.label || projeto.status}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => { setProjetoVisualizar(projeto); setModalVisualizacao(true); }}
-                      title="Visualizar (pra mandar no grupo)"
-                      style={{padding:"0.25rem 0.55rem",background:"rgba(201,168,76,0.15)",color:"#c9a84c",border:"1px solid rgba(201,168,76,0.4)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                      👁️
-                    </button>
-                    {permissoes?.canEdit && (
-                      <>
-                        <button onClick={() => gerarRelatorioDetalhado(projeto)}
-                          title="Relatório em PDF — movimentação detalhada"
-                          style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.4)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                          📄
-                        </button>
-                        <button onClick={() => editarProjeto(projeto)}
-                          style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                          ✏️
-                        </button>
-                        <button onClick={() => excluirProjeto(projeto.id)}
-                          style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                          🗑️
-                        </button>
-                      </>
-                    )}
+              )}}>
+                {/* Header do Card: nome (2 linhas fixas) + tipo/andamento */}
+                <div className="mb-3">
+                  <h3 className="text-xl font-bold" title={projeto.nome} style={{color:"var(--color-text)",lineHeight:"1.3",height:"2.6em",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",marginBottom:"0.6rem"}}>{projeto.nome}</h3>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"0.5rem"}}>
+                    <span style={{...tipoInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                      {tipoInfo?.label || projeto.tipo}
+                    </span>
+                    <span style={{...statusInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                      {statusInfo?.label || projeto.status}
+                    </span>
                   </div>
                 </div>
 
                 {/* Descrição */}
-                {projeto.descricao && (
-                  <p style={{fontSize:"0.85rem",color:"var(--color-text-muted)",marginBottom:"1rem"}}>{projeto.descricao}</p>
-                )}
+                <p title={projeto.descricao || ''} style={{fontSize:"0.85rem",lineHeight:"1.4",height:"2.8em",overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",color:"var(--color-text-muted)",marginBottom:"1rem"}}>{projeto.descricao || ''}</p>
 
                 {/* Informações do Projeto */}
-                <div className="space-y-2 mb-4 text-sm">
+                <div className="space-y-2 mb-4 text-sm" style={{minHeight:"7.6rem"}}>
                   <div className="flex justify-between">
                     <span>📅 Início:</span>
                     <span className="font-semibold">{new Date(projeto.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
@@ -901,7 +873,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
 
                 {/* Financeiro */}
-                <div className="rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border: projeto.tipo === 'campanha' ? "1px solid rgba(245,158,11,0.4)" : "1px solid var(--color-border)"}}>
+                <div className="rounded-lg p-4 space-y-3" style={{marginTop:"auto",background:"var(--color-surface)",border: projeto.tipo === 'campanha' ? "1px solid rgba(245,158,11,0.4)" : "1px solid var(--color-border)"}}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">{projeto.tipo === 'campanha' ? '🎯 Meta de Arrecadação:' : '💰 Valor Previsto:'}</span>
                     <span style={{fontSize:"1.1rem",fontWeight:"800",color: projeto.tipo === 'campanha' ? '#f59e0b' : '#3b82f6'}}>
@@ -969,9 +941,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                           />
                         </div>
                         {projeto.tipo === 'campanha' ? (
-                          pct >= 100 && <p style={{fontSize:"0.72rem",color:"#10b981",marginTop:"0.25rem"}}>🎉 Meta atingida!</p>
+                          <p style={{fontSize:"0.72rem",color:"#10b981",marginTop:"0.25rem",minHeight:"1.1rem"}}>{pct >= 100 ? '🎉 Meta atingida!' : ''}</p>
                         ) : (
-                          pct > 100 && <p style={{fontSize:"0.72rem",color:"#ef4444",marginTop:"0.25rem"}}>⚠️ Custos ultrapassaram o valor previsto!</p>
+                          <p style={{fontSize:"0.72rem",color:"#ef4444",marginTop:"0.25rem",minHeight:"1.1rem"}}>{pct > 100 ? '⚠️ Custos ultrapassaram o valor previsto!' : ''}</p>
                         )}
                       </div>
                     );
@@ -985,6 +957,30 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     📊 Ver Financeiro do Projeto
                   </button>
                 </div>
+                  <div style={{display:"flex",gap:"0.5rem",marginTop:"1rem"}}>
+                    <button onClick={() => { setProjetoVisualizar(projeto); setModalVisualizacao(true); }}
+                      title="Visualizar (pra mandar no grupo)"
+                      style={{flex:1,padding:"0.4rem 0.55rem",background:"rgba(201,168,76,0.15)",color:"#c9a84c",border:"1px solid rgba(201,168,76,0.4)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                      👁️
+                    </button>
+                    {permissoes?.canEdit && (
+                      <>
+                        <button onClick={() => gerarRelatorioDetalhado(projeto)}
+                          title="Relatório em PDF — movimentação detalhada"
+                          style={{flex:1,padding:"0.4rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.4)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                          📄
+                        </button>
+                        <button onClick={() => editarProjeto(projeto)}
+                          style={{flex:1,padding:"0.4rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                          ✏️
+                        </button>
+                        <button onClick={() => excluirProjeto(projeto.id)}
+                          style={{flex:1,padding:"0.4rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                          🗑️
+                        </button>
+                      </>
+                    )}
+                  </div>
               </div>
             );
             };
@@ -1008,7 +1004,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 )}
                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
                   {porAno[ano].map(projeto => (
-                    <div key={projeto.id} style={{opacity: projeto.status === 'em_andamento' ? 1 : 0.82}}>
+                    <div key={projeto.id} style={{height:"100%",opacity: projeto.status === 'em_andamento' ? 1 : 0.82}}>
                       {renderCard(projeto)}
                     </div>
                   ))}
