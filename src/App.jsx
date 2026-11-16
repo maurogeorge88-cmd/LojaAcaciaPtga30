@@ -16,7 +16,6 @@ import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
-import LicencasSituacoes from './components/irmaos/LicencasSituacoes';
 import Comendas from './components/irmaos/Comendas';
 import PerfilIrmao from './components/irmaos/PerfilIrmao';
 import PerfilCompletoIrmao from './components/irmaos/PerfilCompletoIrmao';
@@ -67,6 +66,7 @@ import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
 import MenuLoja from './components/layout/MenuLoja';
 import ModelosDocumentos from './components/administracao/ModelosDocumentos';
 import { rotuloEstadoCivilCompleto } from './utils/constants';
+import { ConfirmHost } from './components/common/ConfirmDialog';
 import { permissoesEfetivas, montarPermissoesLegado, podeAbrirPagina, pode } from './config/permissoes';
 
 // ========================================
@@ -181,7 +181,6 @@ function App() {
     'cadastro': '➕ Cadastro de Irmãos',
     'visualizar': '👥 Visualizar Irmãos',
     'quadro': '📋 Quadro de Irmãos',
-    'licencas-situacoes': '🗓️ Licenças e Situações',
     'comendas': '🎖️ Comendas',
     'modelos-documentos': '📝 Modelos de Documentos',
     'balaustres': '📜 Balaustres',
@@ -1682,6 +1681,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      <ConfirmHost />
       {/* SIDEBAR LATERAL COLAPSÁVEL */}
       <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
@@ -1829,7 +1829,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'cadastro' && '➕ Cadastro de Irmãos'}
                   {currentPage === 'visualizar' && '👥 Visualizar Irmãos'}
                   {currentPage === 'quadro' && '📋 Quadro de Irmãos'}
-                  {currentPage === 'licencas-situacoes' && '🗓️ Licenças e Situações'}
                   {currentPage === 'comendas' && '🎖️ Comendas'}
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
@@ -1981,22 +1980,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* QUADRO DE IRMÃOS */}
         {currentPage === 'quadro' && (
-          <QuadroIrmaos
-            irmaos={irmaos}
-            onViewPerfilCompleto={(irmaoId) => {
-              setIrmaoIdPerfilCompleto(irmaoId);
-              setModalPerfilCompletoAberto(true);
-            }}
-          />
-        )}
-
-        {/* LICENÇAS E SITUAÇÕES */}
-        {currentPage === 'licencas-situacoes' && (
-          <LicencasSituacoes
-            podeEditar={pode(mapaPermissoes, 'cadastro_irmaos', 'editar')}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
+          <QuadroIrmaos irmaos={irmaos} />
         )}
 
         {currentPage === 'modelos-documentos' && (
