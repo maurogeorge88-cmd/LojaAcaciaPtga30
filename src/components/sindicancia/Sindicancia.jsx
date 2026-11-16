@@ -25,6 +25,7 @@ const SITUACOES = [
   { value: 'desistiu',          label: 'Convite Negado',   cor: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
   { value: 'adiado',            label: 'Sob Malhete',      cor: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
   { value: 'convite_positivo',  label: 'Convite Positivo', cor: '#14b8a6', bg: 'rgba(20,184,166,0.15)'  },
+  { value: 'iniciado',          label: 'Iniciado',         cor: '#c9a84c', bg: 'rgba(201,168,76,0.18)'  },
 ];
 
 const STATUS_PROCESSO = [
@@ -1359,7 +1360,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
         </div>
       ) : (() => {
         // Ordem de exibição dos grupos
-        const ORDEM = ['indicado', 'em_analise', 'aprovado', 'convite_positivo', 'adiado', 'desistiu', 'excluido'];
+        const ORDEM = ['indicado', 'em_analise', 'aprovado', 'convite_positivo', 'iniciado', 'adiado', 'desistiu', 'excluido'];
 
         const candidatosFiltrados = candidatos
           .filter(c => filtroSitLocal === 'todos' || c.situacao === filtroSitLocal)
