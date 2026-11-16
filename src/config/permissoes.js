@@ -147,8 +147,6 @@ export const colunasLegadoDoMapa = (mapa = {}) => {
 // Página → [módulo, nível mínimo]. Página fora da lista = livre (dashboard, meu cadastro, etc.)
 export const PAGINAS = {
   'cadastro': ['cadastro_irmaos', 'editar'],
-  'quadro': ['cadastro_irmaos', 'ver'],
-  'licencas-situacoes': ['cadastro_irmaos', 'ver'],
   'gerenciar-graus': ['usuarios', 'editar'],
   'financas-loja': ['financeiro', 'ver'],
   'lancamentos-lote': ['financeiro', 'ver'],
