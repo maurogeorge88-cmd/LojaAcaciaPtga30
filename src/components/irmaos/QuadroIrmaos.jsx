@@ -167,6 +167,14 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
     }));
   }, [ativos]);
 
+  const extremos = useMemo(() => {
+    const comIdade = ativos.filter(i => i._idade != null);
+    if (!comIdade.length) return null;
+    const novo = comIdade.reduce((a, b) => (b._idade < a._idade ? b : a));
+    const velho = comIdade.reduce((a, b) => (b._idade > a._idade ? b : a));
+    return { novo, velho };
+  }, [ativos]);
+
   const topoFaixa = Math.max(3, Math.ceil((Math.max(0, ...dadosFaixa.map(d => d.irmaos)) + 1) / 3) * 3);
   const ticksFaixa = Array.from({ length: topoFaixa / 3 + 1 }, (_, i) => i * 3);
 
@@ -358,7 +366,7 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
         </div>
         <div style={{ ...card, padding: '1rem 1.25rem' }}>
           <div style={{ fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.5rem' }}>Faixa etária</div>
-          <div style={{ height: 250 }}>
+          <div style={{ height: 196 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dadosFaixa} margin={{ top: 24, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
@@ -369,6 +377,16 @@ const QuadroIrmaos = ({ irmaos, onViewPerfilCompleto }) => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          {extremos && (
+            <div style={{ marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremos.novo.nome}>
+                🌱 Mais novo: <strong style={{ color: 'var(--color-text)' }}>{extremos.novo.nome}</strong> ({extremos.novo._idade} anos)
+              </div>
+              <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={extremos.velho.nome}>
+                🏛️ Mais velho: <strong style={{ color: 'var(--color-text)' }}>{extremos.velho.nome}</strong> ({extremos.velho._idade} anos)
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
