@@ -222,6 +222,18 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           </div>
         )}
         {pagina === 'dashboard' && <DashboardArcoReal />}
+        {pagina === 'visualizar-membros' && (
+          <VisualizarMembrosArcoReal permissoes={permissoes} meuMembroId={meuMembroId} showSuccess={showSuccess} showError={showError} />
+        )}
+        {pagina === 'quadro-membros' && (
+          <QuadroMembrosArcoReal showError={showError} />
+        )}
+        {pagina === 'licencas' && (
+          <LicencasSituacoesArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
+        )}
+        {pagina === 'dados-arco-real' && (
+          <DadosArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
+        )}
         {pagina === 'financeiro' && podeVerFinanceiro && (
           <ArcoReal
             isOpen={true}
