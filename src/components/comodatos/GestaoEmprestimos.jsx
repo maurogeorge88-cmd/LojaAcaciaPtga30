@@ -1575,45 +1575,42 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
               <div style={rotuloCampo}>Equipamentos</div>
               {emp.itens?.map(item => {
                 const emprestado = item.status === 'emprestado';
+                const nomeItem = `${item.equipamentos?.numero_patrimonio} - ${item.equipamentos?.tipos_equipamentos?.nome}`;
+                const podeAgir = emprestado && permissoes?.pode_editar_comodatos;
                 return (
                   <div
                     key={item.id}
                     style={{
-                      padding: '0.55rem 0.7rem',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                      padding: '0.35rem 0.6rem',
                       borderRadius: 'var(--radius-md)',
                       border: '1px solid var(--color-border)',
                       background: emprestado ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', minWidth: 0 }}>
-                        {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
+                    <span
+                      title={nomeItem}
+                      style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {nomeItem}
+                    </span>
+                    {!emprestado && (
+                      <span style={{ flexShrink: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                        ✅ Devolvido{item.data_devolucao_real ? ` em ${new Date(item.data_devolucao_real).toLocaleDateString('pt-BR')}` : ''}
                       </span>
-                      <span style={{
-                        flexShrink: 0, padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.66rem', fontWeight: 800, whiteSpace: 'nowrap',
-                        background: emprestado ? 'var(--color-warning-bg)' : 'var(--color-surface)',
-                        color: emprestado ? 'var(--color-warning)' : 'var(--color-text-secondary)',
-                        border: '1px solid var(--color-border)',
-                      }}>
-                        {emprestado ? 'Emprestado' : '✅ Devolvido'}
-                      </span>
-                    </div>
-                    {!emprestado && item.data_devolucao_real && (
-                      <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>
-                        Devolvido em {new Date(item.data_devolucao_real).toLocaleDateString('pt-BR')}
-                      </div>
                     )}
-                    {emprestado && permissoes?.pode_editar_comodatos && (
-                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+                    {podeAgir && (
+                      <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
                         <button
                           onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                          style={{ flex: 1, padding: '0.35rem 0.5rem', background: 'var(--color-info)', color: '#fff', fontSize: '0.75rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                          style={{ padding: '0.15rem 0.5rem', background: 'var(--color-info)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          title="Devolver equipamento"
                         >
                           Devolver
                         </button>
                         <button
                           onClick={() => abrirSubstituicao(emp, item)}
-                          style={{ flex: 1, padding: '0.35rem 0.5rem', background: 'transparent', color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.6)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                          style={{ padding: '0.15rem 0.5rem', background: 'transparent', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.6)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                           title="Substituir equipamento"
                         >
                           🔁 Substituir
