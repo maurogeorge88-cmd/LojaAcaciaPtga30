@@ -112,7 +112,7 @@ export default function InadimplentesArcoReal({ podeGerenciar, showSuccess, show
   }
 
   return (
-    <div className="p-6" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="p-6" style={{ maxWidth: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: 0 }}>⚠️ Irmãos Inadimplentes</h2>
