@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { CARGOS_ARCO_REAL } from '../../utils/cargosArcoReal';
+import FamiliaresArcoReal from './FamiliaresArcoReal';
+import { FAMILIA_VAZIA, carregarFamiliaresArcoReal, carregarFamiliaresDaLoja, salvarFamiliaresArcoReal } from '../../utils/arcoRealFamiliares';
 
 const VAZIO = {
   irmao_vinculado_id: null,
   nome: '', cpf: '', rg: '', data_nascimento: '', email: '', telefone: '',
   cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
   cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true, foto_url: '',
+  loja_nome: '', loja_oriente: '', loja_data_iniciacao: '', loja_data_elevacao: '', loja_data_exaltacao: '',
 };
 
 const inputStyle = { width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem' };
@@ -27,6 +30,9 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
   const [membroAtual, setMembroAtual] = useState(null); // null = novo cadastro
   const [form, setForm] = useState(VAZIO);
   const [cargoModoOutro, setCargoModoOutro] = useState(false);
+  const [aba, setAba] = useState('dados');
+  const [familia, setFamilia] = useState(FAMILIA_VAZIA());
+  const [familiaSemTabela, setFamiliaSemTabela] = useState(false);
 
   const [modalImportar, setModalImportar] = useState(false);
   const [irmaosDisponiveis, setIrmaosDisponiveis] = useState([]);
@@ -43,6 +49,8 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
           setMembroAtual(data);
           setForm(preencherFormComMembro(data));
           setCargoModoOutro(!!data.cargo && !CARGOS_ARCO_REAL.includes(data.cargo));
+          const r = await carregarFamiliaresArcoReal(membroId);
+          setFamilia(r.familia); setFamiliaSemTabela(r.semTabela);
         } catch (e) {
           showError('Erro ao carregar membro: ' + e.message);
         } finally {
@@ -80,6 +88,9 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
     cargo: m.cargo || '', situacao: m.situacao || 'regular',
     data_exaltacao: m.data_exaltacao || '', observacoes: m.observacoes || '', ativo: m.ativo,
     foto_url: m.foto_url || '',
+    loja_nome: m.loja_nome || '', loja_oriente: m.loja_oriente || '',
+    loja_data_iniciacao: m.loja_data_iniciacao || '', loja_data_elevacao: m.loja_data_elevacao || '',
+    loja_data_exaltacao: m.loja_data_exaltacao || '',
   });
 
   const abrirImportar = () => {
@@ -121,7 +132,7 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
     }
   };
 
-  const importarIrmao = (irmao) => {
+  const importarIrmao = async (irmao) => {
     setMembroAtual(null);
     setForm({
       ...VAZIO,
@@ -133,6 +144,7 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
       foto_url: irmao.foto_url || '',
     });
     setModalImportar(false);
+    setFamilia(await carregarFamiliaresDaLoja(irmao.id));
   };
 
   // Se o cargo escolhido é um dos oficiais, reflete automaticamente no
@@ -159,7 +171,14 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
         complemento: form.complemento || null, bairro: form.bairro || null, cidade: form.cidade || null, estado: form.estado || null,
         cargo: form.cargo || null, situacao: form.situacao, data_exaltacao: form.data_exaltacao || null,
         observacoes: form.observacoes || null, ativo: form.ativo, foto_url: form.foto_url || null,
+        // Loja de origem: só vale para irmão de outra loja (sem vínculo com a Acácia)
+        loja_nome: form.irmao_vinculado_id ? null : (form.loja_nome || null),
+        loja_oriente: form.irmao_vinculado_id ? null : (form.loja_oriente || null),
+        loja_data_iniciacao: form.irmao_vinculado_id ? null : (form.loja_data_iniciacao || null),
+        loja_data_elevacao: form.irmao_vinculado_id ? null : (form.loja_data_elevacao || null),
+        loja_data_exaltacao: form.irmao_vinculado_id ? null : (form.loja_data_exaltacao || null),
       };
+      let idSalvo = membroAtual?.id;
 
       if (membroAtual) {
         const { data, error } = await supabase.from('arco_real_membros').update(payload).eq('id', membroAtual.id).select();
@@ -170,8 +189,13 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
       } else {
         const { data, error } = await supabase.from('arco_real_membros').insert([payload]).select();
         if (error) throw error;
+        idSalvo = data?.[0]?.id;
         showSuccess('✅ Membro cadastrado!');
         if (data?.[0]?.id) await sincronizarCorpoAdministrativo(data[0].id, form.cargo);
+      }
+      if (idSalvo && !familiaSemTabela) {
+        try { await salvarFamiliaresArcoReal(idSalvo, familia); }
+        catch (e) { showError('Membro salvo, mas erro nos familiares: ' + e.message); return; }
       }
       if (onSalvo) onSalvo(); else voltarLista();
     } catch (e) {
@@ -249,7 +273,24 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+        {[['dados', '📋 Dados'], ['familiares', '👨‍👩‍👧 Familiares']].map(([k, l]) => (
+          <button key={k} onClick={() => setAba(k)} style={{ padding: '0.55rem 1.1rem', background: 'transparent', border: 'none', borderBottom: aba === k ? '3px solid var(--color-accent)' : '3px solid transparent', color: aba === k ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer' }}>{l}</button>
+        ))}
+      </div>
+
+      {aba === 'familiares' && (
+        <>
+          {familiaSemTabela && (
+            <div style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 'var(--radius-md)', padding: '0.6rem 0.85rem', marginBottom: '1rem', fontSize: '0.8rem', color: '#b45309' }}>
+              ⚠️ Tabelas de familiares ainda não criadas. Rode o SQL <strong>arco_real_familiares.sql</strong> no Supabase.
+            </div>
+          )}
+          <FamiliaresArcoReal value={familia} onChange={setFamilia} showError={showError} />
+        </>
+      )}
+
+      <div style={{ display: aba === 'dados' ? 'flex' : 'none', flexDirection: 'column', gap: '1rem' }}>
         {/* Identificação */}
         <div style={boxCard}>
           <Faixa>Identificação</Faixa>
@@ -308,6 +349,22 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
             <div><label style={labelStyle}>UF</label><input value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} maxLength={2} style={inputStyle} /></div>
           </div>
         </div>
+
+        {/* Loja Simbólica de origem — só para irmão de outra loja */}
+        {!form.irmao_vinculado_id && (
+          <div style={boxCard}>
+            <Faixa>🏛️ Loja Simbólica de Origem (irmão de outra loja)</Faixa>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><label style={labelStyle}>Nome da Loja</label><input value={form.loja_nome} onChange={e => setForm(f => ({ ...f, loja_nome: e.target.value }))} placeholder="Ex.: A∴R∴L∴S∴ Nome nº 00" style={inputStyle} /></div>
+              <div><label style={labelStyle}>Oriente</label><input value={form.loja_oriente} onChange={e => setForm(f => ({ ...f, loja_oriente: e.target.value }))} style={inputStyle} /></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ marginTop: '1rem' }}>
+              <div><label style={labelStyle}>Data de Iniciação</label><input type="date" value={form.loja_data_iniciacao} onChange={e => setForm(f => ({ ...f, loja_data_iniciacao: e.target.value }))} style={inputStyle} /></div>
+              <div><label style={labelStyle}>Data de Elevação</label><input type="date" value={form.loja_data_elevacao} onChange={e => setForm(f => ({ ...f, loja_data_elevacao: e.target.value }))} style={inputStyle} /></div>
+              <div><label style={labelStyle}>Data de Exaltação</label><input type="date" value={form.loja_data_exaltacao} onChange={e => setForm(f => ({ ...f, loja_data_exaltacao: e.target.value }))} style={inputStyle} /></div>
+            </div>
+          </div>
+        )}
 
         {/* Dados do Arco Real */}
         <div style={{ ...boxCard, border: '1px solid rgba(74,222,128,0.35)' }}>
