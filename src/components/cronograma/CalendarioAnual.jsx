@@ -222,9 +222,11 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   return (
     <div>
       <style>{`
-        .cal-agenda { display: grid; grid-template-columns: minmax(calc(250px + 3cm), calc(320px + 3cm)) 1fr; gap: 1rem; align-items: start; }
-        .cal-agenda-esq { max-height: 74vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem; }
-        @media (max-width: 900px) { .cal-agenda { grid-template-columns: 1fr; } .cal-agenda-esq { max-height: none; } }
+        .cal-agenda { display: grid; grid-template-columns: minmax(calc(250px + 3cm), calc(320px + 3cm)) 1fr; gap: 1rem; align-items: stretch; min-height: 32rem; }
+        .cal-agenda-col-esq { display: flex; flex-direction: column; min-height: 0; }
+        .cal-agenda-esq-wrap { position: relative; flex: 1 1 auto; min-height: 20rem; }
+        .cal-agenda-esq { position: absolute; inset: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem; }
+        @media (max-width: 900px) { .cal-agenda { grid-template-columns: 1fr; min-height: 0; } .cal-agenda-esq-wrap { min-height: 0; } .cal-agenda-esq { position: static; max-height: 70vh; } }
       `}</style>
 
       {/* Barra: título, ano e período */}
@@ -250,7 +252,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
       <div className="cal-agenda">
         {/* Coluna esquerda: meses */}
-        <div>
+        <div className="cal-agenda-col-esq">
           {tam < 12 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <button onClick={() => moverBloco(-1)} disabled={blocoIni === 0} style={btnSeta(blocoIni > 0)} aria-label="Período anterior">◀</button>
@@ -260,8 +262,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               <button onClick={() => moverBloco(1)} disabled={blocoIni + tam > 11} style={btnSeta(blocoIni + tam <= 11)} aria-label="Próximo período">▶</button>
             </div>
           )}
-          <div className="cal-agenda-esq">
-            {(tam === 12 ? Array.from({ length: 12 }, (_, i) => i) : mesesBloco).map(renderMiniMes)}
+          <div className="cal-agenda-esq-wrap">
+            <div className="cal-agenda-esq">
+              {(tam === 12 ? Array.from({ length: 12 }, (_, i) => i) : mesesBloco).map(renderMiniMes)}
+            </div>
           </div>
         </div>
 
