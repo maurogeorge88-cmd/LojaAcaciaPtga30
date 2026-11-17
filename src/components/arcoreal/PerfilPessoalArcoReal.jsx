@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { carregarFamiliaresArcoReal } from '../../utils/arcoRealFamiliares';
 
 const fmt  = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const fmtD = (d) => { if (!d) return '—'; const [a, m, dia] = d.split('T')[0].split('-'); return `${dia}/${m}/${a}`; };
@@ -84,6 +85,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, membroId = null, pe
   const [dataFim, setDataFim] = useState(`${anoAtual}-12-31`);
 
   const [maconico, setMaconico] = useState(null);
+  const [familia, setFamilia] = useState(null);
   useEffect(() => { setAba('dados'); if (idAlvo) carregar(); else setLoading(false); }, [idAlvo]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (idAlvo && ehMeu && periodo !== 'personalizado') carregarPresencas(); }, [periodo, idAlvo]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -99,6 +101,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, membroId = null, pe
           .eq('id', m.irmao_vinculado_id).maybeSingle();
         setMaconico(mac || null);
       }
+      try { const r = await carregarFamiliaresArcoReal(idAlvo); setFamilia(r.semTabela ? null : r.familia); } catch { setFamilia(null); }
       if (ehMeu) {
         const { data: lancs } = await supabase.from('arco_real_lancamentos').select('*, categoria_manual:categoria_id(nome)').eq('origem_membro_id', idAlvo).order('data_vencimento', { ascending: false });
         setLancamentos(lancs || []);
@@ -306,6 +309,25 @@ export default function PerfilPessoalArcoReal({ meuMembroId, membroId = null, pe
               <Campo label="📐 Elevação" valor={maconico?.data_elevacao ? fmtD(maconico.data_elevacao) : ''} />
               <Campo label="🏛️ Exaltação" valor={maconico?.data_exaltacao ? fmtD(maconico.data_exaltacao) : ''} />
               <Campo label="⭐ Mestre Instalado" valor={maconico?.mestre_instalado ? `Sim${maconico.data_instalacao ? ' — ' + fmtD(maconico.data_instalacao) : ''}` : 'Não'} />
+            </Secao>
+          )}
+
+          {!membro.irmao_vinculado_id && (membro.loja_nome || membro.loja_oriente || membro.loja_data_iniciacao || membro.loja_data_elevacao || membro.loja_data_exaltacao) && (
+            <Secao icone="🏛️" titulo="Loja Simbólica de Origem">
+              <Campo label="Loja" valor={membro.loja_nome} />
+              <Campo label="Oriente" valor={membro.loja_oriente} />
+              <Campo label="🔨 Iniciação" valor={membro.loja_data_iniciacao ? fmtD(membro.loja_data_iniciacao) : ''} />
+              <Campo label="📐 Elevação" valor={membro.loja_data_elevacao ? fmtD(membro.loja_data_elevacao) : ''} />
+              <Campo label="🏛️ Exaltação" valor={membro.loja_data_exaltacao ? fmtD(membro.loja_data_exaltacao) : ''} />
+            </Secao>
+          )}
+
+          {familia && (familia.temConjuge || familia.filhos.length > 0 || familia.pais.nome_pai || familia.pais.nome_mae) && (
+            <Secao icone="👨‍👩‍👧" titulo="Familiares">
+              {familia.temConjuge && <Campo label="💍 Cônjuge" valor={[familia.conjuge.nome, familia.conjuge.data_nascimento && 'nasc. ' + fmtD(familia.conjuge.data_nascimento), familia.conjuge.data_casamento && 'casamento ' + fmtD(familia.conjuge.data_casamento)].filter(Boolean).join(' · ')} />}
+              {familia.pais.nome_pai && <Campo label="Pai" valor={familia.pais.nome_pai + (familia.pais.pai_vivo ? '' : ' (falecido)')} />}
+              {familia.pais.nome_mae && <Campo label="Mãe" valor={familia.pais.nome_mae + (familia.pais.mae_viva ? '' : ' (falecida)')} />}
+              {familia.filhos.map((f, i) => <Campo key={i} label={f.sexo === 'F' ? '👧 Filha' : '👦 Filho'} valor={[f.nome, f.data_nascimento && fmtD(f.data_nascimento)].filter(Boolean).join(' · ')} />)}
             </Secao>
           )}
 
