@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
-import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
 import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
 import ControleAcesso from '../administracao/ControleAcesso';
-import PerfilPessoalArcoReal from './PerfilPessoalArcoReal';
 import CorpoAdministrativoArcoReal from './CorpoAdministrativoArcoReal';
 import InadimplentesArcoReal from './InadimplentesArcoReal';
 import EmailArcoReal from './EmailArcoReal';
@@ -21,11 +19,9 @@ const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png'
 
 const ITENS_MENU = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', pronto: true },
-  { id: 'meus-dados', label: 'Meus Dados', icone: '👤', pronto: true },
   { id: 'visualizar-membros', label: 'Membros', icone: '🔎', pronto: true },
   { id: 'quadro-membros', label: 'Quadro de Membros', icone: '📋', pronto: true },
   { id: 'licencas', label: 'Licenças e Situações', icone: '🗓️', pronto: true },
-  { id: 'membros', label: 'Cadastro de Membros', icone: '👥', pronto: true },
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
@@ -43,7 +39,6 @@ const NOMES_TELAS_ARCO_REAL = {
   'visualizar-membros': '🔎 Arco Real / Membros',
   'quadro-membros': '📋 Arco Real / Quadro de Membros',
   'licencas': '🗓️ Arco Real / Licenças e Situações',
-  'membros': '👥 Arco Real / Cadastro de Membros',
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
   'inadimplentes': '⚠️ Arco Real / Inadimplentes',
@@ -227,24 +222,6 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           </div>
         )}
         {pagina === 'dashboard' && <DashboardArcoReal />}
-        {pagina === 'meus-dados' && (
-          <PerfilPessoalArcoReal meuMembroId={meuMembroId} permissoes={permissoes} showError={showError} />
-        )}
-        {pagina === 'visualizar-membros' && (
-          <VisualizarMembrosArcoReal showError={showError} />
-        )}
-        {pagina === 'quadro-membros' && (
-          <QuadroMembrosArcoReal showError={showError} />
-        )}
-        {pagina === 'licencas' && (
-          <LicencasSituacoesArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
-        )}
-        {pagina === 'dados-arco-real' && (
-          <DadosArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
-        )}
-        {pagina === 'membros' && (
-          <CadastroArcoRealMembros showSuccess={showSuccess} showError={showError} permissoes={permissoes} />
-        )}
         {pagina === 'financeiro' && podeVerFinanceiro && (
           <ArcoReal
             isOpen={true}
@@ -293,7 +270,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             <p>Você não tem permissão para acessar esta tela.</p>
           </div>
         ) : null}
-        {pagina !== 'dashboard' && pagina !== 'meus-dados' && pagina !== 'membros' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
+        {pagina !== 'dashboard' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
