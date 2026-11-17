@@ -1314,7 +1314,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           )}
         </div>
       ) : (
-        <CalendarioAnual key={anoCalendario} eventos={eventosPorTipo} ano={anoCalendario} podeEditar={podeEditar} onEditar={editarEvento} onExcluir={excluirEvento} />
+        <CalendarioAnual key={anoCalendario} eventos={eventosPorTipo} ano={anoCalendario} podeEditar={podeEditar} onEditar={editarEvento} onExcluir={excluirEvento} onVisualizar={(ev) => { setEventoVisualizar(ev); setModalVisualizacao(true); }} />
       )}
 
       {/* Modal de Visualização */}
