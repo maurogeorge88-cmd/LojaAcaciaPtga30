@@ -588,7 +588,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
               titulo="Total de presenças"
               valor={indicadores.somaPresentes}
               cor="#10b981"
-              sub={`de ${indicadores.somaRegistros} registros`}
+              sub={`de ${indicadores.somaRegistros} registros elegíveis`}
             />
             <KpiGrande
               titulo="Visitantes recebidos"
