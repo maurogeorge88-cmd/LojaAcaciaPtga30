@@ -367,7 +367,7 @@ export default function CadastroArcoRealMembros({ showSuccess, showError, permis
   // ══════════════════════════════════════════════════════════════════════
   if (pagina === 'lista') {
     return (
-      <div className="p-6" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="p-6" style={{ maxWidth: '100%' }}>
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--color-text)' }}>🔺 Cadastro de Membros — Arco Real</h2>
