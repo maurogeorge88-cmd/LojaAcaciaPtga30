@@ -9,7 +9,6 @@ const boxCard = { background: 'var(--color-surface)', border: '1px solid var(--c
 const tituloBox = { fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 };
 const subBox = { fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' };
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const FAIXAS_TEMPO = [
   { label: 'Menos de 1 ano', min: 0, max: 12, cor: '#38bdf8' },
@@ -29,16 +28,15 @@ function Kpi({ icone, titulo, valor, detalhe, cor }) {
   );
 }
 
-export default function DashboardArcoReal({ permissoes = {} }) {
+export default function DashboardArcoReal() {
   const [membros, setMembros] = useState([]);
   const [sessoes, setSessoes] = useState([]);
   const [presencas, setPresencas] = useState([]);
   const [periodos, setPeriodos] = useState([]);
-  const [pendencias, setPendencias] = useState([]);
+  const [fundacao, setFundacao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [principais, setPrincipais] = useState({ p1: null, p2: null, p3: null });
   const anoAtual = new Date().getFullYear();
-  const podeVerFinanceiro = !!permissoes?.canViewFinancial;
 
   useEffect(() => { carregar(); carregarPrincipais(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -84,13 +82,10 @@ export default function DashboardArcoReal({ permissoes = {} }) {
 
       setPeriodos(await buscarPeriodosSituacao());
 
-      if (podeVerFinanceiro) {
-        const { data: lc } = await supabase
-          .from('arco_real_lancamentos')
-          .select('valor, data_vencimento, tipo, origem_membro_id')
-          .eq('status', 'pendente').not('origem_membro_id', 'is', null);
-        setPendencias(lc || []);
-      }
+      try {
+        const { data: dd } = await supabase.from('arco_real_dados').select('data_fundacao').limit(1).maybeSingle();
+        setFundacao(dd?.data_fundacao || null);
+      } catch { /* tabela ainda não criada */ }
     } catch (e) {
       console.error('Erro ao carregar dashboard do Arco Real:', e.message);
     } finally {
@@ -143,21 +138,14 @@ export default function DashboardArcoReal({ permissoes = {} }) {
     const em30 = new Date(); em30.setDate(em30.getDate() + 30);
     const lim30 = `${em30.getFullYear()}-${String(em30.getMonth() + 1).padStart(2, '0')}-${String(em30.getDate()).padStart(2, '0')}`;
     const licAlertas = periodos
-      .filter(p => p.tipo_situacao === 'licenciado' && p.data_fim && p.data_fim <= lim30)
+      .filter(p => p.tipo_situacao === 'licenciado' && (p.status || 'ativa') === 'ativa' && p.data_fim && p.data_fim <= lim30)
       .map(p => ({ p, membro: membros.find(m => m.id === p.membro_id) }))
       .filter(x => x.membro && x.membro.situacao === 'licenciado')
       .sort((a, b) => a.p.data_fim.localeCompare(b.p.data_fim))
       .map(x => ({ ...x, vencida: x.p.data_fim < hojeIso }));
 
-    // Pendências
-    const devidos = pendencias.filter(l => l.tipo === 'receita');
-    const totalDevido = devidos.reduce((s, l) => s + Number(l.valor || 0), 0);
-    const vencidos = devidos.filter(l => l.data_vencimento && l.data_vencimento < hojeIso);
-    const totalVencido = vencidos.reduce((s, l) => s + Number(l.valor || 0), 0);
-    const inadimplentes = new Set(vencidos.map(l => l.origem_membro_id)).size;
-
-    return { quadro, contagem, mediaMeses, maisAntigo, faixas, semData, mediaPresenca, cem, mensal, hoje, prox7, doMes, licAlertas, totalDevido, totalVencido, inadimplentes, totEleg, totPres };
-  }, [membros, sessoes, presencas, periodos, pendencias]);
+    return { quadro, contagem, mediaMeses, maisAntigo, faixas, semData, mediaPresenca, cem, mensal, hoje, prox7, doMes, licAlertas, totEleg, totPres };
+  }, [membros, sessoes, presencas, periodos]);
 
   if (loading) return <div className="p-6" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>Carregando...</div>;
 
@@ -165,7 +153,7 @@ export default function DashboardArcoReal({ permissoes = {} }) {
   const maxFaixa = Math.max(1, ...d.faixas.map(f => f.qtd));
 
   return (
-    <div className="p-6" style={{ maxWidth: '1280px', margin: '0 auto' }}>
+    <div className="p-6" style={{ maxWidth: '100%' }}>
       <div className="mb-6">
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text)' }}>📊 Dashboard — Arco Real</h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Visão geral do Capítulo — exercício {anoAtual}</p>
@@ -204,7 +192,8 @@ export default function DashboardArcoReal({ permissoes = {} }) {
       )}
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-5">
+        <Kpi icone="🏛️" titulo="Tempo de Fundação" valor={fundacao ? `${Math.floor(mesesEntre(fundacao) / 12)} anos` : '—'} detalhe={fundacao ? `desde ${fmtData(fundacao)}` : 'cadastre em Dados do Arco Real'} cor="#c9a84c" />
         <Kpi icone="👥" titulo="Quadro de Membros" valor={d.quadro.length} detalhe={`${d.contagem.regular} regulares · ${d.contagem.licenciado} licenciados`} cor="#2d6a9f" />
         <Kpi icone="🗂️" titulo="Total no Cadastro" valor={totalCadastrados} detalhe="inclui desligados, excluídos e falecidos" cor="#64748b" />
         <Kpi icone="🔺" titulo="Tempo Médio de Arco Real" valor={d.mediaMeses === null ? '—' : `${(d.mediaMeses / 12).toFixed(1).replace('.', ',')} anos`} detalhe={d.mediaMeses === null ? 'sem datas de exaltação' : tempoTexto(d.mediaMeses)} cor="#f59e0b" />
@@ -285,43 +274,21 @@ export default function DashboardArcoReal({ permissoes = {} }) {
         </div>
       </div>
 
-      {/* Alertas de licença + pendências */}
-      {(d.licAlertas.length > 0 || podeVerFinanceiro) && (
-        <div className={`grid grid-cols-1 ${d.licAlertas.length > 0 && podeVerFinanceiro ? 'lg:grid-cols-2' : ''} gap-5 mb-5`}>
-          {d.licAlertas.length > 0 && (
-            <div style={{ ...boxCard, borderLeft: '4px solid #6366f1' }}>
-              <p style={tituloBox}>📋 Licenças a Vencer</p>
-              <p style={subBox}>Vencidas ou com término nos próximos 30 dias</p>
-              <div style={{ marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {d.licAlertas.map(({ p, membro, vencida }) => (
-                  <div key={p.id} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.55rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--color-text)' }}>{nomeCurto(membro.nome)}</span>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: vencida ? '#ef4444' : '#f59e0b' }}>
-                      {vencida ? 'Venceu em ' : 'Vence em '}{fmtData(p.data_fim)}
-                    </span>
-                  </div>
-                ))}
+      {/* Alerta de licenças */}
+      {d.licAlertas.length > 0 && (
+        <div style={{ ...boxCard, borderLeft: '4px solid #6366f1', marginBottom: '1.25rem' }}>
+          <p style={tituloBox}>📋 Licenças a Vencer</p>
+          <p style={subBox}>Vencidas ou com término nos próximos 30 dias</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2" style={{ marginTop: '0.8rem' }}>
+            {d.licAlertas.map(({ p, membro, vencida }) => (
+              <div key={p.id} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.55rem 0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--color-text)' }}>{nomeCurto(membro.nome)}</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: vencida ? '#ef4444' : '#f59e0b' }}>
+                  {vencida ? 'Venceu em ' : 'Vence em '}{fmtData(p.data_fim)}
+                </span>
               </div>
-            </div>
-          )}
-          {podeVerFinanceiro && (
-            <div style={{ ...boxCard, borderLeft: '4px solid #ef4444' }}>
-              <p style={tituloBox}>💰 Pendências Financeiras</p>
-              <p style={subBox}>Valores a receber dos membros</p>
-              <div className="grid grid-cols-3 gap-2" style={{ marginTop: '0.9rem' }}>
-                {[
-                  { t: 'Total a receber', v: moeda(d.totalDevido), c: '#f59e0b' },
-                  { t: 'Vencido', v: moeda(d.totalVencido), c: '#ef4444' },
-                  { t: 'Membros em atraso', v: d.inadimplentes, c: '#a855f7' },
-                ].map(x => (
-                  <div key={x.t} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.7rem', textAlign: 'center' }}>
-                    <p style={{ fontSize: '1.05rem', fontWeight: 800, color: x.c, margin: 0 }}>{x.v}</p>
-                    <p style={{ fontSize: '0.64rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0', fontWeight: 600 }}>{x.t}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
