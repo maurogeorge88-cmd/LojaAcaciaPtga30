@@ -838,16 +838,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Se a edição vinculou um projeto que esse lançamento NUNCA teve
-        // (não existe nenhuma linha em receitas_projeto/custos_projeto pra
-        // ele ainda), cria agora — é um vínculo novo, não uma correção de
-        // algo que já existia, então não atropela nada que tenha sido
-        // ajustado manualmente na tela de Projetos.
+        // Vínculo com projeto na edição:
+        //  • sem ponte ainda → cria (com os mesmos campos do lançamento novo);
+        //  • ponte existente apontando para OUTRO projeto → move só o projeto_id
+        //    (não mexe em valor/descrição, que podem ter sido corrigidos na tela de Projetos);
+        //  • qualquer falha vira aviso — antes era silenciosa e o lançamento ficava fora do projeto.
+        let erroPonte = null;
         if (dados.projeto_id) {
+          const projetoAlvo = parseInt(dados.projeto_id);
           const tabelaPonte = dados.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
           const { data: pontesExistentes } = await supabase
             .from(tabelaPonte)
-            .select('id')
+            .select('id, projeto_id')
             .eq('lancamento_id', editando)
             .limit(1);
 
@@ -856,8 +858,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
               : '';
             if (dados.tipo === 'receita') {
-              await supabase.from('receitas_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
+              ({ error: erroPonte } = await supabase.from('receitas_projeto').insert([{
+                projeto_id: projetoAlvo,
                 lancamento_id: editando,
                 data_receita: dados.data_lancamento,
                 descricao: dados.descricao,
@@ -865,21 +867,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 origem: 'Finanças Loja',
                 forma_pagamento: dados.tipo_pagamento || '',
                 responsavel: irmaoNome,
-              }]);
+              }]));
             } else {
-              await supabase.from('custos_projeto').insert([{
-                projeto_id: parseInt(dados.projeto_id),
+              ({ error: erroPonte } = await supabase.from('custos_projeto').insert([{
+                projeto_id: projetoAlvo,
                 lancamento_id: editando,
                 data_custo: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
                 categoria: 'Finanças Loja',
-              }]);
+                forma_pagamento: dados.tipo_pagamento || '',
+                responsavel: irmaoNome,
+              }]));
             }
+          } else if (pontesExistentes[0].projeto_id !== projetoAlvo) {
+            const { data: movidas, error: errMover } = await supabase
+              .from(tabelaPonte)
+              .update({ projeto_id: projetoAlvo })
+              .eq('lancamento_id', editando)
+              .select('id');
+            erroPonte = errMover || ((!movidas || movidas.length === 0) ? { message: 'sem permissão para atualizar o vínculo' } : null);
+          }
+          if (erroPonte) {
+            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonte.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
 
-        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
+        if (!erroPonte) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { data: novoLanc, error } = await supabase
           .from('lancamentos_loja')
@@ -907,13 +921,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         }
 
-        // Criar vínculo com projeto (novo lançamento)
+        // Criar vínculo com projeto (novo lançamento) — falha deixa de ser silenciosa
+        let erroPonteNovo = null;
         if (dados.projeto_id && novoLanc?.id) {
           const irmaoNome = dados.origem_irmao_id
             ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
             : '';
           if (dados.tipo === 'receita') {
-            await supabase.from('receitas_projeto').insert([{
+            ({ error: erroPonteNovo } = await supabase.from('receitas_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_receita: dados.data_lancamento,
@@ -922,9 +937,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               origem: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
               responsavel: irmaoNome,
-            }]);
+            }]));
           } else {
-            await supabase.from('custos_projeto').insert([{
+            ({ error: erroPonteNovo } = await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               lancamento_id: novoLanc.id,
               data_custo: dados.data_lancamento,
@@ -932,14 +947,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               valor: parseFloat(dados.valor),
               categoria: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
-              responsavel: dados.origem_irmao_id
-                ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-                : '',
-            }]);
+              responsavel: irmaoNome,
+            }]));
+          }
+          if (erroPonteNovo) {
+            showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonteNovo.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
 
-        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
+        if (!erroPonteNovo) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
       }
 
       limparFormulario();
@@ -4321,7 +4337,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   step="0.01" 
                   value={formSangria.valor} 
                   onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                   placeholder="0.00"
                   max={troncoTotalGlobal.especie}
                 />
@@ -4333,7 +4349,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   type="date" 
                   value={formSangria.data} 
                   onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                 />
               </div>
               
@@ -4342,7 +4358,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <textarea 
                   value={formSangria.observacao} 
                   onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} 
-                  className="w-full px-4 py-2 border rounded-lg" 
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)'}} 
                   rows="2"
                   placeholder="Ex: Depósito em conta - Tronco"
                 />
@@ -4362,7 +4378,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <button 
                 onClick={() => fazerSangriaTronco()} 
                 disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > troncoTotalGlobal.especie} 
-                className="flex-1 px-4 py-3 text-white rounded-lg font-medium disabled:opacity-50 hover: transition-colors"
+                className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
               >
                 Confirmar
               </button>
