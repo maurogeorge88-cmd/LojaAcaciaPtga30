@@ -123,12 +123,12 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         <div onClick={() => irParaMes(mesIndex)} role="button" tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') irParaMes(mesIndex); }}
           style={{ cursor: 'pointer', background: selecionado ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', padding: '0.5rem 0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, letterSpacing: '0.04em', color: selecionado ? 'var(--color-accent)' : 'var(--color-text)' }}>{MESES[mesIndex].toUpperCase()}</span>
+          <span style={{ fontSize: '0.95rem', fontWeight: 800, letterSpacing: '0.04em', color: selecionado ? 'var(--color-accent)' : 'var(--color-text)' }}>{MESES[mesIndex].toUpperCase()}</span>
           <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{qtd > 0 ? `${qtd} evento${qtd === 1 ? '' : 's'}` : '—'}</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0.25rem 0.35rem 0' }}>
           {DIAS_SEMANA.map((d, i) => (
-            <div key={i} style={{ textAlign: 'center', fontSize: '0.62rem', fontWeight: 700, color: 'var(--color-text-muted)', padding: '0.15rem 0' }}>{d}</div>
+            <div key={i} style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', padding: '0.15rem 0' }}>{d}</div>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 0.35rem 0.4rem', rowGap: '1px' }}>
@@ -142,13 +142,13 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             return (
               <div key={idx} onClick={() => { if (tem) clicarDia(ds, mesIndex); else irParaMes(mesIndex); }}
                 title={tem ? evs.map(e => e.titulo).join(', ') : ''}
-                style={{ textAlign: 'center', padding: '0.2rem 0', cursor: 'pointer', borderRadius: 'var(--radius-md)', minHeight: '2.1rem',
+                style={{ textAlign: 'center', padding: '0.2rem 0', cursor: 'pointer', borderRadius: 'var(--radius-md)', minHeight: '2.5rem',
                   background: dest ? 'var(--color-accent)' : tem ? 'var(--color-accent-bg)' : 'transparent',
                   outline: ehHoje ? '2px solid var(--color-accent)' : 'none', outlineOffset: '-2px' }}>
-                <div style={{ fontSize: '0.76rem', fontWeight: tem || ehHoje ? 800 : 500, color: dest ? '#fff' : tem ? 'var(--color-accent)' : 'var(--color-text)' }}>{dia}</div>
+                <div style={{ fontSize: '0.86rem', fontWeight: tem || ehHoje ? 800 : 500, color: dest ? '#fff' : tem ? 'var(--color-accent)' : 'var(--color-text)' }}>{dia}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', minHeight: '0.45rem', marginTop: '1px' }}>
                   {evs.slice(0, 3).map((ev, i) => (
-                    <span key={i} style={{ width: '0.38rem', height: '0.38rem', borderRadius: '50%', background: dest ? '#fff' : corDoEvento(ev.tipo, ev.cor_destaque) }} />
+                    <span key={i} style={{ width: '0.45rem', height: '0.45rem', borderRadius: '50%', background: dest ? '#fff' : corDoEvento(ev.tipo, ev.cor_destaque) }} />
                   ))}
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   return (
     <div>
       <style>{`
-        .cal-agenda { display: grid; grid-template-columns: minmax(250px, 320px) 1fr; gap: 1rem; align-items: start; }
+        .cal-agenda { display: grid; grid-template-columns: minmax(calc(250px + 3cm), calc(320px + 3cm)) 1fr; gap: 1rem; align-items: start; }
         .cal-agenda-esq { max-height: 74vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; padding-right: 0.25rem; }
         @media (max-width: 900px) { .cal-agenda { grid-template-columns: 1fr; } .cal-agenda-esq { max-height: none; } }
       `}</style>
