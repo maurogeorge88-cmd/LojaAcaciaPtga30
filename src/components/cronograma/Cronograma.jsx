@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { toBlob } from 'html-to-image';
 import { supabase } from '../../supabaseClient';
 import CalendarioAnual from './CalendarioAnual';
 import { TIPOS_EVENTO, corDoEvento, rotuloDoTipo } from './tiposEvento';
@@ -262,6 +263,56 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   };
   const toggleMes = (mesKey) => setMesesAbertos(prev => ({...prev, [mesKey]: !isMesAberto(mesKey)}));
   const [eventoVisualizar, setEventoVisualizar] = useState(null);
+
+  // Copiar / baixar o quadro do evento como imagem (para colar no grupo)
+  const quadroRef = useRef(null);
+  const [gerandoImagem, setGerandoImagem] = useState(false);
+  const [msgImagem, setMsgImagem] = useState({ tipo: '', texto: '' });
+  useEffect(() => { setMsgImagem({ tipo: '', texto: '' }); }, [modalVisualizacao, eventoVisualizar]);
+
+  // placeholder transparente: se alguma imagem externa falhar, o quadro ainda é gerado
+  const PIXEL_VAZIO = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  const gerarBlobQuadro = () => toBlob(quadroRef.current, {
+    pixelRatio: 2, cacheBust: true, backgroundColor: '#0f1729', imagePlaceholder: PIXEL_VAZIO,
+  });
+
+  const copiarImagemQuadro = async () => {
+    setGerandoImagem(true);
+    setMsgImagem({ tipo: '', texto: '' });
+    try {
+      if (!navigator.clipboard || typeof window.ClipboardItem === 'undefined') throw new Error('sem-clipboard');
+      // Promise direto no ClipboardItem: mantém o gesto do usuário (exigido pelo Safari)
+      await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': gerarBlobQuadro() })]);
+      setMsgImagem({ tipo: 'ok', texto: '✅ Imagem copiada! Cole no grupo (Ctrl+V).' });
+    } catch (e) {
+      console.error('Erro ao copiar imagem do evento:', e);
+      setMsgImagem({ tipo: 'erro', texto: 'Seu navegador não permitiu copiar. Use "Baixar PNG".' });
+    } finally {
+      setGerandoImagem(false);
+    }
+  };
+
+  const baixarImagemQuadro = async () => {
+    setGerandoImagem(true);
+    setMsgImagem({ tipo: '', texto: '' });
+    try {
+      const blob = await gerarBlobQuadro();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `evento-${eventoVisualizar?.data_evento || 'quadro'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMsgImagem({ tipo: 'ok', texto: '✅ Imagem baixada.' });
+    } catch (e) {
+      console.error('Erro ao gerar imagem do evento:', e);
+      setMsgImagem({ tipo: 'erro', texto: '❌ Não foi possível gerar a imagem.' });
+    } finally {
+      setGerandoImagem(false);
+    }
+  };
   const [eventoEditando, setEventoEditando] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMes, setFiltroMes] = useState(''); // '' = todos os meses; senão 'MM'
@@ -1340,6 +1391,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             {/* Quadro do evento — moldura dourada pra dentro, intacto */}
             <div 
               id="quadro-evento"
+              ref={quadroRef}
               className="rounded-xl relative overflow-hidden"
               style={{
                 width:'32rem',
@@ -1443,6 +1495,31 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               </span>
             </div>}
             </div>{/* fim #quadro-evento */}
+
+            {/* Copiar / baixar o quadro como imagem */}
+            <div style={{width:'32rem',maxWidth:'80vw',marginTop:'0.9rem'}}>
+              <div style={{display:'flex',gap:'0.5rem'}}>
+                <button
+                  onClick={copiarImagemQuadro}
+                  disabled={gerandoImagem}
+                  style={{flex:1,padding:'0.6rem',background:'#1a2138',color:'#c9a84c',border:'2px solid #c9a84c',borderRadius:'0.5rem',fontWeight:'700',fontSize:'0.85rem',cursor:gerandoImagem?'wait':'pointer',opacity:gerandoImagem?0.7:1}}
+                >
+                  📋 Copiar imagem
+                </button>
+                <button
+                  onClick={baixarImagemQuadro}
+                  disabled={gerandoImagem}
+                  style={{flex:1,padding:'0.6rem',background:'#fff',color:'#1a2138',border:'1px solid #9ca3af',borderRadius:'0.5rem',fontWeight:'700',fontSize:'0.85rem',cursor:gerandoImagem?'wait':'pointer',opacity:gerandoImagem?0.7:1}}
+                >
+                  ⬇️ Baixar PNG
+                </button>
+              </div>
+              {msgImagem.texto && (
+                <p style={{margin:'0.5rem 0 0',textAlign:'center',fontSize:'0.78rem',fontWeight:'600',color:msgImagem.tipo==='ok'?'#166534':'#b91c1c'}}>
+                  {msgImagem.texto}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}
