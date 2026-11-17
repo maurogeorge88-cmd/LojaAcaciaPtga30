@@ -110,6 +110,18 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     if (el) el.scrollIntoView({ block: 'nearest' });
   }, [mesSel, periodo]);
 
+  // Próximo evento: a data mais próxima (hoje ou depois) com algum evento que não seja feriado nem cancelado.
+  // Todos os eventos dessa data ficam em destaque.
+  const dataProximo = eventos
+    .filter(e => e.tipo !== 'feriado' && e.status !== 'cancelado' && e.data_evento >= hoje)
+    .reduce((menor, e) => (!menor || e.data_evento < menor ? e.data_evento : menor), null);
+  const diasAte = (ds) => {
+    const [a1, m1, d1] = hoje.split('-').map(Number);
+    const [a2, m2, d2] = ds.split('-').map(Number);
+    return Math.round((new Date(a2, m2 - 1, d2) - new Date(a1, m1 - 1, d1)) / 86400000);
+  };
+  const OURO = '#d4af37';
+
   const tiposPresentes = TIPOS_EVENTO.filter(t => eventos.some(e => e.tipo === t.value));
   const listaMes = eventosDoMes(mesSel);
 
@@ -144,7 +156,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                 title={tem ? evs.map(e => e.titulo).join(', ') : ''}
                 style={{ textAlign: 'center', padding: '0.2rem 0', cursor: 'pointer', borderRadius: 'var(--radius-md)', minHeight: '2.5rem',
                   background: dest ? 'var(--color-accent)' : tem ? 'var(--color-accent-bg)' : 'transparent',
-                  outline: ehHoje ? '2px solid var(--color-accent)' : 'none', outlineOffset: '-2px' }}>
+                  outline: ds === dataProximo ? `2px solid ${OURO}` : ehHoje ? '2px solid var(--color-accent)' : 'none', outlineOffset: '-2px' }}>
                 <div style={{ fontSize: '0.86rem', fontWeight: tem || ehHoje ? 800 : 500, color: dest ? '#fff' : tem ? 'var(--color-accent)' : 'var(--color-text)' }}>{dia}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '2px', minHeight: '0.45rem', marginTop: '1px' }}>
                   {evs.slice(0, 3).map((ev, i) => (
@@ -167,6 +179,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     const ehHoje = ev.data_evento === hoje;
     const cancelado = ev.status === 'cancelado';
     const compacto = passado && !expandidos.has(ev.id); // sessão que já passou: só título e tipo
+    const proximo = ev.data_evento === dataProximo && ev.tipo !== 'feriado' && ev.status !== 'cancelado';
+    const nDias = proximo ? diasAte(ev.data_evento) : null;
     return (
       <div key={ev.id} ref={(el) => { refsLinhas.current[ev.id] = el; }}
         onClick={() => {
@@ -174,12 +188,20 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           setDiaDestaque(ev.data_evento === diaDestaque && !passado ? null : ev.data_evento);
         }}
         style={{ display: 'flex', gap: '0.9rem', padding: compacto ? '0.55rem 1rem' : '0.85rem 1rem', cursor: 'pointer', transition: 'background .2s',
-          background: dest ? 'var(--color-accent-bg)' : 'transparent', borderBottom: '1px solid var(--color-border)',
+          background: dest ? 'var(--color-accent-bg)' : proximo ? 'rgba(212,175,55,0.06)' : 'transparent', borderBottom: '1px solid var(--color-border)',
+          outline: proximo ? `1px solid ${OURO}` : 'none', outlineOffset: '-1px',
           borderLeft: `4px solid ${dest ? 'var(--color-accent)' : cor}`, opacity: passado && !dest && !ehHoje ? 0.72 : 1 }}>
-        <div style={{ width: '3.2rem', flexShrink: 0, textAlign: 'center' }}>
+        <div style={{ width: '3.6rem', flexShrink: 0, textAlign: 'center' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1, color: ehHoje ? 'var(--color-accent)' : 'var(--color-text)' }}>{pad(d.getDate())}</div>
           <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{DIAS_ABREV[d.getDay()]}</div>
-          {ehHoje && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: 'var(--color-accent)', borderRadius: 999, marginTop: '0.25rem', padding: '0.05rem 0' }}>HOJE</div>}
+          {proximo ? (
+            <div title={nDias === 0 ? 'Evento hoje' : 'Próximo evento'} style={{ marginTop: '0.3rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '1rem', lineHeight: 1 }}>{nDias === 0 ? '🔔' : '⏳'}</div>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: OURO, marginTop: '0.15rem', whiteSpace: 'nowrap' }}>
+                {nDias === 0 ? 'HOJE' : nDias === 1 ? 'amanhã' : `em ${nDias} dias`}
+              </div>
+            </div>
+          ) : ehHoje && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: 'var(--color-accent)', borderRadius: 999, marginTop: '0.25rem', padding: '0.05rem 0' }}>HOJE</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4 style={{ margin: compacto ? '0 0 0.3rem' : '0 0 0.45rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
