@@ -112,7 +112,7 @@ export default function CorpoAdministrativoArcoReal({ permissoes = {}, showSucce
   )].sort((a, b) => b.localeCompare(a));
 
   return (
-    <div className="p-6" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="p-6" style={{ maxWidth: '100%' }}>
       <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 1.25rem' }}>🏛️ Corpo Administrativo</h2>
 
       {/* Gestão mais recente em destaque */}
