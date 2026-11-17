@@ -35,11 +35,12 @@ const lerPeriodo = () => {
   return 'semestral';
 };
 
-export default function CalendarioAnual({ eventos = [], ano = new Date().getFullYear(), podeEditar = false, onEditar, onExcluir }) {
+export default function CalendarioAnual({ eventos = [], ano = new Date().getFullYear(), podeEditar = false, onEditar, onExcluir, onVisualizar }) {
   const hoje = hojeLocal();
   const [periodo, setPeriodo] = useState(lerPeriodo);
   const [mesSel, setMesSel] = useState(() => (ano === new Date().getFullYear() ? new Date().getMonth() : 0));
   const [diaDestaque, setDiaDestaque] = useState(null);
+  const [expandidos, setExpandidos] = useState(() => new Set()); // eventos passados abertos pelo usuário
   const [simboloMasonico, setSimboloMasonico] = useState(null);
   const refsLinhas = useRef({});
   const refsMeses = useRef({});
@@ -88,7 +89,12 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   const clicarDia = (ds, mesIndex) => {
     if (mesIndex !== mesSel) setMesSel(mesIndex);
     setDiaDestaque(ds);
+    // Sessões que já passaram abrem os detalhes ao clicar no dia
+    const doDia = eventosDoDia(ds).filter(e => e.data_evento < hoje);
+    if (doDia.length) setExpandidos(prev => { const n = new Set(prev); doDia.forEach(e => n.add(e.id)); return n; });
   };
+
+  const alternarExpandido = (id) => setExpandidos(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   // Rola a agenda até a primeira linha do dia destacado
   useEffect(() => {
@@ -160,10 +166,14 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     const passado = ev.data_evento < hoje;
     const ehHoje = ev.data_evento === hoje;
     const cancelado = ev.status === 'cancelado';
+    const compacto = passado && !expandidos.has(ev.id); // sessão que já passou: só título e tipo
     return (
       <div key={ev.id} ref={(el) => { refsLinhas.current[ev.id] = el; }}
-        onClick={() => setDiaDestaque(ev.data_evento === diaDestaque ? null : ev.data_evento)}
-        style={{ display: 'flex', gap: '0.9rem', padding: '0.85rem 1rem', cursor: 'pointer', transition: 'background .2s',
+        onClick={() => {
+          if (passado) alternarExpandido(ev.id);
+          setDiaDestaque(ev.data_evento === diaDestaque && !passado ? null : ev.data_evento);
+        }}
+        style={{ display: 'flex', gap: '0.9rem', padding: compacto ? '0.55rem 1rem' : '0.85rem 1rem', cursor: 'pointer', transition: 'background .2s',
           background: dest ? 'var(--color-accent-bg)' : 'transparent', borderBottom: '1px solid var(--color-border)',
           borderLeft: `4px solid ${dest ? 'var(--color-accent)' : cor}`, opacity: passado && !dest && !ehHoje ? 0.72 : 1 }}>
         <div style={{ width: '3.2rem', flexShrink: 0, textAlign: 'center' }}>
@@ -172,33 +182,35 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           {ehHoje && <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff', background: 'var(--color-accent)', borderRadius: 999, marginTop: '0.25rem', padding: '0.05rem 0' }}>HOJE</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h4 style={{ margin: '0 0 0.45rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.45rem' }}>
+          <h4 style={{ margin: compacto ? '0 0 0.3rem' : '0 0 0.45rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: compacto ? 0 : '0.45rem' }}>
             <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(ev.tipo)}</span>
-            {ev.tipo !== 'feriado' && ev.grau_sessao_id && NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id] && (
+            {!compacto && ev.tipo !== 'feriado' && ev.grau_sessao_id && NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id] && (
               <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)' }}>{NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]}</span>
             )}
-            {ev.tipo !== 'feriado' && ev.status && ev.status !== 'planejado' && (
+            {!compacto && ev.tipo !== 'feriado' && ev.status && ev.status !== 'planejado' && (
               <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{STATUS_ROTULO[ev.status] || ev.status}</span>
             )}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.1rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+          {!compacto && <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.1rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             {ev.hora_inicio && <span>🕐 {String(ev.hora_inicio).substring(0, 5)}{ev.hora_fim && ` – ${String(ev.hora_fim).substring(0, 5)}`}</span>}
             {ev.local && <span>📍 {ev.local}</span>}
             {ev.responsavel && <span>👤 {ev.responsavel}</span>}
-          </div>
-          {(ev.descricao || ev.observacoes) && <div style={{ marginTop: '0.6rem' }}>
+          </div>}
+          {!compacto && (ev.descricao || ev.observacoes) && <div style={{ marginTop: '0.6rem' }}>
             <div style={{ width: '4cm', maxWidth: '100%', height: '1px', background: 'var(--color-border-light)', marginBottom: '0.6rem' }} />
             {ev.descricao && <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--color-text)', whiteSpace: 'pre-wrap' }}>{ev.descricao}</p>}
             {ev.observacoes && <p style={{ margin: ev.descricao ? '0.5rem 0 0' : 0, fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' }}>📝 {ev.observacoes}</p>}
           </div>}
         </div>
-        {podeEditar && (
+        {!compacto && (
           <div style={{ display: 'flex', gap: '0.4rem', alignSelf: 'flex-start', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => onEditar && onEditar(ev)} title="Editar"
-              style={{ padding: '0.25rem 0.55rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>✏️</button>
-            <button onClick={() => onExcluir && onExcluir(ev.id)} title="Excluir"
-              style={{ padding: '0.25rem 0.55rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>🗑️</button>
+            {onVisualizar && <button onClick={() => onVisualizar(ev)} title="Ver detalhes / enviar aos irmãos"
+              style={{ padding: '0.25rem 0.55rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>👁️</button>}
+            {podeEditar && <button onClick={() => onEditar && onEditar(ev)} title="Editar"
+              style={{ padding: '0.25rem 0.55rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>✏️</button>}
+            {podeEditar && <button onClick={() => onExcluir && onExcluir(ev.id)} title="Excluir"
+              style={{ padding: '0.25rem 0.55rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>🗑️</button>}
           </div>
         )}
       </div>
