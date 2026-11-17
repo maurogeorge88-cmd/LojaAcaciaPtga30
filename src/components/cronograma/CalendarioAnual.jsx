@@ -22,6 +22,8 @@ const PERIODOS = [
 ];
 const STATUS_ROTULO = { planejado: 'Planejado', confirmado: 'Confirmado', realizado: 'Realizado', cancelado: 'Cancelado' };
 const CHAVE_PERIODO = 'cronograma_calendario_periodo';
+// Rótulos com largura fixa: ficam alinhados em todas as linhas
+const chipBase = { display: 'inline-block', boxSizing: 'border-box', padding: '0.1rem 0.5rem', borderRadius: 999, fontSize: '0.7rem', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
 const pad = (n) => String(n).padStart(2, '0');
 const hojeLocal = () => {
   const d = new Date();
@@ -206,12 +208,14 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         <div style={{ flex: 1, minWidth: 0 }}>
           <h4 style={{ margin: compacto ? '0 0 0.3rem' : '0 0 0.45rem', fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text)', textDecoration: cancelado ? 'line-through' : 'none' }}>{ev.titulo}</h4>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: compacto ? 0 : '0.45rem' }}>
-            <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(ev.tipo)}</span>
-            {!compacto && ev.tipo !== 'feriado' && ev.grau_sessao_id && NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id] && (
-              <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)' }}>{NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]}</span>
+            <span title={rotuloDoTipo(ev.tipo)} style={{ ...chipBase, width: '7.5rem', fontWeight: 700, color: cor, background: `${cor}22`, border: `1px solid ${cor}66` }}>{rotuloDoTipo(ev.tipo)}</span>
+            {ev.tipo !== 'feriado' && (
+              ev.grau_sessao_id && NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]
+                ? <span title={NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]} style={{ ...chipBase, width: '11rem', fontWeight: 700, color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border-light)' }}>{NOME_GRAU_CRONOGRAMA[ev.grau_sessao_id]}</span>
+                : <span style={{ display: 'inline-block', width: '11rem' }} />
             )}
-            {!compacto && ev.tipo !== 'feriado' && ev.status && ev.status !== 'planejado' && (
-              <span style={{ padding: '0.1rem 0.6rem', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{STATUS_ROTULO[ev.status] || ev.status}</span>
+            {ev.tipo !== 'feriado' && ev.status && (
+              <span style={{ ...chipBase, width: '6.5rem', fontWeight: 600, color: 'var(--color-text-muted)', border: '1px solid var(--color-border-light)' }}>{STATUS_ROTULO[ev.status] || ev.status}</span>
             )}
           </div>
           {!compacto && <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem 1.1rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
