@@ -163,9 +163,14 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
           .eq('eh_autoridade', true)
           .in('sessao_id', idsSessoes);
 
-        const idsComAutoridade = new Set((visitasAutoridade || []).map(v => v.sessao_id));
+        // Conta quantas autoridades (pessoas) houve em cada sessão
+        const qtdPorSessao = {};
+        (visitasAutoridade || []).forEach(v => {
+          qtdPorSessao[v.sessao_id] = (qtdPorSessao[v.sessao_id] || 0) + 1;
+        });
         sessoesMapeadas.forEach(s => {
-          s.teve_visita_autoridade = idsComAutoridade.has(s.id);
+          s.qtd_autoridades = qtdPorSessao[s.id] || 0;
+          s.teve_visita_autoridade = s.qtd_autoridades > 0;
         });
       }
 
@@ -441,6 +446,51 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
     return `${partes[0]} ${partes[1]}`;
   };
 
+  // ── Indicadores do período filtrado ──
+  const indicadores = (() => {
+    const comRegistro = sessoes.filter(x => (x.total_registros || 0) > 0);
+    const pcts = comRegistro.map(x => ({ pct: ((x.total_presentes || 0) / x.total_registros) * 100, data: x.data_sessao }));
+    const mediaPct = pcts.length > 0 ? Math.round(pcts.reduce((a, x) => a + x.pct, 0) / pcts.length) : null;
+    const maior = pcts.length > 0 ? pcts.reduce((m, x) => (x.pct > m.pct ? x : m)) : null;
+    const menor = pcts.length > 0 ? pcts.reduce((m, x) => (x.pct < m.pct ? x : m)) : null;
+    return {
+      qtdSessoes: sessoes.length,
+      qtdComRegistro: comRegistro.length,
+      mediaPct,
+      somaPresentes: comRegistro.reduce((a, x) => a + (x.total_presentes || 0), 0),
+      somaRegistros: comRegistro.reduce((a, x) => a + (x.total_registros || 0), 0),
+      somaVisitantes: sessoes.reduce((a, x) => a + (x.total_visitantes || 0), 0),
+      sessoesComAutoridade: sessoes.filter(x => x.teve_visita_autoridade).length,
+      totalAutoridades: sessoes.reduce((a, x) => a + (x.qtd_autoridades || 0), 0),
+      maior, menor,
+    };
+  })();
+  const corMedia = indicadores.mediaPct === null ? 'var(--color-text-muted)'
+    : indicadores.mediaPct >= 75 ? '#10b981' : indicadores.mediaPct >= 50 ? '#f59e0b' : '#ef4444';
+  const cardKpi = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' };
+  const rotuloKpi = { fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' };
+  const KpiGrande = ({ titulo, valor, sub, cor, children }) => (
+    <div style={{ ...cardKpi, borderTop: `4px solid ${cor}`, padding: '1rem 1.25rem' }}>
+      <div style={rotuloKpi}>{titulo}</div>
+      <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', marginTop: '0.25rem', lineHeight: 1.1 }}>{valor}</div>
+      {children}
+      {sub && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.4rem' }}>{sub}</div>}
+    </div>
+  );
+  const KpiMini = ({ icone, titulo, valor, sub }) => (
+    <div style={{ ...cardKpi, padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div style={{ fontSize: '1.5rem' }}>{icone}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ ...rotuloKpi, fontSize: '0.7rem' }}>{titulo}</div>
+        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--color-text)' }}>{valor}</div>
+        {sub && <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{sub}</div>}
+      </div>
+    </div>
+  );
+  const nomePeriodo = filtroMes
+    ? `${meses[parseInt(filtroMes)]?.nome || ''} de ${filtroAno}`
+    : (filtroAno ? `ano de ${filtroAno}` : 'todos os períodos');
+
   return (
     <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* Cabeçalho */}
@@ -513,6 +563,47 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
           </div>
         </div>
       </div>
+
+      {/* Indicadores do período */}
+      {!loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.75rem' }}>
+            <KpiGrande
+              titulo="Sessões realizadas"
+              valor={indicadores.qtdSessoes}
+              cor="var(--color-accent)"
+              sub={`${nomePeriodo} · ${indicadores.qtdComRegistro} com presença registrada`}
+            />
+            <KpiGrande
+              titulo="Presença média"
+              valor={indicadores.mediaPct !== null ? `${indicadores.mediaPct}%` : '—'}
+              cor={corMedia}
+              sub={indicadores.mediaPct !== null ? 'média dos % das sessões' : 'sem registros no período'}
+            >
+              <div style={{ height: 6, borderRadius: 999, background: 'var(--color-surface-2)', marginTop: '0.5rem', overflow: 'hidden' }}>
+                <div style={{ width: `${indicadores.mediaPct || 0}%`, height: '100%', background: corMedia }} />
+              </div>
+            </KpiGrande>
+            <KpiGrande
+              titulo="Total de presenças"
+              valor={indicadores.somaPresentes}
+              cor="#10b981"
+              sub={`de ${indicadores.somaRegistros} registros`}
+            />
+            <KpiGrande
+              titulo="Visitantes recebidos"
+              valor={indicadores.somaVisitantes}
+              cor="#3b82f6"
+              sub="soma em todas as sessões"
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.75rem' }}>
+            <KpiMini icone="🎖️" titulo="Sessões com autoridade" valor={indicadores.sessoesComAutoridade} sub="visita de autoridade da Potência" />
+            <KpiMini icone="👥" titulo="Autoridades presentes" valor={indicadores.totalAutoridades} sub="soma de pessoas no período" />
+            <KpiMini icone="📍" titulo="Visitas a outras lojas" valor={visitas.length} sub="realizadas pelos irmãos" />
+          </div>
+        </div>
+      )}
 
       {/* Mensagens */}
       {mensagem.texto && (
