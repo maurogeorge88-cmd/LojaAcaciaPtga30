@@ -145,7 +145,7 @@ export default function EstatisticasArcoReal() {
   if (loading) return <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>Carregando estatísticas...</div>;
 
   return (
-    <div className="p-6" style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className="p-6" style={{ maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.3rem', color: 'var(--color-accent)' }}>📊 Estatísticas — Arco Real</h2>
         <div style={{ display: 'flex', gap: '0.4rem' }}>
