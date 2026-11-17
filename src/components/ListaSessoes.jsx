@@ -11,6 +11,14 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [sessaoComposicao, setSessaoComposicao] = useState(null);
 
+  // Meses recolhidos: só o mês atual abre por padrão (se o usuário filtrou um mês, ele abre)
+  const mesAtualKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const [mesesAbertos, setMesesAbertos] = useState({});
+  const isMesAberto = (mesKey) => (mesKey in mesesAbertos ? mesesAbertos[mesKey] : (mesKey === mesAtualKey || !!filtroMes));
+  const toggleMes = (mesKey) => setMesesAbertos(prev => ({ ...prev, [mesKey]: !isMesAberto(mesKey) }));
+  // ao trocar o filtro, volta ao padrão (atual aberto, demais recolhidos)
+  useEffect(() => { setMesesAbertos({}); }, [filtroMes, filtroAno]);
+
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -678,8 +686,17 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                     ? Math.round(comRegistro.reduce((acc, x) => acc + ((x.total_presentes || 0) / x.total_registros) * 100, 0) / comRegistro.length)
                     : null;
                   return (
-                    <div style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                    <div
+                      onClick={() => toggleMes(mesAno)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMes(mesAno); } }}
+                      aria-expanded={isMesAberto(mesAno)}
+                      title={isMesAberto(mesAno) ? 'Recolher mês' : 'Expandir mês'}
+                      style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', cursor: 'pointer', userSelect: 'none' }}
+                    >
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ display: 'inline-block', fontSize: '0.8rem', transition: 'transform 0.2s', transform: isMesAberto(mesAno) ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                         📅 {grupo.mesNome}
                       </h3>
                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -696,6 +713,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                   );
                 })()}
 
+                {isMesAberto(mesAno) && (<>
                 <div className="overflow-x-auto">
                   {/* Cabeçalho alinhado com os cards */}
                   <div style={{
@@ -924,6 +942,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                     </div>
                   );
                 })()}
+                </>)}
               </div>
             ));
           })()}
