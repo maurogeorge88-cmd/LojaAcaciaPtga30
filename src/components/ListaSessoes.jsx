@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import ModalComposicaoLoja from './ModalComposicaoLoja';
 
 export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca }) {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [sessaoComposicao, setSessaoComposicao] = useState(null);
 
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
@@ -68,13 +70,24 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
     return date.toLocaleDateString('pt-BR');
   };
 
+  // Cores do % de presença (tons translúcidos — funcionam em temas claros e escuros)
   const obterCorPorcentagem = (total, presentes) => {
-    if (total === 0) return { background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' };
+    if (total === 0) return { fundo: 'var(--color-surface-2)', texto: 'var(--color-text-muted)', borda: 'var(--color-border)', barra: 'var(--color-border)' };
     const percentual = (presentes / total) * 100;
-    if (percentual >= 75) return { background: '#dcfce7', color: '#166534' }; // verde
-    if (percentual >= 50) return { background: '#fef9c3', color: '#854d0e' }; // amarelo
-    return { background: '#fee2e2', color: '#991b1b' }; // vermelho
+    if (percentual >= 75) return { fundo: 'rgba(16,185,129,0.15)', texto: '#10b981', borda: 'rgba(16,185,129,0.35)', barra: '#10b981' };
+    if (percentual >= 50) return { fundo: 'rgba(245,158,11,0.15)', texto: '#f59e0b', borda: 'rgba(245,158,11,0.35)', barra: '#f59e0b' };
+    return { fundo: 'rgba(239,68,68,0.15)', texto: '#ef4444', borda: 'rgba(239,68,68,0.35)', barra: '#ef4444' };
   };
+
+  // Colunas compartilhadas entre o cabeçalho e as linhas
+  const GRID_SESSAO = '110px minmax(0,1fr) 120px minmax(0,1.1fr) 64px 150px';
+
+  // Estilo base dos botões de ação (ícones SVG)
+  const estiloAcao = (cor, bg, borda) => ({
+    width: '2rem', height: '2rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    background: bg, color: cor, border: `1px solid ${borda}`, borderRadius: 'var(--radius-md)', cursor: 'pointer', padding: 0,
+  });
+  const svgProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
 
   // Buscar anos disponíveis
   useEffect(() => {
@@ -568,17 +581,35 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
 
             return Object.entries(sessoesPorMes).map(([mesAno, grupo]) => (
               <div key={mesAno} className="card" style={{ overflow: 'hidden', padding: 0 }}>
-                <div style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem' }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white' }}>
-                    📅 {grupo.mesNome}
-                  </h3>
-                </div>
+                {(() => {
+                  const comRegistro = grupo.sessoes.filter(x => (x.total_registros || 0) > 0);
+                  const mediaMes = comRegistro.length > 0
+                    ? Math.round(comRegistro.reduce((acc, x) => acc + ((x.total_presentes || 0) / x.total_registros) * 100, 0) / comRegistro.length)
+                    : null;
+                  return (
+                    <div style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
+                        📅 {grupo.mesNome}
+                      </h3>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ padding: '0.15rem 0.7rem', borderRadius: '999px', background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: '0.75rem', fontWeight: 600 }}>
+                          {grupo.sessoes.length} sessão{grupo.sessoes.length === 1 ? '' : 'ões'}
+                        </span>
+                        {mediaMes !== null && (
+                          <span style={{ padding: '0.15rem 0.7rem', borderRadius: '999px', background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: '0.75rem', fontWeight: 600 }}>
+                            presença média {mediaMes}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="overflow-x-auto">
                   {/* Cabeçalho alinhado com os cards */}
                   <div style={{
                     display:'grid',
-                    gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
+                    gridTemplateColumns: GRID_SESSAO,
                     gap:'0.75rem',
                     padding:'0.5rem 1rem',
                     background:'var(--color-surface-2)',
@@ -611,7 +642,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                             key={sessao.id}
                             style={{
                               display:'grid',
-                              gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
+                              gridTemplateColumns: GRID_SESSAO,
                               alignItems:'center',
                               gap:'0.75rem',
                               padding:'0.65rem 1rem',
@@ -653,59 +684,43 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                                 {sessao.classificacao || '—'}
                               </span>
                             </div>
-                            {/* Presença — 3 linhas centralizadas */}
-                            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem',textAlign:'center'}}>
-                              {/* Linha 1: percentual */}
-                              <span style={{...corPct,padding:'0.15rem 0.7rem',borderRadius:'999px',fontSize:'0.82rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                {percentual}% ({presentes}/{totalRegistros})
+                            {/* Presença — compacta */}
+                            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.3rem',textAlign:'center',minWidth:0}}>
+                              <span style={{background:corPct.fundo,color:corPct.texto,border:`1px solid ${corPct.borda}`,padding:'0.12rem 0.7rem',borderRadius:'999px',fontSize:'0.8rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                {percentual}% <span style={{fontWeight:'600',opacity:0.85}}>({presentes}/{totalRegistros})</span>
                               </span>
-                              {/* Linha 2: ausentes */}
                               {totalRegistros > 0 && (
-                                <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
-                                  {ausentes} ausente(s)
-                                </span>
+                                <div style={{width:'100%',maxWidth:'150px',height:'4px',background:'var(--color-surface-3, var(--color-border))',borderRadius:'999px',overflow:'hidden'}} title={`${ausentes} ausente(s)`}>
+                                  <div style={{height:'100%',width:`${percentual}%`,background:corPct.barra,borderRadius:'999px'}} />
+                                </div>
                               )}
-                              {/* Linha 3: badges de grau */}
                               {graus && presentes > 0 && (
-                                <div style={{display:'flex',gap:'0.25rem',flexWrap:'nowrap',justifyContent:'center'}}>
+                                <div style={{display:'flex',gap:'0.25rem',flexWrap:'wrap',justifyContent:'center'}}>
                                   {graus.aprendizes > 0 && (
-                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                      A:{graus.aprendizes}
-                                    </span>
+                                    <span title="Aprendizes presentes" style={{padding:'0.05rem 0.4rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap'}}>A:{graus.aprendizes}</span>
                                   )}
                                   {graus.companheiros > 0 && (
-                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                      C:{graus.companheiros}
-                                    </span>
+                                    <span title="Companheiros presentes" style={{padding:'0.05rem 0.4rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap'}}>C:{graus.companheiros}</span>
                                   )}
                                   {graus.mestres > 0 && (
-                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                      M:{graus.mestres}
-                                    </span>
+                                    <span title="Mestres presentes" style={{padding:'0.05rem 0.4rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap'}}>M:{graus.mestres}</span>
                                   )}
                                   {graus.mestres_instalados > 0 && (
-                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                      M.I:{graus.mestres_instalados}
-                                    </span>
+                                    <span title="Mestres Instalados presentes" style={{padding:'0.05rem 0.4rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap'}}>M.I:{graus.mestres_instalados}</span>
                                   )}
                                 </div>
                               )}
-                              {/* Linha 4: licenciados/prerrogativa (informativo — não contam no %) */}
-                              {((sessao.total_licenciados || 0) > 0 || (sessao.total_prerrogativa || 0) > 0) && (
-                                <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap',justifyContent:'center'}}>
-                                  {sessao.total_licenciados > 0 && (
-                                    <span style={{padding:'0.08rem 0.35rem',background:'rgba(59,130,246,0.1)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.25)',borderRadius:'var(--radius-sm)',fontSize:'0.65rem',fontWeight:'600',whiteSpace:'nowrap'}}
-                                      title="Licenciados — não contam no % de presença">
-                                      📋 {sessao.total_licenciados} licenciado{sessao.total_licenciados===1?'':'s'}
-                                    </span>
+                              {/* Ausentes / licenciados / prerrogativa — uma linha discreta (não contam no %) */}
+                              {totalRegistros > 0 && (
+                                <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
+                                  {ausentes} ausente(s)
+                                  {(sessao.total_licenciados || 0) > 0 && (
+                                    <span title="Licenciados — não contam no % de presença"> · 📋 {sessao.total_licenciados}</span>
                                   )}
-                                  {sessao.total_prerrogativa > 0 && (
-                                    <span style={{padding:'0.08rem 0.35rem',background:'rgba(139,92,246,0.1)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.25)',borderRadius:'var(--radius-sm)',fontSize:'0.65rem',fontWeight:'600',whiteSpace:'nowrap'}}
-                                      title="Com prerrogativa de idade — não contam no % de presença">
-                                      🎖️ {sessao.total_prerrogativa} c/ prerrogativa
-                                    </span>
+                                  {(sessao.total_prerrogativa || 0) > 0 && (
+                                    <span title="Com prerrogativa de idade — não contam no % de presença"> · 🎖️ {sessao.total_prerrogativa}</span>
                                   )}
-                                </div>
+                                </span>
                               )}
                             </div>
                             {/* Visitantes */}
@@ -715,27 +730,35 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                               </span>
                             </div>
                             {/* Ações */}
-                            <div style={{display:'flex',gap:'0.3rem',justifyContent:'flex-end'}}>
+                            <div style={{display:'flex',gap:'0.3rem',justifyContent:'flex-end',alignItems:'center'}}>
                               <button
                                 onClick={() => onVisualizarPresenca(sessao.id)}
-                                style={{padding:'0.35rem 0.7rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
-                                title="Visualizar"
+                                style={estiloAcao('#10b981','rgba(16,185,129,0.15)','rgba(16,185,129,0.3)')}
+                                title="Visualizar presença"
                               >
-                                👁️
+                                <svg {...svgProps}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                              </button>
+                              <button
+                                onClick={() => setSessaoComposicao(sessao)}
+                                style={estiloAcao('#c9a84c','rgba(201,168,76,0.15)','rgba(201,168,76,0.4)')}
+                                title="Composição da Loja (gerar imagem para o grupo)"
+                              >
+                                <svg {...svgProps}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 17v-5M12 17V8M16 17v-3"/></svg>
                               </button>
                               <button
                                 onClick={() => onEditarPresenca(sessao.id)}
-                                style={{padding:'0.35rem 0.7rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                style={estiloAcao('var(--color-accent)','var(--color-accent-bg)','var(--color-accent)')}
                                 title="Editar"
                               >
-                                ✏️
+                                <svg {...svgProps}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
                               </button>
+                              <span style={{width:'1px',height:'1.2rem',background:'var(--color-border)',margin:'0 0.1rem'}} />
                               <button
                                 onClick={() => handleExcluir(sessao.id)}
-                                style={{padding:'0.35rem 0.7rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                style={estiloAcao('#ef4444','transparent','rgba(239,68,68,0.3)')}
                                 title="Excluir"
                               >
-                                🗑️
+                                <svg {...svgProps}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
                               </button>
                             </div>
                           </div>
@@ -1035,6 +1058,14 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Composição da Loja */}
+      {sessaoComposicao && (
+        <ModalComposicaoLoja
+          sessao={sessaoComposicao}
+          onFechar={() => setSessaoComposicao(null)}
+        />
       )}
     </div>
   );
