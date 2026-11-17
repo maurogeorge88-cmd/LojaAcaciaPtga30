@@ -258,7 +258,7 @@ export default function LicencasSituacoesArcoReal({ podeEditar = false, showSucc
   const membrosSelecionaveis = membros.filter(m => m.situacao !== 'falecido');
 
   return (
-    <div className="p-6" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="p-6" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>🗓️ Licenças e Situações</h2>
