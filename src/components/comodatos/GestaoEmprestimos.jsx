@@ -6,6 +6,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [emprestimos, setEmprestimos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [beneficiarios, setBeneficiarios] = useState([]);
+  const [responsaveisPorBen, setResponsaveisPorBen] = useState({}); // beneficiario_id -> [responsáveis]
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
@@ -53,7 +54,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .from('comodatos')
         .select(`
           *,
-          beneficiarios (id, nome, cpf),
+          beneficiarios (id, nome, cpf, telefone, celular),
           irmao_responsavel:irmao_responsavel_id (id, nome),
           itens:comodato_itens (
             id,
@@ -72,6 +73,17 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       if (empError) throw empError;
       const dados = empData || [];
       setEmprestimos(dados);
+
+      // Responsáveis (contato) — agrupados por beneficiário
+      const { data: respData } = await supabase
+        .from('responsaveis')
+        .select('id, beneficiario_id, nome, parentesco, telefone, celular');
+      const mapaResp = {};
+      (respData || []).forEach(r => {
+        if (!mapaResp[r.beneficiario_id]) mapaResp[r.beneficiario_id] = [];
+        mapaResp[r.beneficiario_id].push(r);
+      });
+      setResponsaveisPorBen(mapaResp);
 
       // Carregar irmãos para o select de responsável
       const { data: irmaosData } = await supabase
@@ -1290,6 +1302,48 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     return <div className="text-center py-8">Carregando...</div>;
   }
 
+  // ── Contato (telefones) ─────────────────────────────────────────────────────
+  const fmtTelefone = (t) => {
+    const d = String(t || '').replace(/\D/g, '');
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return String(t || '').trim();
+  };
+  const telefonesDe = (o) => [...new Set([o?.celular, o?.telefone].map(t => String(t || '').trim()).filter(Boolean))];
+  const LinksTel = ({ tels }) => (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '0.15rem 0.6rem' }}>
+      {tels.map(t => (
+        <a key={t} href={`tel:${String(t).replace(/\D/g, '')}`}
+          style={{ color: 'var(--color-text)', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          {fmtTelefone(t)}
+        </a>
+      ))}
+    </span>
+  );
+  const fmtDataBR = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—');
+
+  // ── Indicadores ──────────────────────────────────────────────────────────────
+  const anoKpi = typeof filtroAno === 'number' ? filtroAno : new Date().getFullYear();
+  const kpi = {
+    ativos: emprestimos.filter(e => e.status === 'ativo').length,
+    vencidos: emprestimos.filter(isVencido).length,
+    emprestados: emprestimos
+      .filter(e => e.status === 'ativo')
+      .reduce((a, e) => a + (e.itens || []).filter(i => i.status === 'emprestado').length, 0),
+    devolvidosAno: emprestimos.reduce((a, e) => a + (e.itens || []).filter(i =>
+      i.status === 'devolvido' && i.data_devolucao_real && new Date(i.data_devolucao_real).getFullYear() === anoKpi
+    ).length, 0),
+  };
+  const cardKpi = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.85rem 1.1rem' };
+  const KpiEmp = ({ titulo, valor, sub, cor }) => (
+    <div style={{ ...cardKpi, borderTop: `4px solid ${cor}` }}>
+      <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{titulo}</div>
+      <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.15, marginTop: '0.15rem' }}>{valor}</div>
+      <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{sub}</div>
+    </div>
+  );
+  const rotuloCampo = { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' };
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
@@ -1352,6 +1406,14 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         </div>
       </div>
 
+      {/* INDICADORES */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
+        <KpiEmp titulo="Empréstimos ativos" valor={kpi.ativos} cor="var(--color-accent)" sub="em andamento" />
+        <KpiEmp titulo="Vencidos" valor={kpi.vencidos} cor={kpi.vencidos > 0 ? '#ef4444' : '#10b981'} sub={kpi.vencidos > 0 ? 'prazo de devolução expirado' : 'nenhum em atraso'} />
+        <KpiEmp titulo="Equipamentos emprestados" valor={kpi.emprestados} cor="#f59e0b" sub="itens fora da loja agora" />
+        <KpiEmp titulo={`Devolvidos em ${anoKpi}`} valor={kpi.devolvidosAno} cor="#10b981" sub="equipamentos devolvidos" />
+      </div>
+
       {/* FILTROS */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
 
@@ -1394,167 +1456,173 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         {emprestimosFiltrados.map(emp => {
           const vencido = isVencido(emp);
           const dias = vencido ? diasVencido(emp) : 0;
+          const ativo = emp.status === 'ativo';
+
+          const pill = vencido
+            ? { txt: `⚠️ Vencido há ${dias} dia${dias !== 1 ? 's' : ''}`, bg: 'rgba(239,68,68,0.15)', cor: '#ef4444', borda: 'rgba(239,68,68,0.4)' }
+            : ativo
+              ? { txt: 'Ativo', bg: 'var(--color-success-bg)', cor: 'var(--color-success)', borda: 'transparent' }
+              : { txt: (emp.status || '').toUpperCase(), bg: 'var(--color-surface-2)', cor: 'var(--color-text-secondary)', borda: 'var(--color-border)' };
+
+          // Contato: só o que existir no cadastro (beneficiário em cima, responsável(is) embaixo)
+          const telsBen = telefonesDe(emp.beneficiarios);
+          const respsComTel = (responsaveisPorBen[emp.beneficiarios?.id] || [])
+            .map(r => ({ ...r, tels: telefonesDe(r) }))
+            .filter(r => r.tels.length > 0);
+          const temContato = telsBen.length > 0 || respsComTel.length > 0;
+
           return (
           <div key={emp.id} className="card" style={{
+            display: 'flex', flexDirection: 'column', gap: '0.8rem',
+            padding: '1rem 1.1rem',
             borderLeft: `4px solid ${vencido ? '#ef4444' : 'var(--color-accent)'}`,
-            outline: vencido ? '2px solid #ef4444' : 'none',
-            outlineOffset: '0px',
-            position: 'relative'
+            backgroundImage: vencido ? 'linear-gradient(rgba(239,68,68,0.06), rgba(239,68,68,0.06))' : 'none',
           }}>
-            {/* Banner de vencido */}
-            {vencido && (
-              <div style={{
-                position: 'absolute', top: 0, right: 0,
-                background: '#ef4444', color: '#fff',
-                fontSize: '0.65rem', fontWeight: '800',
-                padding: '0.2rem 0.6rem',
-                borderRadius: '0 var(--radius-lg) 0 0.4rem',
-                letterSpacing: '0.05em'
-              }}>
-                ⚠️ VENCIDO
+            {/* Cabeçalho: nome + situação */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.25, minWidth: 0, wordBreak: 'break-word' }}>
+                {emp.beneficiarios?.nome}
+              </h3>
+              <span style={{ flexShrink: 0, padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, background: pill.bg, color: pill.cor, border: `1px solid ${pill.borda}`, whiteSpace: 'nowrap' }}>
+                {pill.txt}
+              </span>
+            </div>
+
+            {/* Dados */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem 0.75rem' }}>
+              <div>
+                <div style={rotuloCampo}>CPF</div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{emp.beneficiarios?.cpf || '—'}</div>
               </div>
-            )}
-            <div className="flex flex-col gap-2 mb-3">
-              <div className="flex justify-between items-start" style={{ paddingRight: vencido ? '5rem' : 0 }}>
-                <h3 className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
-                  {emp.beneficiarios?.nome}
-                </h3>
-                <span style={{
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  background: emp.status === 'ativo' ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
-                  color: emp.status === 'ativo' ? 'var(--color-success)' : 'var(--color-text-secondary)'
-                }}>
-                  {emp.status?.toUpperCase()}
-                </span>
+              <div>
+                <div style={rotuloCampo}>Empréstimo</div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{fmtDataBR(emp.data_emprestimo)}</div>
               </div>
-              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                CPF: {emp.beneficiarios?.cpf}
-              </p>
-              {emp.irmao_responsavel?.nome && (
-                <p className="text-xs" style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  👤 Indicado pelo Ir.'.: {emp.irmao_responsavel.nome}
-                </p>
-              )}
-              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                Empréstimo: {new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR')}
-              </p>
               {emp.data_devolucao_prevista && (
-                <p className="text-xs" style={{ color: vencido ? '#ef4444' : 'var(--color-text-secondary)', fontWeight: vencido ? '700' : '400' }}>
-                  {vencido
-                    ? `⏰ Venceu há ${dias} dia${dias !== 1 ? 's' : ''} — ${new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}`
-                    : `Devolução prevista: ${new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}`}
-                </p>
+                <div>
+                  <div style={rotuloCampo}>Devolução prevista</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: vencido ? 800 : 600, color: vencido ? '#ef4444' : 'var(--color-text)' }}>
+                    {fmtDataBR(emp.data_devolucao_prevista)}
+                  </div>
+                </div>
               )}
-              {permissoes?.pode_editar_comodatos && (
-                <div className="flex gap-1 mt-2">
-                  <button
-                    onClick={() => gerarTermo(emp)}
-                    style={{
-                      flex: 1,
-                      padding: '0.25rem 0.5rem',
-                      background: 'var(--color-accent)',
-                      color: 'white',
-                      fontSize: '0.75rem',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer'
-                    }}
-                    title="Gerar Termo de Comodato"
-                  >
-                    📄 Termo
-                  </button>
-                  <button
-                    onClick={() => abrirEdicao(emp)}
-                    style={{
-                      flex: 1,
-                      padding: '0.25rem 0.5rem',
-                      background: 'var(--color-info)',
-                      color: 'white',
-                      fontSize: '0.75rem',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer'
-                    }}
-                    title="Editar empréstimo"
-                  >
-                    ✏️ Editar
-                  </button>
-                  <button
-                    onClick={() => excluirEmprestimo(emp)}
-                    style={{
-                      flex: 1,
-                      padding: '0.25rem 0.5rem',
-                      background: 'var(--color-danger)',
-                      color: 'white',
-                      fontSize: '0.75rem',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer'
-                    }}
-                    title="Excluir empréstimo"
-                  >
-                    🗑️ Excluir
-                  </button>
+              {emp.irmao_responsavel?.nome && (
+                <div>
+                  <div style={rotuloCampo}>Indicado pelo Ir.'.</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{emp.irmao_responsavel.nome}</div>
                 </div>
               )}
             </div>
 
-            {/* ITENS DO EMPRÉSTIMO */}
-            <div className="space-y-1">
-              <p className="font-semibold text-xs mb-1" style={{ color: 'var(--color-text)' }}>
-                Equipamentos:
-              </p>
-              {emp.itens?.map(item => (
-                <div
-                  key={item.id}
-                  style={{
-                    padding: '0.5rem',
-                    borderRadius: '0.25rem',
-                    background: item.status === 'devolvido' ? 'var(--color-surface-2)' : 'var(--color-success-bg)'
-                  }}
-                >
-                  <div className="flex justify-between items-start gap-2 mb-1">
-                    <p className="text-xs font-medium flex-1" style={{ color: 'var(--color-text)' }}>
-                      {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
-                    </p>
-                    <span style={{
-                      padding: '0.125rem 0.5rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      background: item.status === 'emprestado' ? 'var(--color-warning-bg)' : 'var(--color-surface-2)',
-                      color: item.status === 'emprestado' ? 'var(--color-warning)' : 'var(--color-text-secondary)'
-                    }}>
-                      {item.status === 'emprestado' ? '🔄' : '✅'}
-                    </span>
-                  </div>
-                  {item.status === 'devolvido' && item.data_devolucao_real && (
-                    <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                      Devolvido: {new Date(item.data_devolucao_real).toLocaleDateString()}
-                    </p>
-                  )}
-                  {item.status === 'emprestado' && permissoes?.pode_editar_comodatos && (
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem' }}>
-                      <button
-                        onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                        style={{ flex: 1, padding: '0.25rem 0.5rem', background: 'var(--color-info)', color: 'white', fontSize: '0.75rem', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}
-                      >
-                        Devolver
-                      </button>
-                      <button
-                        onClick={() => abrirSubstituicao(emp, item)}
-                        style={{ flex: 1, padding: '0.25rem 0.5rem', background: '#f59e0b', color: 'white', fontSize: '0.75rem', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}
-                        title="Substituir equipamento"
-                      >
-                        🔁 Substituir
-                      </button>
+            {/* Contato */}
+            <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.55rem 0.7rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={rotuloCampo}>Contato</div>
+              {temContato ? (
+                <>
+                  {telsBen.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                      <span title="Beneficiário">📞</span>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Beneficiário:</span>
+                      <LinksTel tels={telsBen} />
                     </div>
                   )}
-                </div>
-              ))}
+                  {respsComTel.map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                      <span title="Responsável">👤</span>
+                      <span style={{ color: 'var(--color-text-muted)' }}>
+                        {r.nome}{r.parentesco ? ` (${r.parentesco})` : ''}:
+                      </span>
+                      <LinksTel tels={r.tels} />
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Sem contato cadastrado</span>
+              )}
+            </div>
+
+            {/* Ações do empréstimo */}
+            {permissoes?.pode_editar_comodatos && (
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => gerarTermo(emp)}
+                  style={{ flex: 1, padding: '0.45rem 0.6rem', background: 'var(--color-accent)', color: '#fff', fontSize: '0.78rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Gerar Termo de Comodato"
+                >
+                  📄 Termo
+                </button>
+                <button
+                  onClick={() => abrirEdicao(emp)}
+                  style={{ flex: 1, padding: '0.45rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: '0.78rem', fontWeight: 700, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Editar empréstimo"
+                >
+                  ✏️ Editar
+                </button>
+                <span style={{ width: '1px', height: '1.3rem', background: 'var(--color-border)' }} />
+                <button
+                  onClick={() => excluirEmprestimo(emp)}
+                  style={{ padding: '0.45rem 0.65rem', background: 'transparent', color: '#ef4444', fontSize: '0.78rem', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Excluir empréstimo"
+                  aria-label="Excluir empréstimo"
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
+
+            {/* Equipamentos */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={rotuloCampo}>Equipamentos</div>
+              {emp.itens?.map(item => {
+                const emprestado = item.status === 'emprestado';
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      padding: '0.55rem 0.7rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      background: emprestado ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', minWidth: 0 }}>
+                        {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
+                      </span>
+                      <span style={{
+                        flexShrink: 0, padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.66rem', fontWeight: 800, whiteSpace: 'nowrap',
+                        background: emprestado ? 'var(--color-warning-bg)' : 'var(--color-surface)',
+                        color: emprestado ? 'var(--color-warning)' : 'var(--color-text-secondary)',
+                        border: '1px solid var(--color-border)',
+                      }}>
+                        {emprestado ? 'Emprestado' : '✅ Devolvido'}
+                      </span>
+                    </div>
+                    {!emprestado && item.data_devolucao_real && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', marginTop: '0.2rem' }}>
+                        Devolvido em {new Date(item.data_devolucao_real).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                    {emprestado && permissoes?.pode_editar_comodatos && (
+                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
+                        <button
+                          onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
+                          style={{ flex: 1, padding: '0.35rem 0.5rem', background: 'var(--color-info)', color: '#fff', fontSize: '0.75rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                        >
+                          Devolver
+                        </button>
+                        <button
+                          onClick={() => abrirSubstituicao(emp, item)}
+                          style={{ flex: 1, padding: '0.35rem 0.5rem', background: 'transparent', color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.6)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                          title="Substituir equipamento"
+                        >
+                          🔁 Substituir
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
