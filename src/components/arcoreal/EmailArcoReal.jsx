@@ -227,7 +227,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
     { id: 'resumo',       emoji: '📋', label: 'Resumo aos Dirigentes',   desc: 'Tabela de pendentes para Tesoureiro e Principais', visivel: podeEnviarEmail },
     { id: 'felicitacoes', emoji: '🎂', label: 'Felicitações',           desc: 'Aniversário dos companheiros do quadro (sem familiares)', visivel: podeEventos },
     { id: 'eventos',      emoji: '📅', label: 'Lembrete de Evento',      desc: 'Aviso de evento do Cronograma', visivel: podeEventos },
-    { id: 'automatico',   emoji: '⏰', label: 'Automático',              desc: 'Lembrete de eventos todo dia às 08:00', visivel: podeEventos },
+    { id: 'automatico',   emoji: '⏰', label: 'Automático',              desc: 'Eventos e felicitações, todo dia às 08:00', visivel: podeEventos },
   ];
 
   return (
@@ -376,7 +376,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
         <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', marginBottom: '1.25rem' }}>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 1rem' }}>
             Envia a mensagem de felicitações de aniversário <strong>somente aos companheiros do quadro</strong> — familiares não recebem.
-            Quem já foi felicitado este ano vem desmarcado.
+            Quem já foi felicitado este ano vem desmarcado. O 1º Principal e o Administrador recebem um informativo do envio.
           </p>
           <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.9rem', flexWrap: 'wrap' }}>
             {PERIODOS_FELIC.map(([k, l]) => (
