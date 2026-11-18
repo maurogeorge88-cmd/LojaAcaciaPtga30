@@ -106,3 +106,32 @@ export const salvarFamiliaresArcoReal = async (membroId, fam) => {
     if (error) throw error;
   }
 };
+
+// Copia da Loja os familiares dos membros vinculados que ainda não têm
+// nenhum familiar no Arco Real. Não sobrescreve quem já tem cadastro.
+export const sincronizarFamiliaresDaLoja = async (membros) => {
+  const vinculados = (membros || []).filter(m => m.irmao_vinculado_id);
+  if (!vinculados.length) return { copiados: 0, ignorados: 0, semTabela: false };
+  const ids = vinculados.map(m => m.id);
+  const [e, p, f] = await Promise.all([
+    supabase.from('arco_real_esposas').select('membro_id').in('membro_id', ids),
+    supabase.from('arco_real_pais').select('membro_id').in('membro_id', ids),
+    supabase.from('arco_real_filhos').select('membro_id').in('membro_id', ids),
+  ]);
+  const erro = e.error || p.error || f.error;
+  if (erro) {
+    if (tabelaAusente(erro)) return { copiados: 0, ignorados: 0, semTabela: true };
+    throw erro;
+  }
+  const jaTem = new Set([...(e.data || []), ...(p.data || []), ...(f.data || [])].map(r => String(r.membro_id)));
+  let copiados = 0, ignorados = 0;
+  for (const m of vinculados) {
+    if (jaTem.has(String(m.id))) { ignorados++; continue; }
+    const fam = await carregarFamiliaresDaLoja(m.irmao_vinculado_id);
+    const vazia = !fam.temConjuge && !fam.filhos.length && !fam.pais.nome_pai && !fam.pais.nome_mae;
+    if (vazia) { ignorados++; continue; }
+    await salvarFamiliaresArcoReal(m.id, fam);
+    copiados++;
+  }
+  return { copiados, ignorados, semTabela: false };
+};
