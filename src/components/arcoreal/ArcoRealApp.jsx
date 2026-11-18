@@ -17,6 +17,7 @@ import VisualizarMembrosArcoReal from './VisualizarMembrosArcoReal';
 import QuadroMembrosArcoReal from './QuadroMembrosArcoReal';
 import LicencasSituacoesArcoReal from './LicencasSituacoesArcoReal';
 import DadosArcoReal from './DadosArcoReal';
+import ArquivosArcoReal from './ArquivosArcoReal';
 import CronogramaArcoReal from './CronogramaArcoReal';
 import ErroBoundaryArcoReal from './ErroBoundaryArcoReal';
 
@@ -40,6 +41,7 @@ const ITENS_MENU = [
   { id: 'cronograma', label: 'Cronograma', icone: '📅', pronto: true },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
   { id: 'dados-arco-real', label: 'Dados do Arco Real', icone: '🔺', pronto: true },
+  { id: 'arquivos', label: 'Arquivos', icone: '📁', pronto: true },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
 ];
 
@@ -62,6 +64,7 @@ const NOMES_TELAS_ARCO_REAL = {
   'estatisticas': '📈 Arco Real / Estatísticas',
   'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
   'dados-arco-real': '🔺 Arco Real / Dados do Arco Real',
+  'arquivos': '📁 Arco Real / Arquivos',
 };
 
 export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError, successMessage, errorMessage }) {
@@ -306,6 +309,9 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
         {pagina === 'dados-arco-real' && (
           <DadosArcoReal podeEditar={editar('dados_arco', !!permissoes?.canEditMembers)} showSuccess={showSuccess} showError={showError} />
         )}
+        {pagina === 'arquivos' && (
+          <ArquivosArcoReal podeEditar={editar('arquivos', !!permissoes?.canEditMembers)} userData={userData} showSuccess={showSuccess} showError={showError} />
+        )}
         {pagina === 'financeiro' && (
           <ArcoReal
             isOpen={true}
@@ -368,7 +374,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           <CorpoAdministrativoArcoReal permissoes={permCorpo} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'estatisticas' && (
-          <EstatisticasArcoReal />
+          <EstatisticasArcoReal podeVerFinanceiro={nivel('financeiro') !== 'nenhum' || (!pers && !!permissoes?.canViewFinancial)} />
         )}
         </>)}
         </ErroBoundaryArcoReal>
@@ -378,7 +384,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             <p>Você não tem permissão para acessar esta tela.</p>
           </div>
         )}
-        {pagina !== 'dashboard' && pagina !== 'cronograma' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && !emPresenca && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
+        {pagina !== 'dashboard' && pagina !== 'cronograma' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'arquivos' && pagina !== 'financeiro' && !emPresenca && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
