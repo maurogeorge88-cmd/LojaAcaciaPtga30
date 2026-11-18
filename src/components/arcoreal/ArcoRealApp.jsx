@@ -27,7 +27,7 @@ const ITENS_MENU = [
   { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
-  { id: 'email-financeiro', label: 'Lembrete por E-mail', icone: '✉️', pronto: true, requer: 'financeiro' },
+  { id: 'email-financeiro', label: 'E-mails', icone: '✉️', pronto: true, requer: 'email' },
   { id: 'estatisticas', label: 'Estatísticas', icone: '📈', pronto: true },
   { id: 'cronograma', label: 'Cronograma', icone: '📅', pronto: true },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
@@ -46,7 +46,7 @@ const NOMES_TELAS_ARCO_REAL = {
   'presenca': '📋 Arco Real / Presença',
   'financeiro': '💰 Arco Real / Finanças',
   'inadimplentes': '⚠️ Arco Real / Inadimplentes',
-  'email-financeiro': '✉️ Arco Real / Lembrete por E-mail',
+  'email-financeiro': '✉️ Arco Real / E-mails',
   'estatisticas': '📈 Arco Real / Estatísticas',
   'corpo-admin': '🏛️ Arco Real / Corpo Administrativo',
   'dados-arco-real': '🔺 Arco Real / Dados do Arco Real',
@@ -68,6 +68,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
   const acessoTela = {
     presenca: podeVerPresencaGeral,
     financeiro: podeVerFinanceiro,
+    email: podeVerFinanceiro || !!permissoes?.canEditMembers,
     usuarios: podeGerenciarUsuarios,
   };
 
