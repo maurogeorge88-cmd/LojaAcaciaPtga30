@@ -62,7 +62,7 @@ const buscarPaginado = async (montarQuery) => {
   return todos;
 };
 
-export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modoPagina = false }) {
+export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modoPagina = false, somenteLeitura = false }) {
   const agora = new Date();
   const [lancs, setLancs]       = useState([]);
   const [loading, setLoading]   = useState(false);
@@ -177,6 +177,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   // Sangria: move dinheiro (espécie) do Tronco pro banco — cria um par
   // despesa (saída espécie) + receita (entrada banco), igual à Loja.
   const fazerSangriaTroncoArcoReal = async () => {
+    if (somenteLeitura) { showError('Esta tela está em modo somente leitura.'); return; }
     const valor = parseFloat(valorSangriaTronco);
     if (!valor || valor <= 0) { showError('Informe um valor válido.'); return; }
     if (valor > troncoArcoReal.especie) {
@@ -389,6 +390,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Salvar lançamento manual na tabela própria ─────────────────────────────
   const salvarLancamento = async () => {
+    if (somenteLeitura) { showError('Esta tela está em modo somente leitura.'); return; }
     if (!form.descricao.trim()) { showError('Informe a descrição.'); return; }
     if (!form.valor || parseFloat(form.valor) <= 0) { showError('Informe um valor válido.'); return; }
     if (!form.data_vencimento) { showError('Informe a data.'); return; }
@@ -423,6 +425,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Excluir lançamento ────────────────────────────────────────────────────────
   const excluirLancamento = async (id) => {
+    if (somenteLeitura) { showError('Esta tela está em modo somente leitura.'); return; }
     try {
       const { error } = await supabase.from('arco_real_lancamentos').delete().eq('id', id);
       if (error) throw error;
@@ -543,6 +546,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
   };
 
   const confirmarQuitacao = async () => {
+    if (somenteLeitura) { showError('Esta tela está em modo somente leitura.'); return; }
     if (!quitando) return;
     if (!quitacaoForm.data_pagamento) { showError('Informe a data de pagamento.'); return; }
     setSalvandoQuitacao(true);
@@ -584,6 +588,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
 
   // ── Salvar edição ──────────────────────────────────────────────────────────
   const salvarEdicao = async () => {
+    if (somenteLeitura) { showError('Esta tela está em modo somente leitura.'); return; }
     if (!form.descricao.trim()) { showError('Informe a descrição.'); return; }
     if (!form.valor || parseFloat(form.valor) <= 0) { showError('Informe um valor válido.'); return; }
     if (!form.data_vencimento) { showError('Informe a data.'); return; }
@@ -672,6 +677,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
         <span style={{ fontSize:'0.65rem',color:l.status==='pago'?'#16a34a':'#d97706',fontWeight:'600',whiteSpace:'nowrap' }}>
           {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
         </span>
+        {!somenteLeitura && (<>
         <button onClick={() => abrirEditar(l)} title="Editar"
           style={{ padding:'0.15rem 0.35rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
           ✏️
@@ -686,6 +692,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
           style={{ padding:'0.15rem 0.35rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.65rem',fontWeight:700,flexShrink:0 }}>
           🗑️
         </button>
+        </>)}
       </div>
     </div>
   );
@@ -1163,7 +1170,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                         <p style={{ fontSize:'0.85rem',fontWeight:'800',marginTop:'0.2rem',color: troncoArcoReal.especie>=0?'#10b981':'#ef4444' }}>{fmtR(troncoArcoReal.especie)}</p>
                       </div>
                     </div>
-                    {troncoArcoReal.especie > 0 && (
+                    {troncoArcoReal.especie > 0 && !somenteLeitura && (
                       <button onClick={() => setModalSangriaTroncoAberto(true)}
                         style={{ width:'100%',padding:'0.35rem',background:'#f59e0b',color:'#111827',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.68rem',cursor:'pointer' }}>
                         🔥 Fazer Sangria
@@ -1225,7 +1232,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                   </div>
                   <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem',position:'relative' }}>
                     {/* Menu Registros */}
-                    <div style={{ position:'relative' }}>
+                    {!somenteLeitura && (<div style={{ position:'relative' }}>
                       <button onClick={() => { setMenuRegistrosAberto(v=>!v); setMenuRelatoriosAberto(false); }}
                         style={{ padding:'0.45rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background: menuRegistrosAberto ? '#16a34a' : 'var(--color-surface)',color: menuRegistrosAberto ? '#fff' : 'var(--color-text)',display:'flex',alignItems:'center',gap:'0.35rem' }}>
                         📋 Registros <span style={{ fontSize:'0.65rem' }}>{menuRegistrosAberto ? '▲' : '▼'}</span>
@@ -1246,7 +1253,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError, modo
                           </button>
                         </div>
                       )}
-                    </div>
+                    </div>)}
 
                     {/* Menu Relatórios */}
                     <div style={{ position:'relative' }}>
