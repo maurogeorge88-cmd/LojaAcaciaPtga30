@@ -51,6 +51,7 @@ import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Sindicancia from './components/sindicancia/Sindicancia';
+import LivroNegro from './components/irmaos/LivroNegro';
 import Comodatos from './components/comodatos/Comodatos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
@@ -219,6 +220,7 @@ function App() {
     'dados-loja': '🏛️ Dados da Loja',
     'sobre': 'ℹ️ Sobre o Sistema',
     'sindicancia': '🔍 Sindicância',
+    'livro-negro': '⬛ Livro Negro',
     'estatisticas': '📈 Estatísticas',
     'lojas-visitantes': '🏛️ Lojas Maçônicas',
     'visao-geral': '🗓️ Visão Geral',
@@ -1877,6 +1879,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                   {currentPage === 'sindicancia' && '🔍 Sindicância'}
+                  {currentPage === 'livro-negro' && '⬛ Livro Negro'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -2134,6 +2137,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             grauUsuario={grauUsuarioLogado}
             userData={userData}
           />
+        )}
+
+        {/* LIVRO NEGRO */}
+        {currentPage === 'livro-negro' && (
+          <LivroNegro userData={userData} showSuccess={showSuccess} showError={showError} />
         )}
 
         {/* CORPO ADMINISTRATIVO */}
