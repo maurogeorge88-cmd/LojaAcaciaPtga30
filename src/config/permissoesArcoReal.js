@@ -27,6 +27,7 @@ export const TELAS_ARCO_REAL = [
   { id: 'cronograma',      label: 'Cronograma',                icone: '📅', grupo: 'Geral',      niveis: ['nenhum', 'ver', 'editar'] },
   { id: 'corpo_admin',     label: 'Corpo Administrativo',      icone: '🏛️', grupo: 'Geral',      niveis: ['nenhum', 'ver', 'editar'] },
   { id: 'dados_arco',      label: 'Dados do Arco Real',        icone: '🔺', grupo: 'Geral',      niveis: ['nenhum', 'ver', 'editar'] },
+  { id: 'arquivos',        label: 'Arquivos',                  icone: '📁', grupo: 'Geral',      niveis: ['nenhum', 'ver', 'editar'], ajuda: 'Ver = abrir e baixar. Editar = enviar, renomear, mover e excluir.' },
   { id: 'controle_acesso', label: 'Controle de Acesso',        icone: '🔐', grupo: 'Sistema',    niveis: ['nenhum', 'editar'] },
 ];
 
@@ -46,6 +47,7 @@ export const TELA_DA_PAGINA = {
   'cronograma': 'cronograma',
   'corpo-admin': 'corpo_admin',
   'dados-arco-real': 'dados_arco',
+  'arquivos': 'arquivos',
   'controle-acesso': 'controle_acesso',
 };
 
@@ -84,6 +86,7 @@ export const derivarAcessoArcoReal = (p = {}) => {
     cronograma: (edM || p.canEdit) ? 'editar' : 'ver',
     corpo_admin: edM ? 'editar' : 'ver',
     dados_arco: edM ? 'editar' : 'ver',
+    ...(edM ? { arquivos: 'editar' } : {}),
     ...(p.canManageUsers ? { controle_acesso: 'editar' } : {}),
   };
 };
@@ -107,6 +110,6 @@ export const podeNivel = (mapa, id, minimo = 'ver') => ORDEM[nivelNaTela(mapa, i
 // Modelos prontos para preencher a grade
 export const MODELOS_ARCO_REAL = {
   simples: { label: '👤 Acesso simples', mapa: { dashboard: 'ver', membros: 'ver', quadro: 'ver', licencas: 'ver', estatisticas: 'ver', cronograma: 'ver', corpo_admin: 'ver', dados_arco: 'ver' } },
-  consulta: { label: '👁️ Somente consulta', mapa: { dashboard: 'ver', membros: 'ver', quadro: 'ver', licencas: 'ver', presenca: 'ver', financeiro: 'ver', estatisticas: 'ver', cronograma: 'ver', corpo_admin: 'ver', dados_arco: 'ver' } },
-  gestao: { label: '🔺 Gestão completa', mapa: { dashboard: 'ver', membros: 'editar', quadro: 'ver', licencas: 'editar', presenca: 'editar', financeiro: 'editar', inadimplentes: 'editar', email: 'editar', estatisticas: 'ver', cronograma: 'editar', corpo_admin: 'editar', dados_arco: 'editar' } },
+  consulta: { label: '👁️ Somente consulta', mapa: { dashboard: 'ver', membros: 'ver', quadro: 'ver', licencas: 'ver', presenca: 'ver', financeiro: 'ver', estatisticas: 'ver', cronograma: 'ver', corpo_admin: 'ver', dados_arco: 'ver', arquivos: 'ver' } },
+  gestao: { label: '🔺 Gestão completa', mapa: { dashboard: 'ver', membros: 'editar', quadro: 'ver', licencas: 'editar', presenca: 'editar', financeiro: 'editar', inadimplentes: 'editar', email: 'editar', estatisticas: 'ver', cronograma: 'editar', corpo_admin: 'editar', dados_arco: 'editar', arquivos: 'editar' } },
 };
