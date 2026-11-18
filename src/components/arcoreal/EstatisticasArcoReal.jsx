@@ -36,7 +36,8 @@ const Painel = ({ titulo, children }) => (
   </div>
 );
 
-export default function EstatisticasArcoReal() {
+// podeVerFinanceiro: sem Finanças ≥ Ver, os números financeiros nem são consultados nem exibidos
+export default function EstatisticasArcoReal({ podeVerFinanceiro = true }) {
   const [anoSel, setAnoSel] = useState(anoAtual);
   const [anosDisp, setAnosDisp] = useState([anoAtual]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +66,8 @@ export default function EstatisticasArcoReal() {
       const [{ data: mb }, { data: ss }, { data: lc }, { data: cat }] = await Promise.all([
         supabase.from('arco_real_membros').select('id, situacao, ativo'),
         supabase.from('arco_real_sessoes').select('id, data_sessao, classificacao').gte('data_sessao', inicioAno).lte('data_sessao', fimAno),
-        supabase.from('arco_real_lancamentos').select('tipo, valor, status, data_pagamento, tipo_pagamento, categoria_id, categoria_manual:categoria_id(nome)').eq('status', 'pago').gte('data_pagamento', inicioAno).lte('data_pagamento', fimAno),
-        supabase.from('categorias_financeiras').select('id, nome'),
+        !podeVerFinanceiro ? Promise.resolve({ data: [] }) : supabase.from('arco_real_lancamentos').select('tipo, valor, status, data_pagamento, tipo_pagamento, categoria_id, categoria_manual:categoria_id(nome)').eq('status', 'pago').gte('data_pagamento', inicioAno).lte('data_pagamento', fimAno),
+        !podeVerFinanceiro ? Promise.resolve({ data: [] }) : supabase.from('categorias_financeiras').select('id, nome'),
       ]);
 
       setMembros(mb || []);
@@ -83,7 +84,7 @@ export default function EstatisticasArcoReal() {
       setPresencas(pres);
 
       // Saldo bancário atual — histórico completo, excluindo dinheiro e compensação
-      const { data: todosLancs } = await supabase.from('arco_real_lancamentos').select('tipo, valor, tipo_pagamento').eq('status', 'pago');
+      const { data: todosLancs } = !podeVerFinanceiro ? { data: [] } : await supabase.from('arco_real_lancamentos').select('tipo, valor, tipo_pagamento').eq('status', 'pago');
       const saldoBanco = (todosLancs || [])
         .filter(l => l.tipo_pagamento !== 'compensacao' && l.tipo_pagamento !== 'dinheiro')
         .reduce((s, l) => s + (l.tipo === 'receita' ? 1 : -1) * Number(l.valor || 0), 0);
@@ -158,7 +159,7 @@ export default function EstatisticasArcoReal() {
         <Card label="Membros Ativos" valor={stats.ativos} sub={`${stats.regulares} reg. · ${stats.licenciados} lic.`} cor="var(--color-accent)" icon="👥" />
         <Card label="Taxa de Presença" valor={fmtP(stats.taxaGeralAno)} sub={`Média do ano ${anoSel}`} cor={stats.taxaGeralAno >= 70 ? VERDE : stats.taxaGeralAno >= 50 ? LARANJA : VERMELHO} icon="✅" />
         <Card label="Sessões Realizadas" valor={sessoes.length} sub={`em ${anoSel}`} cor="var(--color-accent)" icon="🏛️" />
-        <Card label="Saldo Bancário" valor={saldoBancarioAtual === null ? '...' : fmtR(saldoBancarioAtual)} sub="PIX, Transf., Cartão" cor="#0ea5e9" icon="🏦" />
+        {podeVerFinanceiro && <Card label="Saldo Bancário" valor={saldoBancarioAtual === null ? '...' : fmtR(saldoBancarioAtual)} sub="PIX, Transf., Cartão" cor="#0ea5e9" icon="🏦" />}
       </div>
 
       {/* Presença mensal */}
@@ -176,6 +177,7 @@ export default function EstatisticasArcoReal() {
         ) : <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '1.5rem' }}>Sem sessões registradas em {anoSel}.</p>}
       </Painel>
 
+      {podeVerFinanceiro && (<>
       {/* Financeiro */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.6rem' }}>
         <Card compacto label={`Receitas ${anoSel}`} valor={fmtR(stats.totalReceita)} sub="Entradas pagas" cor={VERDE} icon="📈" />
@@ -213,6 +215,7 @@ export default function EstatisticasArcoReal() {
           </ResponsiveContainer>
         ) : <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '1.5rem' }}>Sem receitas categorizadas em {anoSel}.</p>}
       </Painel>
+      </>)}
     </div>
   );
 }
