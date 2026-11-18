@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { pode, ehAdminTotal, ehTesoureiro } from '../../config/permissoes';
+import { pode, ehAdminTotal, ehTesoureiro, ehLiderancaLoja } from '../../config/permissoes';
 
 // ════════════════════════════════════════════════════════════════════════
 // Menu do portal dos irmãos — gerado pelas permissões por módulo.
@@ -87,6 +87,7 @@ export default function MenuLoja({
     { tipo: 'item', pagina: 'corpo-admin', icone: '👔', label: 'Administração', mostrar: ver('corpo_admin') },
     { tipo: 'item', pagina: 'eleicao-posse', icone: '🗳️', label: 'Eleição e Posse', mostrar: ver('eleicao_posse') },
     { tipo: 'item', pagina: 'sindicancia', icone: '🔍', label: 'Sindicância', mostrar: editar('sindicancia') },
+    { tipo: 'item', pagina: 'livro-negro', icone: '⬛', label: 'Livro Negro', mostrar: ehLiderancaLoja(userData) },
 
     { tipo: 'grupo', chave: 'sistema', icone: '⚙️', label: 'Gestão do Sistema', itens: [
       { pagina: 'gestao-sistema-usuarios', icone: '👤', label: 'Gerenciar Usuários', mostrar: editar('usuarios') },
