@@ -5,11 +5,6 @@ import CalendarioAnualArcoReal from './CalendarioAnualArcoReal';
 import { carregarLogoArcoRealBase64 } from '../../utils/arcoRealMembros';
 import { TIPOS_EVENTO, corDoEvento, rotuloDoTipo } from './tiposEventoArcoReal';
 
-// Imagens decorativas do quadro de evento — bucket público "cronograma" no Supabase Storage
-const IMG_SOL = supabase.storage.from('cronograma').getPublicUrl('sol.png').data.publicUrl;
-const IMG_LUA = supabase.storage.from('cronograma').getPublicUrl('lua.png').data.publicUrl;
-const IMG_COLUNA_B = supabase.storage.from('cronograma').getPublicUrl('coluna-b.png').data.publicUrl;
-const IMG_COLUNA_J = supabase.storage.from('cronograma').getPublicUrl('coluna-j.png').data.publicUrl;
 
 // Funções de geração de PDF (inline para evitar problemas de import)
 const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null) => {
@@ -1330,19 +1325,10 @@ export default function CronogramaArcoReal({ showSuccess, showError, userEmail, 
                 boxShadow:'0 0 0 1px rgba(201,168,76,0.3), var(--shadow-xl)'
               }}
             >
-            {/* Sol e Lua no topo */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'1rem 1rem 0'}}>
-              <img src={IMG_SOL} alt="" style={{width:'4.5rem',height:'4.5rem',objectFit:'contain',opacity:0.9}} />
-              <img src={IMG_LUA} alt="" style={{width:'4rem',height:'4rem',objectFit:'contain',opacity:0.9}} />
-            </div>
+            <div style={{height:'1rem'}} />
 
             {/* Corpo com colunas nas laterais */}
-            <div style={{display:'grid',gridTemplateColumns:'72px 1fr 72px',gap:'0.5rem',padding:'0 0.25rem 1rem',alignItems:'stretch'}}>
-              {/* Coluna B */}
-              <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-                <img src={IMG_COLUNA_B} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
-              </div>
-
+            <div style={{display:'grid',gridTemplateColumns:'1fr',gap:'0.5rem',padding:'0 1rem 1rem',alignItems:'stretch'}}>
               {/* Pergaminho central */}
               <div style={{background:'#f5f0e1',borderRadius:'0.5rem',border:'2px solid #c9a84c',padding:'1.25rem 1rem',boxShadow:'0 4px 12px rgba(0,0,0,0.35)'}}>
                 {/* Data/hora */}
@@ -1408,10 +1394,6 @@ export default function CronogramaArcoReal({ showSuccess, showError, userEmail, 
                 )}
               </div>
 
-              {/* Coluna J */}
-              <div style={{display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-                <img src={IMG_COLUNA_J} alt="" style={{width:'100%',objectFit:'contain',opacity:0.85}} />
-              </div>
             </div>
 
             {/* Status (mantido do modal original) — feriado não tem situação */}
