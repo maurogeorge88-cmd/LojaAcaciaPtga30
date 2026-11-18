@@ -13,6 +13,7 @@ import VisualizarMembrosArcoReal from './VisualizarMembrosArcoReal';
 import QuadroMembrosArcoReal from './QuadroMembrosArcoReal';
 import LicencasSituacoesArcoReal from './LicencasSituacoesArcoReal';
 import DadosArcoReal from './DadosArcoReal';
+import ErroBoundaryArcoReal from './ErroBoundaryArcoReal';
 
 // Logo do Arco Real — bucket público "arcoreal" no Supabase Storage
 const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png').data.publicUrl;
@@ -221,6 +222,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             </div>
           </div>
         )}
+        <ErroBoundaryArcoReal chave={pagina}>
         {pagina === 'dashboard' && <DashboardArcoReal />}
         {pagina === 'visualizar-membros' && (
           <VisualizarMembrosArcoReal permissoes={permissoes} meuMembroId={meuMembroId} showSuccess={showSuccess} showError={showError} />
@@ -274,6 +276,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
         {pagina === 'estatisticas' && (
           <EstatisticasArcoReal />
         )}
+        </ErroBoundaryArcoReal>
         {(pagina === 'financeiro' && !podeVerFinanceiro) ||
          (pagina === 'presenca' && !podeVerPresencaGeral) ||
          (pagina === 'controle-acesso' && !podeGerenciarUsuarios) ? (
