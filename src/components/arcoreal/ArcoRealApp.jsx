@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { acessoArcoReal, TELA_DA_PAGINA } from '../../config/permissoesArcoReal';
 import { supabase } from '../../supabaseClient';
 import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
@@ -70,23 +71,36 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
   const [grupoPresencaAberto, setGrupoPresencaAberto] = useState(false);
   const [menuAberto, setMenuAberto] = useState(true); // sidebar aberta/recolhida (desktop) ou dentro/fora (mobile)
 
-  // Acesso simples = nenhuma permissão de gestão marcada. Cargo oficial =
-  // pelo menos uma. "Membros" e "Meus Dados" ficam sempre visíveis (ver o
-  // cadastro dos outros é permitido; editar continua travado dentro da
-  // própria tela por permissoes.canEditMembers).
-  const podeVerFinanceiro    = !!permissoes?.canViewFinancial;
-  const podeVerPresencaGeral = !!(permissoes?.pode_editar_presenca || permissoes?.canEditMembers);
-  const podeGerenciarUsuarios = !!permissoes?.canManageUsers;
+  // ── Acesso por tela ─────────────────────────────────────────────────────
+  // Sem grade personalizada (usuarios.permissoes_arco_real vazio), vale a regra
+  // de sempre, derivada das permissões atuais — nada muda para quem não foi
+  // configurado. Com grade, cada tela tem Nenhum / Ver / Editar só no Arco Real
+  // (as permissões da Loja não são tocadas). Admin/Venerável: tudo liberado.
+  const acesso = useMemo(() => acessoArcoReal(userData, permissoes), [userData, permissoes]);
+  const pers = acesso.personalizado;
+  const nivel = (tela) => acesso.mapa[tela] || 'nenhum';
+  const telaDaPagina = TELA_DA_PAGINA[pagina];
+  const bloqueada = !!telaDaPagina && nivel(telaDaPagina) === 'nenhum';
 
-  const acessoTela = {
-    presenca: podeVerPresencaGeral,
-    financeiro: podeVerFinanceiro,
-    email: podeVerFinanceiro || !!permissoes?.canEditMembers,
-    usuarios: podeGerenciarUsuarios,
-  };
+  const podeEditarPresenca = nivel('presenca') === 'editar';
+  const podeEditarFinanceiro = nivel('financeiro') === 'editar';
+  const editar = (tela, legado) => (pers ? nivel(tela) === 'editar' : legado);
+  // Objetos de permissão repassados às telas (na grade personalizada, sobrescrevem o que a tela lê)
+  const permMembros = pers ? { ...permissoes, canEdit: editar('membros'), canEditMembers: editar('membros') } : permissoes;
+  const permCorpo   = pers ? { ...permissoes, canEditMembers: editar('corpo_admin') } : permissoes;
+  const permEmail   = pers ? { ...permissoes, canViewFinancial: editar('email'), canEditMembers: editar('email') } : permissoes;
+  const permCrono   = pers ? { canEdit: editar('cronograma'), canEditMembers: editar('cronograma') } : { canEdit: !!permissoes?.canEditMembers, canEditMembers: !!permissoes?.canEditMembers };
 
   const emPresenca = PAGINAS_PRESENCA.includes(pagina);
-  const itensMenuVisiveis = ITENS_MENU.filter(item => !item.requer || acessoTela[item.requer]);
+  const telaDoItem = (item) => (item.tipo === 'grupo' ? 'presenca' : TELA_DA_PAGINA[item.id]);
+  const itensMenuVisiveis = ITENS_MENU.filter(item => nivel(telaDoItem(item)) !== 'nenhum');
+
+  // Se a tela inicial (Dashboard) estiver bloqueada, abre a primeira liberada
+  useEffect(() => {
+    if (!bloqueada) return;
+    const prim = ITENS_MENU.find(i => nivel(telaDoItem(i)) !== 'nenhum');
+    if (prim) setPagina(prim.tipo === 'grupo' ? prim.itens[0].id : prim.id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Guarda quais telas do Arco Real já foram registradas nesta passagem
   // pelo módulo (zera se ele sair e entrar de novo, o que é aceitável).
@@ -195,7 +209,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
                 <span className="font-semibold">{item.label}</span>
                 <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>{grupoPresencaAberto ? '▼' : '▶'}</span>
               </button>
-              {grupoPresencaAberto && item.itens.map(sub => (
+              {grupoPresencaAberto && item.itens.filter(sub => sub.id !== 'cadastro-sessao' || podeEditarPresenca).map(sub => (
                 <button
                   key={sub.id}
                   onClick={() => selecionarPagina(sub.id)}
@@ -275,31 +289,33 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           </div>
         )}
         <ErroBoundaryArcoReal chave={pagina}>
+        {!bloqueada && (<>
         {pagina === 'dashboard' && <DashboardArcoReal />}
         {pagina === 'cronograma' && (
-          <CronogramaArcoReal showSuccess={showSuccess} showError={showError} userEmail={userData?.email} permissoes={{ canEdit: !!permissoes?.canEditMembers, canEditMembers: !!permissoes?.canEditMembers }} />
+          <CronogramaArcoReal showSuccess={showSuccess} showError={showError} userEmail={userData?.email} permissoes={permCrono} />
         )}
         {pagina === 'visualizar-membros' && (
-          <VisualizarMembrosArcoReal permissoes={permissoes} meuMembroId={meuMembroId} showSuccess={showSuccess} showError={showError} />
+          <VisualizarMembrosArcoReal permissoes={permMembros} meuMembroId={meuMembroId} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'quadro-membros' && (
           <QuadroMembrosArcoReal showError={showError} />
         )}
         {pagina === 'licencas' && (
-          <LicencasSituacoesArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
+          <LicencasSituacoesArcoReal podeEditar={editar('licencas', !!permissoes?.canEditMembers)} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'dados-arco-real' && (
-          <DadosArcoReal podeEditar={!!permissoes?.canEditMembers} showSuccess={showSuccess} showError={showError} />
+          <DadosArcoReal podeEditar={editar('dados_arco', !!permissoes?.canEditMembers)} showSuccess={showSuccess} showError={showError} />
         )}
-        {pagina === 'financeiro' && podeVerFinanceiro && (
+        {pagina === 'financeiro' && (
           <ArcoReal
             isOpen={true}
             modoPagina={true}
+            somenteLeitura={pers && !podeEditarFinanceiro}
             showSuccess={showSuccess}
             showError={showError}
           />
         )}
-        {emPresenca && podeVerPresencaGeral && sessaoPresencaId !== null && (
+        {emPresenca && podeEditarPresenca && sessaoPresencaId !== null && (
           <RegistroPresencaArcoReal
             sessaoId={sessaoPresencaId}
             onVoltar={() => setSessaoPresencaId(null)}
@@ -307,20 +323,20 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             showError={showError}
           />
         )}
-        {emPresenca && podeVerPresencaGeral && sessaoPresencaId === null && (
+        {emPresenca && (sessaoPresencaId === null || !podeEditarPresenca) && (
           <>
             {pagina === 'dashboard-presenca' && (
               <DashboardPresencaArcoReal
-                onCadastrarSessao={() => selecionarPagina('cadastro-sessao')}
+                onCadastrarSessao={podeEditarPresenca ? () => selecionarPagina('cadastro-sessao') : undefined}
                 showError={showError}
               />
             )}
-            {pagina === 'cadastro-sessao' && (
+            {pagina === 'cadastro-sessao' && podeEditarPresenca && (
               <CadastroSessaoArcoReal onSuccess={() => {}} onRegistrarPresenca={(id) => setSessaoPresencaId(id)} />
             )}
             {pagina === 'lista-sessoes' && (
               <ListaSessoesArcoReal
-                podeEditar={podeVerPresencaGeral}
+                podeEditar={podeEditarPresenca}
                 onVisualizar={(id) => setSessaoVisualizarId(id)}
                 onEditarPresenca={(id) => setSessaoPresencaId(id)}
                 onNovaSessao={() => selecionarPagina('cadastro-sessao')}
@@ -334,35 +350,34 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           <ModalVisualizarPresencaArcoReal
             sessaoId={sessaoVisualizarId}
             onFechar={() => setSessaoVisualizarId(null)}
-            onEditar={(id) => { setSessaoVisualizarId(null); setSessaoPresencaId(id); }}
+            onEditar={podeEditarPresenca ? (id) => { setSessaoVisualizarId(null); setSessaoPresencaId(id); } : undefined}
           />
         )}
-        {pagina === 'controle-acesso' && podeGerenciarUsuarios && (
+        {pagina === 'controle-acesso' && (
           <div className="p-6">
             <ControleAcesso userData={userData} showSuccess={showSuccess} showError={showError} escopo="arco_real" />
           </div>
         )}
         {pagina === 'inadimplentes' && (
-          <InadimplentesArcoReal podeGerenciar={podeVerFinanceiro} showSuccess={showSuccess} showError={showError} />
+          <InadimplentesArcoReal podeGerenciar={nivel('inadimplentes') !== 'nenhum'} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'email-financeiro' && (
-          <EmailArcoReal permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
+          <EmailArcoReal permissoes={permEmail} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'corpo-admin' && (
-          <CorpoAdministrativoArcoReal permissoes={permissoes} showSuccess={showSuccess} showError={showError} />
+          <CorpoAdministrativoArcoReal permissoes={permCorpo} showSuccess={showSuccess} showError={showError} />
         )}
         {pagina === 'estatisticas' && (
           <EstatisticasArcoReal />
         )}
+        </>)}
         </ErroBoundaryArcoReal>
-        {(pagina === 'financeiro' && !podeVerFinanceiro) ||
-         (emPresenca && !podeVerPresencaGeral) ||
-         (pagina === 'controle-acesso' && !podeGerenciarUsuarios) ? (
+        {bloqueada && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</p>
             <p>Você não tem permissão para acessar esta tela.</p>
           </div>
-        ) : null}
+        )}
         {pagina !== 'dashboard' && pagina !== 'cronograma' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && !emPresenca && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
