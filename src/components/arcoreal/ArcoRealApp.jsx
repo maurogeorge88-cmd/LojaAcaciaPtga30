@@ -4,6 +4,9 @@ import DashboardArcoReal from './DashboardArcoReal';
 import ArcoReal from '../financeiro/ArcoReal';
 import DashboardPresencaArcoReal from './DashboardPresencaArcoReal';
 import RegistroPresencaArcoReal from './RegistroPresencaArcoReal';
+import CadastroSessaoArcoReal from './CadastroSessaoArcoReal';
+import ListaSessoesArcoReal from './ListaSessoesArcoReal';
+import ModalVisualizarPresencaArcoReal from './ModalVisualizarPresencaArcoReal';
 import ControleAcesso from '../administracao/ControleAcesso';
 import CorpoAdministrativoArcoReal from './CorpoAdministrativoArcoReal';
 import InadimplentesArcoReal from './InadimplentesArcoReal';
@@ -24,7 +27,11 @@ const ITENS_MENU = [
   { id: 'visualizar-membros', label: 'Membros', icone: '🔎', pronto: true },
   { id: 'quadro-membros', label: 'Quadro de Membros', icone: '📋', pronto: true },
   { id: 'licencas', label: 'Licenças e Situações', icone: '🗓️', pronto: true },
-  { id: 'presenca', label: 'Presença', icone: '📋', pronto: true, requer: 'presenca' },
+  { tipo: 'grupo', id: 'presenca', label: 'Presença Irmãos', icone: '✅', requer: 'presenca', itens: [
+    { id: 'dashboard-presenca', label: 'Dashboard', icone: '📊' },
+    { id: 'cadastro-sessao', label: 'Cadastrar Sessão', icone: '📋' },
+    { id: 'lista-sessoes', label: 'Sessões Realizadas', icone: '📑' },
+  ] },
   { id: 'financeiro', label: 'Finanças', icone: '💰', pronto: true, requer: 'financeiro' },
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
   { id: 'email-financeiro', label: 'E-mails', icone: '✉️', pronto: true, requer: 'email' },
@@ -38,12 +45,16 @@ const ITENS_MENU = [
 // Nome bonito de cada tela do Arco Real pro Controle de Acesso — mesmo
 // texto do menu lateral. 'dashboard' e 'controle-acesso' ficam de fora de
 // propósito (a própria tela de controle de acesso não precisa se auto-logar).
+const PAGINAS_PRESENCA = ['dashboard-presenca', 'cadastro-sessao', 'lista-sessoes'];
+
 const NOMES_TELAS_ARCO_REAL = {
   'cronograma': '📅 Arco Real / Cronograma',
   'visualizar-membros': '🔎 Arco Real / Membros',
   'quadro-membros': '📋 Arco Real / Quadro de Membros',
   'licencas': '🗓️ Arco Real / Licenças e Situações',
-  'presenca': '📋 Arco Real / Presença',
+  'dashboard-presenca': '📊 Arco Real / Presença / Dashboard',
+  'cadastro-sessao': '📋 Arco Real / Presença / Cadastrar Sessão',
+  'lista-sessoes': '📑 Arco Real / Presença / Sessões Realizadas',
   'financeiro': '💰 Arco Real / Finanças',
   'inadimplentes': '⚠️ Arco Real / Inadimplentes',
   'email-financeiro': '✉️ Arco Real / E-mails',
@@ -55,6 +66,8 @@ const NOMES_TELAS_ARCO_REAL = {
 export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = null, podeVoltarLoja, onTrocarSistema, onSair, showSuccess, showError, successMessage, errorMessage }) {
   const [pagina, setPagina] = useState('dashboard');
   const [sessaoPresencaId, setSessaoPresencaId] = useState(null); // sessão aberta na tela de Registro de Presença
+  const [sessaoVisualizarId, setSessaoVisualizarId] = useState(null); // modal de visualizar presença
+  const [grupoPresencaAberto, setGrupoPresencaAberto] = useState(false);
   const [menuAberto, setMenuAberto] = useState(true); // sidebar aberta/recolhida (desktop) ou dentro/fora (mobile)
 
   // Acesso simples = nenhuma permissão de gestão marcada. Cargo oficial =
@@ -72,6 +85,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
     usuarios: podeGerenciarUsuarios,
   };
 
+  const emPresenca = PAGINAS_PRESENCA.includes(pagina);
   const itensMenuVisiveis = ITENS_MENU.filter(item => !item.requer || acessoTela[item.requer]);
 
   // Guarda quais telas do Arco Real já foram registradas nesta passagem
@@ -101,6 +115,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
   const selecionarPagina = (id) => {
     setPagina(id);
     setSessaoPresencaId(null);
+    setSessaoVisualizarId(null);
     if (window.innerWidth < 768) setMenuAberto(false);
   };
 
@@ -164,7 +179,39 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
         </div>
 
         <nav className="flex-1 overflow-y-auto py-2">
-          {itensMenuVisiveis.map(item => (
+          {itensMenuVisiveis.map(item => item.tipo === 'grupo' ? (
+            <div key={item.id}>
+              <button
+                onClick={() => setGrupoPresencaAberto(v => !v)}
+                className="w-full px-4 py-2.5 flex items-center gap-2 text-sm transition"
+                style={{
+                  background: PAGINAS_PRESENCA.includes(pagina) ? 'rgba(45,106,159,0.18)' : 'transparent',
+                  borderLeft: PAGINAS_PRESENCA.includes(pagina) ? '4px solid #2d6a9f' : '4px solid transparent',
+                  color: '#fff', cursor: 'pointer',
+                }}
+              >
+                <span>{item.icone}</span>
+                <span className="font-semibold">{item.label}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>{(grupoPresencaAberto || PAGINAS_PRESENCA.includes(pagina)) ? '▼' : '▶'}</span>
+              </button>
+              {(grupoPresencaAberto || PAGINAS_PRESENCA.includes(pagina)) && item.itens.map(sub => (
+                <button
+                  key={sub.id}
+                  onClick={() => selecionarPagina(sub.id)}
+                  className="w-full flex items-center gap-2 text-sm transition"
+                  style={{
+                    padding: '0.5rem 1rem 0.5rem 2.25rem',
+                    background: pagina === sub.id ? 'rgba(45,106,159,0.25)' : 'transparent',
+                    borderLeft: pagina === sub.id ? '4px solid #2d6a9f' : '4px solid transparent',
+                    color: pagina === sub.id ? '#fff' : 'rgba(255,255,255,0.8)', cursor: 'pointer',
+                  }}
+                >
+                  <span>{sub.icone}</span>
+                  <span className="font-semibold">{sub.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
             <button
               key={item.id}
               disabled={!item.pronto}
@@ -251,19 +298,43 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
             showError={showError}
           />
         )}
-        {pagina === 'presenca' && podeVerPresencaGeral && sessaoPresencaId === null && (
-          <DashboardPresencaArcoReal
-            onAbrirPresenca={(id) => setSessaoPresencaId(id)}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-        {pagina === 'presenca' && podeVerPresencaGeral && sessaoPresencaId !== null && (
+        {emPresenca && podeVerPresencaGeral && sessaoPresencaId !== null && (
           <RegistroPresencaArcoReal
             sessaoId={sessaoPresencaId}
             onVoltar={() => setSessaoPresencaId(null)}
             showSuccess={showSuccess}
             showError={showError}
+          />
+        )}
+        {emPresenca && podeVerPresencaGeral && sessaoPresencaId === null && (
+          <>
+            {pagina === 'dashboard-presenca' && (
+              <DashboardPresencaArcoReal
+                onAbrirPresenca={(id) => setSessaoPresencaId(id)}
+                showSuccess={showSuccess}
+                showError={showError}
+              />
+            )}
+            {pagina === 'cadastro-sessao' && (
+              <CadastroSessaoArcoReal onSuccess={() => {}} onRegistrarPresenca={(id) => setSessaoPresencaId(id)} />
+            )}
+            {pagina === 'lista-sessoes' && (
+              <ListaSessoesArcoReal
+                podeEditar={podeVerPresencaGeral}
+                onVisualizar={(id) => setSessaoVisualizarId(id)}
+                onEditarPresenca={(id) => setSessaoPresencaId(id)}
+                onNovaSessao={() => selecionarPagina('cadastro-sessao')}
+                showSuccess={showSuccess}
+                showError={showError}
+              />
+            )}
+          </>
+        )}
+        {sessaoVisualizarId !== null && (
+          <ModalVisualizarPresencaArcoReal
+            sessaoId={sessaoVisualizarId}
+            onFechar={() => setSessaoVisualizarId(null)}
+            onEditar={(id) => { setSessaoVisualizarId(null); setSessaoPresencaId(id); }}
           />
         )}
         {pagina === 'controle-acesso' && podeGerenciarUsuarios && (
@@ -285,14 +356,14 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
         )}
         </ErroBoundaryArcoReal>
         {(pagina === 'financeiro' && !podeVerFinanceiro) ||
-         (pagina === 'presenca' && !podeVerPresencaGeral) ||
+         (emPresenca && !podeVerPresencaGeral) ||
          (pagina === 'controle-acesso' && !podeGerenciarUsuarios) ? (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</p>
             <p>Você não tem permissão para acessar esta tela.</p>
           </div>
         ) : null}
-        {pagina !== 'dashboard' && pagina !== 'cronograma' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && pagina !== 'presenca' && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
+        {pagina !== 'dashboard' && pagina !== 'cronograma' && pagina !== 'visualizar-membros' && pagina !== 'quadro-membros' && pagina !== 'licencas' && pagina !== 'dados-arco-real' && pagina !== 'financeiro' && !emPresenca && pagina !== 'controle-acesso' && pagina !== 'inadimplentes' && pagina !== 'corpo-admin' && pagina !== 'estatisticas' && (
           <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚧</p>
             <p>Essa etapa do módulo Arco Real ainda está sendo construída.</p>
