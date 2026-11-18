@@ -177,3 +177,11 @@ export const podeAbrirPagina = (mapa, pagina) => {
   const regra = PAGINAS[pagina];
   return !regra || pode(mapa, regra[0], regra[1]);
 };
+
+// Liderança da Loja: Admin, Venerável Mestre, Secretário e Orador.
+// Usado em telas de acesso restrito por cargo (ex.: Comendas → Inelegíveis, Livro Negro).
+export const ehLiderancaLoja = (u) => {
+  if (!u) return false;
+  const c = normCargo(u.cargo);
+  return ehAdminTotal(u) || c === 'secretario' || c === 'orador';
+};
