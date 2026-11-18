@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { carregarLogoArcoRealBase64 } from '../../utils/arcoRealMembros';
 import { gerarRelatorioPresencaArcoRealPDF } from '../../utils/gerarRelatorioPresencaArcoRealPDF';
 import { gerarRelatorioIndividualArcoRealPDF } from '../../utils/gerarRelatorioIndividualArcoRealPDF';
 
@@ -32,8 +33,9 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
   };
 
   const buscarDadosLoja = async () => {
-    const { data } = await supabase.from('dados_loja').select('*').single();
-    if (data) setDadosLoja(data);
+    // Cabeçalho dos relatórios é do Capítulo: só precisa do brasão do Arco Real (base64)
+    const logo = await carregarLogoArcoRealBase64();
+    setDadosLoja({ logo_url: logo });
   };
 
   // Busca sessões + presenças do PERÍODO EXATO escolhido no modal individual
