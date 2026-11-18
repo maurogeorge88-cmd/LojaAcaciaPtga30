@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { ordenarComendas, indiceComenda } from '../../utils/ordemComendas';
 import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF';
 import PranchaComendasGLEMT from './PranchaComendasGLEMT';
+import { ehLiderancaLoja } from '../../config/permissoes';
 
 // Mesma lista/normalização já usada no resto do sistema pra identificar
 // licença, desligamento etc. no histórico de situações.
@@ -81,6 +82,8 @@ const SEM_PERMISSAO = 'sem permissão para alterar (bloqueado pelo banco).';
 export default function Comendas({ permissoes, userData, showSuccess, showError }) { // eslint-disable-line no-unused-vars
   // Fase 2: edição definida pelo módulo 'comendas' (Admin/Venerável sempre; demais conforme Usuários)
   const podeEditar = !!permissoes?.canEdit;
+  // Aba Inelegíveis: só Admin, Venerável, Secretário e Orador
+  const podeVerInelegiveis = ehLiderancaLoja(userData);
 
   const [aba, setAba] = useState('elegiveis');
   const [loading, setLoading] = useState(true);
@@ -670,7 +673,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       </div>
 
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`], ...(podeEditar ? [['prancha', '📨 Prancha à GLEMT']] : []), ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
+        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ...(podeVerInelegiveis ? [['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`]] : []), ...(podeEditar ? [['prancha', '📨 Prancha à GLEMT']] : []), ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
           <button key={v} onClick={() => setAba(v)}
             style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === v ? 'var(--color-accent)' : 'var(--color-surface-2)', color: aba === v ? '#fff' : 'var(--color-text)' }}>
             {l}
@@ -810,7 +813,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       )}
 
       {/* ── INELEGÍVEIS ────────────────────────────────────────────────── */}
-      {aba === 'inelegiveis' && (
+      {aba === 'inelegiveis' && podeVerInelegiveis && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <p style={{ margin: 0, padding: '0.75rem 1rem', fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--color-text-muted)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
             Irmãos que já cumpriram o critério da comenda, mas perderam o direito por <strong>licença</strong>, <strong>desligamento (Quit Placet)</strong> ou outra interrupção.
