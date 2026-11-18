@@ -286,6 +286,23 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
               ⚠️ Tabelas de familiares ainda não criadas. Rode o SQL <strong>arco_real_familiares.sql</strong> no Supabase.
             </div>
           )}
+          {form.irmao_vinculado_id && (
+            <div style={{ marginBottom: '1rem' }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  const fam = await carregarFamiliaresDaLoja(form.irmao_vinculado_id);
+                  if (!fam.temConjuge && !fam.filhos.length && !fam.pais.nome_pai && !fam.pais.nome_mae) { showError('Esse irmão não tem familiares cadastrados na Loja.'); return; }
+                  setFamilia(fam);
+                  showSuccess('Familiares da Loja carregados — clique em Salvar para gravar.');
+                }}
+                style={{ padding: '0.5rem 1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
+              >
+                🔄 Puxar familiares da Loja Acácia
+              </button>
+              <span style={{ marginLeft: '0.6rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Substitui o que está na tela pelos dados da Loja.</span>
+            </div>
+          )}
           <FamiliaresArcoReal value={familia} onChange={setFamilia} showError={showError} />
         </>
       )}
