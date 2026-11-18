@@ -269,7 +269,7 @@ export default function QuadroMembrosArcoReal({ showError }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
         <div style={{ ...card, borderTop: '4px solid #c9a84c', padding: '1rem 1.25rem' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>🏛️ Tempo de fundação</div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', marginTop: '0.25rem' }}>{fundacao ? `${Math.floor(mesesEntre(fundacao) / 12)} anos` : '—'}</div>
+          <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--color-text)', marginTop: '0.25rem' }}>{fundacao ? tempoTexto(mesesEntre(fundacao)) : '—'}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>{fundacao ? `desde ${fmtData(fundacao)}` : 'cadastre em Dados do Arco Real'}</div>
         </div>
         <div style={{ ...card, borderTop: '4px solid var(--color-text-muted)', padding: '1rem 1.25rem' }}>
@@ -282,7 +282,6 @@ export default function QuadroMembrosArcoReal({ showError }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
         <KpiMini icone="🎂" titulo="Idade média" valor={kpi.idadeMedia != null ? `${kpi.idadeMedia} anos` : '-'} />
-        <KpiMini icone="🔺" titulo="Tempo médio de Arco Real" valor={formatarMeses(kpi.tempoMedio)} />
         <KpiMini icone="🧓" titulo="Prerrogativa (70+)" valor={kpi.prerrogativa} />
         <KpiMini icone="🎉" titulo="Aniversariantes do mês" valor={kpi.aniversariantes} />
       </div>
