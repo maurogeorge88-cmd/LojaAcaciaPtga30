@@ -243,8 +243,8 @@ export default function DashboardPresencaArcoReal({ onAbrirPresenca, showSuccess
               </div>
 
               {/* Card — versão celular */}
-              <div className="md:hidden" style={{
-                padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+              <div className="md:hidden flex flex-col gap-2" style={{
+                padding: '0.85rem 1rem',
                 background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
                 borderBottom: '1px solid var(--color-border)',
               }}>
