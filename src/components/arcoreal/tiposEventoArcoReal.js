@@ -33,3 +33,6 @@ export const corDoEvento = (tipo, corDestaque) => {
 
 // O Arco Real não usa grau no cronograma (mantido vazio por compatibilidade com o calendário).
 export const NOME_GRAU_CRONOGRAMA = {};
+
+// Rótulo sem emoji (para listas e e-mails)
+export const tipoRotulo = (tipo) => rotuloDoTipo(tipo).replace(/^[^\p{L}]+/u, '');
