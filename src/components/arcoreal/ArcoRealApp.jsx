@@ -114,6 +114,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
   // espaço pro conteúdo — no desktop ele continua aberto normalmente.
   const selecionarPagina = (id) => {
     setPagina(id);
+    if (PAGINAS_PRESENCA.includes(id)) setGrupoPresencaAberto(true);
     setSessaoPresencaId(null);
     setSessaoVisualizarId(null);
     if (window.innerWidth < 768) setMenuAberto(false);
@@ -192,9 +193,9 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
               >
                 <span>{item.icone}</span>
                 <span className="font-semibold">{item.label}</span>
-                <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>{(grupoPresencaAberto || PAGINAS_PRESENCA.includes(pagina)) ? '▼' : '▶'}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '0.65rem', opacity: 0.7 }}>{grupoPresencaAberto ? '▼' : '▶'}</span>
               </button>
-              {(grupoPresencaAberto || PAGINAS_PRESENCA.includes(pagina)) && item.itens.map(sub => (
+              {grupoPresencaAberto && item.itens.map(sub => (
                 <button
                   key={sub.id}
                   onClick={() => selecionarPagina(sub.id)}
