@@ -193,10 +193,9 @@ export default function DashboardArcoReal() {
 
       {/* Indicadores */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-5">
-        <Kpi icone="🏛️" titulo="Tempo de Fundação" valor={fundacao ? `${Math.floor(mesesEntre(fundacao) / 12)} anos` : '—'} detalhe={fundacao ? `desde ${fmtData(fundacao)}` : 'cadastre em Dados do Arco Real'} cor="#c9a84c" />
+        <Kpi icone="🏛️" titulo="Tempo de Fundação" valor={fundacao ? tempoTexto(mesesEntre(fundacao)) : '—'} detalhe={fundacao ? `desde ${fmtData(fundacao)}` : 'cadastre em Dados do Arco Real'} cor="#c9a84c" />
         <Kpi icone="👥" titulo="Quadro de Membros" valor={d.quadro.length} detalhe={`${d.contagem.regular} regulares · ${d.contagem.licenciado} licenciados`} cor="#2d6a9f" />
         <Kpi icone="🗂️" titulo="Total no Cadastro" valor={totalCadastrados} detalhe="inclui desligados, excluídos e falecidos" cor="#64748b" />
-        <Kpi icone="🔺" titulo="Tempo Médio de Arco Real" valor={d.mediaMeses === null ? '—' : `${(d.mediaMeses / 12).toFixed(1).replace('.', ',')} anos`} detalhe={d.mediaMeses === null ? 'sem datas de exaltação' : tempoTexto(d.mediaMeses)} cor="#f59e0b" />
         <Kpi icone="🏅" titulo="Mais Antigo" valor={d.maisAntigo ? `${Math.floor(d.maisAntigo.meses / 12)} anos` : '—'} detalhe={d.maisAntigo ? nomeCurto(d.maisAntigo.m.nome) : ''} cor="#a855f7" />
         <Kpi icone="📋" titulo="Sessões no Exercício" valor={sessoes.length} detalhe="com presença registrada" cor="#06b6d4" />
         <Kpi icone="✅" titulo="Presença Média" valor={d.mediaPresenca === null ? '—' : `${String(d.mediaPresenca).replace('.', ',')}%`} detalhe={d.totEleg ? `${d.totPres} de ${d.totEleg} registros elegíveis` : 'sem sessões'} cor="#10b981" />
