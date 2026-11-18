@@ -28,7 +28,12 @@ export default function VisualizarMembrosArcoReal({ permissoes = {}, meuMembroId
   const carregar = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('arco_real_membros').select('*, irmaos:irmao_vinculado_id(nome)').order('nome');
+      let { data, error } = await supabase.from('arco_real_membros').select('*, irmaos:irmao_vinculado_id(nome)').order('nome');
+      if (error) {
+        // se o relacionamento com irmaos falhar, carrega sem ele
+        const r = await supabase.from('arco_real_membros').select('*').order('nome');
+        data = r.data; error = r.error;
+      }
       if (error) throw error;
       setMembros(data || []);
     } catch (e) {
