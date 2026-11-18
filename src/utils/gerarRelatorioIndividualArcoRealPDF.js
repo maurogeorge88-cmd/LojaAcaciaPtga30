@@ -43,7 +43,6 @@ export const gerarRelatorioIndividualArcoRealPDF = (
   };
 
   // CABEÇALHO
-  const nomeLoja = dadosLoja?.nome_loja || dadosLoja?.nome || 'ARLS Acácia de Paranatinga nº 30';
 
   if (dadosLoja?.logo_url) {
     try {
@@ -52,10 +51,10 @@ export const gerarRelatorioIndividualArcoRealPDF = (
     } catch (e) { y += 2; }
   }
 
-  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(30);
-  txt(nomeLoja, W / 2, y, { align: 'center' }); y += 6;
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  txt('Capítulo Guardiões da Aliança Nº 04', W / 2, y, { align: 'center' }); y += 6;
   doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
-  txt(dadosLoja?.endereco || 'Avenida Brasil, 2.300, Centro — Paranatinga/MT', W / 2, y, { align: 'center' }); y += 5;
+  txt('Arco Real - Controle de Presença', W / 2, y, { align: 'center' }); y += 5;
   linhaDupla(y); y += 6;
 
   doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(20);
