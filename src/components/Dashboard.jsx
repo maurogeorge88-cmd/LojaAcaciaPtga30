@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo, useState, useEffect } from 'react';
+import CardLivroNegroDashboard from './CardLivroNegroDashboard';
 import { supabase } from '../supabaseClient';
 import ParticipacaoComissoes from './ParticipacaoComissoes';
 
@@ -594,7 +595,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       )}
 
       {/* Cards de Graus */}
-      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1.5rem', alignItems:'stretch'}}>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:'1rem', marginBottom:'1.5rem', alignItems:'stretch'}}>
 
         {/* CARD 1 — Quadro de Irmãos */}
         <div style={{background:'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)', borderRadius:'var(--radius-xl)', padding:'1.25rem', color:'#fff', display:'flex', flexDirection:'column', gap:'1rem'}}>
@@ -698,6 +699,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             ))}
           </div>
         </div>
+
+        {/* CARD 4 — Livro Negro */}
+        <CardLivroNegroDashboard />
       </div>
 
       {/* Cards de Situações */}
