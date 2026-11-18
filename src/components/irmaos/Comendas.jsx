@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { ordenarComendas, indiceComenda } from '../../utils/ordemComendas';
 import { gerarRelatorioComendasPDF } from '../../utils/gerarRelatorioComendasPDF';
+import PranchaComendasGLEMT from './PranchaComendasGLEMT';
 
 // Mesma lista/normalização já usada no resto do sistema pra identificar
 // licença, desligamento etc. no histórico de situações.
@@ -669,7 +670,7 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
       </div>
 
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`], ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
+        {[['elegiveis', '✅ Elegíveis'], ['comendados', '📜 Comendados'], ['inelegiveis', `⛔ Inelegíveis${totalInelegiveisVis > 0 ? ` (${totalInelegiveisVis})` : ''}`], ...(podeEditar ? [['prancha', '📨 Prancha à GLEMT']] : []), ['cadastrar', '⚙️ Cadastrar Comenda']].map(([v, l]) => (
           <button key={v} onClick={() => setAba(v)}
             style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === v ? 'var(--color-accent)' : 'var(--color-surface-2)', color: aba === v ? '#fff' : 'var(--color-text)' }}>
             {l}
@@ -855,6 +856,12 @@ export default function Comendas({ permissoes, userData, showSuccess, showError 
             );
           })}
         </div>
+      )}
+
+      {/* ── PRANCHA À GLEMT ────────────────────────────────────────────── */}
+      {aba === 'prancha' && podeEditar && (
+        <PranchaComendasGLEMT comendas={comendas} elegiveisPorComenda={elegiveisPorComenda} irmaos={irmaos}
+          dadosLoja={dadosLoja} showSuccess={showSuccess} showError={showError} />
       )}
 
       {/* ── COMENDADOS ─────────────────────────────────────────────────── */}
