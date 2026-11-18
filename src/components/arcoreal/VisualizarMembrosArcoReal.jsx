@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { sincronizarFamiliaresDaLoja } from '../../utils/arcoRealFamiliares';
 import { gerarRelatorioMembrosArcoRealPDF } from '../../utils/gerarRelatorioMembrosArcoRealPDF';
 import CadastroArcoRealMembros from './CadastroArcoRealMembros';
 import PerfilPessoalArcoReal from './PerfilPessoalArcoReal';
@@ -56,6 +57,21 @@ export default function VisualizarMembrosArcoReal({ permissoes = {}, meuMembroId
       carregar();
     } catch (e) {
       showError && showError('Erro ao excluir: ' + e.message);
+    }
+  };
+
+  const [sincronizando, setSincronizando] = useState(false);
+  const puxarFamiliaresDaLoja = async () => {
+    if (!window.confirm('Copiar da Loja Acácia os familiares dos membros vinculados que ainda não têm familiares no Arco Real?\n\nQuem já tem cadastro não é alterado.')) return;
+    setSincronizando(true);
+    try {
+      const r = await sincronizarFamiliaresDaLoja(membros);
+      if (r.semTabela) { showError && showError('Tabelas de familiares não existem ainda. Rode o arco_real_familiares.sql no Supabase.'); return; }
+      showSuccess && showSuccess(`✅ ${r.copiados} membro(s) com familiares copiados da Loja. ${r.ignorados} ignorado(s) (já tinham ou sem familiares na Loja).`);
+    } catch (e) {
+      showError && showError('Erro ao puxar familiares: ' + e.message);
+    } finally {
+      setSincronizando(false);
     }
   };
 
@@ -125,6 +141,7 @@ export default function VisualizarMembrosArcoReal({ permissoes = {}, meuMembroId
           <button onClick={gerarRelatorio} title="Relatório de nomes e cargos para envio" style={btnSec}>📄 Relatório</button>
           {podeEditar && (
             <>
+              <button onClick={puxarFamiliaresDaLoja} disabled={sincronizando} title="Copia os familiares da Loja para os membros vinculados que ainda não têm" style={btnSec}>{sincronizando ? '⏳ Copiando...' : '👨‍👩‍👧 Puxar Familiares da Loja'}</button>
               <button onClick={() => setTela({ tipo: 'form', importar: true })} style={btnSec}>📥 Importar Irmão</button>
               <button onClick={() => setTela({ tipo: 'form' })} style={{ ...btnSec, background: '#4ade80', color: '#111827', border: 'none', fontWeight: 700 }}>➕ Novo Membro</button>
             </>
