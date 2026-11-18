@@ -310,8 +310,7 @@ export default function ArcoRealApp({ userData, permissoes = {}, meuMembroId = n
           <>
             {pagina === 'dashboard-presenca' && (
               <DashboardPresencaArcoReal
-                onAbrirPresenca={(id) => setSessaoPresencaId(id)}
-                showSuccess={showSuccess}
+                onCadastrarSessao={() => selecionarPagina('cadastro-sessao')}
                 showError={showError}
               />
             )}
