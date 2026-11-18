@@ -267,7 +267,7 @@ export default function PerfilPessoalArcoReal({ meuMembroId, membroId = null, pe
 
       {/* Abas */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--color-border)' }}>
-        {[['dados', ehMeu ? '👤 Meus Dados' : '👤 Dados'], ...(ehMeu ? [['financeiro', '💰 Meu Financeiro'], ['presenca', '📋 Minha Presença']] : [])].map(([id, label]) => (
+        {[['dados', ehMeu ? '👤 Meus Dados' : '👤 Dados'], ['familiares', '👨‍👩‍👧 Familiares'], ...(ehMeu ? [['financeiro', '💰 Meu Financeiro'], ['presenca', '📋 Minha Presença']] : [])].map(([id, label]) => (
           <button key={id} onClick={() => setAba(id)}
             style={{ padding: '0.6rem 1rem', border: 'none', borderBottom: aba === id ? '3px solid var(--color-accent)' : '3px solid transparent', background: 'transparent', color: aba === id ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer' }}>
             {label}
@@ -322,21 +322,54 @@ export default function PerfilPessoalArcoReal({ meuMembroId, membroId = null, pe
             </Secao>
           )}
 
-          {familia && (familia.temConjuge || familia.filhos.length > 0 || familia.pais.nome_pai || familia.pais.nome_mae) && (
-            <Secao icone="👨‍👩‍👧" titulo="Familiares">
-              {familia.temConjuge && <Campo label="💍 Cônjuge" valor={[familia.conjuge.nome, familia.conjuge.data_nascimento && 'nasc. ' + fmtD(familia.conjuge.data_nascimento), familia.conjuge.data_casamento && 'casamento ' + fmtD(familia.conjuge.data_casamento)].filter(Boolean).join(' · ')} />}
-              {familia.pais.nome_pai && <Campo label="Pai" valor={familia.pais.nome_pai + (familia.pais.pai_vivo ? '' : ' (falecido)')} />}
-              {familia.pais.nome_mae && <Campo label="Mãe" valor={familia.pais.nome_mae + (familia.pais.mae_viva ? '' : ' (falecida)')} />}
-              {familia.filhos.map((f, i) => <Campo key={i} label={f.sexo === 'F' ? '👧 Filha' : '👦 Filho'} valor={[f.nome, f.data_nascimento && fmtD(f.data_nascimento)].filter(Boolean).join(' · ')} />)}
-            </Secao>
-          )}
-
           {membro.observacoes && (
             <Secao icone="📝" titulo="Observações">
               <div style={{ gridColumn: '1 / -1' }}>
                 <p style={{ color: 'var(--color-text)', margin: 0, fontSize: '0.9rem' }}>{membro.observacoes}</p>
               </div>
             </Secao>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════ FAMILIARES ══════════════════ */}
+      {aba === 'familiares' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {!familia ? (
+            <Secao icone="👨‍👩‍👧" titulo="Familiares">
+              <div style={{ gridColumn: '1 / -1' }}>
+                <p style={{ color: 'var(--color-text-muted)', margin: 0, fontSize: '0.88rem' }}>Tabelas de familiares ainda não criadas (rodar arco_real_familiares.sql).</p>
+              </div>
+            </Secao>
+          ) : (!familia.temConjuge && !familia.filhos.length && !familia.pais.nome_pai && !familia.pais.nome_mae) ? (
+            <Secao icone="👨‍👩‍👧" titulo="Familiares">
+              <div style={{ gridColumn: '1 / -1' }}>
+                <p style={{ color: 'var(--color-text-muted)', margin: 0, fontSize: '0.88rem' }}>Nenhum familiar cadastrado.{onEditar ? ' Use "✏️ Editar cadastro" para incluir.' : ''}</p>
+              </div>
+            </Secao>
+          ) : (
+            <>
+              {familia.temConjuge && (
+                <Secao icone="💍" titulo="Cônjuge">
+                  <Campo label="Nome" valor={familia.conjuge.nome} />
+                  <Campo label="Nascimento" valor={fmtD(familia.conjuge.data_nascimento)} />
+                  <Campo label="Casamento" valor={fmtD(familia.conjuge.data_casamento)} />
+                  <Campo label="Profissão" valor={familia.conjuge.profissao} />
+                  <Campo label="E-mail" valor={familia.conjuge.email} />
+                </Secao>
+              )}
+              {(familia.pais.nome_pai || familia.pais.nome_mae) && (
+                <Secao icone="👨‍👩" titulo="Pais">
+                  {familia.pais.nome_pai && <Campo label="Pai" valor={familia.pais.nome_pai + (familia.pais.pai_vivo ? '' : ' (falecido)') + (familia.pais.data_nascimento_pai ? ' · ' + fmtD(familia.pais.data_nascimento_pai) : '')} />}
+                  {familia.pais.nome_mae && <Campo label="Mãe" valor={familia.pais.nome_mae + (familia.pais.mae_viva ? '' : ' (falecida)') + (familia.pais.data_nascimento_mae ? ' · ' + fmtD(familia.pais.data_nascimento_mae) : '')} />}
+                </Secao>
+              )}
+              {familia.filhos.length > 0 && (
+                <Secao icone="👶" titulo="Filhos">
+                  {familia.filhos.map((f, i) => <Campo key={i} label={f.sexo === 'F' ? '👧 Filha' : '👦 Filho'} valor={[f.nome, f.data_nascimento && fmtD(f.data_nascimento), f.vivo === false && 'falecido(a)'].filter(Boolean).join(' · ')} />)}
+                </Secao>
+              )}
+            </>
           )}
         </div>
       )}
