@@ -21,7 +21,6 @@ const LOGO_ARCO_REAL = supabase.storage.from('arcoreal').getPublicUrl('logo.png'
 
 const ITENS_MENU = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', pronto: true },
-  { id: 'cronograma', label: 'Cronograma', icone: '📅', pronto: true },
   { id: 'visualizar-membros', label: 'Membros', icone: '🔎', pronto: true },
   { id: 'quadro-membros', label: 'Quadro de Membros', icone: '📋', pronto: true },
   { id: 'licencas', label: 'Licenças e Situações', icone: '🗓️', pronto: true },
@@ -30,6 +29,7 @@ const ITENS_MENU = [
   { id: 'inadimplentes', label: 'Inadimplentes', icone: '⚠️', pronto: true, requer: 'financeiro' },
   { id: 'email-financeiro', label: 'Lembrete por E-mail', icone: '✉️', pronto: true, requer: 'financeiro' },
   { id: 'estatisticas', label: 'Estatísticas', icone: '📈', pronto: true },
+  { id: 'cronograma', label: 'Cronograma', icone: '📅', pronto: true },
   { id: 'corpo-admin', label: 'Corpo Administrativo', icone: '🏛️', pronto: true },
   { id: 'dados-arco-real', label: 'Dados do Arco Real', icone: '🔺', pronto: true },
   { id: 'controle-acesso', label: 'Controle de Acesso', icone: '🔐', pronto: true, requer: 'usuarios' },
