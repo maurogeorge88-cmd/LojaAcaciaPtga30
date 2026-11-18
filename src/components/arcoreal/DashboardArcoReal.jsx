@@ -192,7 +192,7 @@ export default function DashboardArcoReal() {
       )}
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-5">
+      <div className="mb-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem' }}>
         <Kpi icone="🏛️" titulo="Tempo de Fundação" valor={fundacao ? tempoTexto(mesesEntre(fundacao)) : '—'} detalhe={fundacao ? `desde ${fmtData(fundacao)}` : 'cadastre em Dados do Arco Real'} cor="#c9a84c" />
         <Kpi icone="👥" titulo="Quadro de Membros" valor={d.quadro.length} detalhe={`${d.contagem.regular} regulares · ${d.contagem.licenciado} licenciados`} cor="#2d6a9f" />
         <Kpi icone="🗂️" titulo="Total no Cadastro" valor={totalCadastrados} detalhe="inclui desligados, excluídos e falecidos" cor="#64748b" />
