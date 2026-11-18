@@ -11,7 +11,9 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import PermissoesModulos from './PermissoesModulos';
-import { derivarDoLegado, limparMapa, colunasLegadoDoMapa, MODULOS } from '../../config/permissoes';
+import { derivarDoLegado, limparMapa, colunasLegadoDoMapa, montarPermissoesLegado, MODULOS } from '../../config/permissoes';
+import PermissoesArcoReal from './PermissoesArcoReal';
+import { limparMapaArcoReal } from '../../config/permissoesArcoReal';
 
 const nivelDoCargo = (cargo) => cargo === 'arco_real_externo' ? 'arco_real'
   : cargo === 'irmao' ? 'irmao'
@@ -52,7 +54,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     pode_editar_financeiro: false,
     pode_visualizar_arco_real: false,
     pode_gerenciar_usuarios: false,
-    permissoes: {}
+    permissoes: {},
+    permissoes_arco_real: null // null = herdando (nada personalizado no Arco Real)
   });
 
   const [membrosArcoReal, setMembrosArcoReal] = useState([]);
@@ -292,6 +295,30 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     return { permissoes: mapa, ...colunasLegadoDoMapa(mapa) };
   };
 
+  // Grade do Arco Real: só toca na coluna quando há o que gravar (grade
+  // personalizada) ou o que limpar (voltou a herdar). Assim, cadastros que não
+  // mexem no Arco Real continuam funcionando mesmo antes do SQL ser executado.
+  const camposArcoReal = () => {
+    const novo = usuarioForm.permissoes_arco_real;
+    if (novo && typeof novo === 'object') return { permissoes_arco_real: limparMapaArcoReal(novo) };
+    if (modoEdicao && usuarioEditando && usuarioEditando.permissoes_arco_real != null) return { permissoes_arco_real: null };
+    return {};
+  };
+
+  // Permissões "atuais" (legado) do formulário, base do que a pessoa já tem no Arco Real
+  const legadoDoForm = () => {
+    if (usuarioForm.cargo === 'arco_real_externo') {
+      return {
+        canEditMembers: !!usuarioForm.pode_editar_cadastros, canEdit: !!usuarioForm.pode_editar_cadastros,
+        canViewFinancial: !!usuarioForm.pode_visualizar_financeiro, canEditFinancial: !!usuarioForm.pode_editar_financeiro,
+        pode_editar_presenca: !!usuarioForm.pode_editar_presenca, canManageUsers: !!usuarioForm.pode_gerenciar_usuarios,
+      };
+    }
+    const mapa = limparMapa(usuarioForm.permissoes);
+    if (String(usuarioForm.cargo || '').includes('tesoureiro')) mapa.financeiro = 'editar';
+    return montarPermissoesLegado(mapa, { cargo: usuarioForm.cargo, nivel_acesso: nivelDoCargo(usuarioForm.cargo) });
+  };
+
   const limparFormulario = () => {
     setUsuarioForm({
       nome: '',
@@ -314,7 +341,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false,
       pode_editar_projetos: false,
-      permissoes: modeloDoCargo('irmao')
+      permissoes: modeloDoCargo('irmao'),
+      permissoes_arco_real: null
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
@@ -383,7 +411,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
           arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
-          ...camposPermissao()
+          ...camposPermissao(),
+          ...camposArcoReal()
         }]);
 
       if (dbError) throw dbError;
@@ -448,7 +477,8 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
           arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
-          ...camposPermissao()
+          ...camposPermissao(),
+          ...camposArcoReal()
         })
         .eq('id', usuarioEditando.id)
         .select();
@@ -539,7 +569,8 @@ IMPORTANTE: Copie estas informações agora!
       pode_editar_comissoes: usuario.pode_editar_comissoes || false,
       pode_editar_corpo_admin: usuario.pode_editar_corpo_admin || false,
       pode_editar_presenca: usuario.pode_editar_presenca || false,
-      permissoes: usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario)
+      permissoes: usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario),
+      permissoes_arco_real: usuario.permissoes_arco_real && typeof usuario.permissoes_arco_real === 'object' ? usuario.permissoes_arco_real : null
     });
   };
 
@@ -1191,6 +1222,16 @@ IMPORTANTE: Copie estas informações agora!
 
           </>
           )}
+
+          {/* PERMISSÕES POR TELA DO ARCO REAL — vale para interno e externo; não altera a Loja */}
+          <PermissoesArcoReal
+            valor={usuarioForm.permissoes_arco_real}
+            onChange={(m) => setUsuarioForm(f => ({ ...f, permissoes_arco_real: m }))}
+            legado={legadoDoForm()}
+            acessoTotal={['veneravel', 'administrador'].includes(usuarioForm.cargo)}
+            temAcessoModulo={usuarioForm.cargo === 'arco_real_externo' ? null : (limparMapa(usuarioForm.permissoes).arco_real === 'ver')}
+            somenteLeitura={modalModo === 'ver'}
+          />
 
                   <p className="form-hint" style={{ marginTop: '0.25rem' }}>⚠️ Determinadas permissões devem ser solicitadas ao administrador.</p>
                 </div>
