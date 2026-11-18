@@ -1,10 +1,10 @@
 import {
-  Document, Packer, Paragraph, TextRun, AlignmentType, Footer, PageNumber,
-  Table, TableRow, TableCell, WidthType, BorderStyle,
+  Document, Packer, Paragraph, TextRun, AlignmentType, Header, ImageRun,
+  Table, TableRow, TableCell, WidthType, BorderStyle, convertMillimetersToTwip,
+  HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom, TextWrappingType,
 } from 'docx';
 import jsPDF from 'jspdf';
 import { supabase } from '../supabaseClient';
-import { cabecalhoLojaDocx } from './cabecalhoLoja';
 import { LOGO_LOJA_B64 } from './logoLoja';
 
 // ════════════════════════════════════════════════════════════════════════
@@ -79,13 +79,13 @@ const agrupar = (itens) => {
 };
 const textoIrmao = (it) => `${it.nome}${it.cim ? ` – CIM nº ${it.cim}` : ''}${it.detalhe ? ` (${it.detalhe})` : ''}`;
 
-// cabeçalho/margens iguais ao da prancha de instalação (modelo cadastrado, se existir)
-const modeloCabecalho = async () => {
+// Folha timbrada da Loja (a mesma do ofício de pendência): imagem A4 atrás do texto
+const carregarFundo = async () => {
   try {
-    const { data } = await supabase.from('modelos_documentos')
-      .select('cabecalho_texto, mostrar_logo, logo_tamanho').eq('tipo', 'prancha_instalacao').maybeSingle();
-    return data || {};
-  } catch (e) { return {}; }
+    const res = await fetch('/oficio-fundo.jpg');
+    if (!res.ok) return null;
+    return await res.arrayBuffer();
+  } catch (e) { return null; }
 };
 
 const nomeArquivo = (r, ext) => `Prancha_${String(r.prancha_numero || '').replace('/', '-')}_Comendas_GLEMT.${ext}`;
@@ -96,19 +96,21 @@ export const gerarPranchaComendasDocx = async ({ registro: r, dadosLoja = {}, as
   const ar = (t, o = {}) => new TextRun({ text: String(t ?? ''), ...F, bold: !!o.bold });
   const par = (runs, o = {}) => new Paragraph({
     children: runs, alignment: o.align || AlignmentType.JUSTIFIED,
-    spacing: { before: o.before ?? 0, after: o.after ?? 200, line: 276 },
+    spacing: { before: o.before ?? 0, after: o.after ?? 120, line: 259 },
     indent: o.firstLine ? { firstLine: 709 } : (o.left ? { left: o.left } : undefined),
     keepNext: !!o.keepNext,
   });
 
   const V = variaveis(r, dadosLoja);
-  const mod = await modeloCabecalho();
+  const fundo = await carregarFundo();
+  const mm = (v) => convertMillimetersToTwip(v);
+  const LARGURA = 11906 - mm(35) - mm(20); // largura útil entre as margens
   const grupos = agrupar(r.itens);
   const runsNegrito = (linha) => String(linha).split(/(\*[^*]+\*)/).filter(Boolean)
     .map(t => (t.startsWith('*') && t.endsWith('*') ? ar(t.slice(1, -1), { bold: true }) : ar(t)));
 
   const relacao = () => grupos.flatMap(g => [
-    par([ar(g.comenda, { bold: true })], { align: AlignmentType.LEFT, before: 120, after: 80, keepNext: true }),
+    par([ar(g.comenda, { bold: true })], { align: AlignmentType.LEFT, before: 80, after: 40, keepNext: true }),
     ...g.irmaos.map((it, i) => par([ar(`${i + 1}. ${textoIrmao(it)}`)], { align: AlignmentType.LEFT, after: 40, left: 360 })),
   ]);
 
@@ -118,9 +120,8 @@ export const gerarPranchaComendasDocx = async ({ registro: r, dadosLoja = {}, as
     if (l.trim() === '{relacao_comendas}') {
       if (grupos.length === 0) corpo.push(par([ar('Nenhum irmão a indicar no momento.')], { align: AlignmentType.LEFT }));
       else corpo.push(...relacao());
-      corpo.push(par([ar('')], { after: 60 }));
     } else if (/^fraternalmente,?$/i.test(l.trim())) {
-      corpo.push(par([ar(l.trim())], { align: AlignmentType.LEFT, before: 120, after: 200, keepNext: true }));
+      corpo.push(par([ar(l.trim())], { align: AlignmentType.LEFT, before: 60, after: 0, keepNext: true }));
     } else {
       corpo.push(par(runsNegrito(l), { firstLine: true }));
     }
@@ -129,15 +130,15 @@ export const gerarPranchaComendasDocx = async ({ registro: r, dadosLoja = {}, as
   const semBorda = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
   const bordas = { top: semBorda, bottom: semBorda, left: semBorda, right: semBorda };
   const bloco = (nome, cargo) => new TableCell({
-    borders: bordas, width: { size: 4800, type: WidthType.DXA },
+    borders: bordas, width: { size: Math.floor(LARGURA / 2), type: WidthType.DXA },
     children: [
-      par([ar('________________________________')], { align: AlignmentType.CENTER, after: 0, before: 480, keepNext: true }),
-      par([ar(`Ir∴ ${String(nome || '').toUpperCase()}`, { bold: true })], { align: AlignmentType.CENTER, after: 0, keepNext: true }),
+      par([ar('________________________________')], { align: AlignmentType.CENTER, after: 0, before: 400, keepNext: true }),
+      par([new TextRun({ text: `Ir∴ ${String(nome || '').toUpperCase()}`, font: 'Times New Roman', size: 21, bold: true })], { align: AlignmentType.CENTER, after: 0, keepNext: true }),
       par([ar(cargo)], { align: AlignmentType.CENTER, after: 0 }),
     ],
   });
   const assinaturas = new Table({
-    width: { size: 9600, type: WidthType.DXA }, columnWidths: [4800, 4800],
+    width: { size: LARGURA, type: WidthType.DXA }, columnWidths: [Math.floor(LARGURA / 2), Math.floor(LARGURA / 2)],
     borders: { top: semBorda, bottom: semBorda, left: semBorda, right: semBorda, insideHorizontal: semBorda, insideVertical: semBorda },
     rows: [new TableRow({ cantSplit: true, children: [bloco(assinantes.veneravel, 'Venerável Mestre'), bloco(assinantes.secretario, 'Secretário')] })],
   });
@@ -145,12 +146,18 @@ export const gerarPranchaComendasDocx = async ({ registro: r, dadosLoja = {}, as
   const doc = new Document({
     styles: { default: { document: { run: F } } },
     sections: [{
-      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, children: [
-        new TextRun({ children: [PageNumber.CURRENT, ' de ', PageNumber.TOTAL_PAGES], font: 'Times New Roman', size: 20 }),
-      ] })] }) },
-      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } } },
+      // Folha timbrada como imagem flutuante atrás do texto (imprime sempre).
+      // Margens da folha da Loja: 5 / 2,8 / 3,5 / 2 cm (sup. / inf. / esq. / dir.)
+      headers: fundo ? { default: new Header({ children: [new Paragraph({ children: [new ImageRun({
+        type: 'jpg', data: fundo, transformation: { width: 794, height: 1123 },
+        floating: {
+          horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+          verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+          wrap: { type: TextWrappingType.NONE }, behindDocument: true,
+        },
+      })] })] }) } : undefined,
+      properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: mm(50), bottom: mm(28), left: mm(35), right: mm(20), header: 284, footer: 404 } } },
       children: [
-        ...cabecalhoLojaDocx({ dadosLoja, comLogo: mod.mostrar_logo !== false, larguraUtil: 9600, after: 240, texto: mod.cabecalho_texto, logoCm: mod.logo_tamanho }),
         par([ar(`Prancha nº ${r.prancha_numero || ''}`, { bold: true })], { align: AlignmentType.LEFT, before: 120, after: 60 }),
         par([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${dataExtenso(r.prancha_data)}.`)], { align: AlignmentType.LEFT, after: 240 }),
         par([ar(`Ao Grande Chanceler do Selo, Ir∴ ${V.grande_chanceler}`, { bold: true })], { align: AlignmentType.LEFT, after: 0 }),
@@ -198,7 +205,7 @@ export const gerarPranchaComendasPDF = async ({ registro: r, dadosLoja = {}, ass
     y += 8;
   };
   const novaPagina = () => { doc.addPage(); y = 20; doc.setFont('times', 'normal'); doc.setFontSize(11.5); doc.setTextColor(...TEXTO); };
-  const garantir = (h) => { if (y + h > H - 22) novaPagina(); };
+  const garantir = (h, limite = 22) => { if (y + h > H - limite) novaPagina(); };
 
   cabecalho();
   doc.setFont('times', 'bold'); doc.setFontSize(11); doc.setTextColor(...TEXTO);
@@ -222,9 +229,9 @@ export const gerarPranchaComendasPDF = async ({ registro: r, dadosLoja = {}, ass
       const ultima = i === ls.length - 1;
       doc.setFont('times', 'normal');
       doc.text(linha, M + (recuo && i === 0 ? 12 : 0), y, !ultima ? { maxWidth: larg - (recuo && i === 0 ? 12 : 0), align: 'justify' } : undefined);
-      y += 5.6;
+      y += 5.2;
     });
-    y += 3;
+    y += 2;
   };
 
   const linhas = interp(r.texto || CORPO_PADRAO_COMENDAS, V).split('\n').filter(l => l.trim() !== '');
@@ -237,20 +244,20 @@ export const gerarPranchaComendasPDF = async ({ registro: r, dadosLoja = {}, ass
         doc.setFont('times', 'normal');
         g.irmaos.forEach((it, i) => {
           const ls = doc.splitTextToSize(pdfTexto(`${i + 1}. ${textoIrmao(it)}`), larg - 8);
-          ls.forEach((linha, k) => { garantir(6); doc.text(linha, M + 6 + (k > 0 ? 5 : 0), y); y += 5.4; });
+          ls.forEach((linha, k) => { garantir(6); doc.text(linha, M + 6 + (k > 0 ? 5 : 0), y); y += 5; });
         });
-        y += 3;
+        y += 2;
       });
       y += 2;
     } else if (/^fraternalmente,?$/i.test(l.trim())) {
-      garantir(50);
-      doc.setFont('times', 'normal'); doc.text(pdfTexto(l.trim()), M, y); y += 8;
+      garantir(38, 12);   // "Fraternalmente" + assinaturas ficam juntos
+      doc.setFont('times', 'normal'); doc.text(pdfTexto(l.trim()), M, y); y += 5;
     } else {
       paragrafo(l);
     }
   });
 
-  garantir(36);
+  garantir(24, 12);
   y += 14;
   const assina = (cx, nome, cargo) => {
     doc.setDrawColor(...TEXTO); doc.setLineWidth(0.3);
