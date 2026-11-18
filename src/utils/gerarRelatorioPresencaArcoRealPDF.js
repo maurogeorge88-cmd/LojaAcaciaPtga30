@@ -33,28 +33,19 @@ export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSe
     return partes.slice(0, 2).join(' ');
   };
 
-  // CABEÇALHO
-  doc.setFillColor(30, 58, 95);
-  doc.rect(0, 0, pageWidth, 30, 'F');
-
-  const nomeLoja = dadosLoja?.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga';
-  const numeroLoja = dadosLoja?.numero_loja || '30';
-  const grandeLoja = dadosLoja?.grande_loja || 'Grande Oriente do Brasil';
-  const cidadeLoja = dadosLoja?.cidade || 'Paranatinga';
-  const estadoLoja = dadosLoja?.estado || 'MT';
-
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text(`${nomeLoja} nº ${numeroLoja}`, pageWidth / 2, 10, { align: 'center' });
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`${grandeLoja} - ${cidadeLoja}/${estadoLoja}`, pageWidth / 2, 16, { align: 'center' });
-
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('GRADE DE PRESENÇA — ARCO REAL', pageWidth / 2, 24, { align: 'center' });
+  // CABEÇALHO — mesmo padrão dos relatórios financeiros do Arco Real:
+  // fundo branco, brasão do Capítulo centralizado e nome do Capítulo em negrito.
+  let yc = 6;
+  if (dadosLoja?.logo_url) {
+    try { doc.addImage(dadosLoja.logo_url, 'PNG', pageWidth / 2 - 10, yc, 20, 20); yc += 24; } catch (e) { /* segue sem logo */ }
+  }
+  doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  doc.text('Capítulo Guardiões da Aliança Nº 04', pageWidth / 2, yc + 4, { align: 'center' });
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+  doc.text('Arco Real - Controle de Presença', pageWidth / 2, yc + 9, { align: 'center' });
+  doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+  doc.text('GRADE DE PRESENÇA', pageWidth / 2, yc + 15, { align: 'center' });
+  const yPeriodo = yc + 23;
 
   // Período
   doc.setFontSize(10);
@@ -71,12 +62,12 @@ export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSe
   } else {
     periodo = `${meses[mesSelecionado]}/${anoSelecionado}`;
   }
-  doc.text(`Período: ${periodo}`, 10, 36);
+  doc.text(`Período: ${periodo}`, 10, yPeriodo);
 
   const dataGeracao = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
-  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, 36, { align: 'right' });
+  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, yPeriodo, { align: 'right' });
 
   // PREPARAR DADOS DA TABELA
   const headers = [{ title: 'Membro', dataKey: 'nome' }];
@@ -135,7 +126,7 @@ export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSe
   rows.push(totalRow);
 
   doc.autoTable({
-    startY: 42,
+    startY: yPeriodo + 6,
     head: [headers.map(h => h.title)],
     body: rows.map(row => headers.map(h => row[h.dataKey])),
     theme: 'grid',
