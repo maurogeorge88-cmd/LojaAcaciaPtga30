@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import EmailEventosArcoReal from './EmailEventosArcoReal';
 
 // Versão enxuta do EmailIrmaos.jsx da Loja — só o modo "Lembrete Financeiro",
 // chamando a Edge Function irmã (enviar-email-arcoreal) em vez da da Loja.
 export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
-  const podeEnviarEmail = !!permissoes?.canViewFinancial;
+  const podeEnviarEmail = !!permissoes?.canViewFinancial; // e-mails financeiros
+  const podeEventos = !!(permissoes?.canViewFinancial || permissoes?.canEditMembers); // lembrete de eventos
+  const podeConfigurarEventos = !!permissoes?.canEditMembers;
 
   const [membros, setMembros] = useState([]);
   const [membrosSelec, setMembrosSelec] = useState([]);
@@ -13,7 +16,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
   const [resultados, setResultados] = useState([]);
   const [logs, setLogs] = useState([]);
   const [statusPorMembro, setStatusPorMembro] = useState({}); // id -> 'vencido' | 'ok'
-  const [aba, setAba] = useState('individual'); // 'individual' | 'resumo'
+  const [aba, setAba] = useState(permissoes?.canViewFinancial ? 'individual' : 'eventos'); // 'individual' | 'resumo' | 'eventos' | 'automatico'
   const [destinatariosResumo, setDestinatariosResumo] = useState([]);
   const [filtroBuscaResumo, setFiltroBuscaResumo] = useState('');
   const [enviandoResumo, setEnviandoResumo] = useState(false);
@@ -76,7 +79,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
     const { data } = await supabase
       .from('log_email_irmao')
       .select('*')
-      .eq('tipo', 'lembrete_financeiro_arcoreal')
+      .in('tipo', podeEnviarEmail ? ['lembrete_financeiro_arcoreal', 'resumo_pendencias_arcoreal', 'lembrete_evento_arcoreal'] : ['lembrete_evento_arcoreal'])
       .order('enviado_em', { ascending: false })
       .limit(50);
     setLogs(data || []);
@@ -143,7 +146,7 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
     }
   };
 
-  if (!podeEnviarEmail) {
+  if (!podeEnviarEmail && !podeEventos) {
     return (
       <div className="p-10 text-center" style={{ color: 'var(--color-text-muted)' }}>
         <p style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔒</p>
@@ -154,9 +157,10 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
 
   return (
     <div className="p-6" style={{ maxWidth: '900px', margin: '0 auto' }}>
-      <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 0.75rem' }}>✉️ E-mails Financeiros — Arco Real</h2>
+      <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--color-text)', margin: '0 0 0.75rem' }}>✉️ E-mails — Arco Real</h2>
 
-      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        {podeEnviarEmail && (<>
         <button onClick={() => setAba('individual')}
           style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === 'individual' ? '#7c5e1e' : 'var(--color-surface-2)', color: aba === 'individual' ? '#fff' : 'var(--color-text)' }}>
           ✉️ Lembrete Individual
@@ -165,9 +169,19 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
           style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === 'resumo' ? '#7c5e1e' : 'var(--color-surface-2)', color: aba === 'resumo' ? '#fff' : 'var(--color-text)' }}>
           📋 Resumo aos Dirigentes
         </button>
+        </>)}
+        {podeEventos && [['eventos', '📅 Lembrete de Evento'], ['automatico', '⏰ Automático']].map(([k, l]) => (
+          <button key={k} onClick={() => setAba(k)}
+            style={{ padding: '0.45rem 1rem', borderRadius: 'var(--radius-lg)', border: 'none', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', background: aba === k ? '#7c5e1e' : 'var(--color-surface-2)', color: aba === k ? '#fff' : 'var(--color-text)' }}>
+            {l}
+          </button>
+        ))}
       </div>
 
-      {aba === 'individual' && (
+      {aba === 'eventos' && podeEventos && <EmailEventosArcoReal modo="manual" showSuccess={showSuccess} showError={showError} podeConfigurar={podeConfigurarEventos} />}
+      {aba === 'automatico' && podeEventos && <EmailEventosArcoReal modo="automatico" showSuccess={showSuccess} showError={showError} podeConfigurar={podeConfigurarEventos} />}
+
+      {aba === 'individual' && podeEnviarEmail && (
       <>
       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0 0 1.25rem' }}>
         Envia e-mail só para quem está com pendência — quem estiver em dia é pulado automaticamente.
