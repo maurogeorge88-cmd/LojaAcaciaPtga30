@@ -22,6 +22,8 @@ export default function EmailEventosArcoReal({ modo, showSuccess, showError, pod
   const [resultados, setResultados] = useState([]);
 
   const [cfg, setCfg] = useState({ ativo: false, dias_antes: [2, 0] });
+  const [felicAtivo, setFelicAtivo] = useState(false);
+  const [salvandoFelic, setSalvandoFelic] = useState(false);
   const [semTabela, setSemTabela] = useState(false);
   const [avisos, setAvisos] = useState([]);
   const [salvando, setSalvando] = useState(false);
@@ -47,6 +49,8 @@ export default function EmailEventosArcoReal({ modo, showSuccess, showError, pod
     const { data, error } = await supabase.from('arco_real_config_email').select('*').eq('tipo', 'lembrete_evento').maybeSingle();
     if (error) { if (tabelaAusente(error)) setSemTabela(true); return; }
     if (data) setCfg({ ativo: !!data.ativo, dias_antes: data.dias_antes || [2, 0] });
+    const f = await supabase.from('arco_real_config_email').select('ativo').eq('tipo', 'felicitacao_aniversario').maybeSingle();
+    setFelicAtivo(!!f.data?.ativo);
     const av = await supabase.from('arco_real_evento_aviso').select('id, dias_antes, destinatarios, enviado_em, arco_real_cronograma(titulo, data_evento)')
       .order('enviado_em', { ascending: false }).limit(15);
     setAvisos(av.data || []);
@@ -64,6 +68,21 @@ export default function EmailEventosArcoReal({ modo, showSuccess, showError, pod
       showError('Erro ao salvar: ' + e.message);
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const salvarFelic = async (ativo) => {
+    setSalvandoFelic(true);
+    try {
+      const { error } = await supabase.from('arco_real_config_email')
+        .upsert({ tipo: 'felicitacao_aniversario', ativo, dias_antes: [], updated_at: new Date().toISOString() }, { onConflict: 'tipo' });
+      if (error) throw error;
+      setFelicAtivo(ativo);
+      showSuccess('✅ Configuração salva.');
+    } catch (e) {
+      showError('Erro ao salvar: ' + e.message);
+    } finally {
+      setSalvandoFelic(false);
     }
   };
 
@@ -124,6 +143,17 @@ export default function EmailEventosArcoReal({ modo, showSuccess, showError, pod
             ))}
           </div>
           {!podeConfigurar && <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.75rem' }}>Somente quem pode editar membros altera esta configuração.</p>}
+        </div>
+
+        <div style={card}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', margin: '0 0 0.4rem' }}>🎂 Felicitações automáticas de aniversário</h3>
+          <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', margin: '0 0 1rem' }}>
+            Todo dia às 08:00, o sistema envia a mensagem de felicitações aos companheiros que fazem aniversário no dia (regulares e licenciados, com e-mail). Familiares não recebem. Cada companheiro é felicitado uma vez por ano. O 1º Principal e o Administrador recebem um informativo de quem foi felicitado.
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: 'var(--radius-md)', cursor: podeConfigurar && !semTabela ? 'pointer' : 'not-allowed', background: felicAtivo ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)', border: '1px solid ' + (felicAtivo ? 'rgba(16,185,129,0.3)' : 'var(--color-border)') }}>
+            <input type="checkbox" checked={felicAtivo} disabled={!podeConfigurar || semTabela || salvandoFelic} onChange={e => salvarFelic(e.target.checked)} />
+            <span style={{ fontWeight: 700, color: 'var(--color-text)' }}>{felicAtivo ? '▶ Felicitações automáticas ativas' : '⏸ Felicitações automáticas desligadas'}</span>
+          </label>
         </div>
 
         <div style={card}>
