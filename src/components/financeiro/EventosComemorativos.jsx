@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
-import { calcularRateio, custeioAtivo, descricaoComCusteio, cotasConvidados, semCobranca, resumirEvento, somaContribuicoes } from './utils/rateioCusteio';
+import { calcularRateio, custeioAtivo, descricaoComCusteio, cotasConvidados, semCobranca, resumirEvento, somaContribuicoes } from './utils/rateioAgape';
 import { confirmar } from '../common/ConfirmDialog';
 
 // ─────────────────────────────────────────────
