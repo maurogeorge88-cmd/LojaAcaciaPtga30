@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { carregarLogoArcoRealBase64 } from '../../utils/arcoRealMembros';
+import { carregarLogoArcoRealBase64, buscarPeriodosSituacao } from '../../utils/arcoRealMembros';
+import { situacaoNaData } from '../../utils/elegibilidadeArcoReal';
 import { gerarRelatorioPresencaArcoRealPDF } from '../../utils/gerarRelatorioPresencaArcoRealPDF';
 import { gerarRelatorioIndividualArcoRealPDF } from '../../utils/gerarRelatorioIndividualArcoRealPDF';
 
@@ -9,6 +10,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
   const [sessoes, setSessoes] = useState([]);
   const [membros, setMembros] = useState([]);
   const [grade, setGrade] = useState({});
+  const [periodos, setPeriodos] = useState([]);
   const [busca, setBusca] = useState('');
   const [anosDisponiveis, setAnosDisponiveis] = useState([new Date().getFullYear()]);
   const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear());
@@ -88,7 +90,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
       });
 
       gerarRelatorioIndividualArcoRealPDF(
-        membroIndividual, sessoesPeriodo || [], gradePeriodo, dadosLoja, periodoInicio, periodoFim
+        membroIndividual, (sessoesPeriodo || []).filter(s => situacaoNaData(membroIndividual, periodos, s.data_sessao).conta), gradePeriodo, dadosLoja, periodoInicio, periodoFim
       );
       setModalIndividual(false);
     } catch (error) {
@@ -132,10 +134,10 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
 
       const { data: membrosData } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, situacao, foto_url')
+        .select('id, nome, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
         .eq('ativo', true)
-        .in('situacao', ['regular', 'licenciado'])
         .order('nome');
+      const periodosData = await buscarPeriodosSituacao();
 
       const sessaoIds = (sessoesData || []).map(s => s.id);
       let todosRegistros = [];
@@ -161,7 +163,9 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
       });
 
       setSessoes(sessoesData || []);
-      setMembros(membrosData || []);
+      // Só entra na grade quem foi elegível em pelo menos uma sessão do período
+      setMembros((membrosData || []).filter(m => (sessoesData || []).some(s => situacaoNaData(m, periodosData, s.data_sessao).elegivel)));
+      setPeriodos(periodosData);
       setGrade(gradeCompleta);
     } catch (e) {
       console.error('Erro ao carregar grade de presença:', e);
@@ -172,8 +176,17 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
 
   const formatarData = (d) => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
-  const renderizarCelula = (membroId, sessaoId) => {
+  const sitCelula = (membro, sessao) => situacaoNaData(membro, periodos, sessao.data_sessao);
+
+  const renderizarCelula = (membroId, sessaoId, sit) => {
     const reg = grade[membroId]?.[sessaoId];
+    if (sit && !sit.elegivel) {
+      return <td key={sessaoId} title="Fora do período (antes da exaltação ou situação que impede)" style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', color: 'var(--color-text-muted)' }}>–</td>;
+    }
+    if (sit && !sit.conta) {
+      const titulo = sit.licenca ? 'Licença' : 'Prerrogativa';
+      return <td key={sessaoId} title={titulo} style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', color: sit.prerrogativa && reg?.presente ? '#8b5cf6' : 'var(--color-text-muted)', fontWeight: '700' }}>{sit.prerrogativa && reg?.presente ? '✓' : '–'}</td>;
+    }
     if (!reg) {
       return <td key={sessaoId} style={{ border: '1px solid var(--color-border)', textAlign: 'center', padding: '0.35rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: '800' }}>✗</td>;
     }
@@ -232,7 +245,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
           <button
             onClick={() => {
               if (sessoes.length === 0) { alert('Não há sessões para gerar o relatório'); return; }
-              gerarRelatorioPresencaArcoRealPDF(sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja);
+              gerarRelatorioPresencaArcoRealPDF(sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja, (m, s) => situacaoNaData(m, periodos, s.data_sessao));
             }}
             style={{ padding: '0.4rem 0.85rem', background: '#dc2626', color: '#fff', borderRadius: 'var(--radius-md)', fontWeight: '700', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem' }}
             title="Gerar relatório geral em PDF"
@@ -259,6 +272,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
             <span><span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> Presente</span>
             <span><span style={{ color: '#b45309', fontWeight: '800' }}>J</span> Justificado</span>
             <span><span style={{ color: '#ef4444', fontWeight: '800' }}>✗</span> Ausente</span>
+            <span><strong>–</strong> Não conta (antes da exaltação, licença, prerrogativa ou situação que impede)</span>
           </div>
         </div>
 
@@ -289,8 +303,9 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
               </thead>
               <tbody>
                 {membrosFiltrados.map(membro => {
-                  const presencasMembro = sessoes.filter(s => grade[membro.id]?.[s.id]?.presente).length;
-                  const percentual = sessoes.length > 0 ? Math.round((presencasMembro / sessoes.length) * 100) : 0;
+                  const contam = sessoes.filter(s => sitCelula(membro, s).conta);
+                  const presencasMembro = contam.filter(s => grade[membro.id]?.[s.id]?.presente).length;
+                  const percentual = contam.length > 0 ? Math.round((presencasMembro / contam.length) * 100) : 0;
                   return (
                     <tr key={membro.id}>
                       <td style={{ border: '1px solid var(--color-border)', padding: '0.4rem 0.85rem', background: 'var(--color-surface)', position: 'sticky', left: 0, zIndex: 5 }}>
@@ -302,9 +317,9 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
                           )}
                         </div>
                       </td>
-                      {sessoes.map(s => renderizarCelula(membro.id, s.id))}
-                      <td style={{ border: '1px solid var(--color-border)', padding: '0.4rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-text)' }}>{presencasMembro}/{sessoes.length}</td>
-                      <td style={{ border: '1px solid var(--color-border)', padding: '0.4rem', textAlign: 'center', fontWeight: '800', color: percentual >= 70 ? '#10b981' : percentual >= 50 ? '#f59e0b' : '#ef4444' }}>{percentual}%</td>
+                      {sessoes.map(s => renderizarCelula(membro.id, s.id, sitCelula(membro, s)))}
+                      <td style={{ border: '1px solid var(--color-border)', padding: '0.4rem', textAlign: 'center', fontWeight: '700', color: 'var(--color-text)' }}>{contam.length > 0 ? `${presencasMembro}/${contam.length}` : '–'}</td>
+                      <td style={{ border: '1px solid var(--color-border)', padding: '0.4rem', textAlign: 'center', fontWeight: '800', color: percentual >= 70 ? '#10b981' : percentual >= 50 ? '#f59e0b' : '#ef4444' }}>{contam.length > 0 ? `${percentual}%` : '–'}</td>
                     </tr>
                   );
                 })}
