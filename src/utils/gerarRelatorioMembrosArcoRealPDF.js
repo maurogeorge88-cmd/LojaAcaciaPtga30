@@ -96,7 +96,7 @@ export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
-        doc.addImage(img, 'PNG', pageWidth / 2 - 9, 1, 9, 9);
+        doc.addImage(img, 'PNG', 12, 4, 24, 24);
       } catch (e) { /* segue sem logo */ }
       gerarConteudo();
     };
