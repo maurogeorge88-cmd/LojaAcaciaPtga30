@@ -14,6 +14,11 @@ export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
     doc.setFillColor(30, 58, 95);
     doc.rect(0, 0, pageWidth, 32, 'F');
 
+    // Logo (data URL base64) à esquerda — desenhada DEPOIS da faixa azul, senão fica coberta.
+    if (logoUrl) {
+      try { doc.addImage(logoUrl, 'PNG', 12, 4, 24, 24); } catch (e) { /* segue sem logo */ }
+    }
+
     doc.setFontSize(15);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
@@ -90,19 +95,5 @@ export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
     doc.save('Relacao_Membros_ArcoReal.pdf');
   };
 
-  // Logo é opcional — se falhar ao carregar, gera o PDF sem ela.
-  if (logoUrl) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        doc.addImage(img, 'PNG', 12, 4, 24, 24);
-      } catch (e) { /* segue sem logo */ }
-      gerarConteudo();
-    };
-    img.onerror = () => gerarConteudo();
-    img.src = logoUrl;
-  } else {
-    gerarConteudo();
-  }
+  gerarConteudo();
 };
