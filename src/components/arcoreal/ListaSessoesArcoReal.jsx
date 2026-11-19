@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { buscarPeriodosSituacao } from '../../utils/arcoRealMembros';
+import { situacaoNaData } from '../../utils/elegibilidadeArcoReal';
 
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const CLASSIFICACOES = ['Econômica', 'Especial', 'Magna', 'Extraordinária'];
@@ -63,17 +65,21 @@ export default function ListaSessoesArcoReal({ podeEditar, onVisualizar, onEdita
       const ids = (ss || []).map(s => s.id);
       const st = {}, vis = {};
       if (ids.length) {
-        const [{ data: membros }, regs, vs] = await Promise.all([
-          supabase.from('arco_real_membros').select('id, situacao'),
+        const [{ data: membros }, periodos, regs, vs] = await Promise.all([
+          supabase.from('arco_real_membros').select('id, situacao, ativo, data_exaltacao, data_nascimento'),
+          buscarPeriodosSituacao(),
           paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, membro_id, presente, justificativa').in('sessao_id', ids)),
           paginar(() => supabase.from('arco_real_visitantes_sessao').select('id, sessao_id').in('sessao_id', ids)),
         ]);
-        const sit = new Map((membros || []).map(m => [m.id, m.situacao]));
+        const mm = new Map((membros || []).map(m => [m.id, m]));
+        const dataDe = new Map((ss || []).map(s => [s.id, s.data_sessao]));
         regs.forEach(r => {
+          const m = mm.get(r.membro_id), dt = dataDe.get(r.sessao_id);
+          if (!m || !dt || !situacaoNaData(m, periodos, dt).elegivel) return; // não elegível na data: ignora
           const x = st[r.sessao_id] || (st[r.sessao_id] = { total: 0, pres: 0, just: 0, injust: 0, lic: 0 });
           x.total++;
           if (r.presente) x.pres++;
-          else if (sit.get(r.membro_id) === 'licenciado') x.lic++;
+          else if (situacaoNaData(m, periodos, dt).licenca) x.lic++;
           else if (r.justificativa) x.just++;
           else x.injust++;
         });
