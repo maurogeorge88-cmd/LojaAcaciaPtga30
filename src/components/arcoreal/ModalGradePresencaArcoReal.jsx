@@ -134,7 +134,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
 
       const { data: membrosData } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
+        .select('id, nome, situacao, foto_url, ativo, data_exaltacao, data_nascimento, homenagem')
         .eq('ativo', true)
         .order('nome');
       const periodosData = await buscarPeriodosSituacao();
