@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { buscarPeriodosSituacao } from '../../utils/arcoRealMembros';
+import { membrosDaSessao } from '../../utils/elegibilidadeArcoReal';
 
-// Elegibilidade simples do Arco Real: apenas situação "regular" ou "licenciado"
-// podem ter presença registrada. desligado/excluido/falecido nunca aparecem.
-// (Sem as regras complexas de grau-na-data usadas na Loja — o Arco Real tem grau único.)
-const SITUACOES_ELEGIVEIS = ['regular', 'licenciado'];
+// Elegibilidade POR DATA DA SESSÃO (utils/elegibilidadeArcoReal): só a partir da exaltação,
+// sem desligado/excluído/irregular/suspenso/falecido na data; licença e prerrogativa (70 anos) aparecem marcadas.
 
 export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSuccess, showError }) {
   const [loading, setLoading] = useState(true);
@@ -35,12 +35,13 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
 
       const { data: membrosData, error: membrosError } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, cargo, situacao, foto_url')
+        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
         .eq('ativo', true)
         .order('nome');
       if (membrosError) throw membrosError;
 
-      const elegiveis = (membrosData || []).filter(m => SITUACOES_ELEGIVEIS.includes(m.situacao));
+      const periodos = await buscarPeriodosSituacao();
+      const elegiveis = membrosDaSessao(membrosData || [], periodos, sessaoData.data_sessao);
       setMembrosElegiveis(elegiveis);
 
       const { data: presencasExistentes, error: presencasError } = await supabase
@@ -327,6 +328,11 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
                         <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)' }}>{m.nome}</div>
                         {m.cargo && (
                           <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{m.cargo}</div>
+                        )}
+                        {m.prerrogativa && (
+                          <span style={{ display: 'inline-block', marginTop: '0.25rem', marginRight: '0.3rem', padding: '0.1rem 0.5rem', fontSize: '0.7rem', fontWeight: '700', borderRadius: '999px', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' }}>
+                            Prer
+                          </span>
                         )}
                         {m.situacao === 'licenciado' && (
                           <span style={{ display: 'inline-block', marginTop: '0.25rem', padding: '0.1rem 0.5rem', fontSize: '0.7rem', fontWeight: '700', borderRadius: '999px', background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>
