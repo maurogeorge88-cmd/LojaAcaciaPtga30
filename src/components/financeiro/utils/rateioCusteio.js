@@ -28,8 +28,12 @@ export const custeioAtivo = (evento) => {
 export const cotasConvidados = (p) =>
   (parseInt(p?.conv_adultos) || 0) + (parseInt(p?.conv_meia) || 0) * 0.5;
 
-// Participante sem nada a cobrar (isento e sem convidados pagos por ele)
-export const semCobranca = (p) => !!(p?.irmao_id && p.isento && cotasConvidados(p) <= 0);
+// Contribuição voluntária em R$ (irmão ou convidado): abate das despesas antes de ratear
+export const contribuicaoDe = (p) => Math.max(0, r2(parseFloat(p?.contribuicao_valor) || 0));
+export const somaContribuicoes = (participantes) => r2((participantes || []).reduce((s, p) => s + contribuicaoDe(p), 0));
+
+// Participante sem nada a cobrar (isento, sem convidados pagos por ele e sem contribuição)
+export const semCobranca = (p) => !!(p?.irmao_id && p.isento && cotasConvidados(p) <= 0 && contribuicaoDe(p) <= 0);
 
 export function calcularRateio(participantes, valorCota, evento) {
   const lista = participantes || [];
@@ -50,7 +54,7 @@ export function calcularRateio(participantes, valorCota, evento) {
     const item = {
       custo, custoFamilia, custoConvidados,
       pagaProprio: custo, pagaFamilia: custoFamilia,
-      parteCusteio: 0, parteLoja: 0, recebeCusteio: 0, pctProprio: 100,
+      parteCusteio: 0, parteLoja: 0, recebeCusteio: 0, pctProprio: 100, contribuicao: contribuicaoDe(p),
       custeador: !!(ativo && p.irmao_id && p.custeador),
       total: custo,
     };
@@ -81,6 +85,8 @@ export function calcularRateio(participantes, valorCota, evento) {
       pool += parteCusteio;
       lojaIrmaos += lojaFinal;
     }
+    // Contribuição voluntária do irmão: paga a cota do rateio + o valor que escolheu
+    if (p.irmao_id && item.contribuicao > 0) item.total = r2(item.total + item.contribuicao);
     porParticipante[p.id] = item;
   });
 
@@ -96,13 +102,15 @@ export function calcularRateio(participantes, valorCota, evento) {
       const parte = cent / 100;
       const it = porParticipante[c.id];
       it.recebeCusteio = parte;
-      it.total = r2(it.custo + parte);
+      it.total = r2(it.custo + parte + it.contribuicao);
     });
   }
 
   const externosCusto = lista.filter((p) => !p.irmao_id).reduce((s, p) => s + porParticipante[p.id].custo, 0);
   const totalRateio = lista.reduce((s, p) => s + porParticipante[p.id].custo, 0);
   const cobradoIrmaos = lista.filter((p) => p.irmao_id).reduce((s, p) => s + porParticipante[p.id].total, 0);
+  const contribIrmaos = lista.filter((p) => p.irmao_id).reduce((s, p) => s + porParticipante[p.id].contribuicao, 0);
+  const contribExternos = lista.filter((p) => !p.irmao_id).reduce((s, p) => s + porParticipante[p.id].contribuicao, 0);
 
   return {
     ativo, pEvento, fatiaCusteio, numCusteadores: n,
@@ -114,6 +122,8 @@ export function calcularRateio(participantes, valorCota, evento) {
       lojaIrmaos: r2(lojaIrmaos),
       externos: r2(externosCusto),
       lojaTotal: r2(lojaIrmaos + externosCusto),
+      contribuicaoIrmaos: r2(contribIrmaos),
+      contribuicaoExternos: r2(contribExternos),
     },
   };
 }
@@ -125,11 +135,13 @@ const SUFIXO_RE = /\s\((?:própria|família) [^)]*\)$/;
 export const descricaoComCusteio = (descricaoBase, item) => {
   const base = String(descricaoBase || '').replace(SUFIXO_RE, '');
   if (!item) return base;
+  const contrib = item.contribuicao > 0 ? ` + contribuição ${fmtBRL(item.contribuicao)}` : '';
   if (item.recebeCusteio > 0) {
-    return `${base} (própria ${fmtBRL(item.custo)} + custeio famílias ${fmtBRL(item.recebeCusteio)})`;
+    return `${base} (própria ${fmtBRL(item.custo)} + custeio famílias ${fmtBRL(item.recebeCusteio)}${contrib})`;
   }
-  if (item.custoConvidados > 0) {
-    return `${base} (família ${fmtBRL(item.pagaFamilia)} + convidados ${fmtBRL(item.custoConvidados)})`;
+  if (item.custoConvidados > 0 || item.contribuicao > 0) {
+    const conv = item.custoConvidados > 0 ? ` + convidados ${fmtBRL(item.custoConvidados)}` : '';
+    return `${base} (família ${fmtBRL(item.pagaFamilia)}${conv}${contrib})`;
   }
   return base;
 };
@@ -148,7 +160,8 @@ export function resumirEvento(evento, participantes, lancamentos) {
 
   const totalDespesas = r2(lancs.filter((l) => l.origem_tipo === 'Loja' && l.tipo === 'despesa').reduce((s, l) => s + num(l.valor), 0));
   const contribuicaoLoja = num(evento?.contribuicao_loja);
-  const baseRateio = Math.max(0, totalDespesas - contribuicaoLoja);
+  const contribuicaoParticipantes = somaContribuicoes(parts);
+  const baseRateio = Math.max(0, totalDespesas - contribuicaoLoja - contribuicaoParticipantes);
   const totalCotas = parts.reduce((s, p) => s + num(p.cotas), 0);
   const valorCalc = totalCotas > 0 ? baseRateio / totalCotas : 0;
   const ajustado = num(evento?.valor_ajustado);
@@ -181,7 +194,8 @@ export function resumirEvento(evento, participantes, lancamentos) {
     qtdExternos: externos.length,
     pessoasExternos: externos.reduce((s, p) => s + pessoasGrupo(p), 0),
     // valores
-    irmaosFamiliaValor: r2(cobradoIrmaos - convIrmaosValor),
+    irmaosFamiliaValor: r2(cobradoIrmaos - convIrmaosValor - rateio.resumo.contribuicaoIrmaos),
+    contribuicaoParticipantes,
     convIrmaosValor,
     externosValor: rateio.resumo.externos,
     custeioAtivo: rateio.ativo,
