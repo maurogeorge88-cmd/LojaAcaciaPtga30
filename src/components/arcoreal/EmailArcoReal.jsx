@@ -48,13 +48,14 @@ export default function EmailArcoReal({ showSuccess, showError, permissoes }) {
   const carregarMembros = async () => {
     const { data } = await supabase
       .from('arco_real_membros')
-      .select('id, nome, email, situacao, data_nascimento')
+      .select('id, nome, email, situacao, data_nascimento, homenagem')
       .not('email', 'is', null)
       .neq('email', '')
       .eq('ativo', true)
       .order('nome');
-    setMembros(data || []);
-    if (data && data.length > 0) carregarStatusFinanceiro(data.map(m => m.id));
+    const lista = (data || []).filter(m => !m.homenagem);
+    setMembros(lista);
+    if (lista.length > 0) carregarStatusFinanceiro(lista.map(m => m.id));
   };
 
   // Mesma regra da Edge Function: só o que já venceu conta como débito de
