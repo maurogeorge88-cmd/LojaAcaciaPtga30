@@ -33,7 +33,7 @@ export const contribuicaoDe = (p) => Math.max(0, r2(parseFloat(p?.contribuicao_v
 export const somaContribuicoes = (participantes) => r2((participantes || []).reduce((s, p) => s + contribuicaoDe(p), 0));
 
 // Participante sem nada a cobrar (isento, sem convidados pagos por ele e sem contribuição)
-export const semCobranca = (p) => !!(p?.irmao_id && p.isento && cotasConvidados(p) <= 0 && contribuicaoDe(p) <= 0);
+export const semCobranca = (p) => !!(p?.irmao_id && (p.isento || p.somente_contribuicao) && cotasConvidados(p) <= 0 && contribuicaoDe(p) <= 0);
 
 export function calcularRateio(participantes, valorCota, evento) {
   const lista = participantes || [];
@@ -59,7 +59,18 @@ export function calcularRateio(participantes, valorCota, evento) {
       total: custo,
     };
 
-    if (ativo && p.irmao_id && !p.custeador) {
+    // Irmão que NÃO paga a cota da família, só a contribuição declarada (e os convidados dele, se houver).
+    // A cota da família continua no rateio e fica a cargo da Loja.
+    const somenteContrib = !!(p.irmao_id && p.somente_contribuicao && !p.custeador);
+    if (somenteContrib) {
+      item.pctProprio = 0;
+      item.pagaFamilia = 0;
+      item.pagaProprio = custoConvidados;
+      item.parteLoja = custoFamilia;
+      item.total = custoConvidados;
+      item.somenteContribuicao = true;
+      lojaIrmaos += custoFamilia;
+    } else if (ativo && p.irmao_id && !p.custeador) {
       const ov = parseFloat(p.percentual_proprio);
       const isentoLoja = !!p.isento && !!p.isento_loja;
       const pProprio = p.isento ? 0 : (ov > 0 ? Math.min(ov, 100) : pEvento);
@@ -130,12 +141,16 @@ export function calcularRateio(participantes, valorCota, evento) {
 
 // Sufixo de descrição dos lançamentos (reconhecido ao recalcular, para não duplicar)
 const fmtBRL = (v) => (parseFloat(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-const SUFIXO_RE = /\s\((?:própria|família) [^)]*\)$/;
+const SUFIXO_RE = /\s\((?:própria|família|somente) [^)]*\)$/;
 
 export const descricaoComCusteio = (descricaoBase, item) => {
   const base = String(descricaoBase || '').replace(SUFIXO_RE, '');
   if (!item) return base;
   const contrib = item.contribuicao > 0 ? ` + contribuição ${fmtBRL(item.contribuicao)}` : '';
+  if (item.somenteContribuicao) {
+    const conv = item.custoConvidados > 0 ? ` + convidados ${fmtBRL(item.custoConvidados)}` : '';
+    return `${base} (somente contribuição ${fmtBRL(item.contribuicao)}${conv})`;
+  }
   if (item.recebeCusteio > 0) {
     return `${base} (própria ${fmtBRL(item.custo)} + custeio famílias ${fmtBRL(item.recebeCusteio)}${contrib})`;
   }
