@@ -175,7 +175,7 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
         if (error) throw error;
         const ids = (ss || []).map(s => s.id);
         const [{ data: ms }, ps, regs, vis] = await Promise.all([
-          supabase.from('arco_real_membros').select('id, nome, situacao, ativo, data_exaltacao, data_nascimento'),
+          supabase.from('arco_real_membros').select('id, nome, situacao, ativo, data_exaltacao, data_nascimento, homenagem'),
           buscarPeriodosSituacao(),
           ids.length ? paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, membro_id, presente').in('sessao_id', ids)) : Promise.resolve([]),
           ids.length ? paginar(() => supabase.from('arco_real_visitantes_sessao').select('id, sessao_id').in('sessao_id', ids)) : Promise.resolve([]),
@@ -201,7 +201,7 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
     return [`${ano}-${pad(ini)}-01`, `${ano}-${pad(mesRef)}-${ultimoDia(ano, mesRef)}`];
   }, [periodo, ano]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const elegiveisBase = useMemo(() => membros.filter(m => m.ativo !== false && (m.situacao === 'regular' || m.situacao === 'licenciado')), [membros]);
+  const elegiveisBase = useMemo(() => membros.filter(m => m.ativo !== false && !m.homenagem && (m.situacao === 'regular' || m.situacao === 'licenciado')), [membros]);
   // Base dos cálculos: inclui quem saiu depois (a elegibilidade é avaliada pela data de cada sessão)
   const baseCalculo = useMemo(() => membros.filter(m => m.ativo !== false), [membros]);
   const mapaPresenca = useMemo(() => {
