@@ -75,10 +75,17 @@ export default function VisualizarMembrosArcoReal({ permissoes = {}, meuMembroId
     }
   };
 
-  const gerarRelatorio = async () => {
+  const [modalRelatorio, setModalRelatorio] = useState(false);
+
+  const gerarRelatorio = async (ordemRel) => {
+    setModalRelatorio(false);
     if (filtrados.length === 0) { showError && showError('Nenhum membro para gerar relatório.'); return; }
     const logo = await carregarLogoArcoRealBase64();
-    gerarRelatorioMembrosArcoRealPDF([...filtrados].sort((a, b) => a.nome.localeCompare(b.nome)), logo);
+    const porNome = (a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR');
+    const lista = [...filtrados].sort(ordemRel === 'exaltacao'
+      ? (a, b) => (a.data_exaltacao || '9999').localeCompare(b.data_exaltacao || '9999') || porNome(a, b)
+      : porNome);
+    gerarRelatorioMembrosArcoRealPDF(lista, logo);
   };
 
   const filtrados = useMemo(() => {
@@ -138,7 +145,20 @@ export default function VisualizarMembrosArcoReal({ permissoes = {}, meuMembroId
           {meuMembroId && (
             <button onClick={() => setTela({ tipo: 'perfil', id: meuMembroId })} style={btnSec}>👤 Meus Dados</button>
           )}
-          <button onClick={gerarRelatorio} title="Relatório de nomes e cargos para envio" style={btnSec}>📄 Relatório</button>
+          <button onClick={() => setModalRelatorio(true)} title="Relatório de nomes, cargos e data de exaltação para envio" style={btnSec}>📄 Relatório</button>
+          {modalRelatorio && (
+            <div onClick={() => setModalRelatorio(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '380px', padding: '1.25rem', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-text)' }}>📄 Gerar relatório</h3>
+                <p style={{ margin: '0.4rem 0 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Em qual ordem os membros devem aparecer?</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <button onClick={() => gerarRelatorio('alfabetica')} style={{ ...btnSec, padding: '0.6rem', justifyContent: 'center' }}>🔤 Ordem alfabética</button>
+                  <button onClick={() => gerarRelatorio('exaltacao')} style={{ ...btnSec, padding: '0.6rem', justifyContent: 'center' }}>📅 Data de exaltação (mais antigos primeiro)</button>
+                  <button onClick={() => setModalRelatorio(false)} style={{ ...btnSec, padding: '0.5rem', justifyContent: 'center', opacity: 0.8 }}>Cancelar</button>
+                </div>
+              </div>
+            </div>
+          )}
           {podeEditar && (
             <>
               <button onClick={puxarFamiliaresDaLoja} disabled={sincronizando} title="Copia os familiares da Loja para os membros vinculados que ainda não têm" style={btnSec}>{sincronizando ? '⏳ Copiando...' : '👨‍👩‍👧 Puxar Familiares da Loja'}</button>
