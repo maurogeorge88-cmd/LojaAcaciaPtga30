@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
-import { calcularRateio, custeioAtivo, descricaoComCusteio, cotasConvidados, semCobranca, resumirEvento } from './utils/rateioCusteio';
+import { calcularRateio, custeioAtivo, descricaoComCusteio, cotasConvidados, semCobranca, resumirEvento, somaContribuicoes } from './utils/rateioCusteio';
 import { confirmar } from '../common/ConfirmDialog';
 
 // ─────────────────────────────────────────────
@@ -233,6 +233,7 @@ const PART_VAZIO = {
   conv_adultos: 0,
   conv_meia: 0,
   conv_gratuitas: 0,
+  contribuicao_valor: '',
 };
 
 // Estilo dos campos do modal (foco, setas do select, números sem spinner)
@@ -307,6 +308,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
         conv_adultos: partEdit.conv_adultos || 0,
         conv_meia: partEdit.conv_meia || 0,
         conv_gratuitas: partEdit.conv_gratuitas || 0,
+        contribuicao_valor: partEdit.contribuicao_valor || '',
       } : PART_VAZIO);
       setErro('');
     }
@@ -325,7 +327,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
   const simulacao = (ehIrmao && valorCota > 0)
     ? calcularRateio(
         [
-          { id: 'sim', irmao_id: 1, cotas: cotaCalc, conv_adultos: form.conv_adultos, conv_meia: form.conv_meia, custeador: form.custeador, percentual_proprio: form.percentual_proprio, isento: form.isento, isento_loja: form.isento_loja },
+          { id: 'sim', irmao_id: 1, cotas: cotaCalc, conv_adultos: form.conv_adultos, conv_meia: form.conv_meia, custeador: form.custeador, percentual_proprio: form.percentual_proprio, isento: form.isento, isento_loja: form.isento_loja, contribuicao_valor: form.contribuicao_valor },
           ...((form.custeador || !custeioOn) ? [] : [{ id: 'dummy', irmao_id: 2, cotas: 0, custeador: true }]),
         ],
         valorCota, evento
@@ -336,6 +338,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
     if (ehIrmao && !form.irmao_id) { setErro('Selecione um irmão.'); return; }
     if (form.tipo === 'externo' && !form.nome_externo.trim()) { setErro('Informe o nome do convidado externo.'); return; }
     if (form.percentual_proprio !== '' && (isNaN(parseFloat(form.percentual_proprio)) || parseFloat(form.percentual_proprio) < 0 || parseFloat(form.percentual_proprio) > 100)) { setErro('O % a pagar deve ficar entre 0 e 100.'); return; }
+    if (form.contribuicao_valor !== '' && (isNaN(parseFloat(form.contribuicao_valor)) || parseFloat(form.contribuicao_valor) < 0)) { setErro('A contribuição deve ser um valor maior ou igual a zero.'); return; }
     setSalvando(true); setErro('');
     try { await onSalvar({ ...form, cotas: cotaCalc }); }
     catch (e) { setErro(e.message); }
@@ -423,6 +426,26 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
               </div>
             </SecaoModal>
           )}
+
+          {/* Contribuição voluntária (irmão ou convidado): abate das despesas do evento */}
+          <SecaoModal
+            titulo="💝 Contribuição voluntária"
+            subtitulo={ehIrmao
+              ? 'Valor, em reais, que o irmão quer pagar além da cota. Abate das despesas do evento e a cota de todos diminui.'
+              : 'Valor, em reais, que o convidado quer contribuir. Abate das despesas do evento e a cota de todos diminui. O recebimento é registrado manualmente no financeiro.'}
+            cor="#ec4899">
+            <div style={{ position: 'relative', maxWidth: '220px' }}>
+              <span style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>R$</span>
+              <input className="agp-field agp-num" type="number" step="0.01" min="0"
+                style={{ ...inp, height: '2.6rem', paddingLeft: '2.4rem' }}
+                value={form.contribuicao_valor} onChange={e => f('contribuicao_valor', e.target.value)} placeholder="0,00" />
+            </div>
+            {(parseFloat(form.contribuicao_valor) > 0) && (
+              <p style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', margin: '0.4rem 0 0' }}>
+                A cota menor é recalculada para todos ao salvar{ehIrmao ? '; o irmão paga a cota do rateio + esta contribuição.' : '.'}
+              </p>
+            )}
+          </SecaoModal>
 
           {/* Custeio */}
           {custeioOn && (
@@ -629,6 +652,14 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
         <tr style={{ borderBottom: span > 1 ? 'none' : '1px solid var(--color-border)', background: bg }}>
           <td rowSpan={span} style={{ padding: '0.55rem 0.65rem', fontWeight: 600, color: 'var(--color-text)', verticalAlign: 'middle' }}>
             <span title={nomeCompleto}>{p.irmao_id ? nomeCurto(nomeCompleto) : nomeCompleto}</span>
+            {parseFloat(p.contribuicao_valor) > 0 && (
+              <div style={{ marginTop: '0.2rem' }}>
+                <span title="Contribuição voluntária (abate das despesas)"
+                  style={{ display: 'inline-block', fontSize: '0.68rem', fontWeight: 700, padding: '0.1rem 0.5rem', borderRadius: '999px', background: 'rgba(236,72,153,0.15)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.35)' }}>
+                  💝 Contribui {fmtR(parseFloat(p.contribuicao_valor))}
+                </span>
+              </div>
+            )}
             {comCusteio && p.irmao_id && p.custeador && (
               <div style={{ marginTop: '0.2rem' }}>
                 <span title={`Própria ${fmtR(it?.custo)} + custeio famílias ${fmtR(it?.recebeCusteio)}`}
@@ -844,7 +875,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   // Todas as despesas vinculadas ao evento entram no total, independente do status
   const totalDespesas    = despesas.filter(d => d.tipo === 'despesa').reduce((s, d) => s + parseFloat(d.valor), 0);
   const contribuicaoLoja = evento.contribuicao_loja ? parseFloat(evento.contribuicao_loja) : 0;
-  const baseRateio       = Math.max(0, totalDespesas - contribuicaoLoja);
+  const contribuicaoPart = somaContribuicoes(participantes);   // contribuições voluntárias (irmãos e convidados)
+  const baseRateio       = Math.max(0, totalDespesas - contribuicaoLoja - contribuicaoPart);
   const totalCotas       = participantes.reduce((s, p) => s + parseFloat(p.cotas || 0), 0);
   const valorCalc        = totalCotas > 0 ? baseRateio / totalCotas : 0;
   const valorCota        = evento.valor_ajustado ? parseFloat(evento.valor_ajustado) : valorCalc;
@@ -1018,6 +1050,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       conv_adultos: form.tipo === 'irmao' ? (parseInt(form.conv_adultos) || 0) : 0,
       conv_meia: form.tipo === 'irmao' ? (parseInt(form.conv_meia) || 0) : 0,
       conv_gratuitas: form.tipo === 'irmao' ? (parseInt(form.conv_gratuitas) || 0) : 0,
+      contribuicao_valor: parseFloat(form.contribuicao_valor) > 0 ? parseFloat(form.contribuicao_valor) : 0,
     };
     if (partEdit) {
       const { error } = await supabase.from('evento_rateio_participantes').update(payload).eq('id', partEdit.id);
@@ -1106,7 +1139,9 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       startY: y,
       body: [
         ['Total de Despesas', fmtM(totalDespesas)],
-        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- ${fmtM(contribuicaoLoja)}`], ['Base do Rateio', fmtM(baseRateio)]] : []),
+        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- ${fmtM(contribuicaoLoja)}`]] : []),
+        ...(contribuicaoPart > 0 ? [['Contribuicoes voluntarias', `- ${fmtM(contribuicaoPart)}`]] : []),
+        ...((contribuicaoLoja > 0 || contribuicaoPart > 0) ? [['Base do Rateio', fmtM(baseRateio)]] : []),
         ['Total de Cotas', totalCotas.toFixed(1)],
         ['Valor Calculado por Cota', fmtM(valorCalc)],
         ['Valor Ajustado por Cota', evento.valor_ajustado ? fmtM(evento.valor_ajustado) : 'Nao definido'],
@@ -1376,10 +1411,9 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           {/* Cards de resumo */}
           {(() => { const cardsResumo = [
               { label: 'Total Despesas', val: fmtR(totalDespesas), cor: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
-              ...(contribuicaoLoja > 0 ? [
-                { label: 'Contribuição Loja', val: fmtR(contribuicaoLoja), cor: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
-                { label: 'Base do Rateio', val: fmtR(baseRateio), cor: '#f97316', bg: 'rgba(249,115,22,0.1)' },
-              ] : []),
+              ...(contribuicaoLoja > 0 ? [{ label: 'Contribuição Loja', val: fmtR(contribuicaoLoja), cor: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' }] : []),
+              ...(contribuicaoPart > 0 ? [{ label: 'Contribuições voluntárias', val: fmtR(contribuicaoPart), cor: '#ec4899', bg: 'rgba(236,72,153,0.1)' }] : []),
+              ...((contribuicaoLoja > 0 || contribuicaoPart > 0) ? [{ label: 'Base do Rateio', val: fmtR(baseRateio), cor: '#f97316', bg: 'rgba(249,115,22,0.1)' }] : []),
               { label: 'Total Cotas', val: totalCotas.toFixed(1), cor: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
               { label: 'Valor/Cota Calculado', val: fmtR(valorCalc), cor: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
               { label: 'Valor/Cota Ajustado', val: evento.valor_ajustado ? fmtR(parseFloat(evento.valor_ajustado)) : '—', cor: '#10b981', bg: 'rgba(16,185,129,0.1)' },
@@ -1416,7 +1450,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
               <div>
                 <p style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '0.9rem', marginBottom: '0.15rem' }}>🎯 Ajuste do Valor por Cota</p>
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  {contribuicaoLoja > 0 && <>Base do rateio: <strong style={{ color: '#f97316' }}>{fmtR(baseRateio)}</strong> (Loja contribui {fmtR(contribuicaoLoja)}) · </>}
+                  {(contribuicaoLoja > 0 || contribuicaoPart > 0) && <>Base do rateio: <strong style={{ color: '#f97316' }}>{fmtR(baseRateio)}</strong> ({contribuicaoLoja > 0 && <>Loja contribui {fmtR(contribuicaoLoja)}</>}{contribuicaoLoja > 0 && contribuicaoPart > 0 && ' + '}{contribuicaoPart > 0 && <>contribuições {fmtR(contribuicaoPart)}</>}) · </>}
                   Calculado: <strong>{fmtR(valorCalc)}</strong>
                   {evento.valor_ajustado && <> → Ajustado: <strong style={{ color: '#10b981' }}>{fmtR(parseFloat(evento.valor_ajustado))}</strong></>}
                 </p>
