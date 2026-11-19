@@ -272,7 +272,7 @@ export default function ModalGradePresencaArcoReal({ onFechar }) {
             <span><span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> Presente</span>
             <span><span style={{ color: '#b45309', fontWeight: '800' }}>J</span> Justificado</span>
             <span><span style={{ color: '#ef4444', fontWeight: '800' }}>✗</span> Ausente</span>
-            <span><strong>–</strong> Não conta (antes da exaltação, licença, prerrogativa ou situação que impede)</span>
+            <span><strong>–</strong> Não conta (antes da exaltação ou situação que impede: desligado, excluído, irregular, suspenso, falecido, homenagem)</span>
           </div>
         </div>
 
