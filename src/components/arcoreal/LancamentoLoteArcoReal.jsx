@@ -38,10 +38,10 @@ export default function LancamentoLoteArcoReal({ isOpen, onClose, showSuccess, s
     try {
       const { data: membrosData } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, situacao, periodicidade_pagamento')
+        .select('id, nome, situacao, periodicidade_pagamento, homenagem')
         .in('situacao', ['regular', 'licenciado'])
         .order('nome');
-      setMembros(membrosData || []);
+      setMembros((membrosData || []).filter(m => !m.homenagem));
 
       const { data: pais } = await supabase
         .from('categorias_financeiras')
