@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { buscarPeriodosSituacao } from '../../utils/arcoRealMembros';
+import { situacaoNaData } from '../../utils/elegibilidadeArcoReal';
 
 // ── Constantes e helpers ──────────────────────────────────────────────────────
 const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -163,8 +165,17 @@ const CadastroSessaoArcoReal = ({ onSuccess, onRegistrarPresenca }) => {
       const ids = (data || []).map(s => s.id);
       const mapa = {};
       if (ids.length > 0) {
-        const regs = await paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, presente').in('sessao_id', ids));
+        const [regs, { data: membros }, periodos] = await Promise.all([
+          paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, membro_id, presente').in('sessao_id', ids)),
+          supabase.from('arco_real_membros').select('id, situacao, ativo, data_exaltacao, data_nascimento, homenagem'),
+          buscarPeriodosSituacao(),
+        ]);
+        const mm = new Map((membros || []).map(m => [m.id, m]));
+        const dataDe = new Map((data || []).map(s => [s.id, s.data_sessao]));
         regs.forEach(r => {
+          // só conta quem era elegível NA DATA da sessão (exaltação, situação, homenagem)
+          const m = mm.get(r.membro_id), dt = dataDe.get(r.sessao_id);
+          if (!m || !dt || !situacaoNaData(m, periodos, dt).elegivel) return;
           if (!mapa[r.sessao_id]) mapa[r.sessao_id] = { total: 0, presentes: 0 };
           mapa[r.sessao_id].total++;
           if (r.presente) mapa[r.sessao_id].presentes++;
