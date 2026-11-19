@@ -1,4 +1,3 @@
-// VERSÃO: contribuição voluntária + 'apenas contribuição' (arquivo novo: rateioAgape.js)
 // Cálculo do rateio de Ágape & Festas com custeio.
 //
 // Regras:
