@@ -18,7 +18,9 @@ const diasEntre = (a, b) => {
 const fmtData = (d) => (d ? d.split('-').reverse().join('/') : '—');
 const plural = (n, s, p) => `${n} ${n === 1 ? s : p}`;
 
-const TIPOS = { licenciado: 'Licença', desligado: 'Desligado', excluido: 'Excluído', falecido: 'Falecido' };
+const TIPOS = { licenciado: 'Licença', irregular: 'Irregular', suspenso: 'Suspenso', desligado: 'Desligado', excluido: 'Excluído', falecido: 'Falecido' };
+// Tipos que aceitam data final (temporários)
+const TIPOS_COM_PRAZO = ['licenciado', 'suspenso'];
 const DIAS_AVISO = 10;
 
 const GRUPOS = {
@@ -209,14 +211,14 @@ export default function LicencasSituacoesArcoReal({ podeEditar = false, showSucc
     const f = modalNova;
     if (!f.membro_id) { erro('Selecione o membro.'); return; }
     if (!f.data_inicio) { erro('Informe a data de início.'); return; }
-    if (f.tipo_situacao !== 'licenciado' && f.data_fim) { erro('Somente a licença tem data final.'); return; }
+    if (!TIPOS_COM_PRAZO.includes(f.tipo_situacao) && f.data_fim) { erro('Somente licença e suspensão têm data final.'); return; }
     if (f.data_fim && f.data_fim < f.data_inicio) { erro('A data final não pode ser anterior ao início.'); return; }
     const membro = mapaMembros[f.membro_id];
     try {
       setSalvando(true);
       const { error } = await supabase.from('arco_real_situacoes').insert([{
         membro_id: membro.id, tipo_situacao: f.tipo_situacao, data_inicio: f.data_inicio,
-        data_fim: f.tipo_situacao === 'licenciado' && f.data_fim ? f.data_fim : null,
+        data_fim: TIPOS_COM_PRAZO.includes(f.tipo_situacao) && f.data_fim ? f.data_fim : null,
         motivo: f.motivo.trim() || null, status: 'ativa',
       }]);
       if (error) throw error;
@@ -333,7 +335,7 @@ export default function LicencasSituacoesArcoReal({ podeEditar = false, showSucc
             const info = GRUPOS[r.grupo]; const corPrazo = corDoPrazo(r.grupo, r.dias);
             const cadastroLicenciado = r.membro.situacao === 'licenciado';
             const emAndamento = ['vencida', 'vencendo', 'vigente', 'sem_prazo', 'futura'].includes(r.grupo);
-            const podeAlterarPrazo = podeEditar && r.tipo_situacao === 'licenciado' && ['vencida', 'vencendo', 'vigente', 'futura'].includes(r.grupo);
+            const podeAlterarPrazo = podeEditar && TIPOS_COM_PRAZO.includes(r.tipo_situacao) && ['vencida', 'vencendo', 'vigente', 'futura'].includes(r.grupo);
             const podeEncerrar = podeEditar && r.tipo_situacao !== 'falecido' && ['vencida', 'vencendo', 'vigente', 'sem_prazo'].includes(r.grupo);
             const podeCancelar = podeEditar && emAndamento;
             return (
@@ -405,15 +407,15 @@ export default function LicencasSituacoesArcoReal({ podeEditar = false, showSucc
               </div>
               <div>
                 <label style={sLabel}>Tipo *</label>
-                <select value={modalNova.tipo_situacao} onChange={e => setModalNova({ ...modalNova, tipo_situacao: e.target.value, data_fim: e.target.value === 'licenciado' ? modalNova.data_fim : '' })} style={sInput}>
+                <select value={modalNova.tipo_situacao} onChange={e => setModalNova({ ...modalNova, tipo_situacao: e.target.value, data_fim: TIPOS_COM_PRAZO.includes(e.target.value) ? modalNova.data_fim : '' })} style={sInput}>
                   {Object.entries(TIPOS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label style={sLabel}>Início *</label><input type="date" value={modalNova.data_inicio} onChange={e => setModalNova({ ...modalNova, data_inicio: e.target.value })} style={sInput} /></div>
                 <div>
-                  <label style={sLabel}>Data final {modalNova.tipo_situacao === 'licenciado' ? '(opcional)' : ''}</label>
-                  <input type="date" value={modalNova.data_fim} disabled={modalNova.tipo_situacao !== 'licenciado'} onChange={e => setModalNova({ ...modalNova, data_fim: e.target.value })} style={{ ...sInput, opacity: modalNova.tipo_situacao !== 'licenciado' ? 0.5 : 1 }} />
+                  <label style={sLabel}>Data final {TIPOS_COM_PRAZO.includes(modalNova.tipo_situacao) ? '(opcional)' : ''}</label>
+                  <input type="date" value={modalNova.data_fim} disabled={!TIPOS_COM_PRAZO.includes(modalNova.tipo_situacao)} onChange={e => setModalNova({ ...modalNova, data_fim: e.target.value })} style={{ ...sInput, opacity: !TIPOS_COM_PRAZO.includes(modalNova.tipo_situacao) ? 0.5 : 1 }} />
                 </div>
               </div>
               <div><label style={sLabel}>Motivo</label><textarea rows={3} value={modalNova.motivo} onChange={e => setModalNova({ ...modalNova, motivo: e.target.value })} style={{ ...sInput, resize: 'vertical' }} /></div>
