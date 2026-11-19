@@ -8,7 +8,7 @@ const VAZIO = {
   irmao_vinculado_id: null,
   nome: '', cpf: '', rg: '', data_nascimento: '', email: '', telefone: '',
   cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
-  cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true, foto_url: '',
+  cargo: '', situacao: 'regular', data_exaltacao: '', observacoes: '', ativo: true, homenagem: false, foto_url: '',
   loja_nome: '', loja_oriente: '', loja_data_iniciacao: '', loja_data_elevacao: '', loja_data_exaltacao: '',
 };
 
@@ -86,7 +86,7 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
     cep: m.cep || '', endereco: m.endereco || '', numero: m.numero || '', complemento: m.complemento || '',
     bairro: m.bairro || '', cidade: m.cidade || '', estado: m.estado || '',
     cargo: m.cargo || '', situacao: m.situacao || 'regular',
-    data_exaltacao: m.data_exaltacao || '', observacoes: m.observacoes || '', ativo: m.ativo,
+    data_exaltacao: m.data_exaltacao || '', observacoes: m.observacoes || '', ativo: m.ativo, homenagem: !!m.homenagem,
     foto_url: m.foto_url || '',
     loja_nome: m.loja_nome || '', loja_oriente: m.loja_oriente || '',
     loja_data_iniciacao: m.loja_data_iniciacao || '', loja_data_elevacao: m.loja_data_elevacao || '',
@@ -170,7 +170,7 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
         cep: form.cep || null, endereco: form.endereco || null, numero: form.numero || null,
         complemento: form.complemento || null, bairro: form.bairro || null, cidade: form.cidade || null, estado: form.estado || null,
         cargo: form.cargo || null, situacao: form.situacao, data_exaltacao: form.data_exaltacao || null,
-        observacoes: form.observacoes || null, ativo: form.ativo, foto_url: form.foto_url || null,
+        observacoes: form.observacoes || null, ativo: form.ativo, homenagem: !!form.homenagem, foto_url: form.foto_url || null,
         // Loja de origem: só vale para irmão de outra loja (sem vínculo com a Acácia)
         loja_nome: form.irmao_vinculado_id ? null : (form.loja_nome || null),
         loja_oriente: form.irmao_vinculado_id ? null : (form.loja_oriente || null),
@@ -426,6 +426,12 @@ export default function CadastroArcoRealMembros({ membroId = null, abrirImportar
             <div>
               <label style={labelStyle}>Data de Exaltação</label>
               <input type="date" value={form.data_exaltacao} onChange={e => setForm(f => ({ ...f, data_exaltacao: e.target.value }))} style={inputStyle} />
+            </div>
+            <div className="md:col-span-3">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--color-text)' }}>
+                <input type="checkbox" checked={!!form.homenagem} onChange={e => setForm(f => ({ ...f, homenagem: e.target.checked }))} style={{ width: '1.1rem', height: '1.1rem', accentColor: '#2d6a9f' }} />
+                <span><strong>Membro de homenagem</strong> — fica na relação de companheiros, mas não aparece em presença, lançamentos nem e-mails.</span>
+              </label>
             </div>
             <div className="md:col-span-3">
               <label style={labelStyle}>Observações</label>
