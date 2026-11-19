@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { buscarPeriodosSituacao } from '../../utils/arcoRealMembros';
+import { membrosDaSessao } from '../../utils/elegibilidadeArcoReal';
 
 const SITUACAO_COR = {
   regular:    { bg: 'rgba(16,185,129,0.15)', color: '#10b981', border: 'rgba(16,185,129,0.3)' },
@@ -23,10 +25,10 @@ export default function ModalVisualizarPresencaArcoReal({ sessaoId, onFechar, on
 
       const { data: membrosData } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, cargo, situacao, foto_url')
+        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
         .eq('ativo', true)
-        .in('situacao', ['regular', 'licenciado'])
         .order('nome');
+      const periodos = await buscarPeriodosSituacao();
 
       const { data: registrosData } = await supabase
         .from('arco_real_registros_presenca')
@@ -36,7 +38,7 @@ export default function ModalVisualizarPresencaArcoReal({ sessaoId, onFechar, on
       const registrosMap = new Map();
       (registrosData || []).forEach(r => registrosMap.set(r.membro_id, r));
 
-      const lista = (membrosData || []).map(m => {
+      const lista = membrosDaSessao(membrosData || [], periodos, sessaoData.data_sessao).map(m => {
         const reg = registrosMap.get(m.id) || { presente: false, justificativa: null };
         return { membro: m, presente: reg.presente, justificativa: reg.justificativa };
       });
