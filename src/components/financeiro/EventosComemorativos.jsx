@@ -123,6 +123,7 @@ const ModalEvento = ({ aberto, onFechar, onSalvar, eventoEdit }) => {
     if (!form.ano) { setErro('Informe o ano.'); return; }
     const cp = (form.custeio_percentual_irmao === '' || form.custeio_percentual_irmao == null) ? null : parseFloat(form.custeio_percentual_irmao);
     if (cp !== null && (isNaN(cp) || cp <= 0 || cp >= 100)) { setErro('O % do custeio deve ficar entre 0,01 e 99,99 (ou em branco para ratear normalmente).'); return; }
+    if (ehIrmao && form.somente_contribuicao && !(parseFloat(form.contribuicao_valor) > 0)) { setErro('Informe o valor da contribuição para quem não paga a cota.'); return; }
     setSalvando(true); setErro('');
     try { await onSalvar(form); }
     catch (e) { setErro(e.message); }
@@ -234,6 +235,7 @@ const PART_VAZIO = {
   conv_meia: 0,
   conv_gratuitas: 0,
   contribuicao_valor: '',
+  somente_contribuicao: false,
 };
 
 // Estilo dos campos do modal (foco, setas do select, números sem spinner)
@@ -309,6 +311,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
         conv_meia: partEdit.conv_meia || 0,
         conv_gratuitas: partEdit.conv_gratuitas || 0,
         contribuicao_valor: partEdit.contribuicao_valor || '',
+        somente_contribuicao: !!partEdit.somente_contribuicao,
       } : PART_VAZIO);
       setErro('');
     }
@@ -327,7 +330,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
   const simulacao = (ehIrmao && valorCota > 0)
     ? calcularRateio(
         [
-          { id: 'sim', irmao_id: 1, cotas: cotaCalc, conv_adultos: form.conv_adultos, conv_meia: form.conv_meia, custeador: form.custeador, percentual_proprio: form.percentual_proprio, isento: form.isento, isento_loja: form.isento_loja, contribuicao_valor: form.contribuicao_valor },
+          { id: 'sim', irmao_id: 1, cotas: cotaCalc, conv_adultos: form.conv_adultos, conv_meia: form.conv_meia, custeador: form.custeador, percentual_proprio: form.percentual_proprio, isento: form.isento, isento_loja: form.isento_loja, contribuicao_valor: form.contribuicao_valor, somente_contribuicao: form.somente_contribuicao },
           ...((form.custeador || !custeioOn) ? [] : [{ id: 'dummy', irmao_id: 2, cotas: 0, custeador: true }]),
         ],
         valorCota, evento
@@ -440,6 +443,14 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
                 style={{ ...inp, height: '2.6rem', paddingLeft: '2.4rem' }}
                 value={form.contribuicao_valor} onChange={e => f('contribuicao_valor', e.target.value)} placeholder="0,00" />
             </div>
+            {ehIrmao && (
+              <label style={{ ...opcaoCaixa(!!form.somente_contribuicao), marginTop: '0.7rem', opacity: form.custeador ? 0.5 : 1 }}>
+                <input type="checkbox" disabled={!!form.custeador} checked={!!form.somente_contribuicao && !form.custeador}
+                  onChange={e => setForm(p => ({ ...p, somente_contribuicao: e.target.checked, ...(e.target.checked ? { custeador: false } : {}) }))}
+                  style={{ marginTop: '0.2rem', accentColor: 'var(--color-accent)' }} />
+                <span><strong>Não paga a cota — apenas a contribuição</strong><br /><span style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>O irmão paga somente o valor declarado acima (e os convidados dele, se houver). A cota da família fica a cargo da Loja.</span></span>
+              </label>
+            )}
             {(parseFloat(form.contribuicao_valor) > 0) && (
               <p style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', margin: '0.4rem 0 0' }}>
                 A cota menor é recalculada para todos ao salvar{ehIrmao ? '; o irmão paga a cota do rateio + esta contribuição.' : '.'}
@@ -454,7 +465,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
               subtitulo={`O irmão paga ${evento.custeio_percentual_irmao}% da família por padrão.`}
               cor="#8b5cf6">
               <label style={opcaoCaixa(!!form.custeador)}>
-                <input type="checkbox" checked={!!form.custeador} onChange={e => f('custeador', e.target.checked)} style={{ marginTop: '0.2rem', accentColor: 'var(--color-accent)' }} />
+                <input type="checkbox" checked={!!form.custeador} onChange={e => setForm(p => ({ ...p, custeador: e.target.checked, ...(e.target.checked ? { somente_contribuicao: false } : {}) }))} style={{ marginTop: '0.2rem', accentColor: 'var(--color-accent)' }} />
                 <span><strong>Custeador</strong><br /><span style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>Paga 100% da família e dos convidados e divide, com os demais custeadores, o custeio das famílias dos irmãos.</span></span>
               </label>
 
@@ -652,6 +663,14 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
         <tr style={{ borderBottom: span > 1 ? 'none' : '1px solid var(--color-border)', background: bg }}>
           <td rowSpan={span} style={{ padding: '0.55rem 0.65rem', fontWeight: 600, color: 'var(--color-text)', verticalAlign: 'middle' }}>
             <span title={nomeCompleto}>{p.irmao_id ? nomeCurto(nomeCompleto) : nomeCompleto}</span>
+            {p.irmao_id && p.somente_contribuicao && !p.custeador && (
+              <div style={{ marginTop: '0.2rem' }}>
+                <span title="Não paga a cota; paga apenas a contribuição declarada"
+                  style={{ display: 'inline-block', fontSize: '0.68rem', fontWeight: 700, padding: '0.1rem 0.5rem', borderRadius: '999px', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.35)' }}>
+                  Só contribuição
+                </span>
+              </div>
+            )}
             {parseFloat(p.contribuicao_valor) > 0 && (
               <div style={{ marginTop: '0.2rem' }}>
                 <span title="Contribuição voluntária (abate das despesas)"
@@ -1051,6 +1070,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       conv_meia: form.tipo === 'irmao' ? (parseInt(form.conv_meia) || 0) : 0,
       conv_gratuitas: form.tipo === 'irmao' ? (parseInt(form.conv_gratuitas) || 0) : 0,
       contribuicao_valor: parseFloat(form.contribuicao_valor) > 0 ? parseFloat(form.contribuicao_valor) : 0,
+      somente_contribuicao: form.tipo === 'irmao' && !form.custeador && !!form.somente_contribuicao,
     };
     if (partEdit) {
       const { error } = await supabase.from('evento_rateio_participantes').update(payload).eq('id', partEdit.id);
