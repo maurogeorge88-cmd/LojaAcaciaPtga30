@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 // Relatório simples para envio a terceiros: relação de membros do Arco Real
-// com nome e cargo. Cabeçalho com os dados do próprio Capítulo (Guardiões
+// com nome, cargo e data de exaltação. Cabeçalho com os dados do próprio Capítulo (Guardiões
 // da Aliança nº 04), não os da Loja.
 export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -42,12 +42,19 @@ export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
       return '';
     };
 
+    const fmtData = (d) => {
+      if (!d) return '—';
+      const [a, mes, dia] = String(d).substring(0, 10).split('-');
+      return a && mes && dia ? `${dia}/${mes}/${a}` : '—';
+    };
+
     doc.autoTable({
       startY: 44,
-      head: [['Nome', 'Cargo']],
+      head: [['Nome', 'Cargo', 'Data de exaltação']],
       body: membros.map(m => [
         `${m.nome}${linhaSituacao(m)}`,
-        m.cargo && m.cargo.trim() ? m.cargo : '—'
+        m.cargo && m.cargo.trim() ? m.cargo : '—',
+        fmtData(m.data_exaltacao)
       ]),
       theme: 'grid',
       styles: {
@@ -65,8 +72,9 @@ export const gerarRelatorioMembrosArcoRealPDF = (membros, logoUrl) => {
         halign: 'left'
       },
       columnStyles: {
-        0: { cellWidth: 105 },
-        1: { cellWidth: 'auto' }
+        0: { cellWidth: 75 },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 32, halign: 'center' }
       },
       alternateRowStyles: { fillColor: [247, 249, 252] },
       margin: { left: 12, right: 12 },
