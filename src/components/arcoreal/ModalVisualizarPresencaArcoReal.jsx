@@ -25,7 +25,7 @@ export default function ModalVisualizarPresencaArcoReal({ sessaoId, onFechar, on
 
       const { data: membrosData } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
+        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento, homenagem')
         .eq('ativo', true)
         .order('nome');
       const periodos = await buscarPeriodosSituacao();
