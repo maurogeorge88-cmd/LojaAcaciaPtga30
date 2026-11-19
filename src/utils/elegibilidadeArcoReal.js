@@ -2,8 +2,7 @@
 //  - só aparece a partir da data de exaltação (sem data = considera todo o período);
 //  - desligado / excluído / irregular / suspenso bloqueiam enquanto o período cobrir a data;
 //  - falecido aparece até o dia do falecimento;
-//  - licença não bloqueia: aparece, mas não conta ("–");
-//  - prerrogativa de idade (70 anos): aparece, mas não conta (informativo).
+//  - licença e prerrogativa de idade (70 anos) NÃO bloqueiam: contam como elegíveis, só ficam sinalizadas.
 // Datas sempre 'YYYY-MM-DD' (comparação textual, sem fuso).
 
 export const TIPOS_BLOQUEIO = ['desligado', 'excluido', 'irregular', 'suspenso'];
@@ -47,11 +46,11 @@ export const situacaoNaData = (membro, periodos, dataISO) => {
   // Licença: aparece, não conta
   const licenca = meus.some(p => p.tipo_situacao === 'licenciado' && cobre(p, dataISO))
     || (membro.situacao === 'licenciado' && !meus.some(p => p.tipo_situacao === 'licenciado'));
-  if (licenca) return { elegivel: true, conta: false, motivo: 'licenca', licenca: true };
+  if (licenca) return { elegivel: true, conta: true, motivo: 'licenca', licenca: true };
 
   // Prerrogativa de idade
   const dp = dataPrerrogativa(membro.data_nascimento);
-  if (dp && dataISO >= dp) return { elegivel: true, conta: false, motivo: 'prerrogativa', prerrogativa: true };
+  if (dp && dataISO >= dp) return { elegivel: true, conta: true, motivo: 'prerrogativa', prerrogativa: true };
 
   return { elegivel: true, conta: true, motivo: null };
 };
