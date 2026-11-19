@@ -35,12 +35,13 @@ export default function EmailEventosArcoReal({ modo, showSuccess, showError, pod
       const [ev, mb] = await Promise.all([
         supabase.from('arco_real_cronograma').select('id, titulo, tipo, data_evento, hora_inicio, status')
           .gte('data_evento', hoje).neq('status', 'cancelado').neq('tipo', 'feriado').order('data_evento', { ascending: true }),
-        supabase.from('arco_real_membros').select('id, nome, email, situacao')
+        supabase.from('arco_real_membros').select('id, nome, email, situacao, homenagem')
           .eq('ativo', true).in('situacao', ['regular', 'licenciado']).not('email', 'is', null).neq('email', '').order('nome'),
       ]);
       setEventos(ev.data || []);
-      setMembros(mb.data || []);
-      setSelec((mb.data || []).map(m => m.id)); // padrão: todos
+      const mbOk = (mb.data || []).filter(m => !m.homenagem);
+      setMembros(mbOk);
+      setSelec(mbOk.map(m => m.id)); // padrão: todos
       if (modo === 'automatico') carregarConfig();
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
