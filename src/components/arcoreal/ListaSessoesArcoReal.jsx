@@ -66,7 +66,7 @@ export default function ListaSessoesArcoReal({ podeEditar, onVisualizar, onEdita
       const st = {}, vis = {};
       if (ids.length) {
         const [{ data: membros }, periodos, regs, vs] = await Promise.all([
-          supabase.from('arco_real_membros').select('id, situacao, ativo, data_exaltacao, data_nascimento'),
+          supabase.from('arco_real_membros').select('id, situacao, ativo, data_exaltacao, data_nascimento, homenagem'),
           buscarPeriodosSituacao(),
           paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, membro_id, presente, justificativa').in('sessao_id', ids)),
           paginar(() => supabase.from('arco_real_visitantes_sessao').select('id, sessao_id').in('sessao_id', ids)),
