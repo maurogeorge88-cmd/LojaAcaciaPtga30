@@ -22,6 +22,8 @@ export const dataPrerrogativa = (nasc) => {
 // Situação do membro numa data. periodos = linhas de arco_real_situacoes (sem canceladas).
 export const situacaoNaData = (membro, periodos, dataISO) => {
   if (!membro || !dataISO) return { elegivel: false, conta: false, motivo: 'fora' };
+  // Membro de homenagem: não entra em presença nem em outras listas operacionais
+  if (membro.homenagem) return { elegivel: false, conta: false, motivo: 'homenagem' };
   if (membro.data_exaltacao && dataISO < String(membro.data_exaltacao).substring(0, 10)) {
     return { elegivel: false, conta: false, motivo: 'exaltacao' };
   }
