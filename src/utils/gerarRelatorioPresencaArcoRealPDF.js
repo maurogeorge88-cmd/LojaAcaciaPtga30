@@ -7,7 +7,7 @@ import 'jspdf-autotable';
 // "licenciado" contam normalmente na presença/ausência (mesma regra atual
 // da Loja: licença não exclui elegibilidade, só recebe marcação
 // informativa "Lic." e rótulo abaixo do nome).
-export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja) => {
+export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSelecionado, mesSelecionado, dadosLoja, situacaoFn) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -93,6 +93,8 @@ export const gerarRelatorioPresencaArcoRealPDF = (sessoes, membros, grade, anoSe
 
     sessoes.forEach((sessao, index) => {
       const reg = grade[membro.id]?.[sessao.id];
+      const sit = situacaoFn ? situacaoFn(membro, sessao) : { conta: true };
+      if (!sit.conta) { row[`sessao_${index}`] = '-'; return; }
       sessoesElegiveis++;
 
       if (reg?.presente) {
