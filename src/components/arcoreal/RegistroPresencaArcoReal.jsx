@@ -35,7 +35,7 @@ export default function RegistroPresencaArcoReal({ sessaoId, onVoltar, showSucce
 
       const { data: membrosData, error: membrosError } = await supabase
         .from('arco_real_membros')
-        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento')
+        .select('id, nome, cargo, situacao, foto_url, ativo, data_exaltacao, data_nascimento, homenagem')
         .eq('ativo', true)
         .order('nome');
       if (membrosError) throw membrosError;
