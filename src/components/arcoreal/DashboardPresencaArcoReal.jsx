@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import ModalGradePresencaArcoReal from './ModalGradePresencaArcoReal';
+import { situacaoNaData } from '../../utils/elegibilidadeArcoReal';
 import { buscarPeriodosSituacao, periodoCobre, calcularPresencaMembro, nomeCurto, fmtData, SITUACOES_ARCO_REAL } from '../../utils/arcoRealMembros';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -174,7 +175,7 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
         if (error) throw error;
         const ids = (ss || []).map(s => s.id);
         const [{ data: ms }, ps, regs, vis] = await Promise.all([
-          supabase.from('arco_real_membros').select('id, nome, situacao, ativo, data_exaltacao'),
+          supabase.from('arco_real_membros').select('id, nome, situacao, ativo, data_exaltacao, data_nascimento'),
           buscarPeriodosSituacao(),
           ids.length ? paginar(() => supabase.from('arco_real_registros_presenca').select('sessao_id, membro_id, presente').in('sessao_id', ids)) : Promise.resolve([]),
           ids.length ? paginar(() => supabase.from('arco_real_visitantes_sessao').select('id, sessao_id').in('sessao_id', ids)) : Promise.resolve([]),
@@ -201,6 +202,8 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
   }, [periodo, ano]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const elegiveisBase = useMemo(() => membros.filter(m => m.ativo !== false && (m.situacao === 'regular' || m.situacao === 'licenciado')), [membros]);
+  // Base dos cálculos: inclui quem saiu depois (a elegibilidade é avaliada pela data de cada sessão)
+  const baseCalculo = useMemo(() => membros.filter(m => m.ativo !== false), [membros]);
   const mapaPresenca = useMemo(() => {
     const m = new Map();
     registros.forEach(r => m.set(`${r.membro_id}|${r.sessao_id}`, !!r.presente));
@@ -211,9 +214,8 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
   // Elegíveis / presentes de uma sessão (mesma regra da Matrix: exaltado até a data e sem licença cobrindo)
   const statsSessao = (s) => {
     let elegiveis = 0, presentes = 0;
-    elegiveisBase.forEach(m => {
-      if (m.data_exaltacao && s.data_sessao < m.data_exaltacao) return;
-      if (periodos.some(p => p.membro_id === m.id && periodoCobre(p, s.data_sessao))) return;
+    baseCalculo.forEach(m => {
+      if (!situacaoNaData(m, periodos, s.data_sessao).conta) return;
       elegiveis += 1;
       if (mapaPresenca.get(`${m.id}|${s.id}`)) presentes += 1;
     });
@@ -223,12 +225,12 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
   const sessoesJanela = useMemo(() => sessoes.filter(s => s.data_sessao >= dataInicio && s.data_sessao <= dataFim && s.data_sessao <= hojeISO), [sessoes, dataInicio, dataFim, hojeISO]);
   const janelaComReg = useMemo(() => sessoesJanela.filter(s => comRegistro.has(s.id)), [sessoesJanela, comRegistro]);
 
-  const resumoMembros = (lista) => elegiveisBase.map(m => ({ ...m, ...calcularPresencaMembro(m, lista, mapaPresenca, periodos) })).filter(r => r.elegiveis > 0);
+  const resumoMembros = (lista) => baseCalculo.map(m => ({ ...m, ...calcularPresencaMembro(m, lista, mapaPresenca, periodos) })).filter(r => r.elegiveis > 0);
 
   const mediaPresenca = useMemo(() => {
     const r = resumoMembros(janelaComReg);
     return r.length ? Math.round(r.reduce((a, x) => a + x.pct, 0) / r.length) : 0;
-  }, [janelaComReg, elegiveisBase, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [janelaComReg, baseCalculo, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const presencaMensal = useMemo(() => {
     const por = {};
@@ -238,7 +240,7 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
       x.presentes += st.presentes; x.total += st.elegiveis;
     });
     return Object.keys(por).sort().map(k => ({ chave: k, mes: MESES_ABREV[parseInt(k.slice(5), 10) - 1], pct: por[k].total ? Math.round((por[k].presentes / por[k].total) * 100) : 0, presentes: por[k].presentes, total: por[k].total }));
-  }, [janelaComReg, elegiveisBase, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [janelaComReg, baseCalculo, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const classificacoes = useMemo(() => {
     const c = {};
@@ -247,15 +249,15 @@ export default function DashboardPresencaArcoReal({ onCadastrarSessao, showError
   }, [sessoesJanela]);
 
   const recentes = useMemo(() => [...sessoes].filter(s => s.data_sessao <= hojeISO).sort((a, b) => b.data_sessao.localeCompare(a.data_sessao)).slice(0, qtdRecentes)
-    .map(s => ({ ...s, ...statsSessao(s), tem: comRegistro.has(s.id) })), [sessoes, qtdRecentes, elegiveisBase, mapaPresenca, periodos, comRegistro]); // eslint-disable-line react-hooks/exhaustive-deps
+    .map(s => ({ ...s, ...statsSessao(s), tem: comRegistro.has(s.id) })), [sessoes, qtdRecentes, baseCalculo, mapaPresenca, periodos, comRegistro]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const anoComReg = useMemo(() => sessoes.filter(s => comRegistro.has(s.id) && s.data_sessao <= hojeISO), [sessoes, comRegistro, hojeISO]);
-  const presenca100 = useMemo(() => resumoMembros(anoComReg).filter(r => r.presentes === r.elegiveis).sort((a, b) => b.elegiveis - a.elegiveis), [anoComReg, elegiveisBase, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
+  const presenca100 = useMemo(() => resumoMembros(anoComReg).filter(r => r.presentes === r.elegiveis).sort((a, b) => b.elegiveis - a.elegiveis), [anoComReg, baseCalculo, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
   const ausencias = useMemo(() => {
     const lista = mesAusencias === 0 ? anoComReg : anoComReg.filter(s => parseInt(s.data_sessao.slice(5, 7), 10) === mesAusencias);
     return resumoMembros(lista).map(r => ({ ...r, ausentes: r.elegiveis - r.presentes, pctAus: Math.round(((r.elegiveis - r.presentes) / r.elegiveis) * 100) }))
       .filter(r => r.pctAus >= percentualAlerta && r.ausentes > 0).sort((a, b) => b.pctAus - a.pctAus);
-  }, [anoComReg, mesAusencias, percentualAlerta, elegiveisBase, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [anoComReg, mesAusencias, percentualAlerta, baseCalculo, mapaPresenca, periodos]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const licenciados = useMemo(() => membros.filter(m => m.ativo !== false && m.situacao === 'licenciado').map(m => {
     const p = periodos.filter(x => x.membro_id === m.id && periodoCobre(x, hojeISO))[0];
