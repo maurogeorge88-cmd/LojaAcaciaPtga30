@@ -1,10 +1,13 @@
 // Helpers compartilhados das telas de Membros do Arco Real
 // (Dashboard, Visualização de Membros, Quadro de Membros, Licenças e Situações).
 import { supabase } from '../supabaseClient';
+import { situacaoNaData } from './elegibilidadeArcoReal';
 
 export const SITUACOES_ARCO_REAL = {
   regular:    { label: 'Regular',    cor: '#10b981', icone: '✅' },
   licenciado: { label: 'Licenciado', cor: '#6366f1', icone: '📋' },
+  irregular:  { label: 'Irregular',  cor: '#f59e0b', icone: '⚠️' },
+  suspenso:   { label: 'Suspenso',   cor: '#f97316', icone: '⛔' },
   desligado:  { label: 'Desligado',  cor: '#64748b', icone: '🚪' },
   excluido:   { label: 'Excluído',   cor: '#ef4444', icone: '❌' },
   falecido:   { label: 'Falecido',   cor: '#8b5cf6', icone: '🕊️' },
@@ -14,7 +17,7 @@ export const situacaoCor = (s) => SITUACOES_ARCO_REAL[s]?.cor || '#64748b';
 export const situacaoLabel = (s) => SITUACOES_ARCO_REAL[s]?.label || (s || '—');
 
 // "Ativo" no quadro = regular ou licenciado
-export const membroNoQuadro = (m) => m && m.ativo !== false && (m.situacao === 'regular' || m.situacao === 'licenciado');
+export const membroNoQuadro = (m) => m && m.ativo !== false && (['regular', 'licenciado', 'irregular', 'suspenso'].includes(m.situacao));
 
 // 'YYYY-MM-DD' -> dd/mm/aaaa (sem passar por Date, evita problema de fuso)
 export const fmtData = (d) => {
@@ -105,11 +108,9 @@ export const periodoCobre = (p, dataISO) =>
 // só conta sessões com registro, a partir da exaltação e fora de períodos de situação.
 // sessoes: [{id, data_sessao}], regs: Set de `${membro_id}|${sessao_id}` -> presente(bool) via Map
 export const calcularPresencaMembro = (membro, sessoes, mapaPresenca, periodos = []) => {
-  const meus = periodos.filter(p => p.membro_id === membro.id);
   let elegiveis = 0, presentes = 0;
   sessoes.forEach(s => {
-    if (membro.data_exaltacao && s.data_sessao < membro.data_exaltacao) return;
-    if (meus.some(p => periodoCobre(p, s.data_sessao))) return;
+    if (!situacaoNaData(membro, periodos, s.data_sessao).conta) return;
     elegiveis += 1;
     if (mapaPresenca.get(`${membro.id}|${s.id}`)) presentes += 1;
   });
