@@ -6,6 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
+import { normalizarCargo, CARGOS_PRINCIPAIS, ordenarCargos } from './cargosAdmin';
+import { PainelCorpoAdmin } from './PainelCorpoAdmin';
 
 const STATUS_ELEICAO = {
   rascunho:            { label: 'Em Processo de Eleição', emoji: '📝', cor: '#f59e0b' },
@@ -140,6 +142,9 @@ export const CorpoAdmin = ({
   // Faixas por ano recolhidas; clique expande
   const [anosAbertos, setAnosAbertos] = useState({});
   const alternarAno = (ano) => setAnosAbertos(a => ({ ...a, [ano]: !a[ano] }));
+  const [extrasAbertos, setExtrasAbertos] = useState({});
+  const alternarExtras = (ano) => setExtrasAbertos(a => ({ ...a, [ano]: !a[ano] }));
+  const [abaAdmin, setAbaAdmin] = useState('gestoes');
 
   const limparFormularioCorpoAdmin = () => {
     setCorpoAdminForm({
@@ -396,7 +401,19 @@ export const CorpoAdmin = ({
         </div>
       </div>
 
+      {/* ABAS */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        {[['gestoes', '📋 Gestões'], ['painel', '📊 Painel']].map(([k, l]) => (
+          <button key={k} onClick={() => setAbaAdmin(k)}
+            style={{ padding: '0.5rem 1.1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-accent)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
+              background: abaAdmin === k ? 'var(--color-accent)' : 'var(--color-surface)', color: abaAdmin === k ? '#fff' : 'var(--color-accent)' }}>{l}</button>
+        ))}
+      </div>
+
+      {abaAdmin === 'painel' && <PainelCorpoAdmin corpoAdmin={corpoAdmin} irmaos={irmaos} />}
+
       {/* LISTA POR ANO */}
+      {abaAdmin === 'gestoes' && (
       <div className="space-y-6">
         {[...new Set(corpoAdmin
           .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
@@ -423,7 +440,7 @@ export const CorpoAdmin = ({
                     );
                   })()}
                   <p style={{ fontSize: '0.8rem', opacity: 0.9, margin: 0 }}>
-                    {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
+                    {(() => { const rs = corpoAdmin.filter(ca => ca.ano_exercicio === ano); const p = rs.filter(ca => CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo))).length; const o = rs.length - p; return o > 0 ? `${p} principais + ${o} demais cargos` : `${rs.length} cargos`; })()}
                   </p>
                 </div>
                 {podeEditarCorpo && (
@@ -434,84 +451,14 @@ export const CorpoAdmin = ({
                 )}
               </div>
 
-              {anosAbertos[ano] && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{padding:'1rem', gap:'0.75rem'}}>
-
-                    {corpoAdmin
-                      .filter(ca => ca.ano_exercicio === ano)
-                      .sort((a, b) => {
-                        // Normalizar e mapear cargos para hierarquia
-                        const normalizarCargo = (cargo) => {
-                          if (!cargo) return '';
-                          const c = cargo.toLowerCase().trim();
-                          
-                          // Mapear variações para padrão
-                          if (c.includes('veneravel') || c.includes('venerável')) return 'veneravel mestre';
-                          if (c.includes('1') && c.includes('vigilante')) return 'primeiro vigilante';
-                          if (c.includes('primeiro') && c.includes('vigilante')) return 'primeiro vigilante';
-                          if (c.includes('2') && c.includes('vigilante')) return 'segundo vigilante';
-                          if (c.includes('segundo') && c.includes('vigilante')) return 'segundo vigilante';
-                          if (c.includes('orador')) return 'orador';
-                          if (c.includes('secretario') || c.includes('secretário')) return 'secretario';
-                          if (c.includes('tesoureiro')) return 'tesoureiro';
-                          if (c.includes('chanceler')) return 'chanceler';
-                          if (c.includes('hospitaleiro')) return 'hospitaleiro';
-                          if (c.includes('mestre') && c.includes('cerimonia')) return 'mestre de cerimonia';
-                          if (c.includes('mestre') && c.includes('harmonia')) return 'mestre de harmonia';
-                          if (c.includes('mestre') && c.includes('banquete')) return 'mestre de banquetes';
-                          if (c.includes('porta') && c.includes('espada')) return 'porta espada';
-                          if (c.includes('porta') && c.includes('estandarte')) return 'porta estandarte';
-                          if (c.includes('1') && (c.includes('diacono') || c.includes('diácono'))) return '1º diacono';
-                          if (c.includes('2') && (c.includes('diacono') || c.includes('diácono'))) return '2º diacono';
-                          if (c.includes('diacono') || c.includes('diácono')) return '1º diacono';
-                          if (c.includes('cobridor') && c.includes('externo')) return 'cobridor externo';
-                          if (c.includes('guarda') && c.includes('templo')) return 'guarda do templo';
-                          if (c.includes('cobridor') && c.includes('interno')) return 'guarda do templo';
-                          if (c.includes('bibliotecario') || c.includes('bibliotecário')) return 'bibliotecario';
-                          
-                          return c;
-                        };
-                        
-                        // Ordem hierárquica normalizada
-                        const ordemHierarquica = [
-                          'veneravel mestre',
-                          'primeiro vigilante',
-                          'segundo vigilante',
-                          'orador',
-                          'secretario',
-                          'tesoureiro',
-                          'chanceler',
-                          'hospitaleiro',
-                          'mestre de cerimonia',
-                          'mestre de harmonia',
-                          'mestre de banquetes',
-                          'porta espada',
-                          'porta estandarte',
-                          '1º diacono',
-                          '2º diacono',
-                          'cobridor externo',
-                          'guarda do templo',
-                          'bibliotecario'
-                        ];
-                        
-                        const cargoA = normalizarCargo(a.cargo);
-                        const cargoB = normalizarCargo(b.cargo);
-                        
-                        const indexA = ordemHierarquica.indexOf(cargoA);
-                        const indexB = ordemHierarquica.indexOf(cargoB);
-                        
-                        // Se ambos não estão na lista, ordena alfabeticamente
-                        if (indexA === -1 && indexB === -1) return cargoA.localeCompare(cargoB);
-                        // Se só A não está na lista, coloca no final
-                        if (indexA === -1) return 1;
-                        // Se só B não está na lista, coloca no final
-                        if (indexB === -1) return -1;
-                        // Ambos estão na lista, ordena por índice
-                        return indexA - indexB;
-                      })
-                                            .map((item) => {
-                        const irmao = item.irmao;
-                        return (
+              {anosAbertos[ano] && (() => {
+                const regs = corpoAdmin.filter(ca => ca.ano_exercicio === ano).sort(ordenarCargos);
+                const principais = regs.filter(ca => CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo)));
+                const demais = regs.filter(ca => !CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo)));
+                const mostrarDemais = !!extrasAbertos[ano];
+                const renderCard = (item) => {
+                  const irmao = item.irmao;
+                  return (
                           <div
                             key={item.id}
                             style={{
@@ -592,10 +539,29 @@ export const CorpoAdmin = ({
                               )}
                             </div>
                           </div>
-                        );
-                      })}
-              </div>
-              )}
+                  );
+                };
+                return (
+                  <div style={{ padding: '1rem' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '0.75rem' }}>
+                      {principais.map(renderCard)}
+                    </div>
+                    {demais.length > 0 && (
+                      <>
+                        <button onClick={() => alternarExtras(ano)}
+                          style={{ marginTop: '0.85rem', width: '100%', padding: '0.5rem', background: 'var(--color-surface-2)', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-accent)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
+                          {mostrarDemais ? '▴ Recolher demais cargos' : `▾ Ver mais ${demais.length} cargo${demais.length > 1 ? 's' : ''}`}
+                        </button>
+                        {mostrarDemais && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '0.75rem', marginTop: '0.75rem' }}>
+                            {demais.map(renderCard)}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
 
@@ -609,6 +575,7 @@ export const CorpoAdmin = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
