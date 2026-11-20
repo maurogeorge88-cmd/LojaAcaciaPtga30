@@ -109,14 +109,7 @@ export const PainelCorpoAdmin = ({ corpoAdmin = [], irmaos = [] }) => {
       let logo = null;
       if (loja?.logo_url) { try { logo = await baixarImagemDataUrl(loja.logo_url); } catch (e) { /* sem logo */ } }
       const filtros = [busca.trim() && `Busca: "${busca.trim()}"`, soVM && 'Somente quem já foi VM'].filter(Boolean).join(' • ');
-      // PDF inclui Mestre de Cerimônias (a tela segue só VM → Chanceler)
-      const comMc = linhas.map(r => ({ ...r, cargos: { ...r.cargos, 'mestre de cerimonia': dados.mcMap[r.id]?.mc || 0 }, total: r.total + (dados.mcMap[r.id]?.mc || 0) }));
-      const q = busca.trim().toLowerCase();
-      const soMc = soVM ? [] : Object.values(dados.mcMap)
-        .filter(m => !dados.lista.some(r => r.id === m.id) && (!q || m.nome.toLowerCase().includes(q)))
-        .sort((a, b) => b.mc - a.mc || a.nome.localeCompare(b.nome))
-        .map(m => ({ id: m.id, nome: m.nome, cargos: { 'mestre de cerimonia': m.mc }, total: m.mc }));
-      gerarPainelCargosPDF({ linhas: [...comMc, ...soMc], resumo: dados, dadosLoja: loja || {}, logo, filtro: filtros });
+      gerarPainelCargosPDF({ linhas, resumo: dados, dadosLoja: loja || {}, logo, filtro: filtros });
     } catch (e) {
       alert('Erro ao gerar o PDF: ' + e.message);
     } finally {
@@ -126,20 +119,11 @@ export const PainelCorpoAdmin = ({ corpoAdmin = [], irmaos = [] }) => {
 
   const dados = useMemo(() => {
     const porIrmao = {};
-    const mcMap = {};
     const anos = new Set();
     const anosPorCargo = {};
     corpoAdmin.forEach(ca => {
       if (ca.ano_exercicio) anos.add(String(ca.ano_exercicio));
       const cargo = normalizarCargo(ca.cargo);
-      const semAcento = String(ca.cargo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-      if (cargo === 'mestre de cerimonia' && !semAcento.includes('adjunto') && ca.irmao_id) {
-        const nomeMc = ca.irmao?.nome || irmaos.find(i => i.id === ca.irmao_id)?.nome;
-        if (nomeMc) {
-          const m = mcMap[ca.irmao_id] = mcMap[ca.irmao_id] || { id: ca.irmao_id, nome: nomeMc, mc: 0 };
-          m.mc += 1;
-        }
-      }
       if (!CARGOS_PRINCIPAIS.includes(cargo)) return;
       if (!ca.irmao_id) return;
       const nome = ca.irmao?.nome || irmaos.find(i => i.id === ca.irmao_id)?.nome;
@@ -157,7 +141,6 @@ export const PainelCorpoAdmin = ({ corpoAdmin = [], irmaos = [] }) => {
     const vmAtual = corpoAdmin.find(ca => String(ca.ano_exercicio) === anoAtual && normalizarCargo(ca.cargo) === 'veneravel mestre');
     return {
       lista,
-      mcMap,
       totalGestoes: anos.size,
       irmaosDistintos: lista.length,
       jaForamVM: lista.filter(r => r.cargos['veneravel mestre']).length,
