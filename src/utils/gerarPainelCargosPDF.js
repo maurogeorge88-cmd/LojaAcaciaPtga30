@@ -41,7 +41,6 @@ const COLUNAS = [
   ['secretario', 'Secretário'],
   ['tesoureiro', 'Tesoureiro'],
   ['chanceler', 'Chanceler'],
-  ['mestre de cerimonia', 'Mestre de\nCerimônias'],
 ];
 
 /**
@@ -81,7 +80,7 @@ export const gerarPainelCargosPDF = ({ linhas = [], resumo = {}, dadosLoja = {},
   doc.text('PAINEL DA ADMINISTRAÇÃO — IRMÃO × CARGO', W / 2, y, { align: 'center' });
   y += 5.5;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...CINZA);
-  doc.text(`Quantas vezes cada irmão ocupou os cargos de Venerável Mestre a Chanceler, mais Mestre de Cerimônias${resumo.anoAtual ? ` (até ${resumo.anoAtual})` : ''}`, W / 2, y, { align: 'center' });
+  doc.text(`Quantas vezes cada irmão ocupou os cargos de Venerável Mestre a Chanceler${resumo.anoAtual ? ` (até ${resumo.anoAtual})` : ''}`, W / 2, y, { align: 'center' });
   if (filtro) { y += 4.5; doc.setFontSize(8); doc.text(filtro, W / 2, y, { align: 'center' }); }
 
   // ── Cartões-resumo ──
