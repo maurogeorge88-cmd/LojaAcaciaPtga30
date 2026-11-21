@@ -1,1051 +1,2100 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import jsPDF from 'jspdf';
-import RecursosEquipamentos, { SeletorRecurso } from './RecursosEquipamentos';
+// import { gerarTermoComodato } from './utils/termoComodatoPDF';
 
-// ─────────────────────────────────────────────
-//  Estilos base
-// ─────────────────────────────────────────────
-const inp = (extra = {}) => ({
-  background: 'var(--color-surface-2)', color: 'var(--color-text)',
-  border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)',
-  padding: '0.5rem 1rem', width: '100%', outline: 'none', boxSizing: 'border-box',
-  ...extra,
-});
-const lbl = {
-  display: 'block', fontSize: '0.875rem', fontWeight: '600',
-  color: 'var(--color-text-muted)', marginBottom: '0.5rem',
-};
-const modalOverlay = {
-  position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-  zIndex: 50, padding: '1rem', overflowY: 'auto',
-};
-const modalBox = (maxW = '42rem') => ({
-  background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: maxW,
-  marginTop: '0.5rem',
-});
-const modalHead = (bg = 'var(--color-surface-2)') => ({
-  background: bg, color: bg === 'var(--color-surface-2)' ? 'var(--color-text)' : '#fff',
-  padding: '1.25rem 1.5rem',
-  borderBottom: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-});
-
-// ─────────────────────────────────────────────
-//  Modal Histórico de Patrimônio
-// ─────────────────────────────────────────────
-const ModalHistoricoPatrimonio = ({ equipamento, onFechar }) => {
-  const [historico, setHistorico] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-
-  useEffect(() => {
-    const carregar = async () => {
-      const { data } = await supabase
-        .from('equipamento_patrimonio_historico')
-        .select('*')
-        .eq('equipamento_id', equipamento.id)
-        .order('data_inicio', { ascending: false });
-      setHistorico(data || []);
-      setCarregando(false);
-    };
-    carregar();
-  }, [equipamento.id]);
-
-  return (
-    <div style={modalOverlay} onClick={e => e.target === e.currentTarget && onFechar()}>
-      <div style={modalBox('560px')}>
-        <div style={modalHead()}>
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
-              📋 Histórico de Patrimônios
-            </h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0.15rem 0 0' }}>
-              {equipamento.tipos_equipamentos?.nome} — {equipamento.descricao || ''}
-            </p>
-          </div>
-          <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
-        </div>
-        <div style={{ padding: '1.25rem' }}>
-          {carregando ? (
-            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>Carregando...</p>
-          ) : historico.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>Nenhum registro encontrado.</p>
-          ) : (
-            <div style={{ position: 'relative' }}>
-              {/* Linha vertical da timeline */}
-              <div style={{ position: 'absolute', left: '11px', top: 0, bottom: 0, width: '2px', background: 'var(--color-border)' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {historico.map((h, i) => {
-                  const ativo = h.status === 'ativo';
-                  return (
-                    <div key={h.id} style={{ display: 'flex', gap: '0.85rem', alignItems: 'flex-start' }}>
-                      {/* Bolinha */}
-                      <div style={{
-                        width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '0.7rem', fontWeight: 700, zIndex: 1,
-                        background: ativo ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.15)',
-                        border: `2px solid ${ativo ? '#10b981' : '#ef4444'}`,
-                        color: ativo ? '#10b981' : '#ef4444',
-                      }}>
-                        {ativo ? '✓' : '✕'}
-                      </div>
-                      {/* Card */}
-                      <div style={{
-                        flex: 1, background: 'var(--color-surface-2)',
-                        border: `1px solid ${ativo ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.25)'}`,
-                        borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', fontFamily: 'monospace' }}>
-                            {h.numero}
-                          </span>
-                          <span style={{
-                            padding: '0.15rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 600,
-                            background: ativo ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
-                            color: ativo ? '#10b981' : '#ef4444',
-                            border: `1px solid ${ativo ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}`,
-                          }}>
-                            {ativo ? '✅ Ativo' : '⛔ Inutilizado'}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.3rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                          <span>📅 Início: {new Date(h.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                          {h.data_fim && <span>🔚 Fim: {new Date(h.data_fim + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
-                        </div>
-                        {h.motivo && (
-                          <div style={{ marginTop: '0.35rem', fontSize: '0.78rem', color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-sm)' }}>
-                            ⚠️ {h.motivo}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-            <button onClick={onFechar} style={{ ...inp(), width: 'auto', padding: '0.55rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>
-              Fechar
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-//  Modal Inutilizar Patrimônio
-// ─────────────────────────────────────────────
-const ModalInutilizar = ({ equipamento, onFechar, onSalvar }) => {
-  const [motivo, setMotivo] = useState('');
-  const [novoNumero, setNovoNumero] = useState('');
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState('');
-
-  const handleSalvar = async () => {
-    if (!motivo.trim()) { setErro('Informe o motivo da inutilização.'); return; }
-    if (!novoNumero.trim()) { setErro('Informe o novo número de patrimônio.'); return; }
-    if (novoNumero.trim() === equipamento.numero_patrimonio) {
-      setErro('O novo número deve ser diferente do atual.'); return;
-    }
-    setSalvando(true); setErro('');
-    try {
-      await onSalvar({ motivo: motivo.trim(), novoNumero: novoNumero.trim() });
-    } catch (e) {
-      setErro(e.message || 'Erro ao salvar.');
-      setSalvando(false);
-    }
-  };
-
-  return (
-    <div style={modalOverlay} onClick={e => e.target === e.currentTarget && onFechar()}>
-      <div style={modalBox('500px')}>
-        <div style={modalHead()}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
-            ⚠️ Inutilizar Número de Patrimônio
-          </h3>
-          <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
-        </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-          {/* Aviso */}
-          <div style={{ padding: '0.85rem 1rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: '#f59e0b' }}>
-            ⚠️ O número <strong style={{ fontFamily: 'monospace' }}>{equipamento.numero_patrimonio}</strong> será marcado como inutilizado e ficará registrado no histórico. O equipamento continuará ativo com o novo número.
-          </div>
-
-          {/* Motivo */}
-          <div>
-            <label style={lbl}>Motivo da Inutilização *</label>
-            <textarea
-              value={motivo}
-              onChange={e => setMotivo(e.target.value)}
-              style={{ ...inp(), resize: 'vertical' }}
-              rows={3}
-              placeholder="Ex: Plaquinha perdida durante empréstimo, número danificado..."
-              autoFocus
-            />
-          </div>
-
-          {/* Novo número */}
-          <div>
-            <label style={lbl}>Novo Número de Patrimônio *</label>
-            <input
-              value={novoNumero}
-              onChange={e => setNovoNumero(e.target.value)}
-              style={inp()}
-              placeholder="Digite o novo número..."
-            />
-            <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-              Este número substituirá o atual no equipamento.
-            </p>
-          </div>
-
-          {erro && (
-            <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#ef4444' }}>
-              {erro}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
-            <button onClick={onFechar} style={{ ...inp(), width: 'auto', padding: '0.6rem 1.1rem', cursor: 'pointer' }}>
-              Cancelar
-            </button>
-            <button
-              onClick={handleSalvar}
-              disabled={salvando}
-              style={{
-                padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-md)', fontWeight: 600,
-                background: salvando ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.15)',
-                border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b',
-                cursor: salvando ? 'wait' : 'pointer', opacity: salvando ? 0.7 : 1,
-              }}
-            >
-              {salvando ? 'Salvando...' : '⚠️ Confirmar Inutilização'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────
-//  Componente Principal
-// ─────────────────────────────────────────────
-export default function GestaoEquipamentos({ showSuccess, showError, permissoes }) {
+export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
+  const [emprestimos, setEmprestimos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
-  const [tipos, setTipos] = useState([]);
+  const [beneficiarios, setBeneficiarios] = useState([]);
+  const [responsaveisPorBen, setResponsaveisPorBen] = useState({}); // beneficiario_id -> [responsáveis]
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
-  const [modalLote, setModalLote] = useState(false);
-  const [modalTipo, setModalTipo] = useState(false);
-  const [modalInutilizar, setModalInutilizar] = useState(null);
-  const [modalHistorico, setModalHistorico] = useState(null);
+  const [filtroStatus, setFiltroStatus] = useState('ativo');
+  const [filtroAno, setFiltroAno]       = useState('todos');
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [modalRelatorio, setModalRelatorio]   = useState(false);
+  const [modalRelGeral, setModalRelGeral]     = useState(false);
+  const [relGeralPeriodo, setRelGeralPeriodo] = useState('todos'); // todos | ano | trimestre | semestre
+  const [relGeralAno, setRelGeralAno]         = useState(new Date().getFullYear());
+  const [relGeralTri, setRelGeralTri]         = useState(0);
+  const [relGeralSem, setRelGeralSem]         = useState(0);
+  const [modalSubst, setModalSubst]           = useState(null);
+  // modalSubst: { empId, item: {id, equipamento_id, ...}, equipDisp: [] }
+  const [substSelecionado, setSubstSelecionado] = useState(''); // id do equipamento substituto
+  const [relAno, setRelAno]             = useState(new Date().getFullYear());
+  const [relIncluirOutrosAnos, setRelIncluirOutrosAnos] = useState(false);
+  const [relPeriodo, setRelPeriodo]     = useState('ano');   // mes|trimestre|semestre|ano
+  const [relMes, setRelMes]             = useState(new Date().getMonth());
+  const [relTrimestre, setRelTrimestre] = useState(Math.floor(new Date().getMonth() / 3));
+  const [relSemestre, setRelSemestre]   = useState(new Date().getMonth() < 6 ? 0 : 1);
   const [editando, setEditando] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState('disponivel_manutencao');
-  const [filtroTipo, setFiltroTipo] = useState('todos');
-  const [busca, setBusca] = useState('');
-  const [aba, setAba] = useState('equipamentos');
-  const [recursos, setRecursos] = useState([]);
-  const [origens, setOrigens] = useState([]);
+  
+  // Múltiplos equipamentos
+  const [equipamentosSelecionados, setEquipamentosSelecionados] = useState([]);
 
   const [form, setForm] = useState({
-    tipo_id: '', numero_patrimonio: '', descricao: '',
-    estado_conservacao: 'Novo', data_aquisicao: '',
-    valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: ''
+    beneficiario_id: '',
+    data_emprestimo: new Date().toISOString().split('T')[0],
+    data_devolucao_prevista: '',
+    observacoes_entrega: '',
+    irmao_responsavel_id: ''
   });
+  const [irmaos, setIrmaos] = useState([]);
 
-  const [formLote, setFormLote] = useState({
-    tipo_id: '', prefixo_patrimonio: '', quantidade: 1,
-    numero_inicial: 1, descricao: '', estado_conservacao: 'Novo',
-    data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: ''
-  });
-
-  const [formTipo, setFormTipo] = useState({ nome: '', descricao: '', ativo: true });
-  const [tipoEditando, setTipoEditando] = useState(null);
-  const [modalGerenciarTipos, setModalGerenciarTipos] = useState(false);
-
-  useEffect(() => { carregarDados(); }, []);
+  useEffect(() => {
+    carregarDados();
+  }, []);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
-      const { data: tiposData, error: tiposError } = await supabase
-        .from('tipos_equipamentos').select('*').eq('ativo', true).order('nome');
-      if (tiposError) throw tiposError;
-      setTipos(tiposData || []);
 
-      const { data: equipData, error: equipError } = await supabase
-        .from('equipamentos')
-        .select('*, tipos_equipamentos(id, nome)')
+      // Empréstimos com itens
+      const { data: empData, error: empError } = await supabase
+        .from('comodatos')
+        .select(`
+          *,
+          beneficiarios (id, nome, cpf, telefone, celular),
+          irmao_responsavel:irmao_responsavel_id (id, nome),
+          itens:comodato_itens (
+            id,
+            equipamento_id,
+            status,
+            data_devolucao_real,
+            equipamentos (
+              id,
+              numero_patrimonio,
+              tipos_equipamentos (nome)
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
-      if (equipError) throw equipError;
-      setEquipamentos(equipData || []);
 
-      // Recursos de origem (tolerante: se o SQL ainda não foi executado, apenas ignora)
-      const { data: orgData } = await supabase.from('comodato_origens_recurso').select('*').order('nome');
-      setOrigens(orgData || []);
-      const { data: recData } = await supabase
-        .from('comodato_recursos')
-        .select('*, origem:comodato_origens_recurso(id, nome)')
-        .order('data_nf', { ascending: false });
-      setRecursos(recData || []);
+      if (empError) throw empError;
+      const dados = empData || [];
+      setEmprestimos(dados);
+
+      // Responsáveis (contato) — agrupados por beneficiário
+      const { data: respData } = await supabase
+        .from('responsaveis')
+        .select('id, beneficiario_id, nome, parentesco, telefone, celular');
+      const mapaResp = {};
+      (respData || []).forEach(r => {
+        if (!mapaResp[r.beneficiario_id]) mapaResp[r.beneficiario_id] = [];
+        mapaResp[r.beneficiario_id].push(r);
+      });
+      setResponsaveisPorBen(mapaResp);
+
+      // Carregar irmãos para o select de responsável
+      const { data: irmaosData } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .in('situacao', ['regular', 'licenciado'])
+        .order('nome');
+      setIrmaos(irmaosData || []);
+      // Anos disponíveis — extraídos dos empréstimos carregados
+      const anos = [...new Set(dados
+        .map(e => e.data_emprestimo ? new Date(e.data_emprestimo + 'T00:00:00').getFullYear() : null)
+        .filter(Boolean)
+      )].sort((a, b) => b - a);
+      setAnosDisponiveis(anos);
+      // Inicializar relAno com ano atual se disponível, senão o primeiro
+      const anoAtualNum = new Date().getFullYear();
+      if (anos.includes(anoAtualNum)) setRelAno(anoAtualNum);
+      else if (anos.length > 0) setRelAno(anos[0]);
+
+      // Equipamentos disponíveis
+      const { data: eqData, error: eqError } = await supabase
+        .from('equipamentos')
+        .select(`
+          id,
+          numero_patrimonio,
+          status,
+          tipos_equipamentos (nome)
+        `)
+        .eq('status', 'disponivel')
+        .order('numero_patrimonio');
+
+      if (eqError) throw eqError;
+      setEquipamentos(eqData || []);
+
+      // Beneficiários
+      const { data: benData, error: benError } = await supabase
+        .from('beneficiarios')
+        .select('id, nome, cpf')
+        .order('nome');
+
+      if (benError) throw benError;
+      setBeneficiarios(benData || []);
+
       setLoading(false);
     } catch (error) {
+      console.error('Erro:', error);
       showError('Erro ao carregar dados');
       setLoading(false);
     }
   };
 
-  const abrirModal = (equipamento = null) => {
-    if (equipamento) {
-      setEditando(equipamento);
-      setForm({
-        tipo_id: equipamento.tipo_id,
-        numero_patrimonio: equipamento.numero_patrimonio,
-        descricao: equipamento.descricao || '',
-        estado_conservacao: equipamento.estado_conservacao,
-        data_aquisicao: equipamento.data_aquisicao || '',
-        valor_aquisicao: equipamento.valor_aquisicao || '',
-        status: equipamento.status,
-        observacoes: equipamento.observacoes || '',
-        recurso_id: equipamento.recurso_id || ''
-      });
-    } else {
-      setEditando(null);
-      setForm({ tipo_id: '', numero_patrimonio: '', descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: '' });
+  const salvarEmprestimo = async (e) => {
+    e.preventDefault();
+
+    if (!form.beneficiario_id) {
+      showError('Selecione um beneficiário!');
+      return;
     }
+
+    if (equipamentosSelecionados.length === 0) {
+      showError('Selecione pelo menos um equipamento!');
+      return;
+    }
+
+    try {
+      if (editando) {
+        // MODO EDIÇÃO
+        // 1. Atualizar comodato
+        const { error: comodatoError } = await supabase
+          .from('comodatos')
+          .update({
+            beneficiario_id: form.beneficiario_id,
+            data_emprestimo: form.data_emprestimo,
+            data_devolucao_prevista: form.data_devolucao_prevista || null,
+            observacoes_entrega: form.observacoes_entrega || null,
+            irmao_responsavel_id: form.irmao_responsavel_id || null
+          })
+          .eq('id', editando.id);
+
+        if (comodatoError) throw comodatoError;
+
+        // 2. Buscar itens atuais
+        const { data: itensAtuais } = await supabase
+          .from('comodato_itens')
+          .select('equipamento_id')
+          .eq('comodato_id', editando.id)
+          .eq('status', 'emprestado');
+
+        const idsAtuais = itensAtuais?.map(i => i.equipamento_id) || [];
+        
+        // 3. Equipamentos removidos - liberar
+        const removidos = idsAtuais.filter(id => !equipamentosSelecionados.includes(id));
+        for (const eqId of removidos) {
+          await supabase
+            .from('comodato_itens')
+            .delete()
+            .eq('comodato_id', editando.id)
+            .eq('equipamento_id', eqId);
+          
+          await supabase
+            .from('equipamentos')
+            .update({ status: 'disponivel' })
+            .eq('id', eqId);
+        }
+
+        // 4. Equipamentos novos - adicionar
+        const novos = equipamentosSelecionados.filter(id => !idsAtuais.includes(id));
+        if (novos.length > 0) {
+          const itensNovos = novos.map(eq_id => ({
+            comodato_id: editando.id,
+            equipamento_id: eq_id,
+            status: 'emprestado'
+          }));
+
+          await supabase.from('comodato_itens').insert(itensNovos);
+
+          for (const eq_id of novos) {
+            await supabase
+              .from('equipamentos')
+              .update({ status: 'emprestado' })
+              .eq('id', eq_id);
+          }
+        }
+
+        showSuccess('Empréstimo atualizado!');
+      } else {
+        // MODO CRIAÇÃO
+        // 1. Criar comodato
+        const { data: comodato, error: comodatoError } = await supabase
+          .from('comodatos')
+          .insert([{
+            beneficiario_id: form.beneficiario_id,
+            data_emprestimo: form.data_emprestimo,
+            data_devolucao_prevista: form.data_devolucao_prevista || null,
+            observacoes_entrega: form.observacoes_entrega || null,
+            irmao_responsavel_id: form.irmao_responsavel_id || null,
+            status: 'ativo'
+          }])
+          .select()
+          .single();
+
+        if (comodatoError) throw comodatoError;
+
+        // 2. Criar itens
+        const itens = equipamentosSelecionados.map(eq_id => ({
+          comodato_id: comodato.id,
+          equipamento_id: eq_id,
+          status: 'emprestado'
+        }));
+
+        const { error: itensError } = await supabase
+          .from('comodato_itens')
+          .insert(itens);
+
+        if (itensError) throw itensError;
+
+        // 3. Atualizar status dos equipamentos
+        for (const eq_id of equipamentosSelecionados) {
+          await supabase
+            .from('equipamentos')
+            .update({ status: 'emprestado' })
+            .eq('id', eq_id);
+        }
+
+        showSuccess(`Empréstimo criado com ${equipamentosSelecionados.length} equipamento(s)!`);
+      }
+
+      fecharModal();
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError(error.message || 'Erro ao criar empréstimo');
+    }
+  };
+
+  const abrirEdicao = async (emprestimo) => {
+    setEditando(emprestimo);
+    setForm({
+      beneficiario_id: emprestimo.beneficiario_id,
+      data_emprestimo: emprestimo.data_emprestimo,
+      data_devolucao_prevista: emprestimo.data_devolucao_prevista || '',
+      observacoes_entrega: emprestimo.observacoes_entrega || ''
+    });
+
+    // Carregar equipamentos emprestados (não devolvidos)
+    const equipamentosEmprestados = emprestimo.itens
+      ?.filter(item => item.status === 'emprestado')
+      .map(item => item.equipamento_id) || [];
+    
+    setEquipamentosSelecionados(equipamentosEmprestados);
+
+    // Carregar equipamentos disponíveis + os que já estão neste empréstimo
+    const { data: eqDisponiveis } = await supabase
+      .from('equipamentos')
+      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
+      .eq('status', 'disponivel')
+      .order('numero_patrimonio');
+
+    const { data: eqDoEmprestimo } = await supabase
+      .from('equipamentos')
+      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
+      .in('id', equipamentosEmprestados)
+      .order('numero_patrimonio');
+
+    // Combinar e remover duplicatas
+    const todosEquipamentos = [...(eqDisponiveis || []), ...(eqDoEmprestimo || [])];
+    const unicos = todosEquipamentos.filter((eq, index, self) => 
+      index === self.findIndex(e => e.id === eq.id)
+    );
+    
+    setEquipamentos(unicos);
     setModalAberto(true);
   };
 
-  const salvarEquipamento = async (e) => {
-    e.preventDefault();
-    if (!form.tipo_id || !form.numero_patrimonio) { showError('Preencha os campos obrigatórios!'); return; }
+  const gerarTermo = async (emprestimo) => {
     try {
-      const dados = {
-        tipo_id: parseInt(form.tipo_id),
-        numero_patrimonio: form.numero_patrimonio,
-        descricao: form.descricao,
-        estado_conservacao: form.estado_conservacao,
-        data_aquisicao: form.data_aquisicao || null,
-        valor_aquisicao: form.valor_aquisicao ? parseFloat(form.valor_aquisicao) : null,
-        status: form.status,
-        observacoes: form.observacoes,
-        recurso_id: form.recurso_id ? parseInt(form.recurso_id) : null
+      showSuccess('Gerando Termo de Comodato...');
+
+      // Importar jsPDF
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+
+      // Buscar dados da loja
+      const { data: dadosLoja } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+
+      // Buscar dados completos
+      const { data: emprestimoCompleto, error: erroEmp } = await supabase
+        .from('comodatos')
+        .select(`
+          *,
+          beneficiarios (*),
+          itens:comodato_itens (
+            *,
+            equipamentos (*, tipos_equipamentos (*))
+          )
+        `)
+        .eq('id', emprestimo.id)
+        .single();
+
+      if (erroEmp) throw erroEmp;
+
+      // Buscar responsáveis
+      const { data: responsaveis } = await supabase
+        .from('responsaveis')
+        .select('*')
+        .eq('beneficiario_id', emprestimoCompleto.beneficiario_id);
+
+      emprestimoCompleto.beneficiarios.responsaveis = responsaveis || [];
+
+      // Gerar PDF
+      const doc = new jsPDF();
+      let yPos = 8;
+
+      // ── CABEÇALHO ──
+      if (dadosLoja?.logo_url) {
+        try {
+          doc.addImage(dadosLoja.logo_url, 'PNG', 91, yPos, 28, 28);
+          yPos += 32; // espaço suficiente para o texto não sobrepor a logo
+        } catch (e) {
+          console.log('Logo não disponível');
+          yPos += 2;
+        }
+      } else {
+        yPos += 2;
+      }
+
+      // Nome da Loja
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      const nomeLoja = `${dadosLoja?.nome_loja || 'Loja Maçônica'} nº ${dadosLoja?.numero_loja || '30'}`;
+      doc.text(nomeLoja, 105, yPos, { align: 'center' });
+      yPos += 5;
+
+      // Endereço
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      if (dadosLoja?.endereco) {
+        doc.text(dadosLoja.endereco, 105, yPos, { align: 'center' });
+        yPos += 4;
+      }
+      if (dadosLoja?.cidade) {
+        doc.text(`${dadosLoja.cidade}/${dadosLoja.estado || ''} - CEP: ${dadosLoja.cep || ''}`, 105, yPos, { align: 'center' });
+        yPos += 4;
+      }
+      if (dadosLoja?.telefone) {
+        doc.text(`Telefone: ${dadosLoja.telefone}`, 105, yPos, { align: 'center' });
+        yPos += 4;
+      }
+
+      yPos += 2;
+
+      // Linha separadora
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.line(15, yPos, 195, yPos);
+      yPos += 5;
+
+      // ========================================
+      // TÍTULO
+      // ========================================
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TERMO DE COMODATO', 105, yPos, { align: 'center' });
+      yPos += 7;
+
+      // ========================================
+      // COMODANTE - NOME EM NEGRITO NA MESMA LINHA
+      // ========================================
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Comodante: ', 15, yPos);
+      doc.text(nomeLoja, 42, yPos);
+      yPos += 6;
+
+      // ========================================
+      // COMODATÁRIO - NOME EM NEGRITO NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
+      // ========================================
+      const beneficiario = emprestimoCompleto.beneficiarios;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Comodatário: ', 15, yPos);
+      doc.text(beneficiario?.nome || '', 42, yPos); // Nome em negrito
+      yPos += 5; // Próxima linha para qualificação
+      
+      // Qualificação na linha de baixo com data de nascimento
+      doc.setFont('helvetica', 'normal');
+      
+      let textoQualificacao = 'brasileiro(a)';
+      
+      // Adicionar data de nascimento se existir
+      if (beneficiario?.data_nascimento) {
+        const dataNasc = new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR');
+        textoQualificacao += `, nascido(a) aos ${dataNasc}`;
+      }
+      
+      textoQualificacao += `, inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}`;
+      
+      if (beneficiario?.rg) {
+        textoQualificacao += `, portador(a) do RG sob nº ${beneficiario.rg}`;
+      }
+      
+      textoQualificacao += `, com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
+      
+      const linhasQualificacao = doc.splitTextToSize(textoQualificacao, 180);
+      linhasQualificacao.forEach(linha => {
+        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
+        yPos += 5;
+      });
+      yPos += 2;
+
+      // ========================================
+      // RESPONSÁVEL (se houver) - MESMO PADRÃO DO BENEFICIÁRIO
+      // ========================================
+      if (responsaveis && responsaveis.length > 0) {
+        const resp = responsaveis[0];
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comodatário - Responsável: ', 15, yPos);
+        doc.text(resp.nome || '', 75, yPos); // Nome em negrito ao lado
+        yPos += 5; // Próxima linha para qualificação
+        
+        // Qualificação na linha de baixo
+        doc.setFont('helvetica', 'normal');
+        
+        let textoQualificacaoResp = 'brasileiro(a)';
+        
+        textoQualificacaoResp += `, inscrito(a) no CPF sob nº ${resp.cpf || 'não informado'}`;
+        
+        if (resp.rg) {
+          textoQualificacaoResp += `, portador(a) do RG sob nº ${resp.rg}`;
+        }
+        
+        textoQualificacaoResp += `, com endereço na ${resp.endereco || 'não informado'}, no Município de ${resp.cidade || 'não informado'}/${resp.estado || 'MT'}.`;
+        
+        const linhasQualificacaoResp = doc.splitTextToSize(textoQualificacaoResp, 180);
+        linhasQualificacaoResp.forEach(linha => {
+          doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
+          yPos += 5;
+        });
+        yPos += 2;
+      }
+
+      // ========================================
+      // EQUIPAMENTOS em 2 colunas
+      doc.setFont('helvetica', 'bold');
+      doc.text('Equipamento(s):', 15, yPos);
+      yPos += 5;
+      doc.setFont('helvetica', 'normal');
+
+      const itensEquip = emprestimoCompleto.itens || [];
+      for (let ei = 0; ei < itensEquip.length; ei += 2) {
+        const iA = itensEquip[ei];
+        const nA = (iA?.equipamentos?.tipos_equipamentos?.nome || 'Equipamento') + ' - Patrimônio: ' + (iA?.equipamentos?.numero_patrimonio || 'S/N');
+        doc.text(nA, 15, yPos);
+        if (itensEquip[ei + 1]) {
+          const iB = itensEquip[ei + 1];
+          const nB = (iB?.equipamentos?.tipos_equipamentos?.nome || 'Equipamento') + ' - Patrimônio: ' + (iB?.equipamentos?.numero_patrimonio || 'S/N');
+          doc.text(nB, 108, yPos);
+        }
+        yPos += 5;
+      }
+      yPos += 2;
+
+      // ── Irmão Responsável ──────────────────────────────────────────────────
+      if (emprestimoCompleto.irmao_responsavel?.nome) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Acompanhamento do Irmão:', 15, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(emprestimoCompleto.irmao_responsavel.nome, 73, yPos);
+        yPos += 7;
+      }
+
+      // ========================================
+      // PRAZO DE UTILIZAÇÃO
+      // ========================================
+      doc.setFont('helvetica', 'bold');
+      doc.text('Prazo de utilização: ', 15, yPos);
+      doc.setFont('helvetica', 'normal');
+      
+      if (emprestimoCompleto.data_devolucao_prevista) {
+        const dataDevolucao = new Date(emprestimoCompleto.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR');
+        doc.text(`Por tempo determinado até ${dataDevolucao}`, 56, yPos);
+      } else {
+        doc.text('Por prazo indeterminado', 56, yPos);
+      }
+      yPos += 5;
+
+      // ========================================
+      // TEXTO DO COMODATO (da imagem)
+      // ========================================
+      doc.setFont('helvetica', 'normal');
+      
+      const textoComodato = `Este  Termo  de  Comodato  estabelece as condições do empréstimo gratuito do(s) bem(s) descrito(s)   acima,  o(s) qual(is)   é(são)    disponibilizado(s)    pela    Loja    Maçônica   -   ARLS   Acácia   de   Paranatinga   nº    30,   para  que    seja(m)    utilizado(s)    pelo    beneficiário   acima   identificado,  sendo  vedada  a  transferência  à  terceiros sem  a autorização do cedente.
+
+O beneficiário deve cuidar do(s) bem(s) disponibilizado(s) e devolvê-lo(s) em boas condições para uso  posterior,  e será  responsabilizado  por quaisquer danos ou perda.
+
+Se  o(s)  bem(s)   disponibilizado(s)  não  seja(m)  mais  necessário(s) ao beneficiário identificado, que seja(m) o(s) mesmo(s) devidamente devolvido(s).
+
+Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
+
+      const linhasTexto = doc.splitTextToSize(textoComodato, 180);
+      linhasTexto.forEach(linha => {
+        if (yPos > 265) {
+          doc.addPage();
+          yPos = 15;
+        }
+        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
+        yPos += 4.5;
+      });
+      yPos += 6;
+
+      // ========================================
+      // LOCAL E DATA
+      // ========================================
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const hoje = new Date();
+      const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+      const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga-MT'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(dataExtenso, 105, yPos, { align: 'center' });
+      yPos += 14; // espaço antes da linha de assinatura
+
+      // ── Assinatura Comodante (centro) ──
+      doc.line(60, yPos, 150, yPos);
+      yPos += 4; // espaço simples linha → texto
+      doc.setFontSize(9);
+      doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
+      yPos += 4; // espaço simples entre textos
+      doc.text('Comodante', 105, yPos, { align: 'center' });
+      yPos += 14; // espaço antes das assinaturas finais
+
+      // ── Assinaturas Beneficiário + Responsável ──
+      doc.line(15, yPos, 95, yPos);
+      doc.line(115, yPos, 195, yPos);
+      yPos += 4; // espaço simples linha → texto
+      doc.setFontSize(9);
+      doc.text('Comodatário - Beneficiário', 55, yPos, { align: 'center' });
+      doc.text('Comodatário - Responsável', 155, yPos, { align: 'center' });
+
+      // SALVAR
+      const nomeArquivo = `Termo_Comodato_${String(emprestimo.id).padStart(4, '0')}_${beneficiario?.nome?.replace(/\s+/g,'_') || 'Beneficiario'}.pdf`;
+      doc.save(nomeArquivo);
+      
+      showSuccess('Termo gerado com sucesso!');
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao gerar termo: ' + error.message);
+    }
+  };
+
+  const excluirEmprestimo = async (emprestimo) => {
+    if (!window.confirm('Excluir este empréstimo? Os equipamentos serão liberados.')) return;
+
+    try {
+      // 1. Buscar todos os itens do empréstimo
+      const { data: itens } = await supabase
+        .from('comodato_itens')
+        .select('equipamento_id')
+        .eq('comodato_id', emprestimo.id);
+
+      // 2. Liberar equipamentos
+      for (const item of itens || []) {
+        await supabase
+          .from('equipamentos')
+          .update({ status: 'disponivel' })
+          .eq('id', item.equipamento_id);
+      }
+
+      // 3. Excluir itens (cascade vai excluir automaticamente, mas por segurança)
+      await supabase
+        .from('comodato_itens')
+        .delete()
+        .eq('comodato_id', emprestimo.id);
+
+      // 4. Excluir empréstimo
+      const { error } = await supabase
+        .from('comodatos')
+        .delete()
+        .eq('id', emprestimo.id);
+
+      if (error) throw error;
+
+      showSuccess('Empréstimo excluído!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao excluir empréstimo');
+    }
+  };
+
+  const devolverItem = async (comodatoId, itemId, equipamentoId) => {
+    if (!window.confirm('Confirmar devolução deste equipamento?')) return;
+
+    try {
+      // 1. Marcar item como devolvido
+      const { error: itemError } = await supabase
+        .from('comodato_itens')
+        .update({
+          status: 'devolvido',
+          data_devolucao_real: new Date().toISOString()
+        })
+        .eq('id', itemId);
+
+      if (itemError) throw itemError;
+
+      // 2. Liberar equipamento
+      await supabase
+        .from('equipamentos')
+        .update({ status: 'disponivel' })
+        .eq('id', equipamentoId);
+
+      // 3. Verificar se todos itens foram devolvidos
+      const { data: itensRestantes } = await supabase
+        .from('comodato_itens')
+        .select('*')
+        .eq('comodato_id', comodatoId)
+        .eq('status', 'emprestado');
+
+      // Se não tiver mais itens emprestados, marcar comodato como devolvido
+      if (itensRestantes.length === 0) {
+        await supabase
+          .from('comodatos')
+          .update({
+            status: 'devolvido',
+            data_devolucao_real: new Date().toISOString()
+          })
+          .eq('id', comodatoId);
+      }
+
+      showSuccess('Equipamento devolvido!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao devolver equipamento');
+    }
+  };
+
+
+  const abrirSubstituicao = async (emp, item) => {
+    // Buscar equipamentos disponíveis do mesmo tipo preferencialmente
+    const { data: disponiveis } = await supabase
+      .from('equipamentos')
+      .select('id, numero_patrimonio, tipos_equipamentos(nome)')
+      .eq('status', 'disponivel')
+      .order('numero_patrimonio');
+    setSubstSelecionado('');
+    setModalSubst({ empId: emp.id, item, equipDisp: disponiveis || [] });
+  };
+
+  const realizarSubstituicao = async () => {
+    if (!substSelecionado || !modalSubst) return;
+    const { empId, item } = modalSubst;
+    try {
+      // 1. Liberar equipamento antigo → disponivel
+      await supabase.from('equipamentos').update({ status: 'disponivel' }).eq('id', item.equipamento_id);
+
+      // 2. Atualizar item do comodato para o novo equipamento
+      await supabase.from('comodato_itens')
+        .update({ equipamento_id: parseInt(substSelecionado) })
+        .eq('id', item.id);
+
+      // 3. Marcar novo equipamento como emprestado
+      await supabase.from('equipamentos').update({ status: 'emprestado' }).eq('id', parseInt(substSelecionado));
+
+      showSuccess('Equipamento substituído com sucesso!');
+      setModalSubst(null);
+      carregarDados();
+    } catch (e) {
+      showError('Erro ao substituir: ' + e.message);
+    }
+  };
+
+  const gerarRelatorioGeral = async () => {
+    // Renovar sessão antes das queries para evitar JWT expired
+    await supabase.auth.refreshSession();
+    try {
+      showSuccess('Gerando relatório geral...');
+
+      const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
+
+      // Montar query com filtro de período
+      let query = supabase
+        .from('comodatos')
+        .select(`
+          id, status, data_emprestimo, data_devolucao_prevista,
+          beneficiarios (id, nome, cpf),
+          itens:comodato_itens (id, status, data_devolucao_real, equipamentos (numero_patrimonio, tipos_equipamentos (nome)))
+        `)
+        .order('data_emprestimo', { ascending: false });
+
+      if (relGeralPeriodo !== 'todos') {
+        const anoStr = String(relGeralAno);
+        if (relGeralPeriodo === 'ano') {
+          query = query.gte('data_emprestimo', `${anoStr}-01-01`).lte('data_emprestimo', `${anoStr}-12-31`);
+        } else if (relGeralPeriodo === 'trimestre') {
+          const mesIni = relGeralTri * 3 + 1;
+          const mesFim = mesIni + 2;
+          const ultimoDia = new Date(relGeralAno, mesFim, 0).getDate();
+          query = query
+            .gte('data_emprestimo', `${anoStr}-${String(mesIni).padStart(2,'0')}-01`)
+            .lte('data_emprestimo', `${anoStr}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`);
+        } else if (relGeralPeriodo === 'semestre') {
+          const mesIni = relGeralSem === 0 ? 1 : 7;
+          const mesFim = relGeralSem === 0 ? 6 : 12;
+          const ultimoDia = new Date(relGeralAno, mesFim, 0).getDate();
+          query = query
+            .gte('data_emprestimo', `${anoStr}-${String(mesIni).padStart(2,'0')}-01`)
+            .lte('data_emprestimo', `${anoStr}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`);
+        }
+      }
+
+      const { data: todosEmp } = await query;
+      const lista = todosEmp || [];
+
+      // Label do período
+      const MESES_NOMES_G = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const labelPeriodoGeral = relGeralPeriodo === 'todos'      ? 'Todos os Períodos'
+        : relGeralPeriodo === 'ano'        ? `Ano ${relGeralAno}`
+        : relGeralPeriodo === 'trimestre'  ? `${relGeralTri+1}º Trimestre ${relGeralAno}`
+        : `${relGeralSem+1}º Semestre ${relGeralAno}`;
+
+      // ── Cálculos globais ──────────────────────────────────────────────────
+      // Total de empréstimos (cada comodato conta como 1)
+      const totalEmprestimos = lista.length;
+
+      // Total de itens emprestados (todos os itens de todos os comodatos)
+      const todosItens = lista.flatMap(e => e.itens || []);
+      const totalItensEmprestados = todosItens.length;
+
+      // Total de itens devolvidos (itens com status='devolvido')
+      const totalItensDevolvidos = todosItens.filter(i => i.status === 'devolvido').length;
+
+      // Itens ainda ativos
+      const totalItensAtivos = todosItens.filter(i => i.status === 'emprestado').length;
+
+      // Pessoas beneficiadas (beneficiários únicos)
+      const benefIds = new Set(lista.map(e => e.beneficiarios?.id).filter(Boolean));
+      const totalBeneficiados = benefIds.size;
+
+      // Comodatos ativos vs encerrados
+      const comodatosAtivos    = lista.filter(e => e.status === 'ativo').length;
+      const comodatosDevolvidos = lista.filter(e => e.status === 'devolvido').length;
+
+      // Equipamentos mais emprestados
+      const contagemEquip = {};
+      todosItens.forEach(i => {
+        const nome = i.equipamentos?.tipos_equipamentos?.nome || 'Desconhecido';
+        const pat  = i.equipamentos?.numero_patrimonio || '';
+        const key  = `${nome} (${pat})`;
+        contagemEquip[key] = (contagemEquip[key] || 0) + 1;
+      });
+      const rankEquip = Object.entries(contagemEquip)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 10);
+
+      // Beneficiários com mais empréstimos
+      const contagemBenef = {};
+      lista.forEach(e => {
+        const nome = e.beneficiarios?.nome || 'Desconhecido';
+        contagemBenef[nome] = (contagemBenef[nome] || 0) + 1;
+      });
+      const rankBenef = Object.entries(contagemBenef)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 10);
+
+      // Por ano
+      const porAno = {};
+      lista.forEach(e => {
+        if (!e.data_emprestimo) return;
+        const ano = e.data_emprestimo.substring(0, 4);
+        if (!porAno[ano]) porAno[ano] = { emp: 0, dev: 0, itens: 0, itensDevolvidos: 0 };
+        porAno[ano].emp++;
+        porAno[ano].itens += (e.itens || []).length;
+        porAno[ano].itensDevolvidos += (e.itens || []).filter(i => i.status === 'devolvido').length;
+        if (e.status === 'devolvido') porAno[ano].dev++;
+      });
+
+      // ── PDF ──────────────────────────────────────────────────────────────
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      const pW = doc.internal.pageSize.getWidth();
+      let y = 0;
+
+      const rodape = () => {
+        const total = doc.getNumberOfPages();
+        for (let p = 1; p <= total; p++) {
+          doc.setPage(p);
+          doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
+          doc.text(`Página ${p} de ${total}`, pW / 2, 290, { align: 'center' });
+          doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', 10, 290);
+          doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`, pW - 10, 290, { align: 'right' });
+          doc.setTextColor(0);
+        }
       };
 
-      if (editando) {
-        const numeroAnterior = editando.numero_patrimonio;
-        const { error } = await supabase.from('equipamentos').update(dados).eq('id', editando.id);
-        if (error) throw error;
+      // ── Cabeçalho (mesmo padrão do relatório existente) ────────────────
+      doc.setFillColor(30, 58, 95);
+      doc.rect(0, 0, pW, 32, 'F');
 
-        // Se mudou o número, registrar no histórico
-        if (form.numero_patrimonio !== numeroAnterior) {
-          // Fechar registro anterior
-          await supabase
-            .from('equipamento_patrimonio_historico')
-            .update({ data_fim: new Date().toISOString().split('T')[0], status: 'inutilizado', motivo: 'Número alterado via edição' })
-            .eq('equipamento_id', editando.id)
-            .eq('numero', numeroAnterior)
-            .is('data_fim', null);
-          // Inserir novo
-          await supabase.from('equipamento_patrimonio_historico').insert({
-            equipamento_id: editando.id,
-            numero: form.numero_patrimonio,
-            status: 'ativo',
-            data_inicio: new Date().toISOString().split('T')[0],
+      if (dadosLoja?.logo_url) {
+        try { doc.addImage(dadosLoja.logo_url, 'PNG', pW - 36, 4, 24, 24); } catch {}
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+      doc.text(dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
+      doc.setFontSize(11);
+      doc.text(`Relatório Geral de Comodatos — ${labelPeriodoGeral}`, pW / 2, 21, { align: 'center' });
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
+
+      y = 38;
+
+      // ── Cards de totais ────────────────────────────────────────────────
+      const cards = [
+        { label: 'Total Empréstimos',    val: totalEmprestimos,      cor: [30,58,95] },
+        { label: 'Ativos',               val: comodatosAtivos,       cor: [245,158,11] },
+        { label: 'Encerrados',           val: comodatosDevolvidos,   cor: [16,185,129] },
+        { label: 'Itens Emprestados',    val: totalItensEmprestados, cor: [99,102,241] },
+        { label: 'Itens Devolvidos',     val: totalItensDevolvidos,  cor: [16,185,129] },
+        { label: 'Itens em Uso',         val: totalItensAtivos,      cor: [245,158,11] },
+        { label: 'Pessoas Beneficiadas', val: totalBeneficiados,     cor: [236,72,153] },
+
+      ];
+
+      const cols = 4;
+      const boxW = (pW - 20 - 3 * (cols - 1)) / cols;
+      const boxH = 18;
+      cards.forEach((c, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = 10 + col * (boxW + 3);
+        const yy = y + row * (boxH + 3);
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(x, yy, boxW, boxH, 3, 3, 'FD');
+        doc.setTextColor(...c.cor);
+        doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+        doc.text(String(c.val), x + boxW / 2, yy + 9, { align: 'center' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(c.label, x + boxW / 2, yy + 14, { align: 'center' });
+      });
+
+      const rowsCards = Math.ceil(cards.length / cols);
+      y += rowsCards * (boxH + 3) + 6;
+
+      // ── Histórico por Ano ─────────────────────────────────────────────
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('Histórico por Ano', 10, y); y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Ano', 'Empréstimos', 'Encerrados', 'Em Aberto', 'Itens Emprestados', 'Itens Devolvidos']],
+        body: Object.entries(porAno).sort(([a],[b]) => b.localeCompare(a)).map(([ano, v]) => [
+          ano, v.emp, v.dev, v.emp - v.dev, v.itens, v.itensDevolvidos,
+        ]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { fontStyle: 'bold' }, 1:{halign:'center'}, 2:{halign:'center'}, 3:{halign:'center'}, 4:{halign:'center'}, 5:{halign:'center'} },
+        margin: { left: 10, right: 10 },
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      // ── Equipamentos mais emprestados ─────────────────────────────────
+      if (y > 230) { doc.addPage(); y = 15; }
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('Equipamentos Mais Emprestados', 10, y); y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Equipamento', 'Qtd. Empréstimos']],
+        body: rankEquip.map(([nome, qtd]) => [nome, qtd]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
+        margin: { left: 10, right: 10 },
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      rodape();
+      doc.save('Relatorio_Geral_Comodatos.pdf');
+      showSuccess('Relatório Geral gerado!');
+    } catch (e) {
+      showError('Erro ao gerar relatório geral: ' + e.message);
+    }
+  };
+
+  const gerarRelatorio = async () => {
+    try {
+      showSuccess('Gerando relatório...');
+
+      // Renovar sessão antes das queries para evitar JWT expired
+      await supabase.auth.refreshSession();
+
+      const anoAtual = relAno; // número
+
+      // Filtro de período para o relatório
+      const dentroDoperiodo = (emp) => {
+        const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
+        if (!dt || dt.getFullYear() !== anoAtual) return false;
+        if (relPeriodo === 'mes')       return dt.getMonth() === relMes;
+        if (relPeriodo === 'trimestre') return Math.floor(dt.getMonth() / 3) === relTrimestre;
+        if (relPeriodo === 'semestre')  return (dt.getMonth() < 6 ? 0 : 1) === relSemestre;
+        return true;
+      };
+
+      const MESES_NOMES_REL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const labelAno = String(anoAtual);
+      const labelPeriodo = relPeriodo === 'mes'       ? `${MESES_NOMES_REL[relMes]} ${anoAtual}`
+                         : relPeriodo === 'trimestre' ? `${relTrimestre + 1}º Trimestre ${anoAtual}`
+                         : relPeriodo === 'semestre'  ? `${relSemestre + 1}º Semestre ${anoAtual}`
+                         : `Ano ${anoAtual}`;
+
+      // Buscar empréstimos do ano (ativos + devolvidos)
+      const { data: dadosLoja } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+
+      // Buscar empréstimos do ano selecionado
+      const { data: lista, error } = await supabase
+        .from('comodatos')
+        .select(`
+          *,
+          beneficiarios (nome, cpf),
+          itens:comodato_itens (
+            id, status, data_devolucao_real,
+            equipamentos (numero_patrimonio, tipos_equipamentos (nome))
+          )
+        `)
+        .gte('data_emprestimo', `${anoAtual}-01-01`)
+        .lte('data_emprestimo', `${anoAtual}-12-31`)
+        .in('status', ['ativo', 'devolvido'])
+        .order('data_emprestimo', { ascending: false });
+
+      // Buscar ativos/vencidos de outros anos (se checkbox marcado)
+      let listaOutrosAnos = [];
+      if (relIncluirOutrosAnos) {
+        const { data: outrosData } = await supabase
+          .from('comodatos')
+          .select(`
+            *,
+            beneficiarios (nome, cpf),
+            itens:comodato_itens (
+              id, status, data_devolucao_real,
+              equipamentos (numero_patrimonio, tipos_equipamentos (nome))
+            )
+          `)
+          .lt('data_emprestimo', `${anoAtual}-01-01`)
+          .eq('status', 'ativo')
+          .order('data_emprestimo', { ascending: false });
+        listaOutrosAnos = outrosData || [];
+      }
+
+      if (error) throw error;
+      const listaPeriodo = (lista || []).filter(dentroDoperiodo);
+
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF('landscape');
+      const pW = doc.internal.pageSize.getWidth();
+
+      // ── Cabeçalho ──────────────────────────────────────────────────────────
+      doc.setFillColor(30, 58, 95);
+      doc.rect(0, 0, pW, 32, 'F');
+
+      if (dadosLoja?.logo_url) {
+        try { doc.addImage(dadosLoja.logo_url, 'PNG', pW - 36, 4, 24, 24); } catch {}
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(`Relatorio de Emprestimos — ${labelPeriodo}`, pW / 2, 21, { align: 'center' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
+
+      // ── Totalizadores ───────────────────────────────────────────────────────
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const ativos    = listaPeriodo.filter(e => e.status === 'ativo');
+      const devolvidos = listaPeriodo.filter(e => e.status === 'devolvido');
+      const vencidos  = ativos.filter(e => {
+        if (!e.data_devolucao_prevista) return false;
+        return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
+      });
+      const totalItens = listaPeriodo.reduce((s, e) => s + (e.itens?.length || 0), 0);
+
+      doc.setTextColor(30, 58, 95);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+
+      const stats = [
+        { label: 'Total de Emprestimos', val: listaPeriodo.length },
+        { label: 'Ativos',               val: ativos.length },
+        { label: 'Devolvidos',           val: devolvidos.length },
+        { label: 'Vencidos',             val: vencidos.length },
+        { label: 'Itens Emprestados',    val: totalItens },
+      ];
+      const totalW = pW - 20; // mesma largura da tabela (margin 10+10)
+      const gap = 3;
+      const boxW = (totalW - gap * 4) / 5;
+      const boxH = 16, startX = 10, y = 36;
+      stats.forEach((s, i) => {
+        const x = startX + i * (boxW + gap);
+        const isCrit = s.label === 'Vencidos' && s.val > 0;
+        doc.setFillColor(isCrit ? 254 : 248, isCrit ? 242 : 250, isCrit ? 242 : 252);
+        doc.setDrawColor(isCrit ? 239 : 226, isCrit ? 68 : 232, isCrit ? 68 : 240);
+        doc.roundedRect(x, y, boxW, boxH, 3, 3, 'FD');
+        doc.setTextColor(isCrit ? 185 : 30, isCrit ? 28 : 58, isCrit ? 28 : 95);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(s.val), x + boxW / 2, y + 8, { align: 'center' });
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(s.label, x + boxW / 2, y + 13, { align: 'center' });
+      });
+
+      // ── Helpers de linha ────────────────────────────────────────────────────
+      const buildRows = (empLista) => {
+        const rows = [];
+        empLista.forEach(emp => {
+          const benNome = emp.beneficiarios?.nome || '—';
+          const benCpf  = emp.beneficiarios?.cpf  || '—';
+          const dtEmp   = emp.data_emprestimo
+            ? new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+          const dtPrev  = emp.data_devolucao_prevista
+            ? new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+
+          // Vencido: ativo E data_devolucao_prevista < hoje (mesmo critério do frontend)
+          const eVencido = emp.status === 'ativo'
+            && !!emp.data_devolucao_prevista
+            && new Date(emp.data_devolucao_prevista + 'T00:00:00') < hoje;
+
+          (emp.itens || []).forEach(item => {
+            const tipo = item.equipamentos?.tipos_equipamentos?.nome || '—';
+            const patr = item.equipamentos?.numero_patrimonio || '—';
+            // Item vencido: o empréstimo está vencido E o item ainda não foi devolvido
+            const itemVencido = eVencido && item.status !== 'devolvido';
+            const itemStatus  = item.status === 'devolvido' ? 'Devolvido' : (itemVencido ? 'Vencido' : 'Ativo');
+            const dtDev = item.data_devolucao_real
+              ? new Date(item.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
+
+            rows.push({ benNome, benCpf, tipo, patr, dtEmp, dtPrev, dtDev, status: itemStatus, itemVencido });
           });
+        });
+        return rows;
+      };
+
+      // Larguras proporcionais: soma = pW - 20 = 277mm
+      const colStyles = {
+        0: { halign: 'left', cellWidth: 56 },
+        1: { cellWidth: 34 },
+        2: { halign: 'left', cellWidth: 47 },
+        3: { cellWidth: 27 },
+        4: { cellWidth: 29 },
+        5: { cellWidth: 29 },
+        6: { cellWidth: 29 },
+        7: { cellWidth: 26 },
+      };
+      const HEAD = [['Beneficiário', 'CPF', 'Tipo de Equipamento', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']];
+
+      const makeDidParseCell = (rows) => (data) => {
+        if (data.section !== 'body') return;
+        const row = rows[data.row.index];
+        if (!row) return;
+        if (row.itemVencido) {
+          data.cell.styles.fillColor = [255, 245, 245];
+          data.cell.styles.textColor = [185, 28, 28];
+          data.cell.styles.fontStyle = 'bold';
         }
-        showSuccess('Equipamento atualizado com sucesso!');
-      } else {
-        const { data: novo, error } = await supabase.from('equipamentos').insert([dados]).select().single();
-        if (error) throw error;
-        // Registrar no histórico
-        await supabase.from('equipamento_patrimonio_historico').insert({
-          equipamento_id: novo.id,
-          numero: form.numero_patrimonio,
-          status: 'ativo',
-          data_inicio: form.data_aquisicao || new Date().toISOString().split('T')[0],
+        if (data.column.index === 7) {
+          if (row.status === 'Vencido')    { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = 'bold'; }
+          else if (row.status === 'Devolvido') { data.cell.styles.textColor = [22, 101, 52]; }
+          else                              { data.cell.styles.textColor = [30, 58, 95]; }
+        }
+      };
+
+      // ── Seção 1: Ativos (incluindo vencidos) ────────────────────────────────
+      const rowsAtivos = buildRows(ativos);
+      let nextY = y + boxH + 4;
+
+      // Cabeçalho seção Ativos
+      doc.setFillColor(30, 58, 95);
+      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`EMPRESTIMOS ATIVOS  —  ${ativos.length} registro(s)   |   Vencidos: ${vencidos.length}`, 14, nextY + 5.5);
+      nextY += 9;
+
+      if (rowsAtivos.length > 0) {
+        doc.autoTable({
+          startY: nextY,
+          head: HEAD,
+          body: rowsAtivos.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          didParseCell: makeDidParseCell(rowsAtivos),
+          margin: { left: 10, right: 10 },
         });
-        showSuccess('Equipamento cadastrado com sucesso!');
+        nextY = doc.lastAutoTable.finalY + 8;
+      } else {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Nenhum empréstimo ativo.', 14, nextY + 6);
+        nextY += 14;
       }
 
-      setModalAberto(false);
-      carregarDados();
-    } catch (error) {
-      showError(error.message || 'Erro ao salvar equipamento');
-    }
-  };
+      // ── Seção 2: Devolvidos ─────────────────────────────────────────────────
+      const rowsDev = buildRows(devolvidos);
 
-  // ── Inutilizar patrimônio ──────────────────────────────────────
-  const handleInutilizar = async ({ motivo, novoNumero }) => {
-    const eq = modalInutilizar;
-    const hoje = new Date().toISOString().split('T')[0];
+      // Cabeçalho seção Devolvidos
+      doc.setFillColor(22, 101, 52);
+      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`EMPRESTIMOS DEVOLVIDOS  —  ${devolvidos.length} registro(s)`, 14, nextY + 5.5);
+      nextY += 9;
 
-    // 1. Marcar número atual como inutilizado no histórico
-    await supabase
-      .from('equipamento_patrimonio_historico')
-      .update({ status: 'inutilizado', motivo, data_fim: hoje })
-      .eq('equipamento_id', eq.id)
-      .eq('numero', eq.numero_patrimonio)
-      .is('data_fim', null);
+      if (rowsDev.length > 0) {
+        doc.autoTable({
+          startY: nextY,
+          head: HEAD,
+          body: rowsDev.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [21, 128, 61], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [240, 253, 244] },
+          didParseCell: makeDidParseCell(rowsDev),
+          margin: { left: 10, right: 10 },
+        });
+      } else {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Nenhum empréstimo devolvido.', 14, nextY + 6);
+      }
 
-    // 2. Inserir novo número no histórico
-    const { error: errHist } = await supabase
-      .from('equipamento_patrimonio_historico')
-      .insert({ equipamento_id: eq.id, numero: novoNumero, status: 'ativo', data_inicio: hoje });
-    if (errHist) throw errHist;
+      // ── Rodapé ──────────────────────────────────────────────────────────────
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `Página ${i} de ${totalPages} — Relatório gerado automaticamente pelo sistema`,
+          pW / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' }
+        );
+      }
 
-    // 3. Atualizar equipamento com novo número
-    const { error: errEq } = await supabase
-      .from('equipamentos')
-      .update({ numero_patrimonio: novoNumero })
-      .eq('id', eq.id);
-    if (errEq) throw errEq;
+      // ── Seção 3: Ativos/Vencidos de outros anos (se solicitado) ────────────
+      if (relIncluirOutrosAnos && listaOutrosAnos.length > 0) {
+        const hojeOutros = new Date(); hojeOutros.setHours(0,0,0,0);
+        const rowsOutros = buildRows(listaOutrosAnos);
 
-    setModalInutilizar(null);
-    showSuccess(`✅ Patrimônio ${eq.numero_patrimonio} inutilizado. Novo número: ${novoNumero}`);
-    carregarDados();
-  };
+        // Agrupar por ano para mostrar de qual ano cada empréstimo vem
+        const outrosVencidos = listaOutrosAnos.filter(e => {
+          if (!e.data_devolucao_prevista) return false;
+          return new Date(e.data_devolucao_prevista + 'T00:00:00') < hojeOutros;
+        });
 
-  const salvarLote = async (e) => {
-    e.preventDefault();
-    if (!formLote.tipo_id || !formLote.prefixo_patrimonio || formLote.quantidade < 1) {
-      showError('Preencha os campos obrigatórios!'); return;
-    }
-    try {
-      const lote = [];
-      for (let i = 0; i < formLote.quantidade; i++) {
-        lote.push({
-          tipo_id: parseInt(formLote.tipo_id),
-          numero_patrimonio: `${formLote.prefixo_patrimonio}-${String(formLote.numero_inicial + i).padStart(3, '0')}`,
-          descricao: formLote.descricao,
-          estado_conservacao: formLote.estado_conservacao,
-          data_aquisicao: formLote.data_aquisicao || null,
-          valor_aquisicao: formLote.valor_aquisicao ? parseFloat(formLote.valor_aquisicao) : null,
-          status: 'disponivel',
-          observacoes: formLote.observacoes,
-          recurso_id: formLote.recurso_id ? parseInt(formLote.recurso_id) : null
+        let yOutros = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : nextY + 8;
+
+        doc.setFillColor(120, 53, 15);
+        doc.roundedRect(10, yOutros, pW - 20, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`ATIVOS DE ANOS ANTERIORES A ${anoAtual}  —  ${listaOutrosAnos.length} registro(s)   |   Vencidos: ${outrosVencidos.length}`, 14, yOutros + 5.5);
+        yOutros += 9;
+
+        doc.autoTable({
+          startY: yOutros,
+          head: HEAD,
+          body: rowsOutros.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [120, 53, 15], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [255, 247, 237] },
+          didParseCell: makeDidParseCell(rowsOutros),
+          margin: { left: 10, right: 10 },
         });
       }
-      const { data: inseridos, error } = await supabase.from('equipamentos').insert(lote).select();
-      if (error) throw error;
 
-      // Histórico para cada um
-      const hoje = formLote.data_aquisicao || new Date().toISOString().split('T')[0];
-      const histLote = inseridos.map(eq => ({
-        equipamento_id: eq.id, numero: eq.numero_patrimonio,
-        status: 'ativo', data_inicio: hoje,
-      }));
-      await supabase.from('equipamento_patrimonio_historico').insert(histLote);
-
-      showSuccess(`✅ ${formLote.quantidade} equipamento(s) cadastrado(s)!`);
-      setModalLote(false);
-      setFormLote({ tipo_id: '', prefixo_patrimonio: '', quantidade: 1, numero_inicial: 1, descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: '' });
-      carregarDados();
-    } catch (error) {
-      showError(error.message || 'Erro ao cadastrar em lote');
+      doc.save(`Relatorio_Emprestimos_${labelAno}_${relPeriodo}.pdf`);
+      showSuccess('Relatório gerado!');
+    } catch (err) {
+      console.error(err);
+      showError('Erro ao gerar relatório: ' + err.message);
     }
   };
 
-  const excluirEquipamento = async (id) => {
-    if (!window.confirm('⚠️ Esta ação NÃO pode ser desfeita.\n\nDeseja excluir permanentemente este equipamento?')) return;
-    try {
-      const { error } = await supabase.from('equipamentos').delete().eq('id', id);
-      if (error) throw error;
-      showSuccess('Equipamento excluído!');
-      carregarDados();
-    } catch (error) {
-      showError('Erro ao excluir: ' + error.message);
+  const toggleEquipamento = (eqId) => {
+    setEquipamentosSelecionados(prev =>
+      prev.includes(eqId)
+        ? prev.filter(id => id !== eqId)
+        : [...prev, eqId]
+    );
+  };
+
+  const fecharModal = () => {
+    setModalAberto(false);
+    setEditando(null);
+    setEquipamentosSelecionados([]);
+    setForm({
+      beneficiario_id: '',
+      data_emprestimo: new Date().toISOString().split('T')[0],
+      data_devolucao_prevista: '',
+      observacoes_entrega: '',
+      irmao_responsavel_id: ''
+    });
+  };
+
+  // ── Helpers de vencimento ────────────────────────────────────────────────────
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const isVencido = (emp) => {
+    if (emp.status !== 'ativo') return false;
+    if (!emp.data_devolucao_prevista) return false;
+    const prev = new Date(emp.data_devolucao_prevista + 'T00:00:00');
+    return prev < hoje;
+  };
+
+  const diasVencido = (emp) => {
+    if (!emp.data_devolucao_prevista) return 0;
+    const prev = new Date(emp.data_devolucao_prevista + 'T00:00:00');
+    return Math.floor((hoje - prev) / (1000 * 60 * 60 * 24));
+  };
+
+  const emprestimosFiltrados = emprestimos.filter(emp => {
+    // Filtro de status: 'ativo' inclui ativos e vencidos (vencido = ativo com prazo expirado)
+    if (filtroStatus === 'ativo') {
+      if (emp.status !== 'ativo') return false;
+    } else if (filtroStatus !== 'todos') {
+      if (emp.status !== filtroStatus) return false;
     }
-  };
-
-  const descartar = async (id) => {
-    const motivo = prompt('Motivo do descarte:');
-    if (!motivo) return;
-    try {
-      const { error } = await supabase.from('equipamentos').update({
-        status: 'descartado', motivo_descarte: motivo,
-        data_descarte: new Date().toISOString().split('T')[0]
-      }).eq('id', id);
-      if (error) throw error;
-      showSuccess('Equipamento descartado!');
-      carregarDados();
-    } catch (error) {
-      showError('Erro ao descartar equipamento');
-    }
-  };
-
-  const abrirEditarTipo = (tipo) => {
-    setTipoEditando(tipo.id);
-    setFormTipo({ nome: tipo.nome, descricao: tipo.descricao || '', ativo: tipo.ativo });
-    setModalTipo(true);
-  };
-
-  const salvarTipo = async (e) => {
-    e.preventDefault();
-    if (!formTipo.nome) { showError('Nome do tipo é obrigatório!'); return; }
-    try {
-      if (tipoEditando) {
-        const { error } = await supabase.from('tipos_equipamentos').update({ nome: formTipo.nome, descricao: formTipo.descricao }).eq('id', tipoEditando);
-        if (error) throw error;
-        showSuccess('Tipo atualizado com sucesso!');
-      } else {
-        const { data: existe } = await supabase.from('tipos_equipamentos').select('id').ilike('nome', formTipo.nome).single();
-        if (existe) { showError('Já existe um tipo com este nome!'); return; }
-        const { error } = await supabase.from('tipos_equipamentos').insert([formTipo]);
-        if (error) throw error;
-        showSuccess('Tipo cadastrado!');
-      }
-      setModalTipo(false);
-      setTipoEditando(null);
-      setFormTipo({ nome: '', descricao: '', ativo: true });
-      carregarDados();
-    } catch (error) {
-      showError(error.message || 'Erro ao salvar tipo');
-    }
-  };
-
-  const equipamentosFiltrados = equipamentos.filter(eq => {
-    const st = (eq.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const statusOk = filtroStatus === 'todos'
-      ? true
-      : filtroStatus === 'disponivel_manutencao'
-      ? st === 'disponivel' || st === 'manutencao'
-      : st === filtroStatus.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return statusOk
-      && (filtroTipo === 'todos' || eq.tipo_id === parseInt(filtroTipo))
-      && (eq.numero_patrimonio.toLowerCase().includes(busca.toLowerCase())
-        || eq.tipos_equipamentos?.nome.toLowerCase().includes(busca.toLowerCase()));
+    // Filtro de ano
+    const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
+    if (!dt) return false;
+    if (filtroAno !== 'todos' && dt.getFullYear() !== filtroAno) return false;
+    return true;
+  }).sort((a, b) => {
+    const aVenc = isVencido(a) ? 0 : 1;
+    const bVenc = isVencido(b) ? 0 : 1;
+    return aVenc - bVenc;
   });
 
-  const gerarPDF = () => {
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const margin = 14;
-    const colRight = 196;
-    let y = 14;
-
-    const txt = (text, x, yy, opts = {}) => {
-      doc.setFontSize(opts.size || 9);
-      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
-      if (opts.color) doc.setTextColor(...opts.color);
-      else doc.setTextColor(30, 30, 30);
-      doc.text(String(text), x, yy, { align: opts.align || 'left', maxWidth: opts.maxWidth });
-      doc.setTextColor(30, 30, 30);
-    };
-
-    const rect = (x, yy, w, h, cor = [240, 240, 245], radius = 0) => {
-      doc.setFillColor(...cor);
-      doc.roundedRect(x, yy, w, h, radius, radius, 'F');
-    };
-
-    // Cabeçalho
-    rect(margin, y, colRight - margin, 14, [30, 58, 95], 2);
-    txt('Relatório de Equipamentos', margin + 3, y + 5.5, { bold: true, size: 11, color: [255,255,255] });
-    const labelFiltro = filtroStatus === 'todos' ? 'Todos os Status'
-      : filtroStatus === 'disponivel_manutencao' ? 'Disponível + Manutenção'
-      : filtroStatus === 'disponivel' ? 'Disponível'
-      : filtroStatus === 'emprestado' ? 'Emprestado'
-      : filtroStatus === 'manutencao' ? 'Manutenção'
-      : 'Descartado';
-    txt(`Filtro: ${labelFiltro}`, colRight - 3, y + 5.5, { size: 8, color: [180,210,255], align: 'right' });
-    txt(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, colRight - 3, y + 10.5, { size: 7, color: [150,190,230], align: 'right' });
-    y += 18;
-
-    // Totais
-    const totais = {
-      total: equipamentosFiltrados.length,
-      disponivel: equipamentosFiltrados.filter(e => e.status === 'disponivel').length,
-      emprestado: equipamentosFiltrados.filter(e => e.status === 'emprestado').length,
-      manutencao: equipamentosFiltrados.filter(e => e.status === 'manutencao').length,
-      descartado: equipamentosFiltrados.filter(e => e.status === 'descartado').length,
-    };
-    const cW = (colRight - margin - 3) / 4;
-    [
-      { label: 'Total', valor: totais.total, cor: [99,102,241] },
-      { label: 'Disponivel', valor: totais.disponivel, cor: [16,185,129] },
-      { label: 'Emprestado', valor: totais.emprestado, cor: [59,130,246] },
-      { label: 'Manutencao', valor: totais.manutencao, cor: [245,158,11] },
-    ].forEach((c, i) => {
-      const cx = margin + i * (cW + 1);
-      rect(cx, y, cW, 14, [245,247,252], 2);
-      doc.setDrawColor(...c.cor); doc.setLineWidth(0.4); doc.roundedRect(cx, y, cW, 14, 2, 2, 'S');
-      txt(String(c.valor), cx + cW / 2, y + 7, { bold: true, size: 13, color: c.cor, align: 'center' });
-      txt(c.label, cx + cW / 2, y + 12, { size: 6.5, color: [100,100,120], align: 'center' });
-    });
-    y += 18;
-
-    // Cabeçalho tabela
-    rect(margin, y, colRight - margin, 6, [30, 58, 95], 1);
-    const cols = { pat: margin + 2, tipo: margin + 28, desc: margin + 68, est: margin + 128, status: margin + 155, val: colRight - 3 };
-    [['Patrimônio', cols.pat], ['Tipo', cols.tipo], ['Descrição', cols.desc], ['Conservação', cols.est], ['Status', cols.status], ['Valor', cols.val]].forEach(([h, x]) => {
-      txt(h, x, y + 4.2, { size: 7, bold: true, color: [255,255,255], align: x === cols.val ? 'right' : 'left' });
-    });
-    y += 8;
-
-    const STATUS_COR = {
-      disponivel: [16,185,129],
-      emprestado: [59,130,246],
-      manutencao: [245,158,11],
-      descartado: [239,68,68],
-    };
-
-    equipamentosFiltrados.forEach((eq, i) => {
-      if (y > 270) { doc.addPage(); y = 14; }
-      if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 7, [248,249,252]);
-      const st = eq.status || 'disponivel';
-      const corSt = STATUS_COR[st] || [120,120,120];
-      const valor = eq.valor_aquisicao ? `R$ ${parseFloat(eq.valor_aquisicao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
-      txt(eq.numero_patrimonio || '—', cols.pat, y + 4, { size: 7.5, bold: true });
-      txt(eq.tipos_equipamentos?.nome || '—', cols.tipo, y + 4, { size: 7, maxWidth: 38 });
-      txt(eq.descricao || '—', cols.desc, y + 4, { size: 7, maxWidth: 58 });
-      txt(eq.estado_conservacao || '—', cols.est, y + 4, { size: 7 });
-      txt(st.charAt(0).toUpperCase() + st.slice(1), cols.status, y + 4, { size: 7, bold: true, color: corSt });
-      txt(valor, cols.val, y + 4, { size: 7, align: 'right' });
-      y += 7;
-    });
-
-    // Rodapé
-    const total = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= total; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7); doc.setTextColor(150,150,160);
-      doc.text(`Página ${i} de ${total}`, colRight - 3, 290, { align: 'right' });
-      doc.text('SysMacom - Sistema de Gestão Maçônica', margin, 290);
-    }
-
-    doc.save(`equipamentos-${labelFiltro.toLowerCase().replace(/\s+/g,'-')}-${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`);
-  };
-
-  const getStatusStyle = (status) => {
-    const m = {
-      disponivel: { bg: 'rgba(16,185,129,0.15)', cor: '#10b981', label: '✅ Disponível' },
-      emprestado: { bg: 'rgba(59,130,246,0.15)', cor: '#3b82f6', label: '🔄 Emprestado' },
-      manutencao: { bg: 'rgba(245,158,11,0.15)', cor: '#f59e0b', label: '🔧 Manutenção' },
-      descartado: { bg: 'rgba(107,114,128,0.15)', cor: '#6b7280', label: '🗑️ Descartado' },
-    };
-    return m[status] || m.disponivel;
-  };
-
-  const getEstadoStyle = (estado) => {
-    const m = {
-      'Novo': { bg: 'rgba(16,185,129,0.15)', cor: '#10b981' },
-      'Bom': { bg: 'rgba(59,130,246,0.15)', cor: '#3b82f6' },
-      'Regular': { bg: 'rgba(245,158,11,0.15)', cor: '#f59e0b' },
-      'Ruim': { bg: 'rgba(239,68,68,0.15)', cor: '#ef4444' },
-    };
-    return m[estado] || m['Bom'];
-  };
-
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '16rem' }}>
-        <div style={{ width: '3rem', height: '3rem', borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent)', animation: 'spin 0.8s linear infinite' }} />
-      </div>
-    );
+    return <div className="text-center py-8">Carregando...</div>;
   }
 
+  // ── Contato (telefones) ─────────────────────────────────────────────────────
+  const fmtTelefone = (t) => {
+    const d = String(t || '').replace(/\D/g, '');
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return String(t || '').trim();
+  };
+  const telefonesDe = (o) => [...new Set([o?.celular, o?.telefone].map(t => String(t || '').trim()).filter(Boolean))];
+  const LinksTel = ({ tels }) => (
+    <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '0.15rem 0.6rem' }}>
+      {tels.map(t => (
+        <a key={t} href={`tel:${String(t).replace(/\D/g, '')}`}
+          style={{ color: 'var(--color-text)', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          {fmtTelefone(t)}
+        </a>
+      ))}
+    </span>
+  );
+  const fmtDataBR = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—');
+
+  // ── Indicadores ──────────────────────────────────────────────────────────────
+  const anoKpi = typeof filtroAno === 'number' ? filtroAno : new Date().getFullYear();
+  const kpi = {
+    ativos: emprestimos.filter(e => e.status === 'ativo').length,
+    vencidos: emprestimos.filter(isVencido).length,
+    emprestados: emprestimos
+      .filter(e => e.status === 'ativo')
+      .reduce((a, e) => a + (e.itens || []).filter(i => i.status === 'emprestado').length, 0),
+    devolvidosAno: emprestimos.reduce((a, e) => a + (e.itens || []).filter(i =>
+      i.status === 'devolvido' && i.data_devolucao_real && new Date(i.data_devolucao_real).getFullYear() === anoKpi
+    ).length, 0),
+  };
+  const cardKpi = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.85rem 1.1rem' };
+  const KpiEmp = ({ titulo, valor, sub, cor }) => (
+    <div style={{ ...cardKpi, borderTop: `4px solid ${cor}` }}>
+      <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{titulo}</div>
+      <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.15, marginTop: '0.15rem' }}>{valor}</div>
+      <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{sub}</div>
+    </div>
+  );
+  const rotuloCampo = { fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--color-text-muted)' };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-      {/* ── Abas ───────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {[['equipamentos', '🛠️ Equipamentos'], ['recursos', '⚖️ Recursos de Origem']].map(([k, l]) => (
-          <button key={k} onClick={() => setAba(k)}
-            style={{ padding: '0.55rem 1.2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
-              background: aba === k ? 'var(--color-accent)' : 'var(--color-surface)', color: aba === k ? '#fff' : 'var(--color-accent)' }}>{l}</button>
-        ))}
-      </div>
-
-      {aba === 'recursos' && (
-        <RecursosEquipamentos recursos={recursos} origens={origens} equipamentos={equipamentos}
-          podeEditar={!!permissoes?.pode_editar_comodatos} showSuccess={showSuccess} showError={showError} onChange={carregarDados} />
-      )}
-
-      {aba === 'equipamentos' && (<>
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-text)' }}>🛠️ Gestão de Equipamentos</h2>
-          {permissoes?.pode_editar_comodatos && (
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button onClick={() => { setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); setModalTipo(true); }} style={{ ...inp(), width: 'auto', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
-                ➕ Novo Tipo
-              </button>
-              <button onClick={() => setModalGerenciarTipos(true)} style={{ ...inp(), width: 'auto', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
-                ✏️ Gerenciar Tipos
-              </button>
-              <button onClick={() => setModalLote(true)} style={{ padding: '0.5rem 1rem', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
-                📦 Cadastro em Lote
-              </button>
-              <button onClick={() => abrirModal()} style={{ padding: '0.5rem 1rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
-                ➕ Novo Equipamento
-              </button>
-              <button onClick={gerarPDF} style={{ padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
-                📄 Gerar PDF
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Filtros */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '0.75rem', alignItems: 'center' }}>
-          <input type="text" placeholder="🔍 Buscar..." value={busca} onChange={e => setBusca(e.target.value)} style={inp()} />
-          <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={inp()}>
-            <option value="todos">Todos os Tipos</option>
-            {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-          </select>
-          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={inp()}>
-            <option value="todos">Todos os Status</option>
-            <option value="disponivel_manutencao">✅ Disponível + 🔧 Manutenção</option>
-            <option value="disponivel">✅ Disponível</option>
-            <option value="emprestado">🔄 Emprestado</option>
-            <option value="manutencao">🔧 Manutenção</option>
-            <option value="descartado">🗑️ Descartado</option>
-          </select>
-          <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-            <strong style={{ color: 'var(--color-text)' }}>{equipamentosFiltrados.length}</strong> equipamento(s)
+    <div className="space-y-6">
+      {/* HEADER */}
+      <div className="card">
+        <div className="flex justify-between items-center">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+              📦 Empréstimos
+            </h2>
+            {emprestimos.filter(isVencido).length > 0 && (
+              <span style={{
+                background: '#ef4444', color: '#fff',
+                borderRadius: '999px', padding: '0.2rem 0.65rem',
+                fontSize: '0.8rem', fontWeight: '800',
+                animation: 'pulse 2s infinite'
+              }}>
+                ⚠️ {emprestimos.filter(isVencido).length} vencido{emprestimos.filter(isVencido).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setModalRelGeral(true)}
+              style={{ padding: '0.5rem 1rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              📈 Relatório Geral
+            </button>
+            <button
+              onClick={() => setModalRelatorio(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--color-surface-2)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+            >
+              📊 Relatório
+            </button>
+            {permissoes?.pode_editar_comodatos && (
+            <button
+              onClick={() => setModalAberto(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              ➕ Novo Empréstimo
+            </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Tabela ─────────────────────────────────────────────── */}
-      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <colgroup>
-              <col style={{width:'140px'}} />
-              <col style={{width:'140px'}} />
-              <col style={{width:'120px'}} />
-              <col style={{width:'110px'}} />
-              <col style={{width:'110px'}} />
-              <col style={{width:'280px'}} />
-            </colgroup>
-            <thead>
-              <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
-                {[['Patrimônio','left'],['Tipo','left'],['Status','left'],['Conservação','left'],['Dt Aquisição','left'],['Ações','center']].map(([h,align]) => (
-                  <th key={h} style={{ padding: '0.65rem 0.75rem', textAlign: align, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {equipamentosFiltrados.map(eq => {
-                const st = getStatusStyle(eq.status);
-                const es = getEstadoStyle(eq.estado_conservacao);
+      {/* INDICADORES */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem' }}>
+        <KpiEmp titulo="Empréstimos ativos" valor={kpi.ativos} cor="var(--color-accent)" sub="em andamento" />
+        <KpiEmp titulo="Vencidos" valor={kpi.vencidos} cor={kpi.vencidos > 0 ? '#ef4444' : '#10b981'} sub={kpi.vencidos > 0 ? 'prazo de devolução expirado' : 'nenhum em atraso'} />
+        <KpiEmp titulo="Equipamentos emprestados" valor={kpi.emprestados} cor="#f59e0b" sub="itens fora da loja agora" />
+        <KpiEmp titulo={`Devolvidos em ${anoKpi}`} valor={kpi.devolvidosAno} cor="#10b981" sub="equipamentos devolvidos" />
+      </div>
+
+      {/* FILTROS */}
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+        {/* Ano */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ano</label>
+          <select value={filtroAno} onChange={e => setFiltroAno(e.target.value === 'todos' ? 'todos' : parseInt(e.target.value))}
+            style={{ padding: '0.45rem 0.7rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
+            <option value="todos">Todos os anos</option>
+            {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        {/* Status */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Situação</label>
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
+            {[{ id: 'ativo', label: 'Ativos' }, { id: 'devolvido', label: 'Devolvidos' }, { id: 'todos', label: 'Todos' }].map(s => (
+              <button key={s.id} onClick={() => setFiltroStatus(s.id)}
+                style={{ padding: '0.45rem 0.9rem', background: filtroStatus === s.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroStatus === s.id ? 'white' : 'var(--color-text)', border: filtroStatus === s.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Contador */}
+        <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--color-text-muted)', alignSelf: 'flex-end', paddingBottom: '0.1rem' }}>
+          {emprestimosFiltrados.length} empréstimo(s)
+          {emprestimosFiltrados.filter(isVencido).length > 0 && (
+            <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontWeight: '700' }}>
+              · {emprestimosFiltrados.filter(isVencido).length} vencido(s)
+            </span>
+          )}
+        </span>
+      </div>
+
+      {/* LISTA DE EMPRÉSTIMOS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {emprestimosFiltrados.map(emp => {
+          const vencido = isVencido(emp);
+          const dias = vencido ? diasVencido(emp) : 0;
+          const ativo = emp.status === 'ativo';
+
+          const pill = vencido
+            ? { txt: `⚠️ Vencido há ${dias} dia${dias !== 1 ? 's' : ''}`, bg: 'rgba(239,68,68,0.15)', cor: '#ef4444', borda: 'rgba(239,68,68,0.4)' }
+            : ativo
+              ? { txt: 'Ativo', bg: 'var(--color-success-bg)', cor: 'var(--color-success)', borda: 'transparent' }
+              : { txt: (emp.status || '').toUpperCase(), bg: 'var(--color-surface-2)', cor: 'var(--color-text-secondary)', borda: 'var(--color-border)' };
+
+          // Contato: só o que existir no cadastro (beneficiário em cima, responsável(is) embaixo)
+          const telsBen = telefonesDe(emp.beneficiarios);
+          const respsComTel = (responsaveisPorBen[emp.beneficiarios?.id] || [])
+            .map(r => ({ ...r, tels: telefonesDe(r) }))
+            .filter(r => r.tels.length > 0);
+          const temContato = telsBen.length > 0 || respsComTel.length > 0;
+
+          return (
+          <div key={emp.id} style={{
+            background: 'var(--color-surface)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+            display: 'flex', flexDirection: 'column', gap: '0.8rem',
+            padding: '1rem 1.1rem',
+            border: `1px solid ${vencido ? 'rgba(239,68,68,0.45)' : 'rgba(16,185,129,0.45)'}`,
+            borderLeft: `4px solid ${vencido ? '#ef4444' : '#10b981'}`,
+            borderRadius: 'var(--radius-xl)',
+            backgroundImage: vencido ? 'linear-gradient(rgba(239,68,68,0.06), rgba(239,68,68,0.06))' : 'none',
+          }}>
+            {/* Cabeçalho: nome + situação */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.6rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1.25, minWidth: 0, wordBreak: 'break-word' }}>
+                {emp.beneficiarios?.nome}
+              </h3>
+              <span style={{ flexShrink: 0, padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 800, background: pill.bg, color: pill.cor, border: `1px solid ${pill.borda}`, whiteSpace: 'nowrap' }}>
+                {pill.txt}
+              </span>
+            </div>
+
+            {/* Dados */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem 0.75rem' }}>
+              <div>
+                <div style={rotuloCampo}>CPF</div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{emp.beneficiarios?.cpf || '—'}</div>
+              </div>
+              <div>
+                <div style={rotuloCampo}>Empréstimo</div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{fmtDataBR(emp.data_emprestimo)}</div>
+              </div>
+              {emp.data_devolucao_prevista && (
+                <div>
+                  <div style={rotuloCampo}>Devolução prevista</div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: vencido ? 800 : 600, color: vencido ? '#ef4444' : 'var(--color-text)' }}>
+                    {fmtDataBR(emp.data_devolucao_prevista)}
+                  </div>
+                </div>
+              )}
+              {emp.irmao_responsavel?.nome && (
+                <div>
+                  <div style={rotuloCampo}>Indicado pelo Ir.'.</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: 600 }}>{emp.irmao_responsavel.nome}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Contato */}
+            <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.55rem 0.7rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={rotuloCampo}>Contato</div>
+              {temContato ? (
+                <>
+                  {telsBen.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                      <span title="Beneficiário">📞</span>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Beneficiário:</span>
+                      <LinksTel tels={telsBen} />
+                    </div>
+                  )}
+                  {respsComTel.map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                      <span title="Responsável">👤</span>
+                      <span style={{ color: 'var(--color-text-muted)' }}>
+                        {r.nome}{r.parentesco ? ` (${r.parentesco})` : ''}:
+                      </span>
+                      <LinksTel tels={r.tels} />
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Sem contato cadastrado</span>
+              )}
+            </div>
+
+            {/* Ações do empréstimo */}
+            {permissoes?.pode_editar_comodatos && (
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => gerarTermo(emp)}
+                  style={{ flex: 1, padding: '0.45rem 0.6rem', background: 'var(--color-accent)', color: '#fff', fontSize: '0.78rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Gerar Termo de Comodato"
+                >
+                  📄 Termo
+                </button>
+                <button
+                  onClick={() => abrirEdicao(emp)}
+                  style={{ flex: 1, padding: '0.45rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: '0.78rem', fontWeight: 700, border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Editar empréstimo"
+                >
+                  ✏️ Editar
+                </button>
+                <span style={{ width: '1px', height: '1.3rem', background: 'var(--color-border)' }} />
+                <button
+                  onClick={() => excluirEmprestimo(emp)}
+                  style={{ padding: '0.45rem 0.65rem', background: 'transparent', color: '#ef4444', fontSize: '0.78rem', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}
+                  title="Excluir empréstimo"
+                  aria-label="Excluir empréstimo"
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
+
+            {/* Equipamentos */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div style={rotuloCampo}>Equipamentos</div>
+              {emp.itens?.map(item => {
+                const emprestado = item.status === 'emprestado';
+                const nomeItem = `${item.equipamentos?.numero_patrimonio} - ${item.equipamentos?.tipos_equipamentos?.nome}`;
+                const podeAgir = emprestado && permissoes?.pode_editar_comodatos;
                 return (
-                  <tr key={eq.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '0.65rem 0.75rem', maxWidth: '140px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--color-text)', fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                        {eq.numero_patrimonio}
-                      </div>
-                      {eq.recurso_id && (() => { const rc = recursos.find(x => x.id === eq.recurso_id); return rc ? (
-                        <div style={{ fontSize: '0.68rem', color: '#10b981', marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${rc.origem?.nome} — NF ${rc.numero_nf}`}>⚖️ {rc.origem?.nome} • NF {rc.numero_nf}</div>
-                      ) : null; })()}
-                      {eq.descricao && (
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={eq.descricao}>
-                          {eq.descricao}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                      {eq.tipos_equipamentos?.nome}
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem' }}>
-                      <span style={{ padding: '0.2rem 0.55rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 600, background: st.bg, color: st.cor, border: `1px solid ${st.cor}44`, whiteSpace: 'nowrap' }}>
-                        {st.label}
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem',
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      background: emprestado ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
+                    }}
+                  >
+                    <span
+                      title={nomeItem}
+                      style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text)', minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {nomeItem}
+                    </span>
+                    {!emprestado && (
+                      <span style={{ flexShrink: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
+                        ✅ Devolvido{item.data_devolucao_real ? ` em ${new Date(item.data_devolucao_real).toLocaleDateString('pt-BR')}` : ''}
                       </span>
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem' }}>
-                      <span style={{ padding: '0.2rem 0.55rem', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', fontWeight: 600, background: es.bg, color: es.cor, whiteSpace: 'nowrap' }}>
-                        {eq.estado_conservacao}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                      {eq.data_aquisicao ? new Date(eq.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
-                    </td>
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
-                      <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'center' }}>
-                        <button onClick={() => setModalHistorico(eq)}
-                          style={{ padding: '0.22rem 0.45rem', background: 'rgba(59,130,246,0.12)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                          title="Histórico de patrimônios">
-                          📋
+                    )}
+                    {podeAgir && (
+                      <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                        <button
+                          onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
+                          style={{ padding: '0.15rem 0.5rem', background: 'var(--color-info)', color: '#fff', fontSize: '0.7rem', fontWeight: 700, border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          title="Devolver equipamento"
+                        >
+                          Devolver
                         </button>
-                        {permissoes?.pode_editar_comodatos && eq.status !== 'descartado' && (
-                          <>
-                            <button onClick={() => abrirModal(eq)}
-                              style={{ padding: '0.22rem 0.45rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                              title="Editar">
-                              ✏️
-                            </button>
-                            <button onClick={() => setModalInutilizar(eq)}
-                              style={{ padding: '0.22rem 0.45rem', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                              title="Inutilizar número de patrimônio">
-                              ⚠️ Nº
-                            </button>
-                            {eq.status !== 'emprestado' && (
-                              <>
-                                <button onClick={() => descartar(eq.id)}
-                                  style={{ padding: '0.22rem 0.45rem', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                                  title="Descartar">
-                                  🗑️
-                                </button>
-                                <button onClick={() => excluirEquipamento(eq.id)}
-                                  style={{ padding: '0.22rem 0.45rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                                  title="Excluir permanentemente">
-                                  ❌
-                                </button>
-                              </>
-                            )}
-                          </>
-                        )}
+                        <button
+                          onClick={() => abrirSubstituicao(emp, item)}
+                          style={{ padding: '0.15rem 0.5rem', background: 'transparent', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.6)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          title="Substituir equipamento"
+                        >
+                          🔁 Substituir
+                        </button>
                       </div>
-                    </td>
-                  </tr>
+                    )}
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-        {equipamentosFiltrados.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
-            <p style={{ fontSize: '1.1rem' }}>Nenhum equipamento encontrado</p>
+            </div>
+          </div>
+        );
+        })}
+
+        {emprestimosFiltrados.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            Nenhum empréstimo encontrado
           </div>
         )}
       </div>
 
-      </>)}
 
-      {/* ── Modal Equipamento ──────────────────────────────────── */}
-      {modalAberto && (
-        <div style={modalOverlay}>
-          <div style={modalBox()}>
-            <div style={modalHead('var(--color-surface-2)')}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
-                {editando ? '✏️ Editar Equipamento' : '➕ Novo Equipamento'}
-              </h3>
-              <button onClick={() => setModalAberto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+      {/* MODAL RELATÓRIO */}
+      {/* Modal Relatório Geral */}
+      {modalRelGeral && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '440px', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: '#6366f1', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ color: '#fff', fontWeight: '800', margin: 0, fontSize: '1.05rem' }}>📈 Relatório Geral de Comodatos</h3>
+              <button onClick={() => setModalRelGeral(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontWeight: '700', fontSize: '1.1rem' }}>×</button>
             </div>
-            <form onSubmit={salvarEquipamento} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={lbl}>Tipo de Equipamento *</label>
-                  <select value={form.tipo_id} onChange={e => setForm({ ...form, tipo_id: e.target.value })} style={inp()} required>
-                    <option value="">Selecione...</option>
-                    {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Número do Patrimônio *</label>
-                  <input type="text" value={form.numero_patrimonio} onChange={e => setForm({ ...form, numero_patrimonio: e.target.value })} style={inp()} required />
-                  {editando && form.numero_patrimonio !== editando.numero_patrimonio && (
-                    <p style={{ fontSize: '0.72rem', color: '#f59e0b', marginTop: '0.25rem' }}>
-                      ⚠️ Alterar aqui registra no histórico. Para inutilizar use o botão "⚠️ Inutilizar Nº".
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label style={lbl}>Estado de Conservação</label>
-                  <select value={form.estado_conservacao} onChange={e => setForm({ ...form, estado_conservacao: e.target.value })} style={inp()}>
-                    {['Novo', 'Bom', 'Regular', 'Ruim'].map(v => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Status</label>
-                  <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={inp()}>
-                    <option value="disponivel">Disponível</option>
-                    <option value="manutencao">Manutenção</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Data de Aquisição</label>
-                  <input type="date" value={form.data_aquisicao} onChange={e => setForm({ ...form, data_aquisicao: e.target.value })} style={{ ...inp(), colorScheme: 'dark' }} />
-                </div>
-                <div>
-                  <label style={lbl}>Valor de Aquisição (R$)</label>
-                  <input type="number" step="0.01" value={form.valor_aquisicao} onChange={e => setForm({ ...form, valor_aquisicao: e.target.value })} style={inp()} />
-                </div>
-              </div>
-              <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={form.recurso_id}
-                onChange={(v) => {
-                  const r = recursos.find(x => String(x.id) === String(v));
-                  setForm({ ...form, recurso_id: v, data_aquisicao: form.data_aquisicao || (r?.data_nf || '') });
-                }} />
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+              {/* Período */}
               <div>
-                <label style={lbl}>Descrição</label>
-                <textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={3} />
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Período</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[['todos','Todos os Anos'],['ano','Ano'],['trimestre','Trimestre'],['semestre','Semestre']].map(([val, lbl]) => (
+                    <button key={val} onClick={() => setRelGeralPeriodo(val)}
+                      style={{ padding: '0.35rem 0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralPeriodo === val ? '#6366f1' : 'var(--color-surface-2)', color: relGeralPeriodo === val ? '#fff' : 'var(--color-text)', borderColor: relGeralPeriodo === val ? '#6366f1' : 'var(--color-border)' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Ano */}
+              {relGeralPeriodo !== 'todos' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Ano</label>
+                  <select value={relGeralAno} onChange={e => setRelGeralAno(parseInt(e.target.value))}
+                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', width: '100%' }}>
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(a => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Trimestre */}
+              {relGeralPeriodo === 'trimestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Trimestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {[0,1,2,3].map(t => (
+                      <button key={t} onClick={() => setRelGeralTri(t)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralTri === t ? '#6366f1' : 'var(--color-surface-2)', color: relGeralTri === t ? '#fff' : 'var(--color-text)', borderColor: relGeralTri === t ? '#6366f1' : 'var(--color-border)' }}>
+                        {t+1}º Tri
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Semestre */}
+              {relGeralPeriodo === 'semestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Semestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {[0,1].map(s => (
+                      <button key={s} onClick={() => setRelGeralSem(s)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralSem === s ? '#6366f1' : 'var(--color-surface-2)', color: relGeralSem === s ? '#fff' : 'var(--color-text)', borderColor: relGeralSem === s ? '#6366f1' : 'var(--color-border)' }}>
+                        {s+1}º Semestre
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalRelGeral(false)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={() => { setModalRelGeral(false); gerarRelatorioGeral(); }}
+                style={{ flex: 2, padding: '0.6rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer' }}>
+                📈 Gerar Relatório
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalRelatorio && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div className="card" style={{ maxWidth: '420px', width: '100%', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '1.1rem' }}>📊 Gerar Relatório</h3>
+              <button onClick={() => setModalRelatorio(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Ano */}
               <div>
-                <label style={lbl}>Observações</label>
-                <textarea value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={2} />
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Ano</label>
+                <select value={relAno} onChange={e => setRelAno(parseInt(e.target.value))}
+                  style={{ width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
+                  {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
-                <button type="submit" style={{ flex: 1, padding: '0.65rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
-                  💾 Salvar
-                </button>
-                <button type="button" onClick={() => setModalAberto(false)} style={{ ...inp(), width: 'auto', padding: '0.65rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>
+
+              {/* Período */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Período</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[{ id: 'mes', label: 'Mês' }, { id: 'trimestre', label: 'Trimestre' }, { id: 'semestre', label: 'Semestre' }, { id: 'ano', label: 'Ano todo' }].map(p => (
+                    <button key={p.id} onClick={() => setRelPeriodo(p.id)}
+                      style={{ padding: '0.4rem 0.9rem', background: relPeriodo === p.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relPeriodo === p.id ? 'white' : 'var(--color-text)', border: relPeriodo === p.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-período */}
+              {relPeriodo === 'mes' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Mês</label>
+                  <select value={relMes} onChange={e => setRelMes(parseInt(e.target.value))}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
+                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </div>
+              )}
+              {relPeriodo === 'trimestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Trimestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {['1º (Jan–Mar)', '2º (Abr–Jun)', '3º (Jul–Set)', '4º (Out–Dez)'].map((t, i) => (
+                      <button key={i} onClick={() => setRelTrimestre(i)}
+                        style={{ padding: '0.4rem 0.7rem', background: relTrimestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relTrimestre === i ? 'white' : 'var(--color-text)', border: relTrimestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.78rem' }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {relPeriodo === 'semestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Semestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {['1º (Jan–Jun)', '2º (Jul–Dez)'].map((s, i) => (
+                      <button key={i} onClick={() => setRelSemestre(i)}
+                        style={{ padding: '0.4rem 0.9rem', background: relSemestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relSemestre === i ? 'white' : 'var(--color-text)', border: relSemestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Checkbox: outros anos */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', cursor: 'pointer', padding: '0.75rem', borderRadius: '0.5rem',
+                background: relIncluirOutrosAnos ? 'rgba(120,53,15,0.08)' : 'var(--color-surface-2)',
+                border: `1px solid ${relIncluirOutrosAnos ? 'rgba(120,53,15,0.35)' : 'var(--color-border)'}`,
+                transition: 'all 0.15s' }}>
+                <input type="checkbox" checked={relIncluirOutrosAnos} onChange={e => setRelIncluirOutrosAnos(e.target.checked)}
+                  style={{ accentColor: '#78350f', marginTop: '0.15rem', flexShrink: 0, width: '15px', height: '15px' }} />
+                <div>
+                  <p style={{ margin: 0, fontWeight: '700', fontSize: '0.82rem', color: relIncluirOutrosAnos ? '#78350f' : 'var(--color-text)' }}>
+                    Incluir ativos/vencidos de anos anteriores
+                  </p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                    Adiciona uma seção extra no PDF com empréstimos de anos anteriores ainda em aberto.
+                  </p>
+                </div>
+              </label>
+
+              {/* Botões */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                <button onClick={() => setModalRelatorio(false)}
+                  style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer' }}>
                   Cancelar
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal Cadastro em Lote ─────────────────────────────── */}
-      {modalLote && (
-        <div style={modalOverlay}>
-          <div style={modalBox()}>
-            <div style={modalHead()}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>📦 Cadastro em Lote</h3>
-              <button onClick={() => setModalLote(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={salvarLote} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={lbl}>Tipo de Equipamento *</label>
-                  <select value={formLote.tipo_id} onChange={e => setFormLote({ ...formLote, tipo_id: e.target.value })} style={inp()} required>
-                    <option value="">Selecione...</option>
-                    {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Quantidade *</label>
-                  <input type="number" min="1" max="1000" value={formLote.quantidade} onChange={e => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })} style={inp()} required />
-                </div>
-                <div>
-                  <label style={lbl}>Prefixo do Patrimônio *</label>
-                  <input type="text" value={formLote.prefixo_patrimonio} onChange={e => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })} style={inp()} placeholder="Ex: CR" required />
-                </div>
-                <div>
-                  <label style={lbl}>Número Inicial *</label>
-                  <input type="number" min="1" value={formLote.numero_inicial} onChange={e => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })} style={inp()} required />
-                </div>
-                <div>
-                  <label style={lbl}>Estado de Conservação</label>
-                  <select value={formLote.estado_conservacao} onChange={e => setFormLote({ ...formLote, estado_conservacao: e.target.value })} style={inp()}>
-                    {['Novo', 'Bom', 'Regular', 'Ruim'].map(v => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>Data de Aquisição</label>
-                  <input type="date" value={formLote.data_aquisicao} onChange={e => setFormLote({ ...formLote, data_aquisicao: e.target.value })} style={{ ...inp(), colorScheme: 'dark' }} />
-                </div>
-                <div>
-                  <label style={lbl}>Valor Unitário (R$)</label>
-                  <input type="number" step="0.01" value={formLote.valor_aquisicao} onChange={e => setFormLote({ ...formLote, valor_aquisicao: e.target.value })} style={inp()} />
-                </div>
-              </div>
-              <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={formLote.recurso_id}
-                onChange={(v) => {
-                  const r = recursos.find(x => String(x.id) === String(v));
-                  setFormLote({ ...formLote, recurso_id: v, data_aquisicao: formLote.data_aquisicao || (r?.data_nf || '') });
-                }} />
-              <div>
-                <label style={lbl}>Descrição (aplicada a todos)</label>
-                <textarea value={formLote.descricao} onChange={e => setFormLote({ ...formLote, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={2} />
-              </div>
-              <div style={{ padding: '0.85rem 1rem', background: 'var(--color-accent-bg)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: 'var(--color-text)' }}>
-                📋 Serão criados <strong>{formLote.quantidade}</strong> equipamento(s): de{' '}
-                <strong style={{ fontFamily: 'monospace' }}>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
-                <strong style={{ fontFamily: 'monospace' }}>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
-                <button type="submit" style={{ flex: 1, padding: '0.65rem', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 700 }}>
-                  💾 Cadastrar {formLote.quantidade} Equipamento(s)
+                <button onClick={() => { setModalRelatorio(false); gerarRelatorio(); }}
+                  style={{ flex: 2, padding: '0.6rem', background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>
+                  📊 Gerar PDF
                 </button>
-                <button type="button" onClick={() => setModalLote(false)} style={{ ...inp(), width: 'auto', padding: '0.65rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal Novo Tipo ────────────────────────────────────── */}
-      {modalTipo && (
-        <div style={modalOverlay}>
-          <div style={modalBox('28rem')}>
-            <div style={modalHead()}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
-                {tipoEditando ? '✏️ Editar Tipo de Equipamento' : '➕ Novo Tipo de Equipamento'}
-              </h3>
-              <button onClick={() => { setModalTipo(false); setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={salvarTipo} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={lbl}>Nome do Tipo *</label>
-                <input type="text" value={formTipo.nome} onChange={e => setFormTipo({ ...formTipo, nome: e.target.value })} style={inp()} placeholder="Ex: Cadeira de Rodas Motorizada" required />
-              </div>
-              <div>
-                <label style={lbl}>Descrição</label>
-                <textarea value={formTipo.descricao} onChange={e => setFormTipo({ ...formTipo, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={3} />
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
-                <button type="submit" style={{ flex: 1, padding: '0.65rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 700 }}>
-                  {tipoEditando ? '✏️ Atualizar Tipo' : '💾 Salvar Tipo'}
-                </button>
-                <button type="button" onClick={() => { setModalTipo(false); setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); }} style={{ ...inp(), width: 'auto', padding: '0.65rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* MODAL SUBSTITUIÇÃO DE EQUIPAMENTO */}
+      {modalSubst && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '480px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
 
-      {/* ── Modal Gerenciar Tipos ──────────────────────────────── */}
-      {modalGerenciarTipos && (
-        <div style={modalOverlay}>
-          <div style={modalBox('32rem')}>
-            <div style={modalHead()}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>✏️ Gerenciar Tipos de Equipamento</h3>
-              <button onClick={() => setModalGerenciarTipos(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+            {/* Header */}
+            <div style={{ background: '#f59e0b', padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontWeight: '800', color: '#fff', margin: 0, fontSize: '1rem' }}>🔁 Substituir Equipamento</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)', margin: '0.2rem 0 0', fontSize: '0.78rem' }}>
+                  O equipamento antigo será liberado e o substituto marcado como emprestado
+                </p>
+              </div>
+              <button onClick={() => setModalSubst(null)}
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontSize: '1rem', fontWeight: '700' }}>
+                ✕
+              </button>
             </div>
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
-              {tipos.length === 0 && (
-                <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', fontSize: '0.875rem' }}>Nenhum tipo cadastrado.</p>
-              )}
-              {tipos.map((t, idx) => (
-                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-lg)', background: idx % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nome}</p>
-                    {t.descricao && <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.descricao}</p>}
+
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Equipamento sendo substituído */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Equipamento a ser substituído
+                </label>
+                <div style={{ padding: '0.75rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>📦</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: '700', fontSize: '0.9rem', color: 'var(--color-text)' }}>
+                      {modalSubst.item.equipamentos?.numero_patrimonio} — {modalSubst.item.equipamentos?.tipos_equipamentos?.nome}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#ef4444', fontWeight: '600' }}>Será liberado (disponível)</p>
                   </div>
-                  <button
-                    onClick={() => { setModalGerenciarTipos(false); abrirEditarTipo(t); }}
-                    style={{ padding: '0.28rem 0.65rem', background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    ✏️ Editar
-                  </button>
                 </div>
-              ))}
+              </div>
+
+              {/* Equipamento substituto */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Equipamento substituto — disponíveis ({modalSubst.equipDisp.length})
+                </label>
+                {modalSubst.equipDisp.length === 0 ? (
+                  <p style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>
+                    ⚠️ Nenhum equipamento disponível no momento.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '220px', overflowY: 'auto' }}>
+                    {modalSubst.equipDisp.map(eq => {
+                      const sel = substSelecionado === String(eq.id);
+                      return (
+                        <div key={eq.id}
+                          onClick={() => setSubstSelecionado(String(eq.id))}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                            background: sel ? 'rgba(16,185,129,0.12)' : 'var(--color-surface-2)',
+                            border: `1px solid ${sel ? '#10b981' : 'var(--color-border)'}`,
+                            transition: 'all 0.15s' }}>
+                          <span style={{ fontSize: '1rem', flexShrink: 0 }}>{sel ? '✅' : '⬜'}</span>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: '600', fontSize: '0.85rem', color: sel ? '#10b981' : 'var(--color-text)' }}>
+                              {eq.numero_patrimonio}
+                            </p>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                              {eq.tipos_equipamentos?.nome}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
             </div>
-            <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setModalGerenciarTipos(false)} style={{ ...inp(), width: 'auto', padding: '0.55rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Fechar</button>
+
+            {/* Botões */}
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalSubst(null)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={realizarSubstituicao} disabled={!substSelecionado}
+                style={{ flex: 2, padding: '0.6rem', background: substSelecionado ? '#10b981' : 'var(--color-surface-3)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: substSelecionado ? 'pointer' : 'not-allowed', opacity: substSelecionado ? 1 : 0.6 }}>
+                🔁 Confirmar Substituição
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal Inutilizar Patrimônio ────────────────────────── */}
-      {modalInutilizar && (
-        <ModalInutilizar
-          equipamento={modalInutilizar}
-          onFechar={() => setModalInutilizar(null)}
-          onSalvar={handleInutilizar}
-        />
-      )}
+      {/* MODAL NOVO EMPRÉSTIMO */}
+      {modalAberto && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          zIndex: 9999
+        }}>
+          <div className="card" style={{
+            maxWidth: '42rem',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0
+          }}>
+            <div className="card-header">
+              <h3 className="text-xl font-bold">
+                {editando ? '✏️ Editar Empréstimo' : '📦 Novo Empréstimo'}
+              </h3>
+            </div>
+            
+            <form onSubmit={salvarEmprestimo} style={{
+              padding: '1.5rem',
+              flex: 1,
+              overflowY: 'auto'
+            }}>
+              {/* Beneficiário */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Beneficiário *</label>
+                <select
+                  value={form.beneficiario_id}
+                  onChange={(e) => setForm({...form, beneficiario_id: e.target.value})}
+                  className="form-input"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {beneficiarios.map(ben => (
+                    <option key={ben.id} value={ben.id}>
+                      {ben.nome} - {ben.cpf}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-      {/* ── Modal Histórico de Patrimônio ──────────────────────── */}
-      {modalHistorico && (
-        <ModalHistoricoPatrimonio
-          equipamento={modalHistorico}
-          onFechar={() => setModalHistorico(null)}
-        />
+              {/* Data Empréstimo */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Data Empréstimo *</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={form.data_emprestimo}
+                  onChange={(e) => setForm({...form, data_emprestimo: e.target.value})}
+                  required
+                />
+              </div>
+
+              {/* Data Devolução Prevista */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Devolução Prevista</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={form.data_devolucao_prevista}
+                  onChange={(e) => setForm({...form, data_devolucao_prevista: e.target.value})}
+                />
+              </div>
+
+              {/* EQUIPAMENTOS - MÚLTIPLA SELEÇÃO */}
+              <div style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                padding: '0.75rem',
+                background: 'var(--color-surface-2)',
+                marginBottom: '1rem'
+              }}>
+                <label className="form-label" style={{ marginBottom: '0.5rem' }}>
+                  Equipamentos * ({equipamentosSelecionados.length} selecionados)
+                </label>
+                <div style={{ maxHeight: '12rem', overflowY: 'auto' }} className="space-y-1">
+                  {equipamentos.length === 0 ? (
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      Nenhum equipamento disponível
+                    </p>
+                  ) : (
+                    equipamentos.map(eq => (
+                      <label key={eq.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={equipamentosSelecionados.includes(eq.id)}
+                          onChange={() => toggleEquipamento(eq.id)}
+                          style={{ width: '1rem', height: '1rem' }}
+                        />
+                        <span className="text-sm" style={{ color: 'var(--color-text)' }}>
+                          {eq.numero_patrimonio} - {eq.tipos_equipamentos?.nome}
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Irmão Responsável */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">👤 Irmão Responsável (indicou/acompanhou)</label>
+                <select
+                  value={form.irmao_responsavel_id}
+                  onChange={(e) => setForm({...form, irmao_responsavel_id: e.target.value})}
+                  className="form-input"
+                  style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', width: '100%', fontSize: '0.875rem' }}
+                >
+                  <option value="">-- Nenhum --</option>
+                  {irmaos.map(i => (
+                    <option key={i.id} value={String(i.id)}>{i.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Observações */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Observações</label>
+                <textarea
+                  className="form-input"
+                  value={form.observacoes_entrega}
+                  onChange={(e) => setForm({...form, observacoes_entrega: e.target.value})}
+                  rows="3"
+                />
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <button
+                  type="button"
+                  onClick={fecharModal}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-surface-3)',
+                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
