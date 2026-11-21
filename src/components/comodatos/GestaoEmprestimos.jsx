@@ -1472,7 +1472,9 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           const temContato = telsBen.length > 0 || respsComTel.length > 0;
 
           return (
-          <div key={emp.id} className="card" style={{
+          <div key={emp.id} style={{
+            background: 'var(--color-surface)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
             display: 'flex', flexDirection: 'column', gap: '0.8rem',
             padding: '1rem 1.1rem',
             border: `1px solid ${vencido ? 'rgba(239,68,68,0.45)' : 'rgba(16,185,129,0.45)'}`,
