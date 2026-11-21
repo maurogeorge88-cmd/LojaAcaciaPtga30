@@ -26,20 +26,20 @@ export default function CardLivroNegroDashboard() {
 
   return (
     <>
-      <div style={{ background: 'linear-gradient(135deg, #1f2937 0%, #030712 100%)', border: '1px solid #374151', borderRadius: 'var(--radius-xl)', padding: '1.25rem', color: '#fff', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ background: 'linear-gradient(135deg, #e5e7eb 0%, #b6bcc6 100%)', border: '1px solid #9ca3af', borderRadius: 'var(--radius-xl)', padding: '1.25rem', color: '#111827', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
-          <p style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', margin: '0 0 0.25rem' }}>⬛ Livro Negro</p>
+          <p style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(17,24,39,0.7)', margin: '0 0 0.25rem' }}>⬛ Livro Negro</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
             <span style={{ fontSize: '3rem', fontWeight: 900, lineHeight: 1 }}>{lista.length}</span>
             <span style={{ fontSize: '0.82rem', opacity: 0.8 }}>{lista.length === 1 ? 'registro' : 'registros'}</span>
           </div>
         </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '150px', overflowY: 'auto' }}>
+        <div style={{ borderTop: '1px solid rgba(17,24,39,0.2)', paddingTop: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '150px', overflowY: 'auto' }}>
           {erro && <span style={{ fontSize: '0.78rem', opacity: 0.7 }}>Não foi possível carregar.</span>}
           {!erro && lista.length === 0 && <span style={{ fontSize: '0.78rem', opacity: 0.7 }}>Nenhum registro.</span>}
           {lista.map(it => (
             <button key={it.id} onClick={() => setDetalhe(it)}
-              style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'center', textAlign: 'left', background: 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', padding: '0.35rem 0.6rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.8rem' }}>
+              style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'center', textAlign: 'left', background: 'rgba(255,255,255,0.55)', border: 'none', color: '#111827', padding: '0.35rem 0.6rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.8rem' }}>
               <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.nome}</span>
               <span style={{ opacity: 0.75, flexShrink: 0 }}>{it.cim ? `CIM ${it.cim}` : ''}</span>
             </button>
