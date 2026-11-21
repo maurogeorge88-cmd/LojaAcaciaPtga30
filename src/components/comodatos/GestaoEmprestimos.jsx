@@ -1475,7 +1475,9 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           <div key={emp.id} className="card" style={{
             display: 'flex', flexDirection: 'column', gap: '0.8rem',
             padding: '1rem 1.1rem',
-            borderLeft: `4px solid ${vencido ? '#ef4444' : 'var(--color-accent)'}`,
+            border: `1px solid ${vencido ? 'rgba(239,68,68,0.45)' : 'rgba(16,185,129,0.45)'}`,
+            borderLeft: `4px solid ${vencido ? '#ef4444' : '#10b981'}`,
+            borderRadius: 'var(--radius-xl)',
             backgroundImage: vencido ? 'linear-gradient(rgba(239,68,68,0.06), rgba(239,68,68,0.06))' : 'none',
           }}>
             {/* Cabeçalho: nome + situação */}
