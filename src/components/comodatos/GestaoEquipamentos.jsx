@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import jsPDF from 'jspdf';
+import RecursosEquipamentos, { SeletorRecurso } from './RecursosEquipamentos';
 
 // ─────────────────────────────────────────────
 //  Estilos base
@@ -250,17 +251,20 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [filtroStatus, setFiltroStatus] = useState('disponivel_manutencao');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
+  const [aba, setAba] = useState('equipamentos');
+  const [recursos, setRecursos] = useState([]);
+  const [origens, setOrigens] = useState([]);
 
   const [form, setForm] = useState({
     tipo_id: '', numero_patrimonio: '', descricao: '',
     estado_conservacao: 'Novo', data_aquisicao: '',
-    valor_aquisicao: '', status: 'disponivel', observacoes: ''
+    valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: ''
   });
 
   const [formLote, setFormLote] = useState({
     tipo_id: '', prefixo_patrimonio: '', quantidade: 1,
     numero_inicial: 1, descricao: '', estado_conservacao: 'Novo',
-    data_aquisicao: '', valor_aquisicao: '', observacoes: ''
+    data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: ''
   });
 
   const [formTipo, setFormTipo] = useState({ nome: '', descricao: '', ativo: true });
@@ -283,6 +287,15 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         .order('created_at', { ascending: false });
       if (equipError) throw equipError;
       setEquipamentos(equipData || []);
+
+      // Recursos de origem (tolerante: se o SQL ainda não foi executado, apenas ignora)
+      const { data: orgData } = await supabase.from('comodato_origens_recurso').select('*').order('nome');
+      setOrigens(orgData || []);
+      const { data: recData } = await supabase
+        .from('comodato_recursos')
+        .select('*, origem:comodato_origens_recurso(id, nome)')
+        .order('data_nf', { ascending: false });
+      setRecursos(recData || []);
       setLoading(false);
     } catch (error) {
       showError('Erro ao carregar dados');
@@ -301,11 +314,12 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         data_aquisicao: equipamento.data_aquisicao || '',
         valor_aquisicao: equipamento.valor_aquisicao || '',
         status: equipamento.status,
-        observacoes: equipamento.observacoes || ''
+        observacoes: equipamento.observacoes || '',
+        recurso_id: equipamento.recurso_id || ''
       });
     } else {
       setEditando(null);
-      setForm({ tipo_id: '', numero_patrimonio: '', descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', status: 'disponivel', observacoes: '' });
+      setForm({ tipo_id: '', numero_patrimonio: '', descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: '' });
     }
     setModalAberto(true);
   };
@@ -322,7 +336,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         data_aquisicao: form.data_aquisicao || null,
         valor_aquisicao: form.valor_aquisicao ? parseFloat(form.valor_aquisicao) : null,
         status: form.status,
-        observacoes: form.observacoes
+        observacoes: form.observacoes,
+        recurso_id: form.recurso_id ? parseInt(form.recurso_id) : null
       };
 
       if (editando) {
@@ -415,7 +430,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
           data_aquisicao: formLote.data_aquisicao || null,
           valor_aquisicao: formLote.valor_aquisicao ? parseFloat(formLote.valor_aquisicao) : null,
           status: 'disponivel',
-          observacoes: formLote.observacoes
+          observacoes: formLote.observacoes,
+          recurso_id: formLote.recurso_id ? parseInt(formLote.recurso_id) : null
         });
       }
       const { data: inseridos, error } = await supabase.from('equipamentos').insert(lote).select();
@@ -431,7 +447,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
       showSuccess(`✅ ${formLote.quantidade} equipamento(s) cadastrado(s)!`);
       setModalLote(false);
-      setFormLote({ tipo_id: '', prefixo_patrimonio: '', quantidade: 1, numero_inicial: 1, descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', observacoes: '' });
+      setFormLote({ tipo_id: '', prefixo_patrimonio: '', quantidade: 1, numero_inicial: 1, descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: '' });
       carregarDados();
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar em lote');
@@ -638,6 +654,21 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
+      {/* ── Abas ───────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {[['equipamentos', '🛠️ Equipamentos'], ['recursos', '⚖️ Recursos de Origem']].map(([k, l]) => (
+          <button key={k} onClick={() => setAba(k)}
+            style={{ padding: '0.55rem 1.2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
+              background: aba === k ? 'var(--color-accent)' : 'var(--color-surface)', color: aba === k ? '#fff' : 'var(--color-accent)' }}>{l}</button>
+        ))}
+      </div>
+
+      {aba === 'recursos' && (
+        <RecursosEquipamentos recursos={recursos} origens={origens} equipamentos={equipamentos}
+          podeEditar={!!permissoes?.pode_editar_comodatos} showSuccess={showSuccess} showError={showError} onChange={carregarDados} />
+      )}
+
+      {aba === 'equipamentos' && (<>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -715,6 +746,9 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                       <div style={{ fontWeight: 700, color: 'var(--color-text)', fontFamily: 'monospace', fontSize: '0.875rem' }}>
                         {eq.numero_patrimonio}
                       </div>
+                      {eq.recurso_id && (() => { const rc = recursos.find(x => x.id === eq.recurso_id); return rc ? (
+                        <div style={{ fontSize: '0.68rem', color: '#10b981', marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${rc.origem?.nome} — NF ${rc.numero_nf}`}>⚖️ {rc.origem?.nome} • NF {rc.numero_nf}</div>
+                      ) : null; })()}
                       {eq.descricao && (
                         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={eq.descricao}>
                           {eq.descricao}
@@ -787,6 +821,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         )}
       </div>
 
+      </>)}
+
       {/* ── Modal Equipamento ──────────────────────────────────── */}
       {modalAberto && (
         <div style={modalOverlay}>
@@ -837,6 +873,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <input type="number" step="0.01" value={form.valor_aquisicao} onChange={e => setForm({ ...form, valor_aquisicao: e.target.value })} style={inp()} />
                 </div>
               </div>
+              <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={form.recurso_id}
+                onChange={(v) => {
+                  const r = recursos.find(x => String(x.id) === String(v));
+                  setForm({ ...form, recurso_id: v, data_aquisicao: form.data_aquisicao || (r?.data_nf || '') });
+                }} />
               <div>
                 <label style={lbl}>Descrição</label>
                 <textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={3} />
@@ -902,6 +943,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <input type="number" step="0.01" value={formLote.valor_aquisicao} onChange={e => setFormLote({ ...formLote, valor_aquisicao: e.target.value })} style={inp()} />
                 </div>
               </div>
+              <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={formLote.recurso_id}
+                onChange={(v) => {
+                  const r = recursos.find(x => String(x.id) === String(v));
+                  setFormLote({ ...formLote, recurso_id: v, data_aquisicao: formLote.data_aquisicao || (r?.data_nf || '') });
+                }} />
               <div>
                 <label style={lbl}>Descrição (aplicada a todos)</label>
                 <textarea value={formLote.descricao} onChange={e => setFormLote({ ...formLote, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={2} />
