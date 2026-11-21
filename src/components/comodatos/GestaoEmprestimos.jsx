@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioEmprestimosPDF } from '../../utils/gerarRelatorioEmprestimosPDF';
 // import { gerarTermoComodato } from './utils/termoComodatoPDF';
 
 export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
@@ -997,244 +998,23 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       if (error) throw error;
       const listaPeriodo = (lista || []).filter(dentroDoperiodo);
 
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default;
-      await import('jspdf-autotable');
-
-      const doc = new jsPDF('landscape');
-      const pW = doc.internal.pageSize.getWidth();
-
-      // ── Cabeçalho ──────────────────────────────────────────────────────────
-      doc.setFillColor(30, 58, 95);
-      doc.rect(0, 0, pW, 32, 'F');
-
+      // Logo (data URL) para o cabeçalho padrão da Loja
+      let logo = null;
       if (dadosLoja?.logo_url) {
-        try { doc.addImage(dadosLoja.logo_url, 'PNG', pW - 36, 4, 24, 24); } catch {}
+        try {
+          const resp = await fetch(dadosLoja.logo_url);
+          const blob = await resp.blob();
+          logo = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+        } catch (e) { /* sem logo */ }
       }
 
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
-      doc.setFontSize(12);
-      doc.text(`Relatorio de Emprestimos — ${labelPeriodo}`, pW / 2, 21, { align: 'center' });
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
-
-      // ── Totalizadores ───────────────────────────────────────────────────────
-      const hoje = new Date(); hoje.setHours(0,0,0,0);
-      const ativos    = listaPeriodo.filter(e => e.status === 'ativo');
-      const devolvidos = listaPeriodo.filter(e => e.status === 'devolvido');
-      const vencidos  = ativos.filter(e => {
-        if (!e.data_devolucao_prevista) return false;
-        return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
+      gerarRelatorioEmprestimosPDF({
+        ativos: listaPeriodo.filter(e => e.status === 'ativo'),
+        devolvidos: listaPeriodo.filter(e => e.status === 'devolvido'),
+        outrosAnos: relIncluirOutrosAnos ? listaOutrosAnos : [],
+        labelPeriodo, ano: anoAtual, dadosLoja: dadosLoja || {}, logo,
+        nomeArquivo: `Relatorio_Emprestimos_${labelAno}_${relPeriodo}.pdf`,
       });
-      const totalItens = listaPeriodo.reduce((s, e) => s + (e.itens?.length || 0), 0);
-
-      doc.setTextColor(30, 58, 95);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-
-      const stats = [
-        { label: 'Total de Emprestimos', val: listaPeriodo.length },
-        { label: 'Ativos',               val: ativos.length },
-        { label: 'Devolvidos',           val: devolvidos.length },
-        { label: 'Vencidos',             val: vencidos.length },
-        { label: 'Itens Emprestados',    val: totalItens },
-      ];
-      const totalW = pW - 20; // mesma largura da tabela (margin 10+10)
-      const gap = 3;
-      const boxW = (totalW - gap * 4) / 5;
-      const boxH = 16, startX = 10, y = 36;
-      stats.forEach((s, i) => {
-        const x = startX + i * (boxW + gap);
-        const isCrit = s.label === 'Vencidos' && s.val > 0;
-        doc.setFillColor(isCrit ? 254 : 248, isCrit ? 242 : 250, isCrit ? 242 : 252);
-        doc.setDrawColor(isCrit ? 239 : 226, isCrit ? 68 : 232, isCrit ? 68 : 240);
-        doc.roundedRect(x, y, boxW, boxH, 3, 3, 'FD');
-        doc.setTextColor(isCrit ? 185 : 30, isCrit ? 28 : 58, isCrit ? 28 : 95);
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text(String(s.val), x + boxW / 2, y + 8, { align: 'center' });
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100, 116, 139);
-        doc.text(s.label, x + boxW / 2, y + 13, { align: 'center' });
-      });
-
-      // ── Helpers de linha ────────────────────────────────────────────────────
-      const buildRows = (empLista) => {
-        const rows = [];
-        empLista.forEach(emp => {
-          const benNome = emp.beneficiarios?.nome || '—';
-          const benCpf  = emp.beneficiarios?.cpf  || '—';
-          const dtEmp   = emp.data_emprestimo
-            ? new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-          const dtPrev  = emp.data_devolucao_prevista
-            ? new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-
-          // Vencido: ativo E data_devolucao_prevista < hoje (mesmo critério do frontend)
-          const eVencido = emp.status === 'ativo'
-            && !!emp.data_devolucao_prevista
-            && new Date(emp.data_devolucao_prevista + 'T00:00:00') < hoje;
-
-          (emp.itens || []).forEach(item => {
-            const tipo = item.equipamentos?.tipos_equipamentos?.nome || '—';
-            const patr = item.equipamentos?.numero_patrimonio || '—';
-            // Item vencido: o empréstimo está vencido E o item ainda não foi devolvido
-            const itemVencido = eVencido && item.status !== 'devolvido';
-            const itemStatus  = item.status === 'devolvido' ? 'Devolvido' : (itemVencido ? 'Vencido' : 'Ativo');
-            const dtDev = item.data_devolucao_real
-              ? new Date(item.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
-
-            rows.push({ benNome, benCpf, tipo, patr, dtEmp, dtPrev, dtDev, status: itemStatus, itemVencido });
-          });
-        });
-        return rows;
-      };
-
-      // Larguras proporcionais: soma = pW - 20 = 277mm
-      const colStyles = {
-        0: { halign: 'left', cellWidth: 56 },
-        1: { cellWidth: 34 },
-        2: { halign: 'left', cellWidth: 47 },
-        3: { cellWidth: 27 },
-        4: { cellWidth: 29 },
-        5: { cellWidth: 29 },
-        6: { cellWidth: 29 },
-        7: { cellWidth: 26 },
-      };
-      const HEAD = [['Beneficiário', 'CPF', 'Tipo de Equipamento', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']];
-
-      const makeDidParseCell = (rows) => (data) => {
-        if (data.section !== 'body') return;
-        const row = rows[data.row.index];
-        if (!row) return;
-        if (row.itemVencido) {
-          data.cell.styles.fillColor = [255, 245, 245];
-          data.cell.styles.textColor = [185, 28, 28];
-          data.cell.styles.fontStyle = 'bold';
-        }
-        if (data.column.index === 7) {
-          if (row.status === 'Vencido')    { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = 'bold'; }
-          else if (row.status === 'Devolvido') { data.cell.styles.textColor = [22, 101, 52]; }
-          else                              { data.cell.styles.textColor = [30, 58, 95]; }
-        }
-      };
-
-      // ── Seção 1: Ativos (incluindo vencidos) ────────────────────────────────
-      const rowsAtivos = buildRows(ativos);
-      let nextY = y + boxH + 4;
-
-      // Cabeçalho seção Ativos
-      doc.setFillColor(30, 58, 95);
-      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`EMPRESTIMOS ATIVOS  —  ${ativos.length} registro(s)   |   Vencidos: ${vencidos.length}`, 14, nextY + 5.5);
-      nextY += 9;
-
-      if (rowsAtivos.length > 0) {
-        doc.autoTable({
-          startY: nextY,
-          head: HEAD,
-          body: rowsAtivos.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
-          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
-          headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', halign: 'center' },
-          columnStyles: colStyles,
-          alternateRowStyles: { fillColor: [248, 250, 252] },
-          didParseCell: makeDidParseCell(rowsAtivos),
-          margin: { left: 10, right: 10 },
-        });
-        nextY = doc.lastAutoTable.finalY + 8;
-      } else {
-        doc.setTextColor(100, 116, 139);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.text('Nenhum empréstimo ativo.', 14, nextY + 6);
-        nextY += 14;
-      }
-
-      // ── Seção 2: Devolvidos ─────────────────────────────────────────────────
-      const rowsDev = buildRows(devolvidos);
-
-      // Cabeçalho seção Devolvidos
-      doc.setFillColor(22, 101, 52);
-      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`EMPRESTIMOS DEVOLVIDOS  —  ${devolvidos.length} registro(s)`, 14, nextY + 5.5);
-      nextY += 9;
-
-      if (rowsDev.length > 0) {
-        doc.autoTable({
-          startY: nextY,
-          head: HEAD,
-          body: rowsDev.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
-          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
-          headStyles: { fillColor: [21, 128, 61], textColor: 255, fontStyle: 'bold', halign: 'center' },
-          columnStyles: colStyles,
-          alternateRowStyles: { fillColor: [240, 253, 244] },
-          didParseCell: makeDidParseCell(rowsDev),
-          margin: { left: 10, right: 10 },
-        });
-      } else {
-        doc.setTextColor(100, 116, 139);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'italic');
-        doc.text('Nenhum empréstimo devolvido.', 14, nextY + 6);
-      }
-
-      // ── Rodapé ──────────────────────────────────────────────────────────────
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(148, 163, 184);
-        doc.text(
-          `Página ${i} de ${totalPages} — Relatório gerado automaticamente pelo sistema`,
-          pW / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' }
-        );
-      }
-
-      // ── Seção 3: Ativos/Vencidos de outros anos (se solicitado) ────────────
-      if (relIncluirOutrosAnos && listaOutrosAnos.length > 0) {
-        const hojeOutros = new Date(); hojeOutros.setHours(0,0,0,0);
-        const rowsOutros = buildRows(listaOutrosAnos);
-
-        // Agrupar por ano para mostrar de qual ano cada empréstimo vem
-        const outrosVencidos = listaOutrosAnos.filter(e => {
-          if (!e.data_devolucao_prevista) return false;
-          return new Date(e.data_devolucao_prevista + 'T00:00:00') < hojeOutros;
-        });
-
-        let yOutros = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : nextY + 8;
-
-        doc.setFillColor(120, 53, 15);
-        doc.roundedRect(10, yOutros, pW - 20, 8, 2, 2, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`ATIVOS DE ANOS ANTERIORES A ${anoAtual}  —  ${listaOutrosAnos.length} registro(s)   |   Vencidos: ${outrosVencidos.length}`, 14, yOutros + 5.5);
-        yOutros += 9;
-
-        doc.autoTable({
-          startY: yOutros,
-          head: HEAD,
-          body: rowsOutros.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
-          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
-          headStyles: { fillColor: [120, 53, 15], textColor: 255, fontStyle: 'bold', halign: 'center' },
-          columnStyles: colStyles,
-          alternateRowStyles: { fillColor: [255, 247, 237] },
-          didParseCell: makeDidParseCell(rowsOutros),
-          margin: { left: 10, right: 10 },
-        });
-      }
-
-      doc.save(`Relatorio_Emprestimos_${labelAno}_${relPeriodo}.pdf`);
       showSuccess('Relatório gerado!');
     } catch (err) {
       console.error(err);
