@@ -528,6 +528,69 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     setProjetosAtivos(projData || []);
   };
 
+  // Categoria + todas as subcategorias (qualquer nível)
+  const idsComDescendentes = (idRaiz) => {
+    const ids = [idRaiz];
+    for (let i = 0; i < ids.length; i++) {
+      categorias.filter(c => c.categoria_pai_id === ids[i]).forEach(c => { if (!ids.includes(c.id)) ids.push(c.id); });
+    }
+    return ids;
+  };
+
+  // ── Extrato do Tronco de Solidariedade (todas as movimentações) ──
+  const [modalExtratoTronco, setModalExtratoTronco] = useState(false);
+  const [extratoTronco, setExtratoTronco] = useState({ linhas: [], carregando: false });
+  const [anoExtratoTronco, setAnoExtratoTronco] = useState(0); // 0 = todos os anos
+
+  const carregarExtratoTronco = async () => {
+    setExtratoTronco(e => ({ ...e, carregando: true }));
+    try {
+      const norm = (t) => String(t || '').trim().toLowerCase();
+      const catReceita = categorias.find(c => norm(c.nome) === 'tronco de solidariedade');
+      const catSaidaPai = categorias.find(c => norm(c.nome) === 'tronco saida' || norm(c.nome) === 'tronco saída');
+      const ids = [
+        ...(catReceita ? idsComDescendentes(catReceita.id) : []),
+        ...(catSaidaPai ? idsComDescendentes(catSaidaPai.id) : []),
+      ];
+      if (ids.length === 0) { setExtratoTronco({ linhas: [], carregando: false }); return; }
+
+      let todos = [];
+      let ini = 0;
+      for (;;) {
+        const { data, error } = await supabase
+          .from('lancamentos_loja')
+          .select('id, valor, descricao, observacoes, tipo_pagamento, data_pagamento, eh_transferencia_interna, categorias_financeiras(nome, tipo)')
+          .in('categoria_id', ids)
+          .eq('status', 'pago')
+          .order('data_pagamento', { ascending: true })
+          .order('id', { ascending: true })
+          .range(ini, ini + 999);
+        if (error) throw error;
+        todos = todos.concat(data || []);
+        if (!data || data.length < 1000) break;
+        ini += 1000;
+      }
+
+      // Mesma regra do saldo do Tronco (banco x espécie)
+      let banco = 0; let especie = 0;
+      const linhas = todos.map(l => {
+        const v = parseFloat(l.valor) || 0;
+        const rec = l.categorias_financeiras?.tipo === 'receita';
+        const din = l.tipo_pagamento === 'dinheiro';
+        let dBanco = 0; let dEsp = 0;
+        if (rec) { if (!din) dBanco = v; else if (!l.eh_transferencia_interna) dEsp = v; }
+        else { if (din) dEsp = -v; else if (!l.eh_transferencia_interna) dBanco = -v; }
+        banco += dBanco; especie += dEsp;
+        return { ...l, v, rec, dBanco, dEsp, saldo: banco + especie, saldoBanco: banco, saldoEspecie: especie };
+      });
+      setExtratoTronco({ linhas, carregando: false });
+    } catch (err) {
+      console.error('Erro no extrato do Tronco:', err);
+      showError('Erro ao carregar o extrato do Tronco.');
+      setExtratoTronco({ linhas: [], carregando: false });
+    }
+  };
+
   const carregarLancamentos = async () => {
     try {
       const { mes, ano, tipo, categoria, status, origem_tipo, origem_irmao_id } = filtros;
@@ -578,8 +641,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // Filtro de CATEGORIA específica
+      // (inclui as subcategorias: ao escolher "Tronco Saida" aparecem também as "Sangria Tronco", etc.)
       if (categoria) {
-        query = query.eq('categoria_id', parseInt(categoria));
+        const idsCat = idsComDescendentes(parseInt(categoria));
+        query = idsCat.length > 1 ? query.in('categoria_id', idsCat) : query.eq('categoria_id', parseInt(categoria));
       }
 
       // Filtro de STATUS
@@ -1679,15 +1744,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       setLoading(true);
       
       // Buscar categoria Tronco Saída (despesa)
-      const categoriaTroncoSaida = categorias.find(c => 
+      // (nome exato primeiro — evita pegar "Tronco Saida Arco Real")
+      const categoriaTroncoSaida = categorias.find(c => normalizarTexto(c.nome) === 'tronco saida') || categorias.find(c => 
         normalizarTexto(c.nome).includes('tronco') && 
-        normalizarTexto(c.nome).includes('saida')
+        normalizarTexto(c.nome).includes('saida') &&
+        !normalizarTexto(c.nome).includes('arco')
       );
       
       // Buscar categoria Tronco de Solidariedade (receita)
-      const categoriaTroncoReceita = categorias.find(c => 
+      const categoriaTroncoReceita = categorias.find(c => normalizarTexto(c.nome) === 'tronco de solidariedade') || categorias.find(c => 
         normalizarTexto(c.nome).includes('tronco') && 
-        normalizarTexto(c.nome).includes('solidariedade')
+        normalizarTexto(c.nome).includes('solidariedade') &&
+        !normalizarTexto(c.nome).includes('arco')
       );
       
       if (!categoriaTroncoSaida || !categoriaTroncoReceita) {
@@ -2546,6 +2614,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </p>
             </div>
           </div>
+
+          <button
+            onClick={() => { setModalExtratoTronco(true); carregarExtratoTronco(); }}
+            style={{width:'100%',marginBottom:'0.6rem',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(245,158,11,0.4)',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontSize:'0.78rem',fontWeight:700,cursor:'pointer'}}
+          >
+            📒 Extrato do Tronco
+          </button>
 
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             {/* Card Banco */}
@@ -4355,6 +4430,88 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
       {/* Modal Sangria Tronco */}
+      {modalExtratoTronco && (() => {
+        const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fmtD = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '—');
+        const todas = extratoTronco.linhas;
+        const anos = [...new Set(todas.map(l => String(l.data_pagamento || '').substring(0, 4)).filter(Boolean))].sort().reverse();
+        const vis = anoExtratoTronco ? todas.filter(l => String(l.data_pagamento || '').startsWith(String(anoExtratoTronco))) : todas;
+        const entradas = vis.filter(l => l.rec && !l.eh_transferencia_interna).reduce((t, l) => t + l.v, 0);
+        const saidas = vis.filter(l => !l.rec && !l.eh_transferencia_interna).reduce((t, l) => t + l.v, 0);
+        const ultimo = todas[todas.length - 1];
+        return (
+          <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,padding:'1rem'}}>
+            <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'62rem',maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.75rem',flexWrap:'wrap',padding:'0.7rem 1rem',borderBottom:'1px solid var(--color-border)',borderTop:'3px solid #f59e0b',background:'var(--color-surface-2)'}}>
+                <h3 style={{fontSize:'1rem',fontWeight:700,color:'var(--color-text)'}}>📒 Extrato — Tronco de Solidariedade</h3>
+                <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                  <select value={anoExtratoTronco} onChange={(e) => setAnoExtratoTronco(Number(e.target.value))}
+                    style={{background:'var(--color-bg)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)',padding:'0.15rem 0.5rem',fontSize:'0.82rem',fontWeight:600}}>
+                    <option value={0}>Todos os anos</option>
+                    {anos.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <button onClick={() => setModalExtratoTronco(false)} style={{fontSize:'1.4rem',lineHeight:1,color:'var(--color-text-muted)',cursor:'pointer',background:'none',border:'none'}}>×</button>
+                </div>
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'0.5rem',padding:'0.6rem 1rem'}}>
+                {[
+                  { r: 'Entradas', v: brl(entradas), c: '#10b981' },
+                  { r: 'Saídas', v: brl(saidas), c: '#ef4444' },
+                  { r: 'Saldo atual (banco)', v: brl(ultimo?.saldoBanco), c: 'var(--color-accent)' },
+                  { r: 'Saldo atual (espécie)', v: brl(ultimo?.saldoEspecie), c: '#10b981' },
+                  { r: 'Saldo total', v: brl(ultimo?.saldo), c: 'var(--color-text)' },
+                ].map(k => (
+                  <div key={k.r} style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.4rem 0.6rem'}}>
+                    <div style={{fontSize:'0.66rem',color:'var(--color-text-muted)',textTransform:'uppercase',fontWeight:700}}>{k.r}</div>
+                    <div style={{fontSize:'0.98rem',fontWeight:800,color:k.c}}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{overflow:'auto',flex:1,padding:'0 1rem 0.8rem'}}>
+                {extratoTronco.carregando ? (
+                  <p style={{textAlign:'center',padding:'1.5rem',color:'var(--color-text-muted)'}}>Carregando...</p>
+                ) : vis.length === 0 ? (
+                  <p style={{textAlign:'center',padding:'1.5rem',color:'var(--color-text-muted)'}}>Nenhuma movimentação no período.</p>
+                ) : (
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.78rem'}}>
+                    <thead>
+                      <tr style={{position:'sticky',top:0,background:'var(--color-surface-2)',color:'var(--color-text-muted)'}}>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'left'}}>Data</th>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'left'}}>Descrição</th>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'center'}}>Forma</th>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'right'}}>Entrada</th>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'right'}}>Saída</th>
+                        <th style={{padding:'0.35rem 0.5rem',textAlign:'right'}}>Saldo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {vis.map(l => (
+                        <tr key={l.id} style={{borderBottom:'1px solid var(--color-border)'}} title={l.observacoes || ''}>
+                          <td style={{padding:'0.3rem 0.5rem',whiteSpace:'nowrap',color:'var(--color-text-muted)'}}>{fmtD(l.data_pagamento)}</td>
+                          <td style={{padding:'0.3rem 0.5rem',color:'var(--color-text)'}}>
+                            {l.descricao}
+                            {l.eh_transferencia_interna && <span style={{marginLeft:'0.4rem',fontSize:'0.64rem',padding:'0 0.35rem',borderRadius:999,background:'rgba(99,102,241,0.15)',color:'#6366f1'}}>↔ interna</span>}
+                          </td>
+                          <td style={{padding:'0.3rem 0.5rem',textAlign:'center',color:'var(--color-text-muted)'}}>{l.tipo_pagamento === 'dinheiro' ? '💵' : '🏦'}</td>
+                          <td style={{padding:'0.3rem 0.5rem',textAlign:'right',fontWeight:600,color:'#10b981'}}>{l.rec ? brl(l.v) : ''}</td>
+                          <td style={{padding:'0.3rem 0.5rem',textAlign:'right',fontWeight:600,color:'#ef4444'}}>{!l.rec ? brl(l.v) : ''}</td>
+                          <td style={{padding:'0.3rem 0.5rem',textAlign:'right',fontWeight:700,color:l.saldo >= 0 ? 'var(--color-text)' : '#ef4444'}}>{brl(l.saldo)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+              <div style={{padding:'0.4rem 1rem',borderTop:'1px solid var(--color-border)',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
+                Só lançamentos pagos. "↔ interna" = sangria/depósito entre espécie e banco (não altera o total). O saldo corrido considera todo o histórico; passe o mouse na linha para ver as observações.
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {modalSangriaTroncoAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-xl max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
