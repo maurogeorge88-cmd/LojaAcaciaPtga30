@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import EntePublicoAcessos from '../entepublico/EntePublicoAcessos';
 
 export default function ControleAcesso({ userData, showSuccess, showError, embedded = false, escopo = null }) {
   const [logs, setLogs] = useState([]);
@@ -350,6 +351,7 @@ export default function ControleAcesso({ userData, showSuccess, showError, embed
 
   return (
     <div className="max-w-7xl mx-auto" style={{ background: 'transparent' }}>
+      {!escopo && <EntePublicoAcessos />}
       {/* Cabeçalho - só mostra se não estiver embedded */}
       {!embedded && (
         <div className="mb-6">
