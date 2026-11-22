@@ -258,13 +258,13 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [form, setForm] = useState({
     tipo_id: '', numero_patrimonio: '', descricao: '',
     estado_conservacao: 'Novo', data_aquisicao: '',
-    valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: ''
+    valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: '', liberado_ente: false
   });
 
   const [formLote, setFormLote] = useState({
     tipo_id: '', prefixo_patrimonio: '', quantidade: 1,
     numero_inicial: 1, descricao: '', estado_conservacao: 'Novo',
-    data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: ''
+    data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: '', liberado_ente: false
   });
 
   const [formTipo, setFormTipo] = useState({ nome: '', descricao: '', ativo: true });
@@ -315,11 +315,12 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         valor_aquisicao: equipamento.valor_aquisicao || '',
         status: equipamento.status,
         observacoes: equipamento.observacoes || '',
-        recurso_id: equipamento.recurso_id || ''
+        recurso_id: equipamento.recurso_id || '',
+        liberado_ente: !!equipamento.liberado_ente
       });
     } else {
       setEditando(null);
-      setForm({ tipo_id: '', numero_patrimonio: '', descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: '' });
+      setForm({ tipo_id: '', numero_patrimonio: '', descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', status: 'disponivel', observacoes: '', recurso_id: '', liberado_ente: false });
     }
     setModalAberto(true);
   };
@@ -337,7 +338,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         valor_aquisicao: form.valor_aquisicao ? parseFloat(form.valor_aquisicao) : null,
         status: form.status,
         observacoes: form.observacoes,
-        recurso_id: form.recurso_id ? parseInt(form.recurso_id) : null
+        recurso_id: form.recurso_id ? parseInt(form.recurso_id) : null,
+        liberado_ente: !!form.recurso_id && !!form.liberado_ente
       };
 
       if (editando) {
@@ -431,7 +433,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
           valor_aquisicao: formLote.valor_aquisicao ? parseFloat(formLote.valor_aquisicao) : null,
           status: 'disponivel',
           observacoes: formLote.observacoes,
-          recurso_id: formLote.recurso_id ? parseInt(formLote.recurso_id) : null
+          recurso_id: formLote.recurso_id ? parseInt(formLote.recurso_id) : null,
+          liberado_ente: !!formLote.recurso_id && !!formLote.liberado_ente
         });
       }
       const { data: inseridos, error } = await supabase.from('equipamentos').insert(lote).select();
@@ -447,7 +450,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
       showSuccess(`✅ ${formLote.quantidade} equipamento(s) cadastrado(s)!`);
       setModalLote(false);
-      setFormLote({ tipo_id: '', prefixo_patrimonio: '', quantidade: 1, numero_inicial: 1, descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: '' });
+      setFormLote({ tipo_id: '', prefixo_patrimonio: '', quantidade: 1, numero_inicial: 1, descricao: '', estado_conservacao: 'Novo', data_aquisicao: '', valor_aquisicao: '', observacoes: '', recurso_id: '', liberado_ente: false });
       carregarDados();
     } catch (error) {
       showError(error.message || 'Erro ao cadastrar em lote');
@@ -762,7 +765,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                         {eq.numero_patrimonio}
                       </div>
                       {eq.recurso_id && (() => { const rc = recursos.find(x => x.id === eq.recurso_id); return rc ? (
-                        <div style={{ fontSize: '0.68rem', color: '#10b981', marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${rc.origem?.nome} — NF ${rc.numero_nf}`}>⚖️ {rc.origem?.nome} • NF {rc.numero_nf}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#10b981', marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${rc.origem?.nome} — NF ${rc.numero_nf}`}>⚖️ {rc.origem?.nome} • NF {rc.numero_nf}{eq.liberado_ente ? ' • 🏛️' : ''}</div>
                       ) : null; })()}
                       {eq.descricao && (
                         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={eq.descricao}>
@@ -900,6 +903,12 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   const r = recursos.find(x => String(x.id) === String(v));
                   setForm({ ...form, recurso_id: v, data_aquisicao: form.data_aquisicao || (r?.data_nf || '') });
                 }} />
+              {form.recurso_id && (
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', cursor: 'pointer', padding: '0.5rem 0.75rem', border: '1px solid rgba(16,185,129,0.45)', borderRadius: 'var(--radius-lg)', background: 'rgba(16,185,129,0.07)' }}>
+                  <input type="checkbox" checked={!!form.liberado_ente} onChange={e => setForm({ ...form, liberado_ente: e.target.checked })} style={{ marginTop: '0.2rem' }} />
+                  <span style={{ fontSize: '0.82rem', color: 'var(--color-text)' }}><strong>🏛️ Liberar para acesso do ente público</strong><br /><span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>Só aparece para o ente se a nota (recurso) também estiver liberada. Sem recurso, nunca é liberado.</span></span>
+                </label>
+              )}
               <div>
                 <label style={lbl}>Descrição</label>
                 <textarea value={form.descricao} onChange={e => setForm({ ...form, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={3} />
@@ -970,6 +979,12 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   const r = recursos.find(x => String(x.id) === String(v));
                   setFormLote({ ...formLote, recurso_id: v, data_aquisicao: formLote.data_aquisicao || (r?.data_nf || '') });
                 }} />
+              {formLote.recurso_id && (
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', cursor: 'pointer', padding: '0.5rem 0.75rem', border: '1px solid rgba(16,185,129,0.45)', borderRadius: 'var(--radius-lg)', background: 'rgba(16,185,129,0.07)' }}>
+                  <input type="checkbox" checked={!!formLote.liberado_ente} onChange={e => setFormLote({ ...formLote, liberado_ente: e.target.checked })} style={{ marginTop: '0.2rem' }} />
+                  <span style={{ fontSize: '0.82rem', color: 'var(--color-text)' }}><strong>🏛️ Liberar para acesso do ente público</strong><br /><span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>Só aparece para o ente se a nota (recurso) também estiver liberada. Sem recurso, nunca é liberado.</span></span>
+                </label>
+              )}
               <div>
                 <label style={lbl}>Descrição (aplicada a todos)</label>
                 <textarea value={formLote.descricao} onChange={e => setFormLote({ ...formLote, descricao: e.target.value })} style={{ ...inp(), resize: 'vertical' }} rows={2} />
