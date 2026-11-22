@@ -1119,227 +1119,97 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 
   // ── Gerar PDF ──
   const gerarPDF = async () => {
-    const { jsPDF } = await import('jspdf');
-    const { default: autoTable } = await import('jspdf-autotable');
-    const s = (str) => { if (!str) return ''; let r = ''; for (const c of str.normalize('NFD')) { if (c.charCodeAt(0) < 128) r += c; } return r; };
+    const { gerarRelatorioEventoPDF } = await import('../../utils/gerarRelatorioEventoPDF');
     const fmtM = (v) => `R$ ${(parseFloat(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
-    const pW = doc.internal.pageSize.getWidth();
 
-    // Agrupamento de participantes (usado no Resumo e no Rateio)
+    // Dados da Loja + logo (data URL) para o cabeçalho padrão
+    let dadosLoja = {}; let logo = null;
+    try {
+      const { data } = await supabase.from('dados_loja').select('*').single();
+      dadosLoja = data || {};
+      if (dadosLoja.logo_url) {
+        const resp = await fetch(dadosLoja.logo_url);
+        const blob = await resp.blob();
+        logo = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+      }
+    } catch (e) { /* segue sem logo */ }
+
     const nomeParticipante = (p) => (p.irmao_id ? (p.irmaos?.nome || '') : (p.nome_externo || ''));
     const porNome = (a, b) => nomeParticipante(a).localeCompare(nomeParticipante(b), 'pt-BR', { sensitivity: 'base' });
-    const abrev = (nome) => s(nome || '').split(' ').slice(0, 2).join(' ');
+    const abrev = (nome) => String(nome || '').trim().split(/\s+/).slice(0, 2).join(' ');
     const irmaos_part   = participantes.filter(p => p.irmao_id).sort(porNome);
     const externos_part = participantes.filter(p => !p.irmao_id).sort(porNome);
-    const cotasIrmaos    = irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
-    const cotasExternos  = externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
-
-    // Cabeçalho
-    doc.setFillColor(26, 26, 26);
-    doc.rect(0, 0, pW, 42, 'F');
-    doc.setTextColor(201, 168, 76);
-    doc.setFontSize(13); doc.setFont('helvetica', 'bold');
-    doc.text('A.R.L.S. Acacia de Paranatinga no 30', pW / 2, 14, { align: 'center' });
-    doc.setTextColor(220, 220, 220);
-    doc.setFontSize(11);
-    doc.text(`Evento Comemorativo - ${s(evento.nome)} ${evento.ano}`, pW / 2, 23, { align: 'center' });
-    doc.setFontSize(8); doc.setTextColor(160, 160, 160);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 32, { align: 'center' });
-    if (evento.data_evento) doc.text(`Data do Evento: ${fmtD(evento.data_evento)}`, pW / 2, 38, { align: 'center' });
-
-    let y = 52;
-
-    // Resumo financeiro
+    const cotasIrmaos   = irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
+    const cotasExternos = externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0);
     const diferencaLoja = valorCota > 0 ? Math.max(0, totalDespesas - (cotasIrmaos + cotasExternos) * valorCota) : 0;
+    const AZ = [30, 58, 138], VD = [22, 163, 74], VM = [220, 38, 38], PT = [30, 41, 59];
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-    doc.text('Resumo Financeiro', 14, y); y += 5;
-    autoTable(doc, {
-      startY: y,
-      body: [
-        ['Total de Despesas', fmtM(totalDespesas)],
-        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- ${fmtM(contribuicaoLoja)}`]] : []),
-        ...(contribuicaoPart > 0 ? [['Contribuicoes voluntarias', `- ${fmtM(contribuicaoPart)}`]] : []),
-        ...((contribuicaoLoja > 0 || contribuicaoPart > 0) ? [['Base do Rateio', fmtM(baseRateio)]] : []),
-        ['Total de Cotas', totalCotas.toFixed(1)],
-        ['Valor Calculado por Cota', fmtM(valorCalc)],
-        ['Valor Ajustado por Cota', evento.valor_ajustado ? fmtM(evento.valor_ajustado) : 'Nao definido'],
-        ['Irmaos Participantes', `${irmaos_part.length}  (${cotasIrmaos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasIrmaos * valorCota)}` : ''})`],
-        ...(externos_part.length > 0 ? [['Convidados Externos', `${externos_part.length}  (${cotasExternos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasExternos * valorCota)}` : ''})`]] : []),
-        ['Total Geral de Cotas', `${(cotasIrmaos + cotasExternos).toFixed(1)}${valorCota > 0 ? `  (${fmtM((cotasIrmaos + cotasExternos) * valorCota)})` : ''}`],
-        ...(diferencaLoja > 0 ? [['Diferenca Coberta pela Loja', fmtM(diferencaLoja)]] : []),
-      ],
-      styles: { fontSize: 9, cellPadding: 2 },
-      headStyles: { fillColor: [40, 40, 40] },
-      columnStyles: { 0: { fontStyle: 'bold' }, 1: { halign: 'right' } },
-      margin: { left: 14, right: 14 },
-      didParseCell: (data) => {
-        const rotulo = data.row.raw?.[0];
-        if (data.column.index === 1 && rotulo === 'Valor Calculado por Cota') {
-          data.cell.styles.textColor = [0, 0, 0];       // preto — valor calculado por cota
-          data.cell.styles.fontStyle = 'bold';
-        }
-        if (data.column.index === 1 && rotulo === 'Valor Ajustado por Cota' && evento.valor_ajustado) {
-          data.cell.styles.textColor = [22, 163, 74];    // verde — valor ajustado por cota
-          data.cell.styles.fontStyle = 'bold';
-        }
-        if (data.column.index === 1 && rotulo === 'Irmaos Participantes') {
-          data.cell.styles.textColor = [37, 99, 235];   // azul — valor lançado aos irmãos
-          data.cell.styles.fontStyle = 'bold';
-        }
-        if (data.column.index === 1 && (rotulo === 'Convidados Externos' || rotulo === 'Diferenca Coberta pela Loja')) {
-          data.cell.styles.textColor = [220, 38, 38];   // vermelho — coberto pela loja
-          data.cell.styles.fontStyle = 'bold';
-        }
-      },
+    const cards = [
+      { rotulo: 'Total de despesas', valor: fmtM(totalDespesas), sub: `${despesas.length} lançamentos`, cor: VM },
+      { rotulo: 'Total de cotas', valor: totalCotas.toFixed(1), sub: `${participantes.length} participantes`, cor: AZ },
+      { rotulo: evento.valor_ajustado ? 'Valor por cota (ajustado)' : 'Valor por cota', valor: fmtM(valorCota), sub: evento.valor_ajustado ? `Calculado: ${fmtM(valorCalc)}` : 'Valor calculado', cor: VD },
+      { rotulo: 'Cobrado dos irmãos', valor: fmtM(valorCota > 0 ? cotasIrmaos * valorCota : 0), sub: `${irmaos_part.length} irmãos • ${cotasIrmaos.toFixed(1)} cotas`, cor: AZ },
+    ];
+
+    const resumo = [
+      ['Total de despesas', fmtM(totalDespesas)],
+      ...(contribuicaoLoja > 0 ? [['Contribuição da Loja', `- ${fmtM(contribuicaoLoja)}`]] : []),
+      ...(contribuicaoPart > 0 ? [['Contribuições voluntárias', `- ${fmtM(contribuicaoPart)}`]] : []),
+      ...((contribuicaoLoja > 0 || contribuicaoPart > 0) ? [['Base do rateio', fmtM(baseRateio)]] : []),
+      ['Total de cotas', totalCotas.toFixed(1)],
+      ['Valor calculado por cota', fmtM(valorCalc), PT],
+      ['Valor ajustado por cota', evento.valor_ajustado ? fmtM(evento.valor_ajustado) : 'Não definido', evento.valor_ajustado ? VD : null],
+      ['Irmãos participantes', `${irmaos_part.length}  (${cotasIrmaos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasIrmaos * valorCota)}` : ''})`, AZ],
+      ...(externos_part.length > 0 ? [['Convidados externos', `${externos_part.length}  (${cotasExternos.toFixed(1)} cotas${valorCota > 0 ? ` - ${fmtM(cotasExternos * valorCota)}` : ''})`, VM]] : []),
+      ['Total geral de cotas', `${(cotasIrmaos + cotasExternos).toFixed(1)}${valorCota > 0 ? `  (${fmtM((cotasIrmaos + cotasExternos) * valorCota)})` : ''}`],
+      ...(diferencaLoja > 0 ? [['Diferença coberta pela Loja', fmtM(diferencaLoja), VM]] : []),
+    ];
+
+    const linhasIrmaos = irmaos_part.map(p => {
+      const it = rateio.porParticipante[p.id];
+      const linha = [abrev(p.irmaos?.nome), parseFloat(p.cotas).toFixed(1), valorCota > 0 ? fmtM(it ? it.total : parseFloat(p.cotas) * valorCota) : '-'];
+      if (rateio.ativo) {
+        linha.push([
+          it?.custeador ? `Custeador (inclui custeio ${fmtM(it.recebeCusteio)})` : it?.isento ? (it.isentoLoja ? 'Isento (só Loja)' : 'Isento') : it?.personalizado ? `${it.pctProprio}% próprio` : '',
+          it?.custoConvidados > 0 ? `Convidados ${fmtM(it.custoConvidados)}` : '',
+        ].filter(Boolean).join(' | '));
+      }
+      return linha;
     });
-    y = doc.lastAutoTable.finalY + 10;
 
-    // Despesas
-    if (despesas.length > 0) {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      doc.text(`Despesas Vinculadas (${despesas.length})`, 14, y); y += 5;
-      autoTable(doc, {
-        startY: y,
-        head: [['Data', 'Descricao', 'Status', 'Valor']],
-        body: despesas.map(d => [
-          fmtD(d.data_vencimento),
-          s(d.descricao || ''),
-          d.status === 'pago' ? 'Pago' : 'Pendente',
-          fmtM(d.valor),
+    const totalRateioNum = valorCota > 0 ? participantes.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0) : 0;
+    const notasCusteio = (rateio.ativo && valorCota > 0) ? [
+      `Custeio: irmãos pagam ${rateio.pEvento}% (padrão); custeadores ${rateio.fatiaCusteio}%, divididos igualmente.`,
+      `Cobrado dos irmãos: ${fmtM(rateio.resumo.cobradoIrmaos)}  |  Custeio das famílias (custeadores): ${fmtM(rateio.resumo.custeioPool)}`,
+      `Parte da Loja: ${fmtM(rateio.resumo.lojaTotal)} (diferença nas famílias ${fmtM(rateio.resumo.lojaIrmaos)} + visitantes/externos ${fmtM(rateio.resumo.externos)})`,
+    ] : [];
+
+    gerarRelatorioEventoPDF({
+      evento, dadosLoja, logo, cards, resumo,
+      despesas: despesas.map(d => ({ data: d.data_vencimento, descricao: d.descricao, pago: d.status === 'pago', valor: fmtM(d.valor) })),
+      totalDespesas: fmtM(despesas.reduce((s2, d) => s2 + parseFloat(d.valor || 0), 0)),
+      irmaos: {
+        linhas: linhasIrmaos,
+        comObs: !!rateio.ativo,
+        subtotal: [cotasIrmaos.toFixed(1), valorCota > 0 ? fmtM(irmaos_part.reduce((s2, p) => s2 + (rateio.porParticipante[p.id]?.total ?? parseFloat(p.cotas) * valorCota), 0)) : '-'],
+      },
+      externos: {
+        linhas: externos_part.map(p => [abrev(p.nome_externo), parseFloat(p.cotas).toFixed(1), valorCota > 0 ? fmtM(parseFloat(p.cotas) * valorCota) : '-']),
+        subtotal: [cotasExternos.toFixed(1), valorCota > 0 ? fmtM(cotasExternos * valorCota) : '-'],
+      },
+      custoLoja: (rateio.ativo && valorCota > 0 && custoLoja.linhas.length > 0) ? {
+        linhas: custoLoja.linhas.map(({ p: q, it }) => [
+          `Loja Acácia - ${abrev(q.irmaos?.nome)}`,
+          fmtM(it.custoFamilia),
+          it.isento ? (it.isentoLoja ? 'Isento - só a Loja' : 'Isento') : `Paga ${it.pctProprio}% (padrão ${rateio.pEvento}%)`,
+          fmtM(it.pagaProprio), fmtM(it.parteCusteio), fmtM(it.parteLoja),
         ]),
-        foot: [['', '', 'Total', fmtM(despesas.reduce((s2, d) => s2 + parseFloat(d.valor || 0), 0))]],
-        showFoot: 'lastPage',
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [55, 55, 55], textColor: 255 },
-        footStyles: { fillColor: [235, 225, 200], textColor: [26, 26, 26], fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 248, 248] },
-        columnStyles: { 3: { halign: 'right', fontStyle: 'bold' } },
-        margin: { left: 14, right: 14 },
-      });
-      y = doc.lastAutoTable.finalY + 10;
-    }
-
-    // Rateio — separado em Irmãos e Convidados Externos (mesma lógica de agrupamento da tela)
-    if (participantes.length > 0) {
-      // Quadro de Irmãos
-      if (irmaos_part.length > 0) {
-        if (y > 240) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-        doc.text(`Irmaos (${irmaos_part.length})`, 14, y); y += 5;
-        autoTable(doc, {
-          startY: y,
-          head: [rateio.ativo ? ['Irmao', 'Cotas', 'Valor a Pagar', 'Obs.'] : ['Irmao', 'Cotas', 'Valor a Pagar']],
-          body: irmaos_part.map(p => {
-            const it = rateio.porParticipante[p.id];
-            const linha = [
-              abrev(p.irmaos?.nome),
-              parseFloat(p.cotas).toFixed(1),
-              valorCota > 0 ? fmtM(it ? it.total : parseFloat(p.cotas) * valorCota) : '-',
-            ];
-            if (rateio.ativo) linha.push([it?.custeador ? `Custeador (inclui custeio ${fmtM(it.recebeCusteio)})` : it?.isento ? (it.isentoLoja ? 'Isento (so Loja)' : 'Isento') : it?.personalizado ? `${it.pctProprio}% proprio` : '', it?.custoConvidados > 0 ? `Convidados ${fmtM(it.custoConvidados)}` : ''].filter(Boolean).join(' | '));
-            return linha;
-          }),
-          foot: [[
-            'Subtotal Irmaos',
-            irmaos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0).toFixed(1),
-            valorCota > 0 ? fmtM(irmaos_part.reduce((s2, p) => s2 + (rateio.porParticipante[p.id]?.total ?? parseFloat(p.cotas) * valorCota), 0)) : '-',
-            ...(rateio.ativo ? [''] : []),
-          ]],
-          showFoot: 'lastPage',
-          styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [201, 168, 76], textColor: [26, 26, 26] },
-          footStyles: { fillColor: [235, 225, 200], textColor: [26, 26, 26], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [248, 248, 248] },
-          columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right', fontStyle: 'bold' } },
-          margin: { left: 14, right: 14 },
-        });
-        y = doc.lastAutoTable.finalY + 8;
-      }
-
-      // Quadro de Convidados Externos (só aparece se houver)
-      if (externos_part.length > 0) {
-        if (y > 240) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-        doc.text(`Convidados Externos (${externos_part.length})`, 14, y); y += 5;
-        autoTable(doc, {
-          startY: y,
-          head: [['Convidado', 'Cotas', 'Valor a Pagar']],
-          body: externos_part.map(p => [
-            abrev(p.nome_externo),
-            parseFloat(p.cotas).toFixed(1),
-            valorCota > 0 ? fmtM(parseFloat(p.cotas) * valorCota) : '-',
-          ]),
-          foot: [[
-            'Subtotal Externos',
-            externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas), 0).toFixed(1),
-            valorCota > 0 ? fmtM(externos_part.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0)) : '-',
-          ]],
-          showFoot: 'lastPage',
-          styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-          footStyles: { fillColor: [224, 224, 250], textColor: [26, 26, 26], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [248, 248, 248] },
-          columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right', fontStyle: 'bold' } },
-          margin: { left: 14, right: 14 },
-        });
-        y = doc.lastAutoTable.finalY + 6;
-      }
-
-      // Custo da Loja Acacia (irmaos beneficiados por desconto/isencao)
-      if (rateio.ativo && valorCota > 0 && custoLoja.linhas.length > 0) {
-        if (y > 230) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-        doc.text('Custo da Loja Acacia - irmaos beneficiados', 14, y); y += 5;
-        autoTable(doc, {
-          startY: y,
-          head: [['Custo referente a', 'Custo familia', 'Condicao', 'Irmao paga', 'Custeadores', 'Loja paga']],
-          body: custoLoja.linhas.map(({ p: q, it }) => [
-            `Loja Acacia - ${abrev(q.irmaos?.nome)}`,
-            fmtM(it.custoFamilia),
-            it.isento ? (it.isentoLoja ? 'Isento - so a Loja' : 'Isento') : `Paga ${it.pctProprio}% (padrao ${rateio.pEvento}%)`,
-            fmtM(it.pagaProprio),
-            fmtM(it.parteCusteio),
-            fmtM(it.parteLoja),
-          ]),
-          foot: [['Subtotal irmaos beneficiados', '', '', '', '', fmtM(custoLoja.total)]],
-          showFoot: 'lastPage',
-          styles: { fontSize: 8, cellPadding: 2 },
-          headStyles: { fillColor: [99, 102, 241], textColor: 255 },
-          footStyles: { fillColor: [224, 224, 250], textColor: [26, 26, 26], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [248, 248, 248] },
-          columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right', fontStyle: 'bold' } },
-          margin: { left: 14, right: 14 },
-        });
-        y = doc.lastAutoTable.finalY + 6;
-      }
-
-      // Total geral do rateio
-      const totalRateio = valorCota > 0 ? participantes.reduce((s2, p) => s2 + parseFloat(p.cotas) * valorCota, 0) : 0;
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(40, 40, 40);
-      doc.text(`Total do Rateio: ${fmtM(totalRateio)}`, pW - 14, y, { align: 'right' });
-      if (rateio.ativo && valorCota > 0) {
-        if (y > 255) { doc.addPage(); y = 20; }
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
-        const linhas = [
-          `Custeio: irmaos pagam ${rateio.pEvento}% (padrao); custeadores ${rateio.fatiaCusteio}%, divididos igualmente`,
-          `Cobrado dos irmaos: ${fmtM(rateio.resumo.cobradoIrmaos)}  |  Custeio das familias (custeadores): ${fmtM(rateio.resumo.custeioPool)}`,
-          `Parte da Loja: ${fmtM(rateio.resumo.lojaTotal)} (diferenca nas familias ${fmtM(rateio.resumo.lojaIrmaos)} + visitantes/externos ${fmtM(rateio.resumo.externos)})`,
-        ];
-        linhas.forEach((t) => { y += 5; doc.text(t, pW - 14, y, { align: 'right' }); });
-      }
-    }
-
-    // Rodapé em todas as páginas
-    const total = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= total; i++) {
-      doc.setPage(i);
-      doc.setFontSize(7); doc.setTextColor(180, 180, 180);
-      doc.text(`Pagina ${i} de ${total}`, pW - 14, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
-    }
-
-    doc.save(`Evento_${s(evento.nome)}_${evento.ano}.pdf`);
+        total: fmtM(custoLoja.total),
+      } : null,
+      totalRateio: participantes.length > 0 ? fmtM(totalRateioNum) : '',
+      notasCusteio,
+      nomeArquivo: `Evento_${String(evento.nome || 'Evento').normalize('NFD').replace(/[^\x00-\x7F]/g, '').replace(/[^A-Za-z0-9]+/g, '_')}_${evento.ano}.pdf`,
+    });
     showSuccess('📄 PDF gerado!');
   };
 
