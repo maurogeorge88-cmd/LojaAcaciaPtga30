@@ -14,8 +14,10 @@ import PermissoesModulos from './PermissoesModulos';
 import { derivarDoLegado, limparMapa, colunasLegadoDoMapa, montarPermissoesLegado, MODULOS } from '../../config/permissoes';
 import PermissoesArcoReal from './PermissoesArcoReal';
 import { limparMapaArcoReal } from '../../config/permissoesArcoReal';
+import LiberacoesEnte from '../entepublico/LiberacoesEnte';
 
 const nivelDoCargo = (cargo) => cargo === 'arco_real_externo' ? 'arco_real'
+  : cargo === 'ente_publico' ? 'ente_publico'
   : cargo === 'irmao' ? 'irmao'
   : (cargo === 'veneravel' || cargo === 'administrador') ? 'admin' : 'cargo';
 
@@ -27,6 +29,7 @@ const ResumoAcesso = ({ usuario }) => {
   if (['veneravel', 'administrador'].includes(usuario.cargo) || usuario.nivel_acesso === 'admin') {
     return chip('👑 Acesso total', 'var(--color-accent)', 'var(--color-accent-bg)', 'Venerável / Administrador');
   }
+  if (usuario.nivel_acesso === 'ente_publico') return chip('🏛️ Ente público', '#10b981', 'rgba(16,185,129,0.14)', 'Acesso somente leitura ao Comodato');
   if (usuario.nivel_acesso === 'arco_real') return chip('🔺 Arco Real', 'var(--color-accent)', 'var(--color-accent-bg)', 'Usuário externo do Arco Real');
   const mapa = usuario.permissoes && typeof usuario.permissoes === 'object' ? limparMapa(usuario.permissoes) : derivarDoLegado(usuario);
   const editar = MODULOS.filter(m => mapa[m.id] === 'editar');
@@ -48,6 +51,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     cargo: 'irmao',
     ativo: true,
     arco_real_membro_id: '',
+    ente_origem_id: '',
+    ente_acesso_estendido: false,
     // Permissões customizáveis
     pode_editar_cadastros: false,
     pode_visualizar_financeiro: false,
@@ -59,10 +64,13 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   });
 
   const [membrosArcoReal, setMembrosArcoReal] = useState([]);
+  const [origensEnte, setOrigensEnte] = useState([]);
 
   React.useEffect(() => {
     supabase.from('arco_real_membros').select('id, nome').order('nome')
       .then(({ data }) => setMembrosArcoReal(data || []));
+    supabase.from('comodato_origens_recurso').select('id, nome').order('nome')
+      .then(({ data }) => setOrigensEnte(data || []));
   }, []);
 
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -233,6 +241,13 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_presenca: true,
       pode_editar_projetos: true
     },
+    'ente_publico': {
+      pode_editar_cadastros: false, pode_visualizar_financeiro: false, pode_editar_financeiro: false,
+      pode_visualizar_arco_real: false, pode_gerenciar_usuarios: false, pode_editar_biblioteca: false,
+      pode_editar_comodatos: false, pode_editar_caridade: false, pode_editar_balaustres: false,
+      pode_editar_pranchas: false, pode_editar_comissoes: false, pode_editar_corpo_admin: false,
+      pode_editar_presenca: false, pode_editar_projetos: false
+    },
     'arco_real_externo': {
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
@@ -289,7 +304,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   // (as antigas continuam sendo usadas pelas policies do banco). Arco Real
   // externo mantém o modelo antigo de checkboxes.
   const camposPermissao = () => {
-    if (usuarioForm.cargo === 'arco_real_externo') return { permissoes: null };
+    if (usuarioForm.cargo === 'arco_real_externo' || usuarioForm.cargo === 'ente_publico') return { permissoes: null };
     const mapa = limparMapa(usuarioForm.permissoes);
     if (String(usuarioForm.cargo || '').includes('tesoureiro')) mapa.financeiro = 'editar';
     return { permissoes: mapa, ...colunasLegadoDoMapa(mapa) };
@@ -298,7 +313,12 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   // Grade do Arco Real: só toca na coluna quando há o que gravar (grade
   // personalizada) ou o que limpar (voltou a herdar). Assim, cadastros que não
   // mexem no Arco Real continuam funcionando mesmo antes do SQL ser executado.
+  const camposEnte = () => (usuarioForm.cargo === 'ente_publico'
+    ? { ente_origem_id: usuarioForm.ente_origem_id ? Number(usuarioForm.ente_origem_id) : null, ente_acesso_estendido: !!usuarioForm.ente_acesso_estendido }
+    : { ente_origem_id: null, ente_acesso_estendido: false });
+
   const camposArcoReal = () => {
+    if (usuarioForm.cargo === 'ente_publico') return {};
     const novo = usuarioForm.permissoes_arco_real;
     if (novo && typeof novo === 'object') return { permissoes_arco_real: limparMapaArcoReal(novo) };
     if (modoEdicao && usuarioEditando && usuarioEditando.permissoes_arco_real != null) return { permissoes_arco_real: null };
@@ -327,6 +347,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       cargo: 'irmao',
       ativo: true,
       arco_real_membro_id: '',
+      ente_origem_id: '',
+      ente_acesso_estendido: false,
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
@@ -362,6 +384,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
 
   const handleCriarUsuario = async (e) => {
     e.preventDefault();
+    if (usuarioForm.cargo === 'ente_publico' && !usuarioForm.ente_origem_id) { showError('❌ Selecione a entidade do ente público.'); return; }
     
     if (!usuarioForm.senha || usuarioForm.senha.length < 6) {
       showError('❌ Senha deve ter no mínimo 6 caracteres!');
@@ -395,6 +418,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           ativo: usuarioForm.ativo,
           senha_temporaria: usuarioForm.senha, // Salvar para referência
           nivel_acesso: usuarioForm.cargo === 'arco_real_externo' ? 'arco_real' :
+                       usuarioForm.cargo === 'ente_publico' ? 'ente_publico' :
                        usuarioForm.cargo === 'irmao' ? 'irmao' : 
                        (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
@@ -411,6 +435,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
           arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
+          ...camposEnte(),
           ...camposPermissao(),
           ...camposArcoReal()
         }]);
@@ -450,6 +475,7 @@ IMPORTANTE: Copie estas informações agora!
 
   const handleAtualizarUsuario = async (e) => {
     e.preventDefault();
+    if (usuarioForm.cargo === 'ente_publico' && !usuarioForm.ente_origem_id) { showError('❌ Selecione a entidade do ente público.'); return; }
     setLoading(true);
 
     try {
@@ -460,6 +486,7 @@ IMPORTANTE: Copie estas informações agora!
           nome: usuarioForm.nome,
           cargo: usuarioForm.cargo,
           nivel_acesso: usuarioForm.cargo === 'arco_real_externo' ? 'arco_real' :
+                       usuarioForm.cargo === 'ente_publico' ? 'ente_publico' :
                        usuarioForm.cargo === 'irmao' ? 'irmao' :
                        (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           ativo: usuarioForm.ativo,
@@ -477,6 +504,7 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
           pode_editar_presenca: usuarioForm.pode_editar_presenca,
           arco_real_membro_id: usuarioForm.arco_real_membro_id || null,
+          ...camposEnte(),
           ...camposPermissao(),
           ...camposArcoReal()
         })
@@ -556,6 +584,8 @@ IMPORTANTE: Copie estas informações agora!
       cargo: usuario.cargo,
       ativo: usuario.ativo,
       arco_real_membro_id: usuario.arco_real_membro_id || '',
+      ente_origem_id: usuario.ente_origem_id || '',
+      ente_acesso_estendido: usuario.ente_acesso_estendido || false,
       pode_editar_cadastros: usuario.pode_editar_cadastros || false,
       pode_visualizar_financeiro: usuario.pode_visualizar_financeiro || false,
       pode_visualizar_arco_real: usuario.pode_visualizar_arco_real || false,
@@ -771,6 +801,7 @@ IMPORTANTE: Copie estas informações agora!
                 <option value="veneravel">Venerável</option>
                 <option value="administrador">Administrador</option>
                 <option value="arco_real_externo">🔺 Arco Real (Externo — não é irmão da Loja)</option>
+                <option value="ente_publico">🏛️ Ente Público (Comodato — somente leitura)</option>
               </select>
               {!modoEdicao && (
                 <p className="form-hint" style={{ color: 'var(--color-accent)' }}>
@@ -778,6 +809,27 @@ IMPORTANTE: Copie estas informações agora!
                 </p>
               )}
             </div>
+
+            {usuarioForm.cargo === 'ente_publico' && (
+              <div style={{ gridColumn: '1 / -1', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.5)', borderRadius: 'var(--radius-lg)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                  <strong style={{ color: 'var(--color-text)', fontSize: '0.9rem' }}>🏛️ Acesso de Ente Público — somente Comodato</strong>
+                  <LiberacoesEnte />
+                </div>
+                <div>
+                  <label className="form-label">Entidade (origem do recurso) *</label>
+                  <select value={usuarioForm.ente_origem_id} onChange={(e) => setUsuarioForm({ ...usuarioForm, ente_origem_id: e.target.value })} className="form-input" style={{ cursor: 'pointer' }}>
+                    <option value="">— Selecione —</option>
+                    {origensEnte.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                  </select>
+                  <p className="form-hint">Só enxerga recursos/equipamentos dessa entidade marcados como liberados no cadastro de Recursos e Equipamentos.</p>
+                </div>
+                <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!usuarioForm.ente_acesso_estendido} onChange={(e) => setUsuarioForm({ ...usuarioForm, ente_acesso_estendido: e.target.checked })} style={{ marginTop: '0.2rem' }} />
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}><strong>Autorização estendida</strong> — vê todos os empréstimos (CPF mascarado). Relatórios continuam apenas do recurso da entidade.</span>
+                </label>
+              </div>
+            )}
 
             {usuarioForm.cargo === 'arco_real_externo' && (
               <div style={{ gridColumn: '1 / -1', background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -833,7 +885,7 @@ IMPORTANTE: Copie estas informações agora!
             </div>
           </div>
 
-          {usuarioForm.cargo !== 'arco_real_externo' && (
+          {usuarioForm.cargo !== 'arco_real_externo' && usuarioForm.cargo !== 'ente_publico' && (
               <div style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.85rem' }}>
                 <label className="form-label">Vincular ao cadastro no Arco Real (opcional)</label>
                 <select
@@ -853,7 +905,7 @@ IMPORTANTE: Copie estas informações agora!
                 </div>
                 <div className="space-y-4" style={{ display: abaModal === 'permissoes' ? 'block' : 'none' }}>
           {/* PERMISSÕES POR MÓDULO (Fase 2) */}
-          {usuarioForm.cargo !== 'arco_real_externo' && (
+          {usuarioForm.cargo !== 'arco_real_externo' && usuarioForm.cargo !== 'ente_publico' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <PermissoesModulos
                 valor={usuarioForm.permissoes || {}}
@@ -1224,6 +1276,9 @@ IMPORTANTE: Copie estas informações agora!
           )}
 
           {/* PERMISSÕES POR TELA DO ARCO REAL — vale para interno e externo; não altera a Loja */}
+          {usuarioForm.cargo === 'ente_publico' ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>🏛️ Ente público não usa permissões por módulo: acessa apenas o Comodato, somente leitura, conforme o que foi liberado nos recursos/equipamentos.</p>
+          ) : (
           <PermissoesArcoReal
             valor={usuarioForm.permissoes_arco_real}
             onChange={(m) => setUsuarioForm(f => ({ ...f, permissoes_arco_real: m }))}
@@ -1232,6 +1287,7 @@ IMPORTANTE: Copie estas informações agora!
             temAcessoModulo={usuarioForm.cargo === 'arco_real_externo' ? null : (limparMapa(usuarioForm.permissoes).arco_real === 'ver')}
             somenteLeitura={modalModo === 'ver'}
           />
+          )}
 
                   <p className="form-hint" style={{ marginTop: '0.25rem' }}>⚠️ Determinadas permissões devem ser solicitadas ao administrador.</p>
                 </div>
