@@ -58,6 +58,9 @@ export default function EntePublicoApp({ userData, onSair }) {
   const [benef, setBenef] = useState({});
   const [entidade, setEntidade] = useState('');
   const [dadosLoja, setDadosLoja] = useState({});
+  const [gestao, setGestao] = useState([]);
+  const [totalGeral, setTotalGeral] = useState(null);
+  const [filtroNF, setFiltroNF] = useState('todas');
   const estendido = !!userData?.ente_acesso_estendido;
   const telasVistas = useRef(new Set());
 
@@ -84,7 +87,7 @@ export default function EntePublicoApp({ userData, onSair }) {
   useEffect(() => {
     (async () => {
       try {
-        const [rec, eq, emp, ben, org, loja] = await Promise.all([
+        const [rec, eq, emp, ben, org, loja, ges, tot] = await Promise.all([
           supabase.from('comodato_recursos').select('*, origem:comodato_origens_recurso(id, nome)').order('data_nf', { ascending: false }),
           supabase.from('equipamentos').select('*, tipos_equipamentos(id, nome)').order('numero_patrimonio'),
           supabase.from('comodatos')
@@ -93,7 +96,11 @@ export default function EntePublicoApp({ userData, onSair }) {
           supabase.from('v_ente_beneficiarios').select('id, nome, cpf_mascarado'),
           userData?.ente_origem_id ? supabase.from('comodato_origens_recurso').select('nome').eq('id', userData.ente_origem_id).maybeSingle() : Promise.resolve({ data: null }),
           supabase.from('dados_loja').select('*').limit(1).maybeSingle(),
+          supabase.from('v_ente_gestao').select('*'),
+          supabase.rpc('ente_total_equipamentos'),
         ]);
+        setGestao(ges.data || []);
+        setTotalGeral(typeof tot.data === 'number' ? tot.data : null);
         if (rec.error) throw rec.error;
         if (eq.error) throw eq.error;
         if (emp.error) throw emp.error;
@@ -189,25 +196,70 @@ export default function EntePublicoApp({ userData, onSair }) {
   // ═════════ Render ═════════
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
-      {/* Cabeçalho */}
-      <div style={{ background: 'var(--color-accent)', color: '#fff', padding: '0.8rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {dadosLoja?.logo_url && <img src={dadosLoja.logo_url} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />}
-          <div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>♿ Controle de Comodatos — Acesso Institucional</div>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>ARLS Acácia de Paranatinga nº 30</div>
-          </div>
-        </div>
+      {/* Barra superior */}
+      <div style={{ background: 'var(--color-accent)', color: '#fff', padding: '0.55rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ fontSize: '0.92rem', fontWeight: 800 }}>♿ Controle de Comodatos — Acesso Institucional</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
+          <div style={{ textAlign: 'right', fontSize: '0.78rem' }}>
             <div style={{ fontWeight: 700 }}>{userData?.nome}</div>
             <div style={{ opacity: 0.9 }}>🏛️ {entidade || 'Ente público'}{estendido ? ' • 🔓 acesso estendido' : ''}</div>
           </div>
-          <button onClick={onSair} style={{ padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Sair</button>
+          <button onClick={onSair} style={{ padding: '0.35rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Sair</button>
         </div>
       </div>
 
       <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Apresentação da Loja */}
+        <div style={{ textAlign: 'center', padding: aba === 'dashboard' ? '1.6rem 1rem 1.2rem' : '0.4rem 1rem', background: 'linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg) 100%)', border: '1px solid var(--color-border)', borderBottom: '3px double #c9a84c', borderRadius: 'var(--radius-xl)' }}>
+          {dadosLoja?.logo_url && <img src={dadosLoja.logo_url} alt="Logo da Loja" style={{ width: aba === 'dashboard' ? 128 : 44, height: aba === 'dashboard' ? 128 : 44, objectFit: 'contain', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 4px 14px rgba(201,168,76,0.35))' }} />}
+          <div style={{ marginTop: aba === 'dashboard' ? '0.8rem' : '0.2rem', fontSize: aba === 'dashboard' ? '1.55rem' : '1rem', fontWeight: 800, color: 'var(--color-text)', letterSpacing: '0.02em' }}>
+            AUG∴ E RESP∴ LOJA SIMB∴ ACÁCIA DE PARANATINGA Nº {dadosLoja?.numero_loja || '30'}
+          </div>
+          {aba === 'dashboard' && (
+            <>
+              <div style={{ marginTop: '0.35rem', fontSize: '0.9rem', color: '#c9a84c', fontWeight: 700 }}>
+                Jurisdicionada à Sereníssima Grande Loja Maçônica do Estado de Mato Grosso
+              </div>
+              <div style={{ marginTop: '0.15rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                {[dadosLoja?.cidade || 'Paranatinga', dadosLoja?.estado || 'MT'].join('/')} • Fundada em {dadosLoja?.data_fundacao ? dataBR(dadosLoja.data_fundacao) : '20/12/1997'}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Administração da gestão atual */}
+        {aba === 'dashboard' && gestao.length > 0 && (() => {
+          const ordem = ['venerável', 'veneravel', '1', 'primeiro', '2', 'segundo', 'orador', 'secret', 'tesour', 'chanceler'];
+          const peso = (c) => { const x = String(c || '').toLowerCase(); const i = ordem.findIndex(o => x.includes(o)); return i === -1 ? 99 : i; };
+          const lista = [...gestao].sort((a, b) => peso(a.cargo) - peso(b.cargo) || String(a.cargo).localeCompare(String(b.cargo)));
+          const principais = lista.filter(g => peso(g.cargo) < 99);
+          const demais = lista.filter(g => peso(g.cargo) === 99);
+          return (
+            <div>
+              <div style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                Administração — Gestão {gestao[0]?.ano_exercicio}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.6rem' }}>
+                {principais.map(g => (
+                  <div key={g.cargo} style={{ textAlign: 'center', background: 'var(--color-surface)', border: '1px solid rgba(201,168,76,0.5)', borderTop: '3px solid #c9a84c', borderRadius: 'var(--radius-lg)', padding: '0.6rem 0.5rem' }}>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: '#c9a84c' }}>{g.cargo}</div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text)', marginTop: '0.15rem' }}>{g.nome}</div>
+                  </div>
+                ))}
+              </div>
+              {demais.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
+                  {demais.map(g => (
+                    <span key={g.cargo} style={{ fontSize: '0.74rem', padding: '0.15rem 0.6rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                      <strong style={{ color: 'var(--color-text)' }}>{g.cargo}:</strong> {g.nome}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Abas */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', padding: '0.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
           {ABAS.map(a => (
@@ -227,12 +279,13 @@ export default function EntePublicoApp({ userData, onSair }) {
             {/* ───────── DASHBOARD ───────── */}
             {aba === 'dashboard' && (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '0.75rem' }}>
-                  <Kpi rotulo="Equipamentos do recurso" valor={meusEquip.length} sub={`${recursos.length} nota(s) fiscal(is) • ${moeda(valorRecursos)}`} cor="#10b981" />
-                  <Kpi rotulo="Disponíveis" valor={contEq('disponivel')} sub={`${contEq('manutencao')} em manutenção`} cor="#3b82f6" />
-                  <Kpi rotulo="Emprestados" valor={contEq('emprestado')} sub="em uso por beneficiários" cor="#8b5cf6" />
-                  <Kpi rotulo={estendido ? 'Empréstimos ativos (todos)' : 'Empréstimos ativos'} valor={empAtivos.length} sub={`${empDev.length} devolvido(s)`} cor="#f59e0b" />
-                  <Kpi rotulo="Em atraso" valor={empAtrasados.length} sub={empAtrasados.length ? 'devolução prevista vencida' : 'tudo em dia'} cor={empAtrasados.length ? '#ef4444' : '#10b981'} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.75rem' }}>
+                  <Kpi rotulo="Total de equipamentos" valor={totalGeral ?? equipamentos.length} sub="geral da Loja" cor="#c9a84c" />
+                  <Kpi rotulo="Provenientes do ente" valor={meusEquip.length} sub="liberados para esta entidade" cor="#10b981" />
+                  <Kpi rotulo="Disponíveis" valor={contEq('disponivel')} sub="do recurso do ente" cor="#3b82f6" />
+                  <Kpi rotulo="Emprestados" valor={contEq('emprestado')} sub="do recurso do ente" cor="#8b5cf6" />
+                  <Kpi rotulo="Beneficiados" valor={new Set(emp.filter(e => e.temMeu).map(e => e.beneficiario_id)).size} sub="com equipamento do ente" cor="#f59e0b" />
+                  <Kpi rotulo="Recursos (NF)" valor={recursos.length} sub={moeda(valorRecursos)} cor="#14b8a6" />
                 </div>
 
                 <Caixa titulo="🧾 Notas fiscais do recurso">
@@ -268,41 +321,57 @@ export default function EntePublicoApp({ userData, onSair }) {
             )}
 
             {/* ───────── EQUIPAMENTOS ───────── */}
-            {aba === 'equipamentos' && (
-              <Caixa titulo={`♿ Equipamentos do recurso (${meusEquip.length})`}
-                extra={<input value={buscaEq} onChange={e => setBuscaEq(e.target.value)} placeholder="🔎 Patrimônio, tipo ou descrição..." style={{ ...campo, minWidth: '16rem' }} />}>
-                {(() => {
-                  const q = buscaEq.trim().toLowerCase();
-                  const lista = meusEquip.filter(e => !q || `${e.numero_patrimonio} ${e.tipos_equipamentos?.nome || ''} ${e.descricao || ''}`.toLowerCase().includes(q));
-                  if (lista.length === 0) return <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>Nenhum equipamento liberado{q ? ' para a busca' : ''}.</p>;
-                  return (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
-                        <thead><tr style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
-                          {['Patrimônio', 'Tipo', 'Descrição', 'NF', 'Aquisição', 'Situação'].map(h => <th key={h} style={{ padding: '0.4rem 0.6rem', textAlign: 'left' }}>{h}</th>)}
-                        </tr></thead>
-                        <tbody>
-                          {lista.map(e => {
-                            const [txt, cor] = STATUS_EQ[e.status] || [e.status, '#94a3b8'];
-                            const nf = recursos.find(r => r.id === e.recurso_id);
-                            return (
-                              <tr key={e.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                                <td style={{ padding: '0.4rem 0.6rem', fontWeight: 700, color: 'var(--color-text)' }}>{e.numero_patrimonio}</td>
-                                <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text)' }}>{e.tipos_equipamentos?.nome || '—'}</td>
-                                <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)' }}>{e.descricao || '—'}</td>
-                                <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)' }}>{nf ? `NF ${nf.numero_nf}` : '—'}</td>
-                                <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)' }}>{dataBR(e.data_aquisicao)}</td>
-                                <td style={{ padding: '0.4rem 0.6rem' }}><span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.1rem 0.55rem', borderRadius: 999, color: cor, background: `${cor}22`, border: `1px solid ${cor}55` }}>{txt}</span></td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+            {aba === 'equipamentos' && (() => {
+              const q = buscaEq.trim().toLowerCase();
+              const passa = (e) => !q || `${e.numero_patrimonio} ${e.tipos_equipamentos?.nome || ''} ${e.descricao || ''}`.toLowerCase().includes(q);
+              const grupos = recursos
+                .filter(r => filtroNF === 'todas' || String(r.id) === String(filtroNF))
+                .map(r => ({ r, itens: meusEquip.filter(e => e.recurso_id === r.id && passa(e)) }))
+                .filter(g => g.itens.length > 0);
+              return (
+                <>
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.6rem 0.9rem' }}>
+                    <div>
+                      <label style={rotulo}>Nota fiscal</label>
+                      <select value={filtroNF} onChange={e => setFiltroNF(e.target.value)} style={campo}>
+                        <option value="todas">Todas as NF</option>
+                        {recursos.map(r => <option key={r.id} value={r.id}>NF {r.numero_nf} — {dataBR(r.data_nf)}</option>)}
+                      </select>
                     </div>
-                  );
-                })()}
-              </Caixa>
-            )}
+                    <div style={{ flex: 1, minWidth: '14rem' }}>
+                      <label style={rotulo}>Pesquisar</label>
+                      <input value={buscaEq} onChange={e => setBuscaEq(e.target.value)} placeholder="🔎 Patrimônio, tipo ou descrição..." style={{ ...campo, width: '100%' }} />
+                    </div>
+                  </div>
+                  {grupos.length === 0 ? <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>Nenhum equipamento encontrado.</p> : grupos.map(({ r, itens }) => (
+                    <Caixa key={r.id} titulo={`🧾 NF nº ${r.numero_nf} — ${dataBR(r.data_nf)}${r.fornecedor ? ` • ${r.fornecedor}` : ''}`}
+                      extra={<span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{itens.length} equipamento(s) • {moeda(r.valor_total)}</span>}>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
+                          <thead><tr style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                            {['Patrimônio', 'Tipo', 'Descrição', 'Aquisição', 'Situação'].map(h => <th key={h} style={{ padding: '0.4rem 0.6rem', textAlign: 'left' }}>{h}</th>)}
+                          </tr></thead>
+                          <tbody>
+                            {itens.map(e => {
+                              const [txt, cor] = STATUS_EQ[e.status] || [e.status, '#94a3b8'];
+                              return (
+                                <tr key={e.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                  <td style={{ padding: '0.4rem 0.6rem', fontWeight: 700, color: 'var(--color-text)' }}>{e.numero_patrimonio}</td>
+                                  <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text)' }}>{e.tipos_equipamentos?.nome || '—'}</td>
+                                  <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)' }}>{e.descricao || '—'}</td>
+                                  <td style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)' }}>{dataBR(e.data_aquisicao)}</td>
+                                  <td style={{ padding: '0.4rem 0.6rem' }}><span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.1rem 0.55rem', borderRadius: 999, color: cor, background: `${cor}22`, border: `1px solid ${cor}55` }}>{txt}</span></td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Caixa>
+                  ))}
+                </>
+              );
+            })()}
 
             {/* ───────── EMPRÉSTIMOS ───────── */}
             {aba === 'emprestimos' && (() => {
