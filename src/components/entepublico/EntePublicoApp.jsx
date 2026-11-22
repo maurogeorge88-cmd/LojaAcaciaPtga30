@@ -175,6 +175,7 @@ export default function EntePublicoApp({ userData, onSair }) {
 
   const [buscaEq, setBuscaEq] = useState('');
   const [filtroEmp, setFiltroEmp] = useState('todos');
+  const [visaoEmp, setVisaoEmp] = useState('todos');
 
   const baixarNota = async (r) => {
     try {
@@ -304,46 +305,76 @@ export default function EntePublicoApp({ userData, onSair }) {
             )}
 
             {/* ───────── EMPRÉSTIMOS ───────── */}
-            {aba === 'emprestimos' && (
-              <Caixa titulo={`📤 Empréstimos ${estendido ? '(todos — autorização estendida)' : 'do recurso'}`}
-                extra={
-                  <select value={filtroEmp} onChange={e => setFiltroEmp(e.target.value)} style={campo}>
-                    <option value="todos">Todos</option>
-                    <option value="ativo">Ativos</option>
-                    <option value="devolvido">Devolvidos</option>
-                    <option value="atrasado">Em atraso</option>
-                  </select>
-                }>
-                {(() => {
-                  const lista = emp.filter(e => filtroEmp === 'todos' || (filtroEmp === 'atrasado' ? atrasado(e) : e.status === filtroEmp));
-                  if (lista.length === 0) return <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>Nenhum empréstimo encontrado.</p>;
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {lista.map(e => (
-                        <div key={e.id} style={{ border: '1px solid rgba(16,185,129,0.45)', borderLeft: '4px solid #10b981', borderRadius: 'var(--radius-md)', padding: '0.6rem 0.85rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
-                            <div>
-                              <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>{e.beneficiarios.nome}{e.beneficiarios.cpf ? <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: '0.78rem' }}> • CPF {e.beneficiarios.cpf}</span> : null}</div>
-                              <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Emprestado em {dataBR(e.data_emprestimo)}{e.data_devolucao_prevista ? ` • previsão ${dataBR(e.data_devolucao_prevista)}` : ''}{e.data_devolucao_real ? ` • devolvido em ${dataBR(e.data_devolucao_real)}` : ''}</div>
-                            </div>
-                            <span style={{ alignSelf: 'flex-start', fontSize: '0.72rem', fontWeight: 700, padding: '0.1rem 0.55rem', borderRadius: 999, color: atrasado(e) ? '#ef4444' : e.status === 'ativo' ? '#3b82f6' : '#10b981', background: atrasado(e) ? 'rgba(239,68,68,0.14)' : e.status === 'ativo' ? 'rgba(59,130,246,0.14)' : 'rgba(16,185,129,0.14)' }}>
-                              {atrasado(e) ? 'Em atraso' : e.status === 'ativo' ? 'Ativo' : 'Devolvido'}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                            {(e.itens || []).map(i => (
-                              <span key={i.id} style={{ fontSize: '0.74rem', padding: '0.1rem 0.5rem', borderRadius: 'var(--radius-sm)', background: ehMeu(i.equipamentos) ? 'rgba(16,185,129,0.14)' : 'var(--color-surface-2)', color: ehMeu(i.equipamentos) ? '#10b981' : 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}>
-                                {i.equipamentos?.tipos_equipamentos?.nome || 'Equipamento'} {i.equipamentos?.numero_patrimonio ? `nº ${i.equipamentos.numero_patrimonio}` : ''}{ehMeu(i.equipamentos) ? ' ✔ seu recurso' : ''}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+            {aba === 'emprestimos' && (() => {
+              const passaStatus = (e) => filtroEmp === 'todos' || (filtroEmp === 'atrasado' ? atrasado(e) : e.status === filtroEmp);
+              const verTudo = estendido && visaoEmp === 'todos';
+              const meus = emp.filter(e => e.temMeu && passaStatus(e));
+              const demais = verTudo ? emp.filter(e => !e.temMeu && passaStatus(e)) : [];
+
+              const Cartao = ({ e, marcar }) => (
+                <div style={{ border: '1px solid rgba(16,185,129,0.45)', borderLeft: '4px solid #10b981', borderRadius: 'var(--radius-md)', padding: '0.6rem 0.85rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--color-text)' }}>{e.beneficiarios.nome}{e.beneficiarios.cpf ? <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', fontSize: '0.78rem' }}> • CPF {e.beneficiarios.cpf}</span> : null}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Emprestado em {dataBR(e.data_emprestimo)}{e.data_devolucao_prevista ? ` • previsão ${dataBR(e.data_devolucao_prevista)}` : ''}{e.data_devolucao_real ? ` • devolvido em ${dataBR(e.data_devolucao_real)}` : ''}</div>
                     </div>
-                  );
-                })()}
-              </Caixa>
-            )}
+                    <span style={{ alignSelf: 'flex-start', fontSize: '0.72rem', fontWeight: 700, padding: '0.1rem 0.55rem', borderRadius: 999, color: atrasado(e) ? '#ef4444' : e.status === 'ativo' ? '#3b82f6' : '#10b981', background: atrasado(e) ? 'rgba(239,68,68,0.14)' : e.status === 'ativo' ? 'rgba(59,130,246,0.14)' : 'rgba(16,185,129,0.14)' }}>
+                      {atrasado(e) ? 'Em atraso' : e.status === 'ativo' ? 'Ativo' : 'Devolvido'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                    {(e.itens || []).map(i => (
+                      <span key={i.id} style={{ fontSize: '0.74rem', padding: '0.1rem 0.5rem', borderRadius: 'var(--radius-sm)', background: marcar && ehMeu(i.equipamentos) ? 'rgba(16,185,129,0.14)' : 'var(--color-surface-2)', color: marcar && ehMeu(i.equipamentos) ? '#10b981' : 'var(--color-text-muted)', border: '1px solid var(--color-border)' }}>
+                        {i.equipamentos?.tipos_equipamentos?.nome || 'Equipamento'} {i.equipamentos?.numero_patrimonio ? `nº ${i.equipamentos.numero_patrimonio}` : ''}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+
+              return (
+                <>
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '0.6rem 0.9rem' }}>
+                    {estendido && (
+                      <div>
+                        <label style={rotulo}>Visualizar</label>
+                        <select value={visaoEmp} onChange={e => setVisaoEmp(e.target.value)} style={campo}>
+                          <option value="todos">Todos os empréstimos</option>
+                          <option value="meu">Somente NF do meu recurso</option>
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <label style={rotulo}>Situação</label>
+                      <select value={filtroEmp} onChange={e => setFiltroEmp(e.target.value)} style={campo}>
+                        <option value="todos">Todas</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="devolvido">Devolvidos</option>
+                        <option value="atrasado">Em atraso</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <Caixa titulo={`📤 Empréstimos do meu recurso (${meus.length})`}>
+                    {meus.length === 0 ? <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', margin: 0 }}>Nenhum empréstimo encontrado.</p> : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {meus.map(e => <Cartao key={e.id} e={e} marcar />)}
+                      </div>
+                    )}
+                  </Caixa>
+
+                  {verTudo && (
+                    <Caixa titulo={`📋 Demais empréstimos (${demais.length})`}>
+                      {demais.length === 0 ? <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', margin: 0 }}>Nenhum empréstimo encontrado.</p> : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {demais.map(e => <Cartao key={e.id} e={e} />)}
+                        </div>
+                      )}
+                    </Caixa>
+                  )}
+                </>
+              );
+            })()}
 
             {/* ───────── RELATÓRIOS ───────── */}
             {aba === 'relatorios' && (
