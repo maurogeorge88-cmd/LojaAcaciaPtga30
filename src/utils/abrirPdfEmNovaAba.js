@@ -56,17 +56,31 @@ export const instalarAbrirPdfEmNovaAba = () => {
   // jsPDF aplica os plugins (jsPDF.API) por cima dos métodos internos de cada documento,
   // então definir "save" aqui vale para todo relatório gerado com new jsPDF().
   jsPDF.API.save = function (nomeArquivo) {
-    const nome = String(nomeArquivo || 'documento.pdf');
+    let nome = String(nomeArquivo || 'documento.pdf');
+    if (!/\.pdf$/i.test(nome)) nome += '.pdf';
     carimbarRodape(this);
     try { this.setProperties({ title: nome.replace(/\.pdf$/i, '').replace(/_/g, ' ') }); } catch (e) { /* ignora */ }
-    try {
-      const blob = this.output('blob');
-      const url = URL.createObjectURL(blob);
-      const aba = window.open(url, '_blank');
-      if (!aba) { URL.revokeObjectURL(url); throw new Error('Nova aba bloqueada pelo navegador'); }
-      setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
-    } catch (e) {
-      baixarDireto(this, nome); // popup bloqueado: baixa normalmente
+    const blob = this.output('blob');
+
+    // Escolhe a pasta (com o nome do arquivo sugerido), grava e só então termina.
+    // Navegadores sem essa função (Firefox/Safari) ou com erro: download normal.
+    if (typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function') {
+      (async () => {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: nome,
+            types: [{ description: 'Documento PDF', accept: { 'application/pdf': ['.pdf'] } }],
+          });
+          const w = await handle.createWritable();
+          await w.write(blob);
+          await w.close();
+        } catch (e) {
+          if (e && e.name === 'AbortError') return; // usuário cancelou
+          try { baixarDireto(this, nome); } catch (e2) { /* ignora */ }
+        }
+      })();
+    } else {
+      baixarDireto(this, nome);
     }
     return this;
   };
