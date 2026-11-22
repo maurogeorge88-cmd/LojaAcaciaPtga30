@@ -218,7 +218,8 @@ export const gerarRelatorioRecursosComodatoPDF = ({ recursos = [], dadosLoja = {
     doc.setDrawColor(...DOURADO); doc.setLineWidth(0.3);
     doc.line(M, H - 14, W - M, H - 14);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
-    doc.text(`Loja ${nomeLoja} — emitido em ${hoje}`, W / 2, H - 9, { align: 'center' });
+    doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', M, H - 9);
+    doc.text(`Loja ${nomeLoja} — emitido em ${hoje}`, W / 2 + 14, H - 9, { align: 'center' });
     doc.text(`${p} de ${total}`, W - M, H - 9, { align: 'right' });
   }
 
