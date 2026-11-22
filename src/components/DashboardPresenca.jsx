@@ -1385,12 +1385,12 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
       </div>
 
       {/* Quadros lado a lado */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         
         {/* Quadro: Presença 100% */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #10b981', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #10b981', borderBottom: '1px solid var(--color-border)', padding: '0.5rem 0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>🏆</span>
               Presença 100% - {resumoAno.length} {resumoAno.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
@@ -1400,7 +1400,7 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',
-                padding: '0.25rem 0.75rem',
+                padding: '0.1rem 0.45rem', fontSize: '0.78rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
                 border: '1px solid var(--color-border-light)',
@@ -1412,53 +1412,36 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
               ))}
             </select>
           </div>
-          <div className="p-4 max-h-96 overflow-y-auto">
+          <div className="p-2 max-h-72 overflow-y-auto">
             {resumoAno.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão com 100% em {anoPresenca100}</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '0.8rem 0', fontSize: '0.82rem' }}>Nenhum irmão com 100% em {anoPresenca100}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {resumoAno
                   .sort((a, b) => b.total_sessoes - a.total_sessoes)
                   .map(irmao => (
-                  <div key={irmao.id} style={{ 
-                    padding: '0.75rem', 
-                    background: 'var(--color-success-bg)', 
+                  <div key={irmao.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap',
+                    padding: '0.3rem 0.6rem',
+                    background: 'var(--color-success-bg)',
                     borderRadius: 'var(--radius-md)',
                     transition: 'background 0.2s'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-bg)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-success-bg)'}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>
-                        {formatarNome(irmao.nome)}
-                      </span>
-                      <span style={{ background: 'var(--color-success)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: '600' }}>
-                        {irmao.total_sessoes}
-                      </span>
+                    <span style={{ fontWeight: 500, fontSize: '0.84rem', color: 'var(--color-text)', flex: '1 1 130px', minWidth: 0 }}>
+                      {formatarNome(irmao.nome)}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.3rem', fontSize: '0.68rem' }}>
+                      {irmao.aprendiz > 0 && <span style={{padding:"0.05rem 0.38rem",borderRadius:"var(--radius-sm)",background:"rgba(59,130,246,0.15)",color:"#3b82f6"}}>Apr {irmao.aprendiz}</span>}
+                      {irmao.companheiro > 0 && <span style={{padding:"0.05rem 0.38rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>Comp {irmao.companheiro}</span>}
+                      {irmao.mestre > 0 && <span style={{padding:"0.05rem 0.38rem",borderRadius:"var(--radius-sm)",background:"rgba(139,92,246,0.15)",color:"#8b5cf6"}}>Mest {irmao.mestre}</span>}
+                      {irmao.administrativa > 0 && <span style={{padding:"0.05rem 0.38rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>Adm {irmao.administrativa}</span>}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                      {irmao.aprendiz > 0 && (
-                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(59,130,246,0.15)",color:"#3b82f6"}}>
-                          Apr: {irmao.aprendiz}
-                        </span>
-                      )}
-                      {irmao.companheiro > 0 && (
-                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>
-                          Comp: {irmao.companheiro}
-                        </span>
-                      )}
-                      {irmao.mestre > 0 && (
-                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(139,92,246,0.15)",color:"#8b5cf6"}}>
-                          Mest: {irmao.mestre}
-                        </span>
-                      )}
-                      {irmao.administrativa > 0 && (
-                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>
-                          Adm: {irmao.administrativa}
-                        </span>
-                      )}
-                    </div>
+                    <span style={{ background: 'var(--color-success)', color: 'white', padding: '0.05rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: 600, minWidth: '1.9rem', textAlign: 'center' }}>
+                      {irmao.total_sessoes}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -1468,8 +1451,8 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
 
         {/* Quadro: Irmãos com Prerrogativa (70+) */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #f59e0b', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #f59e0b', borderBottom: '1px solid var(--color-border)', padding: '0.5rem 0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>👴</span>
               Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
@@ -1479,7 +1462,7 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',
-                padding: '0.25rem 0.75rem',
+                padding: '0.1rem 0.45rem', fontSize: '0.78rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
                 border: '1px solid var(--color-border-light)',
@@ -1493,16 +1476,16 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
           </div>
           <div className="p-4">
             {resumoPrerrogativa.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão com prerrogativa no período</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '0.8rem 0', fontSize: '0.82rem' }}>Nenhum irmão com prerrogativa no período</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead style={{ background: 'var(--color-surface-2)' }}>
                     <tr>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
                     </tr>
                   </thead>
                   <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
@@ -1515,16 +1498,16 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', fontSize: '0.8rem', color: 'var(--color-text)' }}>
                           {formatarNome(irmao.nome)}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                           {irmao.grau}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: '500', color: 'var(--color-text)' }}>
                           {irmao.presencas}/{irmao.total}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', textAlign: 'center' }}>
                           <span style={{background:irmao.percentual>=75?'rgba(16,185,129,0.15)':irmao.percentual>=50?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',color:irmao.percentual>=75?'#10b981':irmao.percentual>=50?'#f59e0b':'#ef4444',border:'1px solid currentColor',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                             {irmao.percentual}%
                           </span>
@@ -1540,8 +1523,8 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
 
         {/* Quadro: Irmãos Licenciados */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #6366f1', borderBottom: '1px solid var(--color-border)', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #6366f1', borderBottom: '1px solid var(--color-border)', padding: '0.5rem 0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>📋</span>
               Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
@@ -1551,7 +1534,7 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
               style={{
                 background: 'var(--color-bg)',
                 color: 'var(--color-text)',
-                padding: '0.25rem 0.75rem',
+                padding: '0.1rem 0.45rem', fontSize: '0.78rem',
                 borderRadius: 'var(--radius-md)',
                 fontWeight: '600',
                 border: '1px solid var(--color-border-light)',
@@ -1565,16 +1548,16 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
           </div>
           <div className="p-4">
             {resumoLicenciados.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão licenciado no período</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '0.8rem 0', fontSize: '0.82rem' }}>Nenhum irmão licenciado no período</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead style={{ background: 'var(--color-surface-2)' }}>
                     <tr>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
+                      <th style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
                     </tr>
                   </thead>
                   <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
@@ -1587,13 +1570,13 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', fontSize: '0.8rem', color: 'var(--color-text)' }}>
                           {formatarNome(irmao.nome)}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                           {irmao.grau}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
+                        <td style={{ padding: '0.35rem 0.7rem', textAlign: 'center', fontSize: '0.8rem', fontWeight: '500', color: 'var(--color-text)' }}>
                           {irmao.presencas}/{irmao.total}
                         </td>
                         <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
@@ -1612,10 +1595,10 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
 
         {/* Quadro: Ausências acima do percentual configurado */}
         <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #ef4444', borderBottom: '1px solid var(--color-border)', padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', borderTop: '3px solid #ef4444', borderBottom: '1px solid var(--color-border)', padding: '0.5rem 0.85rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span>⚠️</span>
                   Ausências
                 </h3>
@@ -1639,7 +1622,7 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
                   style={{
                     background: 'var(--color-bg)',
                     color: 'var(--color-text)',
-                    padding: '0.25rem 0.75rem',
+                    padding: '0.1rem 0.45rem', fontSize: '0.78rem',
                     borderRadius: 'var(--radius-md)',
                     fontWeight: '600',
                     border: '1px solid var(--color-border-light)',
@@ -1702,11 +1685,11 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
               </select>
             </div>
           </div>
-          <div className="p-4 max-h-96 overflow-y-auto">
+          <div className="p-2 max-h-72 overflow-y-auto">
             {ausenciasFiltradas.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão com ≥{percentualAlerta}% ausências no período</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '0.8rem 0', fontSize: '0.82rem' }}>Nenhum irmão com ≥{percentualAlerta}% ausências no período</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {ausenciasFiltradas
                   .sort((a, b) => {
                     const percA = (a.ausentes / a.total_registros) * 100;
@@ -1722,7 +1705,7 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
                           display: 'flex', 
                           justifyContent: 'space-between', 
                           alignItems: 'center', 
-                          padding: '0.75rem', 
+                          padding: '0.3rem 0.6rem', 
                           background: 'var(--color-warning-bg)', 
                           borderRadius: 'var(--radius-md)',
                           transition: 'background 0.2s'
@@ -1730,15 +1713,15 @@ export default function DashboardPresenca({ somenteDashboard = false }) {
                         onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-bg)'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-warning-bg)'}
                       >
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontWeight: '500', color: 'var(--color-text)' }}>
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '0.6rem', minWidth: 0 }}>
+                          <span style={{ fontWeight: 500, fontSize: '0.84rem', color: 'var(--color-text)' }}>
                             {formatarNome(irmao.nome)}
-                          </p>
-                          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
                             {irmao.ausentes}/{irmao.total_registros}
-                          </p>
+                          </span>
                         </div>
-                        <span style={{ background: 'var(--color-warning)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: '600' }}>
+                        <span style={{ background: 'var(--color-warning)', color: 'white', padding: '0.05rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '600' }}>
                           {percAusencias}%
                         </span>
                       </div>
