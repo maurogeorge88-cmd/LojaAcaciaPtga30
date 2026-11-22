@@ -814,6 +814,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // (botão de editar), não automaticamente por aqui.
 
       if (editando) {
+        const valorAnteriorEdicao = (() => { const v = lancamentos.find(l => l.id === editando)?.valor; return v == null ? null : Number(v); })();
         const { error } = await supabase
           .from('lancamentos_loja')
           .update(dadosLancamento)
@@ -892,6 +893,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             showError('Lançamento salvo, mas não foi possível vincular ao projeto: ' + erroPonte.message + ' — use "Sincronizar" na tela do projeto.');
           }
         }
+
+        // Valor corrigido num lançamento que JÁ está no projeto: pergunta se deve atualizar lá também.
+        // (Compensações/abatimentos têm fluxo próprio e não passam por aqui.)
+        try {
+          const valorNovo = parseFloat(dados.valor);
+          if (valorAnteriorEdicao != null && Math.abs(valorAnteriorEdicao - valorNovo) > 0.001) {
+            const tabelaVal = dados.tipo === 'receita' ? 'receitas_projeto' : 'custos_projeto';
+            const { data: pontesVal } = await supabase.from(tabelaVal).select('id, valor, projeto_id').eq('lancamento_id', editando);
+            const ponteVal = pontesVal?.[0];
+            if (ponteVal && Math.abs(Number(ponteVal.valor) - valorNovo) > 0.001) {
+              const { data: projVal } = await supabase.from('projetos').select('nome').eq('id', ponteVal.projeto_id).maybeSingle();
+              const moeda = (v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+              const alterar = await confirmar({
+                titulo: 'Alterar o valor no projeto também?',
+                mensagem: `Este lançamento já está registrado no projeto "${projVal?.nome || ''}" com o valor ${moeda(ponteVal.valor)}.\n\nDeseja alterar o valor lá para ${moeda(valorNovo)}?`,
+                confirmarTexto: 'Sim, alterar no projeto',
+                perigo: false,
+              });
+              if (alterar) {
+                const { data: atualizada, error: errVal } = await supabase.from(tabelaVal).update({ valor: valorNovo }).eq('id', ponteVal.id).select('id');
+                if (errVal || !atualizada || atualizada.length === 0) showError('Lançamento salvo, mas não foi possível alterar o valor no projeto: ' + (errVal?.message || 'sem permissão'));
+              }
+            }
+          }
+        } catch (e) { console.error('Erro ao conferir valor no projeto:', e); }
 
         if (!erroPonte) showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
@@ -1230,7 +1256,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser excluídos.`);
       return;
     }
-    if (!(await confirmar({ titulo: 'Excluir lançamento', mensagem: 'Excluir este lançamento permanentemente?', detalhe: lancamento ? `${lancamento.descricao || 'Lançamento'} — R$ ${Number(lancamento.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : undefined }))) return;
+    // Este lançamento já foi registrado em algum projeto? Se sim, avisa que o registro de lá também será excluído.
+    let pontesProjeto = [];
+    try {
+      const [{ data: pr }, { data: pc }] = await Promise.all([
+        supabase.from('receitas_projeto').select('id, projeto_id, valor, descricao').eq('lancamento_id', id),
+        supabase.from('custos_projeto').select('id, projeto_id, valor, descricao').eq('lancamento_id', id),
+      ]);
+      pontesProjeto = [
+        ...(pr || []).map(x => ({ ...x, tabela: 'receitas_projeto' })),
+        ...(pc || []).map(x => ({ ...x, tabela: 'custos_projeto' })),
+      ];
+      if (pontesProjeto.length > 0) {
+        const { data: projs } = await supabase.from('projetos').select('id, nome').in('id', [...new Set(pontesProjeto.map(x => x.projeto_id))]);
+        pontesProjeto.forEach(x => { x.projetoNome = projs?.find(p => p.id === x.projeto_id)?.nome || `#${x.projeto_id}`; });
+      }
+    } catch (e) { /* segue sem o aviso */ }
+    const avisoProjeto = pontesProjeto.length > 0
+      ? `\n\n⚠️ Este lançamento está registrado no projeto "${[...new Set(pontesProjeto.map(x => x.projetoNome))].join('", "')}" (R$ ${pontesProjeto.reduce((t, x) => t + Number(x.valor || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}). O registro do projeto também será excluído.`
+      : '';
+    if (!(await confirmar({ titulo: 'Excluir lançamento', mensagem: 'Excluir este lançamento permanentemente?' + avisoProjeto, detalhe: lancamento ? `${lancamento.descricao || 'Lançamento'} — R$ ${Number(lancamento.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : undefined }))) return;
 
     try {
       // Busca os dados atuais direto do banco (com o nome do irmão já
@@ -1243,15 +1288,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .eq('id', id)
         .maybeSingle();
 
-      // Não mexe mais em receitas_projeto/custos_projeto — uma vez criada a
-      // linha do projeto, ela só é alterada/excluída manualmente na tela de
-      // Projetos, nunca automaticamente a partir de uma ação no Finanças.
       const { error } = await supabase
         .from('lancamentos_loja')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // Usuário foi avisado: remove também o registro correspondente no projeto
+      for (const ponte of pontesProjeto) {
+        const { error: errPonte } = await supabase.from(ponte.tabela).delete().eq('id', ponte.id);
+        if (errPonte) showError('Lançamento excluído, mas não foi possível excluir o registro do projeto: ' + errPonte.message);
+      }
 
       // Registrar log de exclusão — inclui o nome do irmão vinculado, quando houver
       if (userData?.id) {
