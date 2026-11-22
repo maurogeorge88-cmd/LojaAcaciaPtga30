@@ -191,229 +191,116 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
   }
 
   return (
-    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
-      {/* HEADER */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3" style={{color:"var(--color-text)"}}>
-              💰 Créditos e Débitos
-            </h1>
-            <p style={{color:"rgba(255,255,255,0.85)",marginTop:"0.5rem"}}>
-              Controle de operações financeiras com terceiros
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* NAVEGAÇÃO */}
-      <div className="rounded-xl p-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex gap-2 flex-wrap">
+      <div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap",padding:"0.5rem",background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)"}}>
+        {[
+          { id: 'dashboard', rotulo: '📊 Dashboard', cor: 'var(--color-accent)' },
+          { id: 'entidades', rotulo: '🏢 Entidades', cor: 'var(--color-accent)' },
+          { id: 'creditos', rotulo: '💵 Créditos (A Receber)', cor: '#059669' },
+          { id: 'debitos', rotulo: '💳 Débitos (A Pagar)', cor: '#dc2626' },
+          { id: 'relatorio', rotulo: '📋 Relatório', cor: 'var(--color-accent)' },
+        ].map(aba => (
           <button
-            onClick={() => setView('dashboard')}
-            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='dashboard'?'var(--color-accent)':'var(--color-surface-2)',color:view==='dashboard'?'#fff':'var(--color-text)'}}
+            key={aba.id}
+            onClick={() => setView(aba.id)}
+            style={{padding:'0.5rem 1rem',borderRadius:'var(--radius-md)',fontWeight:'600',fontSize:'0.88rem',cursor:'pointer',border:'none',transition:'all 0.2s',background:view===aba.id?aba.cor:'var(--color-surface-2)',color:view===aba.id?'#fff':'var(--color-text)'}}
           >
-            📊 Dashboard
+            {aba.rotulo}
           </button>
-
-          <button
-            onClick={() => setView('entidades')}
-            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='entidades'?'var(--color-accent)':'var(--color-surface-2)',color:view==='entidades'?'#fff':'var(--color-text)'}}
-          >
-            🏢 Entidades
-          </button>
-
-          <button
-            onClick={() => setView('creditos')}
-            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='creditos'?'#059669':'var(--color-surface-2)',color:view==='creditos'?'#fff':'var(--color-text)'}}
-          >
-            💵 Créditos (A Receber)
-          </button>
-
-          <button
-            onClick={() => setView('debitos')}
-            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='debitos'?'#dc2626':'var(--color-surface-2)',color:view==='debitos'?'#fff':'var(--color-text)'}}
-          >
-            💳 Débitos (A Pagar)
-          </button>
-
-          <button
-            onClick={() => setView('relatorio')}
-            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='relatorio'?'var(--color-accent)':'var(--color-surface-2)',color:view==='relatorio'?'#fff':'var(--color-text)'}}
-          >
-            📋 Relatório
-          </button>
-        </div>
+        ))}
       </div>
 
       {/* DASHBOARD */}
-      {view === 'dashboard' && (
-        <div className="space-y-6">
-          {/* NEGÓCIOS CONSOLIDADOS (TOTAIS HISTÓRICOS) */}
-          <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>📊 Negócios Consolidados</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* TOTAL EMPRESTADO A TERCEIROS */}
-              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={{background:"#10b981",color:"#fff",width:"3rem",height:"3rem",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>
-                    📤
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
-                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Operações ativas (a receber)</p>
-                  </div>
-                </div>
-                <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
-                  R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center gap-2 text-sm">
-                  <span>✓ Apenas operações em andamento</span>
-                </div>
-              </div>
+      {view === 'dashboard' && (() => {
+        const brl = (v) => `R$ ${Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const positivo = stats.posicao_liquida >= 0;
+        const corLiquida = positivo ? '#10b981' : '#ef4444';
+        const atrasadas = alertas.filter(a => a.tipo === 'atrasada');
+        const vencendo = alertas.filter(a => a.tipo === 'vencendo');
 
-              {/* TOTAL TOMADO EMPRESTADO */}
-              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div style={{background:"#ef4444",color:"#fff",width:"3rem",height:"3rem",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>
-                    📥
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
-                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Operações ativas (a pagar)</p>
-                  </div>
-                </div>
-                <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
-                  R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center gap-2 text-sm">
-                  <span>✓ Apenas operações em andamento</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CENÁRIO ATUAL (SALDOS PENDENTES) */}
-          <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>💼 Cenário Atual</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* A RECEBER */}
-              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>💵 A Receber</h3>
-                  <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
-                    {stats.num_creditos_ativos} ativas
-                  </span>
-                </div>
-                <p className="text-3xl font-bold">
-                  R$ {stats.total_a_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>Saldo pendente de recebimento</p>
-              </div>
-
-              {/* A PAGAR */}
-              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>💳 A Pagar</h3>
-                  <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">
-                    {stats.num_debitos_ativos} ativas
-                  </span>
-                </div>
-                <p className="text-3xl font-bold">
-                  R$ {stats.total_a_pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>Saldo pendente de pagamento</p>
-              </div>
-
-              {/* POSIÇÃO LÍQUIDA */}
-              <div className={` ${
-                stats.posicao_liquida >= 0 
-                  ? ' ' 
-                  : ' '
-              } rounded-xl p-6 border-2`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-text)"}}>⚖️ Posição Líquida</h3>
-                </div>
-                <p style={{fontSize:"1.875rem",fontWeight:"700",color:stats.posicao_liquida>=0?"#10b981":"#ef4444"}}>R$ {Math.abs(stats.posicao_liquida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>  {stats.posicao_liquida >= 0 ? 'Saldo credor' : 'Saldo devedor'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ALERTAS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* ATRASADAS */}
-            <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>🚨 Parcelas Atrasadas</h3>
-                <span style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
-                  {stats.parcelas_atrasadas}
-                </span>
-              </div>
-              
-              {alertas.filter(a => a.tipo === 'atrasada').length === 0 ? (
-                <p className="text-center py-4">✅ Nenhuma parcela atrasada</p>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {alertas.filter(a => a.tipo === 'atrasada').map(alerta => (
-                    <div key={alerta.id} className="bg-red-50 border rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold">
-                            {alerta.operacao.entidade_nome}
-                          </p>
-                          <p className="text-sm">
-                            Parcela {alerta.numero_parcela} - {alerta.dias_atraso} dias
-                          </p>
-                        </div>
-                        <span className="font-bold">
-                          R$ {alerta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        const Kpi = ({ icone, rotulo, valor, sub, cor, badge, onClick }) => (
+          <div
+            onClick={onClick}
+            style={{background:'var(--color-surface)',border:`1px solid ${cor}66`,borderLeft:`4px solid ${cor}`,borderRadius:'var(--radius-lg)',padding:'0.85rem 1rem',cursor:onClick?'pointer':'default',minWidth:0}}
+          >
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.5rem',marginBottom:'0.35rem'}}>
+              <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--color-text-muted)'}}>{icone} {rotulo}</span>
+              {badge !== undefined && (
+                <span style={{fontSize:'0.7rem',fontWeight:700,padding:'0.1rem 0.5rem',borderRadius:999,background:`${cor}26`,color:cor,border:`1px solid ${cor}55`,whiteSpace:'nowrap'}}>{badge}</span>
               )}
             </div>
+            <div style={{fontSize:'1.4rem',fontWeight:700,color:cor,lineHeight:1.15,wordBreak:'break-word'}}>{valor}</div>
+            <div style={{fontSize:'0.74rem',color:'var(--color-text-muted)',marginTop:'0.25rem'}}>{sub}</div>
+          </div>
+        );
 
-            {/* VENCENDO */}
-            <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>⏰ Vencendo em 7 dias</h3>
-                <span className="bg-yellow-600 text-white text-sm px-3 py-1 rounded-full">
-                  {stats.parcelas_vencendo_7dias}
-                </span>
-              </div>
-              
-              {alertas.filter(a => a.tipo === 'vencendo').length === 0 ? (
-                <p className="text-center py-4">✅ Nenhuma parcela próxima</p>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {alertas.filter(a => a.tipo === 'vencendo').map(alerta => (
-                    <div key={alerta.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-yellow-800">
-                            {alerta.operacao.entidade_nome}
-                          </p>
-                          <p className="text-sm text-yellow-600">
-                            Parcela {alerta.numero_parcela} - Vence em {new Date(alerta.data_vencimento).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                        <span className="text-yellow-700 font-bold">
-                          R$ {alerta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
+        const ListaAlertas = ({ titulo, itens, cor, vazio, textoData }) => (
+          <div style={{background:'var(--color-surface)',border:`1px solid ${cor}55`,borderLeft:`4px solid ${cor}`,borderRadius:'var(--radius-lg)',padding:'0.85rem 1rem',minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.6rem'}}>
+              <span style={{fontSize:'0.95rem',fontWeight:700,color:'var(--color-text)'}}>{titulo}</span>
+              <span style={{fontSize:'0.75rem',fontWeight:700,padding:'0.1rem 0.55rem',borderRadius:999,background:`${cor}26`,color:cor,border:`1px solid ${cor}55`}}>{itens.length}</span>
+            </div>
+            {itens.length === 0 ? (
+              <p style={{textAlign:'center',padding:'0.6rem 0',fontSize:'0.82rem',color:'var(--color-text-muted)'}}>{vazio}</p>
+            ) : (
+              <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',maxHeight:'16rem',overflowY:'auto'}}>
+                {itens.map(alerta => (
+                  <div
+                    key={alerta.id}
+                    onClick={() => setView(alerta.operacao?.tipo_operacao === 'debito' ? 'debitos' : 'creditos')}
+                    title="Abrir operações"
+                    style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.75rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.7rem',cursor:'pointer'}}
+                  >
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:'0.86rem',fontWeight:600,color:'var(--color-text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{alerta.operacao?.entidade_nome}</div>
+                      <div style={{fontSize:'0.74rem',color:'var(--color-text-muted)'}}>Parcela {alerta.numero_parcela} • {textoData(alerta)}</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <span style={{fontSize:'0.86rem',fontWeight:700,color:cor,whiteSpace:'nowrap'}}>{brl(alerta.valor)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
+        return (
+          <div className="space-y-4">
+            {/* INDICADORES */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(215px,1fr))',gap:'0.75rem'}}>
+              <Kpi icone="💵" rotulo="A Receber" valor={brl(stats.total_a_receber)} sub="Saldo pendente de recebimento" cor="#10b981" badge={`${stats.num_creditos_ativos} ativas`} onClick={() => setView('creditos')} />
+              <Kpi icone="💳" rotulo="A Pagar" valor={brl(stats.total_a_pagar)} sub="Saldo pendente de pagamento" cor="#ef4444" badge={`${stats.num_debitos_ativos} ativas`} onClick={() => setView('debitos')} />
+              <Kpi icone="⚖️" rotulo="Posição Líquida" valor={brl(Math.abs(stats.posicao_liquida))} sub={positivo ? 'Saldo credor' : 'Saldo devedor'} cor={corLiquida} />
+              <Kpi icone="🚨" rotulo="Parcelas Atrasadas" valor={String(stats.parcelas_atrasadas)} sub={stats.parcelas_atrasadas > 0 ? 'Requer atenção' : 'Tudo em dia'} cor={stats.parcelas_atrasadas > 0 ? '#ef4444' : '#10b981'} />
+            </div>
+
+            {/* TOTAIS DAS OPERAÇÕES EM ANDAMENTO */}
+            <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.7rem 1rem',display:'flex',flexWrap:'wrap',gap:'0.5rem 2rem',alignItems:'center'}}>
+              <span style={{fontSize:'0.82rem',fontWeight:700,color:'var(--color-text)'}}>📊 Negócios em andamento (valor original)</span>
+              <span style={{fontSize:'0.82rem',color:'var(--color-text-muted)'}}>📤 Emprestado a terceiros: <strong style={{color:'#10b981'}}>{brl(stats.total_geral_emprestado)}</strong></span>
+              <span style={{fontSize:'0.82rem',color:'var(--color-text-muted)'}}>📥 Tomado emprestado: <strong style={{color:'#ef4444'}}>{brl(stats.total_geral_tomado)}</strong></span>
+            </div>
+
+            {/* ALERTAS */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:'0.75rem'}}>
+              <ListaAlertas
+                titulo="🚨 Parcelas Atrasadas"
+                itens={atrasadas}
+                cor="#ef4444"
+                vazio="✅ Nenhuma parcela atrasada"
+                textoData={a => `${a.dias_atraso} dias de atraso`}
+              />
+              <ListaAlertas
+                titulo="⏰ Vencendo em 7 dias"
+                itens={vencendo}
+                cor="#f59e0b"
+                vazio="✅ Nenhuma parcela próxima"
+                textoData={a => `vence em ${new Date(a.data_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}`}
+              />
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ENTIDADES */}
       {view === 'entidades' && (
