@@ -23,7 +23,7 @@ const btn = (cor = '99,102,241') => ({ padding: '0.5rem 1rem', background: `rgba
 const moeda = (v) => (v == null || v === '' ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
 const dataBR = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '—');
 
-const FORM_VAZIO = { origem_id: '', numero_nf: '', data_nf: '', fornecedor: '', valor_total: '', processo: '', observacoes: '' };
+const FORM_VAZIO = { origem_id: '', numero_nf: '', data_nf: '', fornecedor: '', valor_total: '', processo: '', observacoes: '', liberado_ente: false };
 
 export default function RecursosEquipamentos({ recursos, origens, equipamentos, podeEditar, showSuccess, showError, onChange }) {
   const [filtroOrigem, setFiltroOrigem] = useState('todas');
@@ -70,7 +70,7 @@ export default function RecursosEquipamentos({ recursos, origens, equipamentos, 
     setEditando(r);
     setForm(r ? {
       origem_id: r.origem_id, numero_nf: r.numero_nf, data_nf: r.data_nf || '', fornecedor: r.fornecedor || '',
-      valor_total: r.valor_total ?? '', processo: r.processo || '', observacoes: r.observacoes || '',
+      valor_total: r.valor_total ?? '', processo: r.processo || '', observacoes: r.observacoes || '', liberado_ente: !!r.liberado_ente,
     } : FORM_VAZIO);
     setArquivo(null); setRemoverArquivo(false); setModal(true);
   };
@@ -89,6 +89,7 @@ export default function RecursosEquipamentos({ recursos, origens, equipamentos, 
         valor_total: form.valor_total === '' ? null : parseFloat(form.valor_total),
         processo: form.processo.trim() || null,
         observacoes: form.observacoes.trim() || null,
+        liberado_ente: !!form.liberado_ente,
       };
       if (arquivo) {
         const seguro = arquivo.name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -105,6 +106,11 @@ export default function RecursosEquipamentos({ recursos, origens, equipamentos, 
         if (error) throw error;
         if (!data || data.length === 0) throw new Error('Sem permissão para alterar este registro.');
         if (editando.arquivo_path && (arquivo || removerArquivo)) await supabase.storage.from(BUCKET).remove([editando.arquivo_path]);
+        // Mudou a liberação do recurso: replica para os equipamentos dele
+        if (!!editando.liberado_ente !== !!form.liberado_ente) {
+          const { error: eqErr } = await supabase.from('equipamentos').update({ liberado_ente: !!form.liberado_ente }).eq('recurso_id', editando.id);
+          if (eqErr) throw eqErr;
+        }
       } else {
         const { error } = await supabase.from('comodato_recursos').insert([dados]);
         if (error) throw error;
@@ -238,6 +244,7 @@ export default function RecursosEquipamentos({ recursos, origens, equipamentos, 
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: 999, background: `rgba(${GREEN},0.15)`, color: `rgb(${GREEN})`, border: `1px solid rgba(${GREEN},0.4)` }}>{r.origem?.nome || '—'}</span>
+                {r.liberado_ente && <span title="Liberado para acesso do ente público" style={{ marginLeft: '0.4rem', fontSize: '0.68rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: 999, background: 'rgba(59,130,246,0.14)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.4)' }}>🏛️ ente liberado</span>}
                 <h3 style={{ margin: '0.5rem 0 0', fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text)' }}>NF nº {r.numero_nf}</h3>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -309,6 +316,10 @@ export default function RecursosEquipamentos({ recursos, origens, equipamentos, 
                 <div><label style={lbl}>Valor total da nota (R$)</label><input type="number" step="0.01" min="0" value={form.valor_total} onChange={e => setForm({ ...form, valor_total: e.target.value })} style={inp()} /></div>
               </div>
               <div><label style={lbl}>Nº do processo / ofício</label><input value={form.processo} onChange={e => setForm({ ...form, processo: e.target.value })} style={inp()} /></div>
+              <label style={{ display: 'flex', gap: '0.55rem', alignItems: 'flex-start', cursor: 'pointer', padding: '0.6rem 0.8rem', border: `1px solid rgba(${GREEN},0.45)`, borderRadius: 'var(--radius-lg)', background: `rgba(${GREEN},0.07)` }}>
+                <input type="checkbox" checked={!!form.liberado_ente} onChange={e => setForm({ ...form, liberado_ente: e.target.checked })} style={{ marginTop: '0.2rem' }} />
+                <span style={{ fontSize: '0.84rem', color: 'var(--color-text)' }}><strong>🏛️ Liberar para acesso do ente público</strong><br /><span style={{ color: 'var(--color-text-muted)', fontSize: '0.76rem' }}>Desmarcado = o ente não enxerga esta nota nem seus equipamentos. Ao alterar, a escolha é aplicada aos equipamentos já vinculados (cada equipamento pode ser ajustado depois).</span></span>
+              </label>
               <div><label style={lbl}>Observações</label><textarea rows={2} value={form.observacoes} onChange={e => setForm({ ...form, observacoes: e.target.value })} style={inp({ resize: 'vertical' })} /></div>
               <div>
                 <label style={lbl}>Arquivo da nota fiscal (PDF ou imagem) — opcional</label>
