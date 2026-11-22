@@ -540,7 +540,59 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // ── Extrato do Tronco de Solidariedade (todas as movimentações) ──
   const [modalExtratoTronco, setModalExtratoTronco] = useState(false);
   const [extratoTronco, setExtratoTronco] = useState({ linhas: [], carregando: false });
-  const [anoExtratoTronco, setAnoExtratoTronco] = useState(0); // 0 = todos os anos
+  const [anoExtratoTronco, setAnoExtratoTronco] = useState(new Date().getFullYear()); // 0 = todos os anos
+  const [buscaExtratoTronco, setBuscaExtratoTronco] = useState('');
+  const [dataDeExtratoTronco, setDataDeExtratoTronco] = useState('');
+  const [dataAteExtratoTronco, setDataAteExtratoTronco] = useState('');
+
+  // Filtro do extrato: período (datas têm prioridade sobre o ano) + pesquisa na descrição
+  const filtrarExtratoTronco = () => {
+    const norm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const q = norm(buscaExtratoTronco.trim());
+    const todas = extratoTronco.linhas;
+    const vis = todas.filter(l => {
+      const d = String(l.data_pagamento || '').substring(0, 10);
+      if (dataDeExtratoTronco || dataAteExtratoTronco) {
+        if (dataDeExtratoTronco && d < dataDeExtratoTronco) return false;
+        if (dataAteExtratoTronco && d > dataAteExtratoTronco) return false;
+      } else if (anoExtratoTronco && !d.startsWith(String(anoExtratoTronco))) return false;
+      if (q && !norm(l.descricao).includes(q)) return false;
+      return true;
+    });
+    const fmt = (d) => d.split('-').reverse().join('/');
+    const periodo = (dataDeExtratoTronco || dataAteExtratoTronco)
+      ? `${dataDeExtratoTronco ? fmt(dataDeExtratoTronco) : 'início'} a ${dataAteExtratoTronco ? fmt(dataAteExtratoTronco) : 'hoje'}`
+      : (anoExtratoTronco ? `Ano ${anoExtratoTronco}` : 'Todos os períodos');
+    const primeiro = vis[0] ? todas.findIndex(l => l.id === vis[0].id) : -1;
+    const saldoAnterior = (!q && primeiro > 0) ? todas[primeiro - 1].saldo : (!q && primeiro === 0 ? 0 : null);
+    return { vis, periodo, saldoAnterior };
+  };
+
+  const gerarPdfExtratoTronco = async () => {
+    try {
+      const { gerarExtratoTroncoPDF } = await import('../../utils/gerarExtratoTroncoPDF');
+      const { vis, periodo, saldoAnterior } = filtrarExtratoTronco();
+      let dadosLoja = {}; let logo = null;
+      try {
+        const { data } = await supabase.from('dados_loja').select('*').single();
+        dadosLoja = data || {};
+        if (dadosLoja.logo_url) {
+          const resp = await fetch(dadosLoja.logo_url);
+          const blob = await resp.blob();
+          logo = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+        }
+      } catch (e) { /* segue sem logo */ }
+      const ultimo = extratoTronco.linhas[extratoTronco.linhas.length - 1];
+      gerarExtratoTroncoPDF({
+        linhas: vis, periodo, filtroTexto: buscaExtratoTronco.trim(), saldoAnterior,
+        saldos: { banco: ultimo?.saldoBanco || 0, especie: ultimo?.saldoEspecie || 0, total: ultimo?.saldo || 0 },
+        dadosLoja, logo,
+      });
+    } catch (err) {
+      console.error('Erro ao gerar extrato do Tronco:', err);
+      showError('Erro ao gerar o PDF do extrato.');
+    }
+  };
 
   const carregarExtratoTronco = async () => {
     setExtratoTronco(e => ({ ...e, carregando: true }));
@@ -2616,7 +2668,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
 
           <button
-            onClick={() => { setModalExtratoTronco(true); carregarExtratoTronco(); }}
+            onClick={() => { setAnoExtratoTronco(new Date().getFullYear()); setBuscaExtratoTronco(''); setDataDeExtratoTronco(''); setDataAteExtratoTronco(''); setModalExtratoTronco(true); carregarExtratoTronco(); }}
             style={{width:'100%',marginBottom:'0.6rem',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(245,158,11,0.4)',background:'rgba(245,158,11,0.12)',color:'#f59e0b',fontSize:'0.78rem',fontWeight:700,cursor:'pointer'}}
           >
             📒 Extrato do Tronco
@@ -4434,8 +4486,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const fmtD = (d) => (d ? String(d).substring(0, 10).split('-').reverse().join('/') : '—');
         const todas = extratoTronco.linhas;
-        const anos = [...new Set(todas.map(l => String(l.data_pagamento || '').substring(0, 4)).filter(Boolean))].sort().reverse();
-        const vis = anoExtratoTronco ? todas.filter(l => String(l.data_pagamento || '').startsWith(String(anoExtratoTronco))) : todas;
+        const anos = [...new Set([String(new Date().getFullYear()), ...todas.map(l => String(l.data_pagamento || '').substring(0, 4)).filter(Boolean)])].sort().reverse();
+        const { vis } = filtrarExtratoTronco();
         const entradas = vis.filter(l => l.rec && !l.eh_transferencia_interna).reduce((t, l) => t + l.v, 0);
         const saidas = vis.filter(l => !l.rec && !l.eh_transferencia_interna).reduce((t, l) => t + l.v, 0);
         const ultimo = todas[todas.length - 1];
@@ -4444,14 +4496,42 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'62rem',maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'0.75rem',flexWrap:'wrap',padding:'0.7rem 1rem',borderBottom:'1px solid var(--color-border)',borderTop:'3px solid #f59e0b',background:'var(--color-surface-2)'}}>
                 <h3 style={{fontSize:'1rem',fontWeight:700,color:'var(--color-text)'}}>📒 Extrato — Tronco de Solidariedade</h3>
-                <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-                  <select value={anoExtratoTronco} onChange={(e) => setAnoExtratoTronco(Number(e.target.value))}
-                    style={{background:'var(--color-bg)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)',padding:'0.15rem 0.5rem',fontSize:'0.82rem',fontWeight:600}}>
-                    <option value={0}>Todos os anos</option>
-                    {anos.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                  <button onClick={() => setModalExtratoTronco(false)} style={{fontSize:'1.4rem',lineHeight:1,color:'var(--color-text-muted)',cursor:'pointer',background:'none',border:'none'}}>×</button>
-                </div>
+                <button onClick={() => setModalExtratoTronco(false)} style={{fontSize:'1.4rem',lineHeight:1,color:'var(--color-text-muted)',cursor:'pointer',background:'none',border:'none'}}>×</button>
+              </div>
+
+              <div style={{display:'flex',alignItems:'flex-end',gap:'0.6rem',flexWrap:'wrap',padding:'0.6rem 1rem 0'}}>
+                {(() => {
+                  const campo = { background:'var(--color-bg)',color:'var(--color-text)',border:'1px solid var(--color-border-light)',borderRadius:'var(--radius-md)',padding:'0.25rem 0.5rem',fontSize:'0.82rem' };
+                  const rot = { display:'block',fontSize:'0.66rem',color:'var(--color-text-muted)',fontWeight:700,textTransform:'uppercase',marginBottom:'0.15rem' };
+                  const temData = !!(dataDeExtratoTronco || dataAteExtratoTronco);
+                  return (<>
+                    <div style={{flex:'1 1 200px'}}>
+                      <label style={rot}>🔎 Pesquisar descrição</label>
+                      <input type="text" value={buscaExtratoTronco} onChange={(e) => setBuscaExtratoTronco(e.target.value)} placeholder="Ex.: cesta, cadeira de rodas..." style={{...campo,width:'100%'}} />
+                    </div>
+                    <div>
+                      <label style={rot}>Ano</label>
+                      <select value={anoExtratoTronco} onChange={(e) => setAnoExtratoTronco(Number(e.target.value))} disabled={temData} style={{...campo,opacity:temData?0.5:1}}>
+                        <option value={0}>Todos</option>
+                        {anos.map(a => <option key={a} value={a}>{a}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={rot}>Data de</label>
+                      <input type="date" value={dataDeExtratoTronco} onChange={(e) => setDataDeExtratoTronco(e.target.value)} style={campo} />
+                    </div>
+                    <div>
+                      <label style={rot}>Data até</label>
+                      <input type="date" value={dataAteExtratoTronco} onChange={(e) => setDataAteExtratoTronco(e.target.value)} style={campo} />
+                    </div>
+                    {(temData || buscaExtratoTronco) && (
+                      <button onClick={() => { setDataDeExtratoTronco(''); setDataAteExtratoTronco(''); setBuscaExtratoTronco(''); setAnoExtratoTronco(new Date().getFullYear()); }}
+                        style={{...campo,cursor:'pointer',fontWeight:600}}>Limpar</button>
+                    )}
+                    <button onClick={gerarPdfExtratoTronco} disabled={extratoTronco.carregando}
+                      style={{padding:'0.3rem 0.8rem',borderRadius:'var(--radius-md)',border:'1px solid rgba(59,130,246,0.4)',background:'rgba(59,130,246,0.14)',color:'#3b82f6',fontSize:'0.82rem',fontWeight:700,cursor:'pointer'}}>📄 Gerar PDF</button>
+                  </>);
+                })()}
               </div>
 
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'0.5rem',padding:'0.6rem 1rem'}}>
@@ -4505,7 +4585,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 )}
               </div>
               <div style={{padding:'0.4rem 1rem',borderTop:'1px solid var(--color-border)',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
-                Só lançamentos pagos. "↔ interna" = sangria/depósito entre espécie e banco (não altera o total). O saldo corrido considera todo o histórico; passe o mouse na linha para ver as observações.
+                Só lançamentos pagos. Datas (de/até) substituem o ano. O PDF sai com o filtro aplicado; sem datas, usa o ano selecionado (padrão: ano atual). "↔ interna" = sangria/depósito entre espécie e banco.
               </div>
             </div>
           </div>
