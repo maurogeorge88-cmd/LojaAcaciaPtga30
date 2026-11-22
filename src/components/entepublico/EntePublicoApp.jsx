@@ -298,19 +298,6 @@ export default function EntePublicoApp({ userData, onSair }) {
                   )}
                 </Caixa>
 
-                <Caixa titulo={`📤 Empréstimos ativos${estendido ? ' (todos)' : ''}`}>
-                  {empAtivos.length === 0 ? <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem' }}>Nenhum empréstimo ativo.</p> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                      {empAtivos.slice(0, 10).map(e => (
-                        <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.4rem 0.7rem', fontSize: '0.83rem' }}>
-                          <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>{e.beneficiarios.nome}</span>
-                          <span style={{ color: 'var(--color-text-muted)' }}>{(e.itens || []).map(i => i.equipamentos?.tipos_equipamentos?.nome).filter(Boolean).join(', ') || '—'}</span>
-                          <span style={{ color: atrasado(e) ? '#ef4444' : 'var(--color-text-muted)', fontWeight: atrasado(e) ? 700 : 400 }}>desde {dataBR(e.data_emprestimo)}{e.data_devolucao_prevista ? ` • prev. ${dataBR(e.data_devolucao_prevista)}` : ''}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Caixa>
               </>
             )}
 
