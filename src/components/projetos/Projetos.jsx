@@ -27,6 +27,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [enviandoArquivo, setEnviandoArquivo] = useState(false);
   const [lancamentosVinculados, setLancamentosVinculados] = useState([]); // lançamentos do Financeiro ligados ao projeto aberto
   const [sincronizando, setSincronizando] = useState(false);
+  const [ignorados, setIgnorados] = useState([]);            // lançamentos cuja sincronização foi descartada neste projeto
+  const [verIgnorados, setVerIgnorados] = useState(false);
   const [receitasDoModal, setReceitasDoModal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -208,18 +210,43 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const carregarLancamentosVinculados = async (projetoId) => {
     const { data, error } = await supabase
       .from('lancamentos_loja')
-      .select('id, tipo, descricao, valor, data_lancamento, tipo_pagamento, origem_irmao_id')
+      .select('id, tipo, descricao, valor, data_lancamento, tipo_pagamento, origem_irmao_id, eh_pagamento_parcial, lancamento_principal_id')
       .eq('projeto_id', projetoId);
     if (!error) setLancamentosVinculados(data || []);
+
+    // Sincronizações descartadas (tabela opcional: se ainda não existir, ignora)
+    const { data: ign, error: errIgn } = await supabase
+      .from('projeto_lancamentos_ignorados')
+      .select('id, lancamento_id')
+      .eq('projeto_id', projetoId);
+    setIgnorados(errIgn ? [] : (ign || []));
+  };
+
+  // Descarta a sincronização de lançamentos: o aviso deixa de aparecer para eles neste projeto.
+  const descartarSincronizacao = async (itens) => {
+    if (!projetoSelecionado || !itens?.length) return;
+    const { error } = await supabase.from('projeto_lancamentos_ignorados').insert(
+      itens.map(l => ({ projeto_id: projetoSelecionado.id, lancamento_id: l.id }))
+    );
+    if (error) { showError?.('Erro ao descartar: ' + error.message + ' (o SQL projeto_lancamentos_ignorados.sql já foi executado?)'); return; }
+    showSuccess?.(`${itens.length} lançamento(s) descartado(s) da sincronização.`);
+    await carregarLancamentosVinculados(projetoSelecionado.id);
+  };
+
+  const restaurarSincronizacao = async (lancamentoId) => {
+    if (!projetoSelecionado) return;
+    const { error } = await supabase.from('projeto_lancamentos_ignorados').delete().eq('projeto_id', projetoSelecionado.id).eq('lancamento_id', lancamentoId);
+    if (error) { showError?.('Erro ao restaurar: ' + error.message); return; }
+    await carregarLancamentosVinculados(projetoSelecionado.id);
   };
 
   // Traz para o projeto os lançamentos vinculados no Financeiro que ficaram sem a "ponte"
   // (receitas_projeto / custos_projeto). Se já existir uma ponte apontando para OUTRO projeto,
   // só move o vínculo. Qualquer falha aparece na tela (não é mais silenciosa).
-  const sincronizarComFinanceiro = async () => {
+  const sincronizarComFinanceiro = async (itens = null) => {
     if (!projetoSelecionado) return;
     const projetoId = projetoSelecionado.id;
-    const faltando = lancamentosVinculados.filter(l => !idsComPonte.has(l.id));
+    const faltando = itens || lancamentosFora;
     if (faltando.length === 0) return;
     setSincronizando(true);
     try {
@@ -565,7 +592,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const ehCampanhaModal = projetoSelecionado?.tipo === 'campanha';
   // Lançamentos vinculados no Financeiro que não têm "ponte" neste projeto (não aparecem nos quadros)
   const idsComPonte = new Set([...receitasDoModal, ...custosDoModal].map(x => x.lancamento_id).filter(Boolean));
-  const lancamentosFora = lancamentosVinculados.filter(l => !idsComPonte.has(l.id));
+  // Fora dos quadros = vinculado no Financeiro, sem ponte, e que NÃO seja:
+  //  • registro derivado de compensação/pagamento parcial (o valor já está no lançamento principal);
+  //  • sincronização descartada pelo usuário.
+  const idsIgnorados = new Set(ignorados.map(i => i.lancamento_id));
+  const ehDerivado = (l) => l.eh_pagamento_parcial || l.tipo_pagamento === 'compensacao';
+  const lancamentosFora = lancamentosVinculados.filter(l => !idsComPonte.has(l.id) && !ehDerivado(l) && !idsIgnorados.has(l.id));
+  const lancamentosDescartados = lancamentosVinculados.filter(l => idsIgnorados.has(l.id) && !idsComPonte.has(l.id));
   // Campanha: o que sobra é o valor ainda pendente de transferência ao beneficiário
   const saldoZeradoModal = Math.abs(saldoModal) < 0.005;
   const corSaldoModal = ehCampanhaModal
@@ -1128,18 +1161,59 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <strong style={{color:'#f59e0b',fontSize:'0.85rem'}}>
                       ⚠️ {lancamentosFora.length} lançamento{lancamentosFora.length === 1 ? '' : 's'} do Financeiro da Loja {lancamentosFora.length === 1 ? 'está vinculado' : 'estão vinculados'} a este projeto, mas não {lancamentosFora.length === 1 ? 'aparece' : 'aparecem'} nos quadros
                     </strong>
-                    <button onClick={sincronizarComFinanceiro} disabled={sincronizando}
-                      style={{padding:'0.4rem 1rem',background:'#f59e0b',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.82rem',cursor:sincronizando?'wait':'pointer',opacity:sincronizando?0.6:1}}>
-                      {sincronizando ? 'Sincronizando...' : '🔄 Sincronizar agora'}
-                    </button>
+                    {lancamentosFora.length > 1 && (
+                      <div style={{display:'flex',gap:'0.5rem'}}>
+                        <button onClick={() => sincronizarComFinanceiro(lancamentosFora)} disabled={sincronizando}
+                          style={{padding:'0.35rem 0.8rem',background:'#f59e0b',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.78rem',cursor:sincronizando?'wait':'pointer'}}>
+                          {sincronizando ? 'Sincronizando...' : '🔄 Sincronizar todos'}
+                        </button>
+                        <button onClick={() => { if (window.confirm(`Descartar a sincronização de ${lancamentosFora.length} lançamentos? Eles não serão trazidos para o projeto e o aviso deixa de aparecer.`)) descartarSincronizacao(lancamentosFora); }}
+                          style={{padding:'0.35rem 0.8rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.78rem',cursor:'pointer'}}>
+                          🚫 Descartar todos
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <ul style={{margin:'0.5rem 0 0',paddingLeft:'1.1rem',fontSize:'0.78rem',color:'var(--color-text)'}}>
+                  <ul style={{margin:'0.6rem 0 0',padding:0,listStyle:'none',fontSize:'0.78rem',color:'var(--color-text)',display:'flex',flexDirection:'column',gap:'0.4rem'}}>
                     {lancamentosFora.map(l => (
-                      <li key={l.id}>
-                        {new Date(String(l.data_lancamento).substring(0, 10) + 'T00:00:00').toLocaleDateString('pt-BR')} · {l.tipo === 'receita' ? 'Crédito' : 'Débito'} · {l.descricao} · <strong>R$ {parseFloat(l.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                      <li key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'0.75rem',flexWrap:'wrap'}}>
+                        <span>
+                          {new Date(String(l.data_lancamento).substring(0, 10) + 'T00:00:00').toLocaleDateString('pt-BR')} · {l.tipo === 'receita' ? 'Crédito' : 'Débito'} · {l.descricao} · <strong>R$ {parseFloat(l.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                        </span>
+                        <span style={{display:'flex',gap:'0.4rem'}}>
+                          <button onClick={() => sincronizarComFinanceiro([l])} disabled={sincronizando}
+                            style={{padding:'0.25rem 0.7rem',background:'#f59e0b',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.75rem',cursor:sincronizando?'wait':'pointer'}}>
+                            🔄 Sincronizar
+                          </button>
+                          <button onClick={() => descartarSincronizacao([l])}
+                            style={{padding:'0.25rem 0.7rem',background:'transparent',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',fontWeight:700,fontSize:'0.75rem',cursor:'pointer'}}>
+                            🚫 Descartar
+                          </button>
+                        </span>
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* Sincronizações descartadas (restaurável) */}
+              {permissoes?.canEdit && lancamentosDescartados.length > 0 && (
+                <div style={{marginBottom:'1rem',fontSize:'0.78rem'}}>
+                  <button onClick={() => setVerIgnorados(v => !v)}
+                    style={{background:'none',border:'none',color:'var(--color-text-muted)',cursor:'pointer',fontWeight:600,padding:0}}>
+                    {verIgnorados ? '▴' : '▾'} {lancamentosDescartados.length} sincronização(ões) descartada(s)
+                  </button>
+                  {verIgnorados && (
+                    <ul style={{margin:'0.4rem 0 0',padding:0,listStyle:'none',display:'flex',flexDirection:'column',gap:'0.3rem',color:'var(--color-text-muted)'}}>
+                      {lancamentosDescartados.map(l => (
+                        <li key={l.id} style={{display:'flex',justifyContent:'space-between',gap:'0.75rem',flexWrap:'wrap'}}>
+                          <span>{new Date(String(l.data_lancamento).substring(0, 10) + 'T00:00:00').toLocaleDateString('pt-BR')} · {l.descricao} · R$ {parseFloat(l.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <button onClick={() => restaurarSincronizacao(l.id)}
+                            style={{background:'none',border:'none',color:'var(--color-accent)',cursor:'pointer',fontWeight:700,fontSize:'0.75rem'}}>↩️ Restaurar aviso</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
 
