@@ -45,6 +45,7 @@ import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import ArcoRealApp from './components/arcoreal/ArcoRealApp';
+import EntePublicoApp from './components/entepublico/EntePublicoApp';
 import EscolhaArea from './components/arcoreal/EscolhaArea';
 import Caridade from './components/caridade/Caridade';
 import Eventos from './components/filantropia/Eventos';
@@ -337,7 +338,7 @@ function App() {
 
   // ── Fase 2: bloqueio de página sem permissão → volta ao Dashboard ──
   useEffect(() => {
-    if (!perfilCarregado || !userData || userData.nivel_acesso === 'arco_real') return;
+    if (!perfilCarregado || !userData || userData.nivel_acesso === 'arco_real' || userData.nivel_acesso === 'ente_publico') return;
     if (portalAtivo !== 'irmaos') return;
     if (!podeAbrirPagina(mapaPermissoes, currentPage)) setCurrentPage('dashboard');
   }, [currentPage, mapaPermissoes, perfilCarregado, userData, portalAtivo]);
@@ -632,7 +633,7 @@ function App() {
       // Admin/Venerável = tudo; Tesoureiro = financeiro automático; demais = jsonb
       // usuarios.permissoes (ou colunas antigas pode_*, se o jsonb ainda não existir).
       // O Arco Real externo continua com a regra própria acima.
-      if (data.nivel_acesso !== 'arco_real') {
+      if (data.nivel_acesso !== 'arco_real' && data.nivel_acesso !== 'ente_publico') {
         const mapa = permissoesEfetivas(data);
         setMapaPermissoes(mapa);
         setPermissoes(montarPermissoesLegado(mapa, data));
@@ -1610,6 +1611,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       modalAcessoNegado={modalAcessoNegado}
       onFecharModalAcessoNegado={() => setModalAcessoNegado(false)}
     />;
+  }
+
+  // Ente público (financiador): só leitura do Comodato, nada mais do sistema.
+  if (userData?.nivel_acesso === 'ente_publico') {
+    return <EntePublicoApp userData={userData} onSair={handleLogout} />;
   }
 
   // ── Roteamento Loja x Arco Real ─────────────────────────────────────────
