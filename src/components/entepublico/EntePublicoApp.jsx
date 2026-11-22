@@ -229,33 +229,27 @@ export default function EntePublicoApp({ userData, onSair }) {
 
         {/* Administração da gestão atual */}
         {aba === 'dashboard' && gestao.length > 0 && (() => {
-          const ordem = ['venerável', 'veneravel', '1', 'primeiro', '2', 'segundo', 'orador', 'secret', 'tesour', 'chanceler'];
-          const peso = (c) => { const x = String(c || '').toLowerCase(); const i = ordem.findIndex(o => x.includes(o)); return i === -1 ? 99 : i; };
-          const lista = [...gestao].sort((a, b) => peso(a.cargo) - peso(b.cargo) || String(a.cargo).localeCompare(String(b.cargo)));
-          const principais = lista.filter(g => peso(g.cargo) < 99);
-          const demais = lista.filter(g => peso(g.cargo) === 99);
+          const norm = (c) => String(c || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const acha = (fn) => gestao.find(g => fn(norm(g.cargo)));
+          const trio = [
+            ['Venerável Mestre', acha(c => c.includes('veneravel'))],
+            ['1º Vigilante', acha(c => c.includes('vigilante') && (c.includes('primeiro') || c.includes('1')))],
+            ['2º Vigilante', acha(c => c.includes('vigilante') && (c.includes('segundo') || c.includes('2')))],
+          ].filter(([, g]) => g);
+          if (trio.length === 0) return null;
           return (
             <div>
               <div style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                 Administração — Gestão {gestao[0]?.ano_exercicio}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: '0.6rem' }}>
-                {principais.map(g => (
-                  <div key={g.cargo} style={{ textAlign: 'center', background: 'var(--color-surface)', border: '1px solid rgba(201,168,76,0.5)', borderTop: '3px solid #c9a84c', borderRadius: 'var(--radius-lg)', padding: '0.6rem 0.5rem' }}>
-                    <div style={{ fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', color: '#c9a84c' }}>{g.cargo}</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text)', marginTop: '0.15rem' }}>{g.nome}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: '0.75rem' }}>
+                {trio.map(([rot, g]) => (
+                  <div key={rot} style={{ textAlign: 'center', background: 'var(--color-surface)', border: '1px solid rgba(201,168,76,0.5)', borderTop: '3px solid #c9a84c', borderRadius: 'var(--radius-lg)', padding: '0.8rem 0.6rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', color: '#c9a84c', letterSpacing: '0.05em' }}>{rot}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', marginTop: '0.25rem' }}>{g.nome}</div>
                   </div>
                 ))}
               </div>
-              {demais.length > 0 && (
-                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
-                  {demais.map(g => (
-                    <span key={g.cargo} style={{ fontSize: '0.74rem', padding: '0.15rem 0.6rem', borderRadius: 999, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-                      <strong style={{ color: 'var(--color-text)' }}>{g.cargo}:</strong> {g.nome}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           );
         })()}
