@@ -162,7 +162,8 @@ export const gerarPainelCargosPDF = ({ linhas = [], resumo = {}, dadosLoja = {},
     doc.setDrawColor(...DOURADO); doc.setLineWidth(0.3);
     doc.line(M, H - 13, W - M, H - 13);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
-    doc.text(`Loja ${nomeLoja} — emitido em ${hoje}`, W / 2, H - 8, { align: 'center' });
+    doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', M, H - 8);
+    doc.text(`Loja ${nomeLoja} — emitido em ${hoje}`, W / 2 + 18, H - 8, { align: 'center' });
     doc.text(`${p} de ${total}`, W - M, H - 8, { align: 'right' });
   }
 
