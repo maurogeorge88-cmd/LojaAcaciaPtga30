@@ -454,12 +454,27 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
   };
 
-  const excluirEquipamento = async (id) => {
-    if (!window.confirm('⚠️ Esta ação NÃO pode ser desfeita.\n\nDeseja excluir permanentemente este equipamento?')) return;
+  // Exclusão DEFINITIVA do registro (cadastro de teste, lançamento errado ou registro de descarte)
+  const excluirEquipamento = async (eq) => {
+    if (eq.status === 'emprestado') { showError('Equipamento emprestado não pode ser excluído.'); return; }
+    const ehDescarte = eq.status === 'descartado';
+    if (!window.confirm(
+      `⚠️ EXCLUIR DEFINITIVAMENTE ${ehDescarte ? 'o registro de descarte do' : 'o'} equipamento ${eq.numero_patrimonio}?\n\n` +
+      'O registro será eliminado do banco de dados e esta ação NÃO pode ser desfeita.\n\n' +
+      (ehDescarte ? '' : 'Se o equipamento apenas saiu de uso, use "Descartar" em vez de excluir.')
+    )) return;
     try {
-      const { error } = await supabase.from('equipamentos').delete().eq('id', id);
+      // Se já foi emprestado alguma vez, o histórico de empréstimos depende dele
+      const { count } = await supabase.from('comodato_itens').select('id', { count: 'exact', head: true }).eq('equipamento_id', eq.id);
+      if (count > 0) {
+        showError(`Este equipamento possui ${count} empréstimo(s) no histórico e não pode ser excluído. Mantenha-o como Descartado.`);
+        return;
+      }
+      await supabase.from('equipamento_patrimonio_historico').delete().eq('equipamento_id', eq.id);
+      const { data, error } = await supabase.from('equipamentos').delete().eq('id', eq.id).select();
       if (error) throw error;
-      showSuccess('Equipamento excluído!');
+      if (!data || data.length === 0) throw new Error('Sem permissão para excluir este registro.');
+      showSuccess('Registro excluído definitivamente!');
       carregarDados();
     } catch (error) {
       showError('Erro ao excluir: ' + error.message);
@@ -794,17 +809,24 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                               <>
                                 <button onClick={() => descartar(eq.id)}
                                   style={{ padding: '0.22rem 0.45rem', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                                  title="Descartar">
-                                  🗑️
+                                  title="Tornar equipamento descartado (fora de uso, mantém o histórico)">
+                                  📦 Descartar
                                 </button>
-                                <button onClick={() => excluirEquipamento(eq.id)}
+                                <button onClick={() => excluirEquipamento(eq)}
                                   style={{ padding: '0.22rem 0.45rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
-                                  title="Excluir permanentemente">
-                                  ❌
+                                  title="Excluir definitivamente o registro (cadastro errado/teste)">
+                                  ❌ Excluir
                                 </button>
                               </>
                             )}
                           </>
+                        )}
+                        {permissoes?.pode_editar_comodatos && eq.status === 'descartado' && (
+                          <button onClick={() => excluirEquipamento(eq)}
+                            style={{ padding: '0.22rem 0.45rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
+                            title="Excluir definitivamente o registro de descarte">
+                            ❌ Excluir registro
+                          </button>
                         )}
                       </div>
                     </td>
