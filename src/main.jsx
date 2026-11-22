@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import './styles/globals.css'
+import { instalarAbrirPdfEmNovaAba } from './utils/abrirPdfEmNovaAba'
+
+instalarAbrirPdfEmNovaAba()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
