@@ -1392,7 +1392,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                       {nomeItem}
                     </span>
                     {item.equipamentos?.recurso_id && (
-                      <span title="Equipamento de origem pública (recurso de ente público)" style={{ flexShrink: 0, fontSize: '0.85rem', lineHeight: 1 }}>⚖️</span>
+                      <span title="Equipamento de origem pública (recurso de ente público)" style={{ flexShrink: 0, width: '1.45rem', height: '1.45rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', lineHeight: 1, borderRadius: '50%', border: '2px solid #c9a84c', background: 'rgba(201,168,76,0.18)', boxShadow: '0 0 6px rgba(201,168,76,0.45)' }}>⚖️</span>
                     )}
                     {!emprestado && (
                       <span style={{ flexShrink: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
