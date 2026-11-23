@@ -2,13 +2,11 @@ import React from 'react';
 
 // Quadros informativos: gênero e faixa etária (um quadro por gênero) — todos os beneficiários cadastrados
 const FAIXAS = [
-  { rot: '0–20', min: 0, max: 20 },
-  { rot: '21–30', min: 21, max: 30 },
-  { rot: '31–40', min: 31, max: 40 },
-  { rot: '41–50', min: 41, max: 50 },
-  { rot: '51–60', min: 51, max: 60 },
-  { rot: '61–69', min: 61, max: 69 },
-  { rot: '70+', min: 70, max: 200 },
+  { rot: '1–20', min: 0, max: 20 },
+  { rot: '21–40', min: 21, max: 40 },
+  { rot: '41–60', min: 41, max: 60 },
+  { rot: '61–80', min: 61, max: 80 },
+  { rot: '81+', min: 81, max: 200 },
 ];
 const COR_M = '#60a5fa';
 const COR_F = '#f472b6';
