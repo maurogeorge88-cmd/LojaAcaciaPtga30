@@ -66,6 +66,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
             equipamentos (
               id,
               numero_patrimonio,
+              recurso_id,
               tipos_equipamentos (nome)
             )
           )
@@ -1390,6 +1391,9 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                     >
                       {nomeItem}
                     </span>
+                    {item.equipamentos?.recurso_id && (
+                      <span title="Equipamento de origem pública (recurso de ente público)" style={{ flexShrink: 0, fontSize: '0.85rem', lineHeight: 1 }}>⚖️</span>
+                    )}
                     {!emprestado && (
                       <span style={{ flexShrink: 0, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
                         ✅ Devolvido{item.data_devolucao_real ? ` em ${new Date(item.data_devolucao_real).toLocaleDateString('pt-BR')}` : ''}
