@@ -1,15 +1,18 @@
 import React from 'react';
 
-// Quadros informativos: gênero e faixa etária por gênero (todos os beneficiários cadastrados)
+// Quadros informativos: gênero e faixa etária (um quadro por gênero) — todos os beneficiários cadastrados
 const FAIXAS = [
-  { rot: '0 a 20 anos', min: 0, max: 20 },
-  { rot: '21 a 40 anos', min: 21, max: 40 },
-  { rot: '41 a 60 anos', min: 41, max: 60 },
-  { rot: '61 a 80 anos', min: 61, max: 80 },
-  { rot: '81 anos ou mais', min: 81, max: 200 },
+  { rot: '0–20', min: 0, max: 20 },
+  { rot: '21–30', min: 21, max: 30 },
+  { rot: '31–40', min: 31, max: 40 },
+  { rot: '41–50', min: 41, max: 50 },
+  { rot: '51–60', min: 51, max: 60 },
+  { rot: '61–69', min: 61, max: 69 },
+  { rot: '70+', min: 70, max: 200 },
 ];
-const COR_M = '#3b82f6';
-const COR_F = '#ec4899';
+const COR_M = '#60a5fa';
+const COR_F = '#f472b6';
+const ALTURA = 96; // altura útil das colunas (px)
 
 const idadeDe = (d) => {
   if (!d) return null;
@@ -23,80 +26,72 @@ const idadeDe = (d) => {
 };
 
 const caixa = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' };
-const cab = { padding: '0.6rem 1rem', background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' };
+const cab = { padding: '0.45rem 1rem', background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.76rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', display: 'flex', justifyContent: 'space-between', gap: '0.5rem' };
+
+function Colunas({ dados, cor, max }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem', height: ALTURA + 38, padding: '0.6rem 1rem 0.5rem', borderBottom: '1px dashed var(--color-border)' }}>
+      {dados.map(d => (
+        <div key={d.rot} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: 2 }}>{d.v}</span>
+          <div style={{ width: '100%', maxWidth: 44, height: d.v ? Math.max(4, (d.v / max) * ALTURA) : 2, background: cor, borderRadius: '4px 4px 0 0', opacity: d.v ? 1 : 0.3 }} />
+          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>{d.rot}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function PerfilBeneficiarios({ beneficiarios = [] }) {
   const total = beneficiarios.length;
-  const conta = (sx) => beneficiarios.filter(b => b.sexo === sx).length;
-  const m = conta('M'), f = conta('F'), sem = total - m - f;
+  const m = beneficiarios.filter(b => b.sexo === 'M');
+  const f = beneficiarios.filter(b => b.sexo === 'F');
+  const sem = total - m.length - f.length;
   const pct = (v) => (total ? Math.round((v / total) * 100) : 0);
 
-  const linhas = FAIXAS.map(fx => {
-    const nela = beneficiarios.filter(b => { const i = idadeDe(b.data_nascimento); return i !== null && i >= fx.min && i <= fx.max; });
-    return { ...fx, m: nela.filter(b => b.sexo === 'M').length, f: nela.filter(b => b.sexo === 'F').length, s: nela.filter(b => b.sexo !== 'M' && b.sexo !== 'F').length };
-  });
-  const semData = beneficiarios.filter(b => idadeDe(b.data_nascimento) === null);
-  const maxCel = Math.max(1, ...linhas.map(l => Math.max(l.m, l.f)));
+  const serie = (lista) => FAIXAS.map(fx => ({
+    rot: fx.rot,
+    v: lista.filter(b => { const i = idadeDe(b.data_nascimento); return i !== null && i >= fx.min && i <= fx.max; }).length,
+  }));
+  const sm = serie(m), sf = serie(f);
+  const max = Math.max(1, ...sm.map(x => x.v), ...sf.map(x => x.v));
+  const semDataDe = (l) => l.filter(b => idadeDe(b.data_nascimento) === null).length;
 
-  const Bloco = ({ rot, v, cor, icone }) => (
-    <div style={{ flex: 1, minWidth: '9rem', border: `1px solid ${cor}66`, borderTop: `4px solid ${cor}`, borderRadius: 'var(--radius-lg)', padding: '0.8rem 1rem', textAlign: 'center' }}>
-      <div style={{ fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{icone} {rot}</div>
-      <div style={{ fontSize: '2.2rem', fontWeight: 800, color: cor, lineHeight: 1.1 }}>{v}</div>
-      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{pct(v)}% do total</div>
+  const Gen = ({ rot, v, cor }) => (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', padding: '0.35rem 1rem', borderLeft: `4px solid ${cor}` }}>
+      <span style={{ fontSize: '1.6rem', fontWeight: 800, color: cor, lineHeight: 1 }}>{v}</span>
+      <span style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>{rot} <span style={{ color: 'var(--color-text-muted)' }}>({pct(v)}%)</span></span>
     </div>
   );
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))', gap: '1rem' }}>
-      {/* Quadro 1 — Gênero */}
-      <div style={caixa}>
-        <div style={cab}>Beneficiários por gênero</div>
-        <div style={{ padding: '1rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '0.8rem' }}>
-            <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--color-text)' }}>{total}</span>
-            <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}> beneficiários cadastrados</span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <Bloco rot="Masculino" v={m} cor={COR_M} icone="♂" />
-            <Bloco rot="Feminino" v={f} cor={COR_F} icone="♀" />
-          </div>
-          <div style={{ display: 'flex', height: 12, borderRadius: 999, overflow: 'hidden', background: 'var(--color-surface-2)', margin: '1rem 0 0.4rem' }}>
-            <div style={{ width: `${pct(m)}%`, background: COR_M }} />
-            <div style={{ width: `${pct(f)}%`, background: COR_F }} />
-          </div>
-          {sem > 0 && <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>{sem} sem gênero informado</div>}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Gênero — faixa compacta */}
+      <div style={{ ...caixa, padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--color-text)', lineHeight: 1 }}>{total}</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>beneficiários</span>
+        </div>
+        <Gen rot="Masculino" v={m.length} cor={COR_M} />
+        <Gen rot="Feminino" v={f.length} cor={COR_F} />
+        {sem > 0 && <span style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>{sem} sem gênero informado</span>}
+        <div style={{ flex: 1, minWidth: '8rem', display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', background: 'var(--color-surface-2)' }}>
+          <div style={{ width: `${pct(m.length)}%`, background: COR_M }} />
+          <div style={{ width: `${pct(f.length)}%`, background: COR_F }} />
         </div>
       </div>
 
-      {/* Quadro 2 — Faixa etária por gênero */}
-      <div style={caixa}>
-        <div style={cab}>Faixa etária por gênero</div>
-        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
-            <span><span style={{ color: COR_M }}>●</span> Masculino</span>
-            <span><span style={{ color: COR_F }}>●</span> Feminino</span>
-          </div>
-          {linhas.map(l => (
-            <div key={l.rot}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.2rem' }}>
-                <strong style={{ color: 'var(--color-text)' }}>{l.rot}</strong>
-                <span style={{ color: 'var(--color-text-muted)' }}>{l.m + l.f + l.s} no total</span>
-              </div>
-              {[['M', l.m, COR_M], ['F', l.f, COR_F]].map(([k, v, cor]) => (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.15rem' }}>
-                  <div style={{ flex: 1, height: 10, background: 'var(--color-surface-2)', borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ width: `${(v / maxCel) * 100}%`, height: '100%', background: cor }} />
-                  </div>
-                  <span style={{ width: '1.8rem', textAlign: 'right', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text)' }}>{v}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-          {semData.length > 0 && (
-            <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
-              {semData.length} sem data de nascimento (não entram nas faixas)
-            </div>
-          )}
+      {/* Faixa etária — um quadro por gênero */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: '0.75rem' }}>
+        <div style={caixa}>
+          <div style={cab}><span>♂ Faixa etária — Masculino</span><span>{m.length}</span></div>
+          <Colunas dados={sm} cor={COR_M} max={max} />
+          {semDataDe(m) > 0 && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', padding: '0.3rem 1rem' }}>{semDataDe(m)} sem data de nascimento</div>}
+        </div>
+        <div style={caixa}>
+          <div style={cab}><span>♀ Faixa etária — Feminino</span><span>{f.length}</span></div>
+          <Colunas dados={sf} cor={COR_F} max={max} />
+          {semDataDe(f) > 0 && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', padding: '0.3rem 1rem' }}>{semDataDe(f)} sem data de nascimento</div>}
         </div>
       </div>
     </div>
