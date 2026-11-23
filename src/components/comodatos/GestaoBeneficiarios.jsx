@@ -378,29 +378,23 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              {beneficiario.data_nascimento && (
-                <div>
-                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Nascimento:</span>
-                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>
-                    {new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              )}
-              {beneficiario.celular && (
-                <div>
-                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Celular:</span>
-                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>{beneficiario.celular}</p>
-                </div>
-              )}
-              {beneficiario.cidade && (
-                <div>
-                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Cidade:</span>
-                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>
-                    {beneficiario.cidade}/{beneficiario.estado}
-                  </p>
-                </div>
-              )}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3, minmax(0, 1fr))",gap:"0.6rem",fontSize:"0.85rem",marginBottom:"1rem"}}>
+              <div>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Nasc.:</span>
+                <p style={{fontWeight:"600",color:"var(--color-text)",margin:0,minHeight:"1.2em"}}>
+                  {beneficiario.data_nascimento ? new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : ''}
+                </p>
+              </div>
+              <div>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Celular:</span>
+                <p style={{fontWeight:"600",color:"var(--color-text)",margin:0,minHeight:"1.2em"}}>{beneficiario.celular || ''}</p>
+              </div>
+              <div>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Cidade:</span>
+                <p style={{fontWeight:"600",color:"var(--color-text)",margin:0,minHeight:"1.2em"}}>
+                  {beneficiario.cidade ? `${beneficiario.cidade}${beneficiario.estado ? '/' + beneficiario.estado : ''}` : ''}
+                </p>
+              </div>
             </div>
 
             {beneficiario.responsaveis && beneficiario.responsaveis.length > 0 && (
