@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PerfilBeneficiarios from './PerfilBeneficiarios';
 import { supabase } from '../../supabaseClient';
 
 export default function GestaoBeneficiarios({ showSuccess, showError, permissoes }) {
@@ -17,6 +18,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
     nome: '',
     cpf: '',
     rg: '',
+    sexo: '',
     data_nascimento: '',
     telefone: '',
     celular: '',
@@ -121,6 +123,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         nome: beneficiario.nome || '',
         cpf: beneficiario.cpf || '',
         rg: beneficiario.rg || '',
+        sexo: beneficiario.sexo || '',
         data_nascimento: beneficiario.data_nascimento || '',
         telefone: beneficiario.telefone || '',
         celular: beneficiario.celular || '',
@@ -141,6 +144,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         nome: '',
         cpf: '',
         rg: '',
+        sexo: '',
         data_nascimento: '',
         telefone: '',
         celular: '',
@@ -170,7 +174,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       if (editando) {
         const { error } = await supabase
           .from('beneficiarios')
-          .update(form)
+          .update({ ...form, sexo: form.sexo || null })
           .eq('id', editando.id);
 
         if (error) throw error;
@@ -178,7 +182,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       } else {
         const { error } = await supabase
           .from('beneficiarios')
-          .insert([form]);
+          .insert([{ ...form, sexo: form.sexo || null }]);
 
         if (error) throw error;
         showSuccess('Beneficiário cadastrado!');
@@ -350,6 +354,9 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           style={{width:"100%",padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",outline:"none"}}
         />
       </div>
+
+      {/* PERFIL: gênero e faixa etária */}
+      <PerfilBeneficiarios beneficiarios={beneficiarios} />
 
       {/* LISTA */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -557,6 +564,21 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     value={form.rg}
                     onChange={(e) => setForm({ ...form, rg: e.target.value })}
                   />
+                </div>
+
+                <div>
+                  <label className="form-label">
+                    Gênero
+                  </label>
+                  <select
+                    className="form-input"
+                    value={form.sexo}
+                    onChange={(e) => setForm({ ...form, sexo: e.target.value })}
+                  >
+                    <option value="">— Não informado —</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Feminino</option>
+                  </select>
                 </div>
 
                 <div>
