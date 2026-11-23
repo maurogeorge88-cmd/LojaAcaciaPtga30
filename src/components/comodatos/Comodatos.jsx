@@ -5,7 +5,7 @@ import GestaoBeneficiarios from './GestaoBeneficiarios';
 import GestaoEmprestimos from './GestaoEmprestimos';
 
 const MS_DIA = 1000 * 60 * 60 * 24;
-const DIAS_A_VENCER = 15;
+const DIAS_A_VENCER = 30;
 const MAX_LISTA = 8;
 
 // ── Telefones ─────────────────────────────────────────────────────────────────
@@ -222,28 +222,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       {view === 'dashboard' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-          {/* Alerta de vencidos (só aparece se houver) */}
-          {vencidos.length > 0 && (
-            <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
-              padding: '0.8rem 1.1rem', borderRadius: 'var(--radius-lg)',
-              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderLeft: '4px solid #ef4444',
-            }}>
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ef4444' }}>
-                  ⚠️ {vencidos.length} empréstimo{vencidos.length === 1 ? '' : 's'} vencido{vencidos.length === 1 ? '' : 's'}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
-                  O mais antigo está há {vencidos[0].dias} dia{vencidos[0].dias === 1 ? '' : 's'} em atraso
-                </div>
-              </div>
-              <button onClick={irParaVencidos}
-                style={{ padding: '0.45rem 1rem', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
-                Ver vencidos
-              </button>
-            </div>
-          )}
-
           {/* ── Equipamentos ── */}
           <div style={{ ...cardBase, padding: '1rem 1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
@@ -290,32 +268,12 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
                 sub={temFiltroAno && s.ativos_outros_anos > 0 ? `em andamento · +${s.ativos_outros_anos} de anos anteriores` : 'em andamento'} />
               <Kpi titulo="Devolvidos" valor={s.emp_devolvidos} sub="finalizados" cor="#10b981" />
               <Kpi titulo="Beneficiários" valor={s.total_beneficiarios} sub="cadastrados (total geral)" cor="var(--color-accent)" />
+              <Kpi titulo="Vencidos" valor={vencidos.length} cor="#ef4444"
+                sub={vencidos.length > 0 ? `mais antigo: ${vencidos[0].dias} dia${vencidos[0].dias === 1 ? '' : 's'} de atraso` : 'nenhum em atraso'} />
+              <Kpi titulo={`A vencer em ${DIAS_A_VENCER} dias`} valor={aVencer.length} cor="#f59e0b"
+                sub={aVencer.length > 0 ? 'devolução prevista próxima' : 'nenhum a vencer'} />
             </div>
           </div>
-
-          {/* ── Listas de ação: vencidos e a vencer ── */}
-          {(vencidos.length > 0 || aVencer.length > 0) ? (
-            <div id="dash-vencidos" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '0.75rem', scrollMarginTop: '1rem' }}>
-              {vencidos.length > 0 && (
-                <ListaAcao
-                  titulo="Vencidos — precisam de devolução" cor="#ef4444"
-                  linhas={vencidos}
-                  rotuloPrazo={(l) => `${l.dias} dia${l.dias === 1 ? '' : 's'} de atraso`}
-                />
-              )}
-              {aVencer.length > 0 && (
-                <ListaAcao
-                  titulo={`Vencem nos próximos ${DIAS_A_VENCER} dias`} cor="#f59e0b"
-                  linhas={aVencer}
-                  rotuloPrazo={(l) => l.dias === 0 ? 'vence hoje' : `vence em ${l.dias} dia${l.dias === 1 ? '' : 's'}`}
-                />
-              )}
-            </div>
-          ) : (
-            <div style={{ ...cardBase, padding: '0.8rem 1.1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-              ✅ Nenhum empréstimo vencido ou a vencer nos próximos {DIAS_A_VENCER} dias.
-            </div>
-          )}
 
         </div>
       )}
