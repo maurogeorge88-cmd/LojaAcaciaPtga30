@@ -12,6 +12,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [modalAberto, setModalAberto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [filtroAno, setFiltroAno]       = useState('todos');
+  const [buscaBen, setBuscaBen]         = useState('');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
   const [modalRelGeral, setModalRelGeral]     = useState(false);
@@ -1071,6 +1072,10 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
     if (!dt) return false;
     if (filtroAno !== 'todos' && dt.getFullYear() !== filtroAno) return false;
+    // Filtro por nome do beneficiado (sem acento / maiúscula)
+    const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const termo = norm(buscaBen.trim());
+    if (termo && !norm(emp.beneficiarios?.nome).includes(termo)) return false;
     return true;
   }).sort((a, b) => {
     const aVenc = isVencido(a) ? 0 : 1;
@@ -1196,6 +1201,13 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       {/* FILTROS */}
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+        {/* Pesquisa por beneficiado */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: '14rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Pesquisar beneficiado</label>
+          <input value={buscaBen} onChange={e => setBuscaBen(e.target.value)} placeholder="🔎 Nome do comodatário..."
+            style={{ padding: '0.45rem 0.7rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontSize: '0.875rem' }} />
+        </div>
 
         {/* Ano */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
