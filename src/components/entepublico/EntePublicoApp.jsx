@@ -183,6 +183,7 @@ export default function EntePublicoApp({ userData, onSair }) {
   const [buscaEq, setBuscaEq] = useState('');
   const [filtroEmp, setFiltroEmp] = useState('todos');
   const [visaoEmp, setVisaoEmp] = useState('todos');
+  const [buscaEmp, setBuscaEmp] = useState('');
 
   const baixarNota = async (r) => {
     try {
@@ -356,7 +357,10 @@ export default function EntePublicoApp({ userData, onSair }) {
 
             {/* ───────── EMPRÉSTIMOS ───────── */}
             {aba === 'emprestimos' && (() => {
-              const passaStatus = (e) => filtroEmp === 'todos' || (filtroEmp === 'atrasado' ? atrasado(e) : e.status === filtroEmp);
+              const semAcento = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              const termo = semAcento(buscaEmp.trim());
+              const passaStatus = (e) => (filtroEmp === 'todos' || (filtroEmp === 'atrasado' ? atrasado(e) : e.status === filtroEmp))
+                && (!termo || semAcento(e.beneficiarios?.nome).includes(termo));
               const verTudo = estendido && visaoEmp === 'todos';
               const meus = emp.filter(e => e.temMeu && passaStatus(e));
               const demais = verTudo ? emp.filter(e => !e.temMeu && passaStatus(e)) : [];
@@ -394,6 +398,10 @@ export default function EntePublicoApp({ userData, onSair }) {
                         </select>
                       </div>
                     )}
+                    <div style={{ flex: 1, minWidth: '14rem' }}>
+                      <label style={rotulo}>Pesquisar beneficiado</label>
+                      <input value={buscaEmp} onChange={e => setBuscaEmp(e.target.value)} placeholder="🔎 Nome do beneficiado..." style={{ ...campo, width: '100%' }} />
+                    </div>
                     <div>
                       <label style={rotulo}>Situação</label>
                       <select value={filtroEmp} onChange={e => setFiltroEmp(e.target.value)} style={campo}>
