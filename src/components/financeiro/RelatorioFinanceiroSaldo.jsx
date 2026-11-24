@@ -56,7 +56,8 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
     let continuar = true;
 
     while (continuar) {
-      const { data, error } = await queryFactory().range(inicio, inicio + tamanhoPagina - 1);
+      // order('id') como desempate: sem ele, linhas com a mesma data podem repetir/sumir na troca de página
+      const { data, error } = await queryFactory().order('id', { ascending: true }).range(inicio, inicio + tamanhoPagina - 1);
       if (error) throw error;
       if (data && data.length > 0) {
         todos = [...todos, ...data];
