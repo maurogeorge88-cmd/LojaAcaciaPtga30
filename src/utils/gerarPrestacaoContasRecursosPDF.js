@@ -40,7 +40,7 @@ const linhaLoja = (doc, nomeLoja, y, W) => {
 
 // Monta a estrutura do relatório a partir dos dados carregados na tela
 export function montarDadosPrestacao({ entes = [], recursos = [], saldos = {}, nfs = [], equipamentos = [], aplicacoes = [], anexos = [] }) {
-  const nomeEnte = {}; entes.forEach(e => { nomeEnte[e.id] = e.nome; });
+  const nomeEnte = {}; entes.forEach(e => { nomeEnte[e.id] = e.caminho || e.nome; });
   return recursos.map(r => {
     const s = saldos[r.id] || {};
     const nfsR = nfs.filter(n => n.recurso_publico_id === r.id).sort((a, b) => String(a.data_nf || '').localeCompare(String(b.data_nf || '')));
