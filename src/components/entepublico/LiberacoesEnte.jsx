@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { montarArvore } from '../recursospublicos/comum';
 
 // Botão pequeno: mostra quais recursos/entes estão liberados para acesso de ente público.
 export default function LiberacoesEnte() {
@@ -11,9 +12,11 @@ export default function LiberacoesEnte() {
     const [r, e, o] = await Promise.all([
       supabase.from('comodato_recursos').select('id, numero_nf, data_nf, origem_id, liberado_ente').eq('liberado_ente', true),
       supabase.from('equipamentos').select('id, recurso_id, liberado_ente').eq('liberado_ente', true),
-      supabase.from('comodato_origens_recurso').select('id, nome'),
+      supabase.from('comodato_origens_recurso').select('id, nome, parent_id'),
     ]);
-    const orig = {}; (o.data || []).forEach(x => { orig[x.id] = x.nome; });
+    let od = o.data;
+    if (o.error) od = (await supabase.from('comodato_origens_recurso').select('id, nome')).data;
+    const orig = {}; montarArvore(od || []).forEach(x => { orig[x.id] = x.caminho; });
     const porEnte = {};
     (r.data || []).forEach(x => {
       const n = orig[x.origem_id] || 'Sem entidade';
