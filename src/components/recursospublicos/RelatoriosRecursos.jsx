@@ -3,7 +3,7 @@
  */
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { inp, lbl, card, btn, dataBR, urlParaDataUrl } from './comum';
+import { inp, lbl, card, btn, dataBR, urlParaDataUrl, idsDoRamo } from './comum';
 import { montarDadosPrestacao, gerarPrestacaoContasRecursosPDF } from '../../utils/gerarPrestacaoContasRecursosPDF';
 
 export default function RelatoriosRecursos({ dados, showError }) {
@@ -14,7 +14,8 @@ export default function RelatoriosRecursos({ dados, showError }) {
   const [ate, setAte] = useState('');
   const [gerando, setGerando] = useState(false);
 
-  const recursosDoEnte = (recursos || []).filter(r => ente === 'todos' || String(r.origem_id) === String(ente));
+  const ramo = ente === 'todos' ? null : idsDoRamo(entes, ente);
+  const recursosDoEnte = (recursos || []).filter(r => !ramo || ramo.has(String(r.origem_id)));
 
   const gerar = async () => {
     setGerando(true);
@@ -27,7 +28,7 @@ export default function RelatoriosRecursos({ dados, showError }) {
       let logo = null;
       if (loja?.logo_url) { try { logo = await urlParaDataUrl(loja.logo_url); } catch (e) { /* sem logo */ } }
       const filtro = [
-        ente !== 'todos' && `Ente: ${(entes || []).find(o => String(o.id) === String(ente))?.nome}`,
+        ente !== 'todos' && `Ente: ${(entes || []).find(o => String(o.id) === String(ente))?.caminho}`,
         recurso !== 'todos' && `Recurso: ${(recursos || []).find(r => String(r.id) === String(recurso))?.titulo}`,
         de && `Recebidos a partir de ${dataBR(de)}`, ate && `Até ${dataBR(ate)}`,
       ].filter(Boolean).join(' • ');
@@ -49,7 +50,7 @@ export default function RelatoriosRecursos({ dados, showError }) {
           <label style={lbl}>Ente</label>
           <select value={ente} onChange={e => { setEnte(e.target.value); setRecurso('todos'); }} style={inp()}>
             <option value="todos">Todos os entes</option>
-            {(entes || []).map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+            {(entes || []).map(o => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
           </select>
         </div>
         <div>
