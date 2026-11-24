@@ -3,7 +3,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import ModalRecurso from './ModalRecurso';
-import { inp, card, btn, moeda, dataBR, resumoDoRecurso } from './comum';
+import { inp, card, btn, moeda, dataBR, resumoDoRecurso, idsDoRamo } from './comum';
 
 export default function ListaRecursos({ dados, podeEditar, onAbrir, onChange, showSuccess, showError }) {
   const { entes, recursos, saldos, equipamentos, nfs } = dados;
@@ -12,15 +12,16 @@ export default function ListaRecursos({ dados, podeEditar, onAbrir, onChange, sh
   const [busca, setBusca] = useState('');
   const [modal, setModal] = useState(false);
 
-  const nomeEnte = (id) => (entes || []).find(e => e.id === id)?.nome || '—';
+  const nomeEnte = (id) => (entes || []).find(e => e.id === id)?.caminho || '—';
 
   const lista = useMemo(() => {
+    const ramo = filtroEnte === 'todos' ? null : idsDoRamo(entes, filtroEnte);
     const q = busca.trim().toLowerCase();
     return (recursos || [])
-      .filter(r => filtroEnte === 'todos' || String(r.origem_id) === String(filtroEnte))
+      .filter(r => !ramo || ramo.has(String(r.origem_id)))
       .filter(r => filtroSit === 'todos' || r.situacao === filtroSit)
       .filter(r => !q || [r.titulo, r.numero_processo, r.documento_ref, r.finalidade].some(t => String(t || '').toLowerCase().includes(q)));
-  }, [recursos, filtroEnte, filtroSit, busca]);
+  }, [recursos, entes, filtroEnte, filtroSit, busca]);
 
   const tot = lista.reduce((t, r) => { const x = resumoDoRecurso(r, saldos); return { rec: t.rec + x.recebido, ap: t.ap + x.aplicado, sal: t.sal + x.saldo }; }, { rec: 0, ap: 0, sal: 0 });
 
@@ -39,7 +40,7 @@ export default function ListaRecursos({ dados, podeEditar, onAbrir, onChange, sh
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍 Buscar por título, processo, finalidade..." style={inp({ flex: '1 1 14rem', width: 'auto' })} />
           <select value={filtroEnte} onChange={e => setFiltroEnte(e.target.value)} style={inp({ width: 'auto' })}>
             <option value="todos">Todos os entes</option>
-            {(entes || []).map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+            {(entes || []).map(o => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
           </select>
           <select value={filtroSit} onChange={e => setFiltroSit(e.target.value)} style={inp({ width: 'auto' })}>
             <option value="todos">Todas as situações</option>
