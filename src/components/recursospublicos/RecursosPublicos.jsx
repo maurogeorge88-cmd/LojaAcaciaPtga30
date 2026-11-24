@@ -10,7 +10,7 @@ import ListaRecursos from './ListaRecursos';
 import DetalheRecurso from './DetalheRecurso';
 import EntesRecursos from './EntesRecursos';
 import RelatoriosRecursos from './RelatoriosRecursos';
-import { card, buscarTudo } from './comum';
+import { card, buscarTudo, montarArvore } from './comum';
 
 const ABAS = [['painel', '📊 Painel'], ['recursos', '💰 Recursos'], ['entes', '🏛️ Entes'], ['relatorios', '📄 Relatórios']];
 
@@ -33,12 +33,12 @@ export default function RecursosPublicos({ podeEditar, showSuccess, showError })
         buscarTudo(() => supabase.from('recurso_anexos').select('*').order('id')),
       ]);
       const saldos = {}; saldosLista.forEach(s => { saldos[s.recurso_id] = s; });
-      setDados({ entes, recursos, saldos, nfs, equipamentos, aplicacoes, anexos });
+      setDados({ entes: montarArvore(entes), recursos, saldos, nfs, equipamentos, aplicacoes, anexos });
       setErro('');
     } catch (e) {
       console.error(e);
       setErro(/relation|does not exist|schema cache|rp_nivel/i.test(e.message || '')
-        ? 'As tabelas da Central de Recursos Públicos ainda não foram criadas no banco. Execute o arquivo recursos_publicos.sql no Supabase.'
+        ? 'As tabelas da Central de Recursos Públicos ainda não foram criadas no banco. Execute os arquivos recursos_publicos.sql e recursos_publicos_arvore.sql no Supabase.'
         : 'Não foi possível carregar os dados: ' + (e.message || e));
     } finally { setCarregando(false); }
   }, []);
