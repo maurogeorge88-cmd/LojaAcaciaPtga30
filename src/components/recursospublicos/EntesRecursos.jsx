@@ -4,9 +4,9 @@
  */
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { inp, lbl, overlay, box, head, card, btn, btnPequeno } from './comum';
+import { inp, lbl, overlay, box, head, card, btn, btnPequeno, idsDoRamo } from './comum';
 
-const VAZIO = { nome: '', tipo: '', cnpj: '', responsavel: '', telefone: '', email: '', endereco: '', observacoes: '' };
+const VAZIO = { parent_id: '', nome: '', tipo: '', cnpj: '', responsavel: '', telefone: '', email: '', endereco: '', observacoes: '' };
 const TIPOS = ['Justiça', 'Ministério Público', 'Prefeitura', 'Câmara Municipal', 'Governo do Estado', 'Governo Federal', 'Outro'];
 
 export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess, showError, onChange }) {
@@ -15,12 +15,14 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
   const [form, setForm] = useState(VAZIO);
   const [salvando, setSalvando] = useState(false);
 
-  const abrir = (e = null) => {
+  // novo(e) = cadastrar uma unidade dentro de `paiId`
+  const abrir = (e = null, paiId = '') => {
     setEditando(e);
     setForm(e ? {
+      parent_id: e.parent_id == null ? '' : String(e.parent_id),
       nome: e.nome || '', tipo: e.tipo || '', cnpj: e.cnpj || '', responsavel: e.responsavel || '',
       telefone: e.telefone || '', email: e.email || '', endereco: e.endereco || '', observacoes: e.observacoes || '',
-    } : VAZIO);
+    } : { ...VAZIO, parent_id: paiId === '' ? '' : String(paiId) });
     setModal(true);
   };
 
@@ -31,6 +33,7 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
     setSalvando(true);
     try {
       const dados = {
+        parent_id: form.parent_id === '' ? null : Number(form.parent_id),
         nome,
         tipo: form.tipo.trim() || null,
         cnpj: form.cnpj.trim() || null,
@@ -53,7 +56,7 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
       setModal(false);
       onChange();
     } catch (err) {
-      showError(err.code === '23505' ? 'Já existe um ente com esse nome.' : 'Erro ao salvar: ' + err.message);
+      showError(err.code === '23505' ? 'Já existe um ente com esse nome dentro do mesmo ente superior.' : /Hierarquia|pai dele/.test(err.message || '') ? err.message : /parent|column/i.test(err.message || '') ? 'Execute o arquivo recursos_publicos_arvore.sql no Supabase.' : 'Erro ao salvar: ' + err.message);
     } finally { setSalvando(false); }
   };
 
@@ -64,13 +67,16 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
   };
 
   const qtdRecursos = (id) => (recursos || []).filter(r => r.origem_id === id).length;
+  // opções de "pertence a": exclui o próprio ente e seus descendentes
+  const proibidos = editando ? idsDoRamo(entes, editando.id) : new Set();
+  const opcoesPai = (entes || []).filter(o => !proibidos.has(String(o.id)));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div style={{ ...card, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>🏛️ Entes</h2>
-          <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Justiça, Ministério Público, Prefeitura e demais entes que disponibilizam recursos.</p>
+          <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Em árvore: Justiça Estadual › Fórum › 1ª Vara Cível. Cada unidade é cadastrada individualmente e vê somente os seus recursos.</p>
         </div>
         {podeEditar && <button onClick={() => abrir()} style={btn('16,185,129')}>➕ Novo ente</button>}
       </div>
@@ -79,22 +85,24 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
         <div style={{ ...card, textAlign: 'center', color: 'var(--color-text-muted)' }}>Nenhum ente cadastrado ainda.</div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.9rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
         {(entes || []).map(e => (
-          <div key={e.id} style={{ ...card, opacity: e.ativo === false ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div key={e.id} style={{ ...card, marginLeft: `${Math.min(e.nivel, 6) * 1.6}rem`, borderLeft: e.nivel ? '3px solid var(--color-accent)' : undefined, opacity: e.ativo === false ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'baseline' }}>
               <strong style={{ color: 'var(--color-text)', fontSize: '1rem' }}>{e.nome}</strong>
               {e.ativo === false && <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 700 }}>INATIVO</span>}
             </div>
+            {e.nivel > 0 && <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>{e.caminho}</span>}
             {e.tipo && <span style={{ fontSize: '0.78rem', color: 'var(--color-accent)', fontWeight: 600 }}>{e.tipo}</span>}
             {e.cnpj && <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>CNPJ: {e.cnpj}</span>}
             {e.responsavel && <span style={{ fontSize: '0.8rem', color: 'var(--color-text)' }}>👤 {e.responsavel}</span>}
             {(e.telefone || e.email) && <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{[e.telefone, e.email].filter(Boolean).join(' • ')}</span>}
             {e.endereco && <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{e.endereco}</span>}
-            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{qtdRecursos(e.id)} recurso(s) cadastrado(s)</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{qtdRecursos(e.id)} recurso(s){e.qtdFilhos ? ` • ${e.qtdFilhos} unidade(s) abaixo` : ''}</span>
             {podeEditar && (
               <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
                 <button onClick={() => abrir(e)} style={btnPequeno()}>✏️ Editar</button>
+                <button onClick={() => abrir(null, e.id)} style={btnPequeno('16,185,129')}>➕ Unidade abaixo</button>
                 <button onClick={() => alternar(e)} style={btnPequeno(e.ativo === false ? '16,185,129' : '100,116,139')}>{e.ativo === false ? 'Reativar' : 'Inativar'}</button>
               </div>
             )}
@@ -110,7 +118,14 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
               <button onClick={() => setModal(false)} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.4rem', cursor: 'pointer' }}>×</button>
             </div>
             <form onSubmit={salvar} style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div><label style={lbl}>Nome do ente *</label><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} style={inp()} placeholder="Ex.: Prefeitura Municipal de Paranatinga" /></div>
+              <div>
+                <label style={lbl}>Pertence a (ente superior)</label>
+                <select value={form.parent_id} onChange={e => setForm({ ...form, parent_id: e.target.value })} style={inp()}>
+                  <option value="">— Nenhum (ente principal) —</option>
+                  {opcoesPai.map(o => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
+                </select>
+              </div>
+              <div><label style={lbl}>Nome *</label><input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} style={inp()} placeholder="Ex.: Justiça Estadual, Fórum de Paranatinga, 1ª Vara Cível" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
                 <div>
                   <label style={lbl}>Tipo</label>
