@@ -39,13 +39,16 @@ export default function DadosLoja({ showSuccess, showError }) {
 
   useEffect(() => {
     carregarDados();
-    supabase.from('irmaos').select('id, nome, cpf, situacao').order('nome').then(({ data }) => setIrmaosLista(data || []));
+    supabase.from('irmaos').select('id, nome, cpf, email, telefone, situacao').order('nome').then(({ data }) => setIrmaosLista(data || []));
   }, []);
+
+  const fmtCpf = (v) => { const d = String(v || '').replace(/\D/g, ''); return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : (v || ''); };
+  const fmtTel = (v) => { const d = String(v || '').replace(/\D/g, ''); if (d.length === 11) return d.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3'); if (d.length === 10) return d.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3'); return v || ''; };
 
   const escolherContadorIrmao = (valor) => {
     if (!valor) { setDadosLoja(prev => ({ ...prev, contador_irmao_id: null })); return; }
     const ir = irmaosLista.find(i => String(i.id) === String(valor));
-    setDadosLoja(prev => ({ ...prev, contador_irmao_id: ir ? ir.id : null, contador_nome: ir?.nome || prev.contador_nome, contador_cpf: ir?.cpf || prev.contador_cpf }));
+    setDadosLoja(prev => ({ ...prev, contador_irmao_id: ir ? ir.id : null, contador_nome: ir?.nome || prev.contador_nome, contador_cpf: ir?.cpf ? fmtCpf(ir.cpf) : prev.contador_cpf, contador_telefone: ir?.telefone ? fmtTel(ir.telefone) : prev.contador_telefone, contador_email: ir?.email || prev.contador_email }));
   };
 
   const carregarDados = async () => {
@@ -404,7 +407,7 @@ export default function DadosLoja({ showSuccess, showError }) {
               <option value="">Não — contador externo (informar abaixo)</option>
               {irmaosLista.map(i => <option key={i.id} value={i.id}>{i.nome}{i.situacao && i.situacao !== 'ativo' ? ` (${i.situacao})` : ''}</option>)}
             </select>
-            <p className="form-hint">Ao escolher um irmão, nome e CPF são preenchidos do cadastro dele. Aparece nas assinaturas do Demonstrativo Financeiro.</p>
+            <p className="form-hint">Ao escolher um irmão, nome, CPF, telefone e e-mail são preenchidos do cadastro dele. Aparece nas assinaturas do Demonstrativo Financeiro.</p>
           </div>
           <div className="md:col-span-2">
             <label className="form-label">Nome do contador</label>
