@@ -15,6 +15,7 @@ import { derivarDoLegado, limparMapa, colunasLegadoDoMapa, montarPermissoesLegad
 import PermissoesArcoReal from './PermissoesArcoReal';
 import { limparMapaArcoReal } from '../../config/permissoesArcoReal';
 import LiberacoesEnte from '../entepublico/LiberacoesEnte';
+import { montarArvore } from '../recursospublicos/comum';
 
 const nivelDoCargo = (cargo) => cargo === 'arco_real_externo' ? 'arco_real'
   : cargo === 'ente_publico' ? 'ente_publico'
@@ -69,8 +70,11 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   React.useEffect(() => {
     supabase.from('arco_real_membros').select('id, nome').order('nome')
       .then(({ data }) => setMembrosArcoReal(data || []));
-    supabase.from('comodato_origens_recurso').select('id, nome').order('nome')
-      .then(({ data }) => setOrigensEnte(data || []));
+    supabase.from('comodato_origens_recurso').select('id, nome, parent_id').order('nome')
+      .then(async ({ data, error }) => {
+        if (error) { const alt = await supabase.from('comodato_origens_recurso').select('id, nome').order('nome'); data = alt.data; }
+        setOrigensEnte(montarArvore(data || []));
+      });
   }, []);
 
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -820,7 +824,7 @@ IMPORTANTE: Copie estas informações agora!
                   <label className="form-label">Entidade (origem do recurso) *</label>
                   <select value={usuarioForm.ente_origem_id} onChange={(e) => setUsuarioForm({ ...usuarioForm, ente_origem_id: e.target.value })} className="form-input" style={{ cursor: 'pointer' }}>
                     <option value="">— Selecione —</option>
-                    {origensEnte.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                    {origensEnte.map(o => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
                   </select>
                   <p className="form-hint">Só enxerga recursos/equipamentos dessa entidade marcados como liberados no cadastro de Recursos e Equipamentos.</p>
                 </div>
