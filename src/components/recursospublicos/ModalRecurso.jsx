@@ -85,7 +85,7 @@ export default function ModalRecurso({ entes, recurso = null, nfs, equipamentos,
               <label style={lbl}>Ente *</label>
               <select value={form.origem_id} onChange={e => setForm({ ...form, origem_id: e.target.value })} style={inp()}>
                 <option value="">— Selecione —</option>
-                {entesAtivos.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                {entesAtivos.map(o => <option key={o.id} value={o.id}>{o.rotulo}</option>)}
               </select>
             </div>
             <div><label style={lbl}>Título do recurso *</label><input value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} style={inp()} placeholder="Ex.: Recurso ação nº 123/2026" /></div>
