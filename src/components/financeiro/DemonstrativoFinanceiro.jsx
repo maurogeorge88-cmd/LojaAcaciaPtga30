@@ -86,6 +86,7 @@ export default function DemonstrativoFinanceiro({ showError, showSuccess }) {
             {kpi('Receitas', dados.receitas, '#10b981')}
             {kpi('Despesas', dados.despesas, '#ef4444')}
             {kpi('Resultado', dados.resultado, dados.resultado >= 0 ? '#10b981' : '#ef4444')}
+            {Math.abs(dados.outrasMovimentacoes) > 0.005 && kpi('Transf./Tronco/ajustes', dados.outrasMovimentacoes, 'var(--color-text)')}
             {kpi('Saldo final', dados.saldoFinal, 'var(--color-accent)')}
           </div>
           <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
