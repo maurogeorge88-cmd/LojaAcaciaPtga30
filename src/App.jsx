@@ -54,6 +54,7 @@ import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Sindicancia from './components/sindicancia/Sindicancia';
 import LivroNegro from './components/irmaos/LivroNegro';
 import Comodatos from './components/comodatos/Comodatos';
+import RecursosPublicos from './components/recursospublicos/RecursosPublicos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
 import RegistroPresenca from './components/RegistroPresenca';
@@ -214,6 +215,7 @@ function App() {
     'lista-sessoes': '📊 Sessões Realizadas',
     'registro-presenca': '✅ Registro de Presença',
     'comodatos': '♿ Controle de Comodatos',
+    'recursos-publicos': '🏛️ Recursos Públicos',
     'altos-graus': '🔺 Altos Graus',
     'gerenciar-graus': '⚙️ Gerenciar Graus',
     'perfil-irmao': '👤 Perfil do Irmão',
@@ -1878,6 +1880,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'lista-sessoes' && '📊 Sessões Realizadas'}
                   {currentPage === 'registro-presenca' && '✅ Registro de Presença'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
+                  {currentPage === 'recursos-publicos' && '🏛️ Recursos Públicos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -2369,6 +2372,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'comodatos' && (
           <Comodatos
             permissoes={permissoes}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* RECURSOS PÚBLICOS */}
+        {currentPage === 'recursos-publicos' && (
+          <RecursosPublicos
+            podeEditar={pode(mapaPermissoes, 'recursos_publicos', 'editar')}
+            userData={userData}
             showSuccess={showSuccess}
             showError={showError}
           />
