@@ -63,3 +63,36 @@ export function resumoDoRecurso(r, saldos) {
   const equipamentos = num(s?.comodato_equipamentos);
   return { recebido, comodato, outras, equipamentos, aplicado: arred(comodato + outras), saldo: arred(recebido - comodato - outras) };
 }
+
+// ── Árvore de entes (qualquer profundidade) ──
+// Devolve os entes em ordem de árvore, com `nivel`, `caminho` ("A › B › C") e `rotulo` (recuado, para selects).
+export function montarArvore(lista) {
+  const itens = lista || [];
+  const porPai = {};
+  itens.forEach(e => { const k = e.parent_id == null ? '' : String(e.parent_id); (porPai[k] = porPai[k] || []).push(e); });
+  Object.values(porPai).forEach(l => l.sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR')));
+  const ids = new Set(itens.map(e => String(e.id)));
+  const out = []; const vistos = new Set();
+  const visitar = (e, nivel, caminhoPai) => {
+    if (vistos.has(String(e.id))) return; vistos.add(String(e.id));
+    const caminho = caminhoPai ? `${caminhoPai} › ${e.nome}` : e.nome;
+    const filhos = porPai[String(e.id)] || [];
+    out.push({ ...e, nivel, caminho, rotulo: `${'\u00A0\u00A0\u00A0'.repeat(nivel)}${nivel ? '└ ' : ''}${e.nome}`, qtdFilhos: filhos.length });
+    filhos.forEach(f => visitar(f, nivel + 1, caminho));
+  };
+  // raízes: sem pai, ou cujo pai não está visível para o usuário
+  itens.filter(e => e.parent_id == null || !ids.has(String(e.parent_id)))
+    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'))
+    .forEach(e => visitar(e, 0, ''));
+  return out;
+}
+// ids do ente e de todos os descendentes (para filtrar "Fórum" incluindo suas varas)
+export function idsDoRamo(entes, id) {
+  const set = new Set([String(id)]);
+  let mudou = true;
+  while (mudou) {
+    mudou = false;
+    (entes || []).forEach(e => { if (e.parent_id != null && set.has(String(e.parent_id)) && !set.has(String(e.id))) { set.add(String(e.id)); mudou = true; } });
+  }
+  return set;
+}
