@@ -96,7 +96,7 @@ export default function EntePublicoApp({ userData, onSair }) {
             .select('id, status, data_emprestimo, data_devolucao_prevista, data_devolucao_real, beneficiario_id, itens:comodato_itens(id, status, equipamento_id, equipamentos(id, numero_patrimonio, recurso_id, liberado_ente, tipos_equipamentos(nome)))')
             .order('data_emprestimo', { ascending: false }),
           supabase.from('v_ente_beneficiarios').select('id, nome, cpf_mascarado'),
-          userData?.ente_origem_id ? supabase.from('comodato_origens_recurso').select('nome').eq('id', userData.ente_origem_id).maybeSingle() : Promise.resolve({ data: null }),
+          userData?.ente_origem_id ? supabase.rpc('ente_caminho', { p_id: userData.ente_origem_id }).then(async (r) => (r.error || !r.data) ? await supabase.from('comodato_origens_recurso').select('nome').eq('id', userData.ente_origem_id).maybeSingle() : { data: { nome: r.data } }) : Promise.resolve({ data: null }),
           supabase.from('dados_loja').select('*').limit(1).maybeSingle(),
           supabase.from('v_ente_gestao').select('*'),
           supabase.rpc('ente_total_equipamentos'),
