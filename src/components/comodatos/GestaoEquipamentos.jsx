@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import jsPDF from 'jspdf';
 import { SeletorRecurso } from '../recursospublicos/SeletorRecurso';
+import { montarArvore } from '../recursospublicos/comum';
 
 // ─────────────────────────────────────────────
 //  Estilos base
@@ -290,7 +291,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
       // Recursos de origem (tolerante: se o SQL ainda não foi executado, apenas ignora)
       const { data: orgData } = await supabase.from('comodato_origens_recurso').select('*').order('nome');
-      setOrigens(orgData || []);
+      const arvore = montarArvore(orgData || []);
+      setOrigens(arvore);
       let { data: recData, error: recErr } = await supabase
         .from('comodato_recursos')
         .select('*, origem:comodato_origens_recurso(id, nome), recurso_publico:recursos_publicos(id, titulo)')
@@ -300,7 +302,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         const alt = await supabase.from('comodato_recursos').select('*, origem:comodato_origens_recurso(id, nome)').order('data_nf', { ascending: false });
         recData = alt.data;
       }
-      setRecursos(recData || []);
+      const caminhos = {}; arvore.forEach(o => { caminhos[o.id] = o.caminho; });
+      setRecursos((recData || []).map(r => (r.origem && caminhos[r.origem.id] ? { ...r, origem: { ...r.origem, nome: caminhos[r.origem.id] } } : r)));
       setLoading(false);
     } catch (error) {
       showError('Erro ao carregar dados');
