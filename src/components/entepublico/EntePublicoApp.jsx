@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { gerarRelatorioRecursosComodatoPDF } from '../../utils/gerarRelatorioRecursosComodatoPDF';
 import { gerarRelatorioEmprestimosPDF } from '../../utils/gerarRelatorioEmprestimosPDF';
+import RecursosDoEnte from './RecursosDoEnte';
 
 // ═══════════════════════════════════════════════════════════════════════
 // ÁREA DO ENTE PÚBLICO — somente leitura, apenas Comodato.
@@ -17,6 +18,7 @@ const ABAS = [
   { id: 'dashboard', rotulo: '📊 Dashboard' },
   { id: 'equipamentos', rotulo: '♿ Equipamentos' },
   { id: 'emprestimos', rotulo: '📤 Empréstimos' },
+  { id: 'recursos', rotulo: '💰 Recursos' },
   { id: 'relatorios', rotulo: '📄 Relatórios' },
 ];
 
@@ -433,6 +435,9 @@ export default function EntePublicoApp({ userData, onSair }) {
                 </>
               );
             })()}
+
+            {/* ───────── RECURSOS (central de recursos públicos) ───────── */}
+            {aba === 'recursos' && <RecursosDoEnte entidade={entidade} dadosLoja={dadosLoja} registrarAcao={registrarAcao} />}
 
             {/* ───────── RELATÓRIOS ───────── */}
             {aba === 'relatorios' && (
