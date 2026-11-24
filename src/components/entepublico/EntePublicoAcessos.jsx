@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { montarArvore } from '../recursospublicos/comum';
 
 // Quadro do Controle de Acesso: acessos de entes públicos ao módulo de Comodato.
 const fmt = (d) => (d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—');
@@ -15,9 +16,11 @@ export default function EntePublicoAcessos() {
       try {
         const [u, o] = await Promise.all([
           supabase.from('usuarios').select('id, nome, email, ativo, ente_origem_id, ente_acesso_estendido').eq('nivel_acesso', 'ente_publico').order('nome'),
-          supabase.from('comodato_origens_recurso').select('id, nome'),
+          supabase.from('comodato_origens_recurso').select('id, nome, parent_id'),
         ]);
-        const orig = {}; (o.data || []).forEach(x => { orig[x.id] = x.nome; });
+        let od = o.data;
+        if (o.error) od = (await supabase.from('comodato_origens_recurso').select('id, nome')).data;
+        const orig = {}; montarArvore(od || []).forEach(x => { orig[x.id] = x.caminho; });
         const lista = (u.data || []).map(x => ({ ...x, entidade: orig[x.ente_origem_id] || '—' }));
         setEntes(lista);
         if (lista.length) {
