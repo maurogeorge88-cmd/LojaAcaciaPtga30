@@ -32,11 +32,21 @@ export default function DadosLoja({ showSuccess, showError }) {
     glemt_gestao: '', glemt_grao_mestre: '', glemt_grao_mestre_adjunto: '',
     glemt_grande_orador: '', glemt_grande_secretario: '', glemt_grande_tesoureiro: '',
     glemt_endereco: '', glemt_email: '', glemt_site: '',
+    // Contador (pode ser irmão ou não)
+    contador_irmao_id: null, contador_nome: '', contador_crc: '', contador_cpf: '', contador_telefone: '', contador_email: '',
   });
+  const [irmaosLista, setIrmaosLista] = useState([]);
 
   useEffect(() => {
     carregarDados();
+    supabase.from('irmaos').select('id, nome, cpf, situacao').order('nome').then(({ data }) => setIrmaosLista(data || []));
   }, []);
+
+  const escolherContadorIrmao = (valor) => {
+    if (!valor) { setDadosLoja(prev => ({ ...prev, contador_irmao_id: null })); return; }
+    const ir = irmaosLista.find(i => String(i.id) === String(valor));
+    setDadosLoja(prev => ({ ...prev, contador_irmao_id: ir ? ir.id : null, contador_nome: ir?.nome || prev.contador_nome, contador_cpf: ir?.cpf || prev.contador_cpf }));
+  };
 
   const carregarDados = async () => {
     try {
@@ -379,6 +389,42 @@ export default function DadosLoja({ showSuccess, showError }) {
             <label className="form-label">Site</label>
             <input type="text" name="glemt_site" value={dadosLoja.glemt_site || ''} onChange={handleChange}
               disabled={!editando} className="form-input" placeholder="www.glemt.org.br" />
+          </div>
+        </div>
+      </div>
+
+      {/* CONTADOR */}
+      <div className="card mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {secaoTitulo('🧾', 'Contador da Loja')}
+          <div className="md:col-span-3">
+            <label className="form-label">Contador é irmão da Loja?</label>
+            <select value={dadosLoja.contador_irmao_id || ''} onChange={e => escolherContadorIrmao(e.target.value)}
+              disabled={!editando} className="form-input" style={{ cursor: editando ? 'pointer' : 'default' }}>
+              <option value="">Não — contador externo (informar abaixo)</option>
+              {irmaosLista.map(i => <option key={i.id} value={i.id}>{i.nome}{i.situacao && i.situacao !== 'ativo' ? ` (${i.situacao})` : ''}</option>)}
+            </select>
+            <p className="form-hint">Ao escolher um irmão, nome e CPF são preenchidos do cadastro dele. Aparece nas assinaturas do Demonstrativo Financeiro.</p>
+          </div>
+          <div className="md:col-span-2">
+            <label className="form-label">Nome do contador</label>
+            <input type="text" name="contador_nome" value={dadosLoja.contador_nome || ''} onChange={handleChange} disabled={!editando} className="form-input" />
+          </div>
+          <div>
+            <label className="form-label">CRC</label>
+            <input type="text" name="contador_crc" value={dadosLoja.contador_crc || ''} onChange={handleChange} disabled={!editando} className="form-input" placeholder="Ex: MT-012345/O" />
+          </div>
+          <div>
+            <label className="form-label">CPF</label>
+            <input type="text" name="contador_cpf" value={dadosLoja.contador_cpf || ''} onChange={handleChange} disabled={!editando} className="form-input" />
+          </div>
+          <div>
+            <label className="form-label">Telefone</label>
+            <input type="text" name="contador_telefone" value={dadosLoja.contador_telefone || ''} onChange={handleChange} disabled={!editando} className="form-input" />
+          </div>
+          <div>
+            <label className="form-label">E-mail</label>
+            <input type="email" name="contador_email" value={dadosLoja.contador_email || ''} onChange={handleChange} disabled={!editando} className="form-input" />
           </div>
         </div>
       </div>
