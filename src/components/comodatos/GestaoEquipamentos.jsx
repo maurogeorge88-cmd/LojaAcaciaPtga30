@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import jsPDF from 'jspdf';
-import RecursosEquipamentos, { SeletorRecurso } from './RecursosEquipamentos';
+import { SeletorRecurso } from '../recursospublicos/SeletorRecurso';
 
 // ─────────────────────────────────────────────
 //  Estilos base
@@ -291,10 +291,15 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       // Recursos de origem (tolerante: se o SQL ainda não foi executado, apenas ignora)
       const { data: orgData } = await supabase.from('comodato_origens_recurso').select('*').order('nome');
       setOrigens(orgData || []);
-      const { data: recData } = await supabase
+      let { data: recData, error: recErr } = await supabase
         .from('comodato_recursos')
-        .select('*, origem:comodato_origens_recurso(id, nome)')
+        .select('*, origem:comodato_origens_recurso(id, nome), recurso_publico:recursos_publicos(id, titulo)')
         .order('data_nf', { ascending: false });
+      if (recErr) {
+        // SQL da Central de Recursos Públicos ainda não executado: carrega só as NFs
+        const alt = await supabase.from('comodato_recursos').select('*, origem:comodato_origens_recurso(id, nome)').order('data_nf', { ascending: false });
+        recData = alt.data;
+      }
       setRecursos(recData || []);
       setLoading(false);
     } catch (error) {
@@ -328,6 +333,9 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const salvarEquipamento = async (e) => {
     e.preventDefault();
     if (!form.tipo_id || !form.numero_patrimonio) { showError('Preencha os campos obrigatórios!'); return; }
+    if (form.recurso_id && (form.valor_aquisicao === '' || form.valor_aquisicao == null || isNaN(parseFloat(form.valor_aquisicao)))) {
+      showError('Informe o valor de aquisição: é obrigatório quando o equipamento vem de recurso de ente público.'); return;
+    }
     try {
       const dados = {
         tipo_id: parseInt(form.tipo_id),
@@ -420,6 +428,9 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     e.preventDefault();
     if (!formLote.tipo_id || !formLote.prefixo_patrimonio || formLote.quantidade < 1) {
       showError('Preencha os campos obrigatórios!'); return;
+    }
+    if (formLote.recurso_id && (formLote.valor_aquisicao === '' || formLote.valor_aquisicao == null || isNaN(parseFloat(formLote.valor_aquisicao)))) {
+      showError('Informe o valor unitário: é obrigatório quando os equipamentos vêm de recurso de ente público.'); return;
     }
     try {
       const lote = [];
@@ -672,20 +683,6 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-      {/* ── Abas ───────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {[['equipamentos', '🛠️ Equipamentos'], ['recursos', '⚖️ Recursos de Origem']].map(([k, l]) => (
-          <button key={k} onClick={() => setAba(k)}
-            style={{ padding: '0.55rem 1.2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent)', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer',
-              background: aba === k ? 'var(--color-accent)' : 'var(--color-surface)', color: aba === k ? '#fff' : 'var(--color-accent)' }}>{l}</button>
-        ))}
-      </div>
-
-      {aba === 'recursos' && (
-        <RecursosEquipamentos recursos={recursos} origens={origens} equipamentos={equipamentos}
-          podeEditar={!!permissoes?.pode_editar_comodatos} showSuccess={showSuccess} showError={showError} onChange={carregarDados} />
-      )}
-
       {aba === 'equipamentos' && (<>
       {/* ── Header ─────────────────────────────────────────────── */}
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem' }}>
@@ -894,14 +891,14 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <input type="date" value={form.data_aquisicao} onChange={e => setForm({ ...form, data_aquisicao: e.target.value })} style={{ ...inp(), colorScheme: 'dark' }} />
                 </div>
                 <div>
-                  <label style={lbl}>Valor de Aquisição (R$)</label>
+                  <label style={lbl}>Valor de Aquisição (R$){form.recurso_id ? ' *' : ''}</label>
                   <input type="number" step="0.01" value={form.valor_aquisicao} onChange={e => setForm({ ...form, valor_aquisicao: e.target.value })} style={inp()} />
                 </div>
               </div>
               <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={form.recurso_id}
                 onChange={(v) => {
                   const r = recursos.find(x => String(x.id) === String(v));
-                  setForm({ ...form, recurso_id: v, data_aquisicao: form.data_aquisicao || (r?.data_nf || '') });
+                  setForm({ ...form, recurso_id: v, liberado_ente: r ? !!r.liberado_ente : false, data_aquisicao: form.data_aquisicao || (r?.data_nf || '') });
                 }} />
               {form.recurso_id && (
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', cursor: 'pointer', padding: '0.5rem 0.75rem', border: '1px solid rgba(16,185,129,0.45)', borderRadius: 'var(--radius-lg)', background: 'rgba(16,185,129,0.07)' }}>
@@ -970,14 +967,14 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <input type="date" value={formLote.data_aquisicao} onChange={e => setFormLote({ ...formLote, data_aquisicao: e.target.value })} style={{ ...inp(), colorScheme: 'dark' }} />
                 </div>
                 <div>
-                  <label style={lbl}>Valor Unitário (R$)</label>
+                  <label style={lbl}>Valor Unitário (R$){formLote.recurso_id ? ' *' : ''}</label>
                   <input type="number" step="0.01" value={formLote.valor_aquisicao} onChange={e => setFormLote({ ...formLote, valor_aquisicao: e.target.value })} style={inp()} />
                 </div>
               </div>
               <SeletorRecurso lbl={lbl} inpStyle={inp()} recursos={recursos} value={formLote.recurso_id}
                 onChange={(v) => {
                   const r = recursos.find(x => String(x.id) === String(v));
-                  setFormLote({ ...formLote, recurso_id: v, data_aquisicao: formLote.data_aquisicao || (r?.data_nf || '') });
+                  setFormLote({ ...formLote, recurso_id: v, liberado_ente: r ? !!r.liberado_ente : false, data_aquisicao: formLote.data_aquisicao || (r?.data_nf || '') });
                 }} />
               {formLote.recurso_id && (
                 <label style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', cursor: 'pointer', padding: '0.5rem 0.75rem', border: '1px solid rgba(16,185,129,0.45)', borderRadius: 'var(--radius-lg)', background: 'rgba(16,185,129,0.07)' }}>
