@@ -25,6 +25,7 @@ export const MODULOS = [
   { id: 'pranchas',            label: 'Pranchas',                  icone: '📄', grupo: 'Expedientes',   niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'financeiro',          label: 'Controle Financeiro',       icone: '💰', grupo: 'Financeiro',    niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Inclui edição do Ágape & Festas' },
   { id: 'comodatos',           label: 'Comodatos',                 icone: '♿', grupo: 'Filantropia',   niveis: ['ver', 'editar'],           base: 'ver' },
+  { id: 'recursos_publicos',    label: 'Recursos Públicos',         icone: '🏛️', grupo: 'Filantropia',   niveis: ['nenhum', 'ver', 'editar'], base: 'nenhum', ajuda: 'Ver = consultar recursos de entes públicos · Editar = cadastrar entes, recursos, aplicações e anexos' },
   { id: 'caridade',            label: 'Caridade',                  icone: '❤️', grupo: 'Filantropia',   niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'eventos_filantropia', label: 'Eventos (Filantropia)',     icone: '🎉', grupo: 'Filantropia',   niveis: ['ver', 'editar'],           base: 'ver' },
   { id: 'projetos',            label: 'Projeto/Campanha',          icone: '📊', grupo: 'Geral',         niveis: ['ver', 'editar'],           base: 'ver' },
@@ -171,6 +172,7 @@ export const PAGINAS = {
   'acesso-cunhadas': ['usuarios', 'editar'],
   'usuarios': ['usuarios', 'editar'],
   'modelos-documentos': ['modelos', 'editar'],
+  'recursos-publicos': ['recursos_publicos', 'ver'],
 };
 
 export const podeAbrirPagina = (mapa, pagina) => {
