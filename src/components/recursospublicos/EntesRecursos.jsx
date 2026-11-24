@@ -85,9 +85,9 @@ export default function EntesRecursos({ entes, recursos, podeEditar, showSuccess
         <div style={{ ...card, textAlign: 'center', color: 'var(--color-text-muted)' }}>Nenhum ente cadastrado ainda.</div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(max(13rem, calc((100% - 2.1rem) / 4)), 1fr))', gap: '0.7rem', alignItems: 'start' }}>
         {(entes || []).map(e => (
-          <div key={e.id} style={{ ...card, marginLeft: `${Math.min(e.nivel, 6) * 1.6}rem`, borderLeft: e.nivel ? '3px solid var(--color-accent)' : undefined, opacity: e.ativo === false ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+          <div key={e.id} style={{ ...card, gridColumn: e.nivel ? undefined : '1 / -1', padding: e.nivel ? '0.8rem 0.9rem' : card.padding, borderLeft: e.nivel ? '3px solid var(--color-accent)' : undefined, minWidth: 0, overflowWrap: 'anywhere', opacity: e.ativo === false ? 0.6 : 1, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'baseline' }}>
               <strong style={{ color: 'var(--color-text)', fontSize: '1rem' }}>{e.nome}</strong>
               {e.ativo === false && <span style={{ fontSize: '0.7rem', color: '#ef4444', fontWeight: 700 }}>INATIVO</span>}
