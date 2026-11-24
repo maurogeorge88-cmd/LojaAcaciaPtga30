@@ -50,7 +50,7 @@ export default function PainelRecursos({ dados, onAbrir }) {
     return out;
   }, [recursos, saldos, nfs, equipamentos]);
 
-  const nomeEnte = (id) => (entes || []).find(e => e.id === id)?.nome || '—';
+  const nomeEnte = (id) => (entes || []).find(e => e.id === id)?.caminho || '—';
   const idsComRecurso = Object.keys(porEnte).map(Number);
 
   return (
