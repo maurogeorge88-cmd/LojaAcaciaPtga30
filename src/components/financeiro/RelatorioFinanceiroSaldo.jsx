@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { formatarMoeda } from './utils/formatadores';
 import { ehAjusteInternoTronco } from './utils/ajusteTronco';
 import { gerarPDFRelatorioFinanceiro } from './utils/pdfRelatorioFinanceiro';
+import DemonstrativoFinanceiro from './DemonstrativoFinanceiro';
 
 const MESES = [
   'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -896,6 +897,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
               { key:'receitas', label:'💵 Receitas por Categoria' },
               { key:'despesas', label:'💸 Despesas por Categoria' },
               { key:'mensal',   label:'📅 Visão Mensal' },
+              { key:'demonstrativo', label:'🏦 Demonstrativo Financeiro' },
             ].map(tab => (
               <button key={tab.key} onClick={() => setAba(tab.key)}
                 style={{padding:'0.5rem 1rem', background:'transparent', border:'none', borderBottom: aba === tab.key ? '3px solid var(--color-accent)' : '3px solid transparent', color: aba === tab.key ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: aba === tab.key ? '700' : '500', cursor:'pointer', fontSize:'0.82rem', marginBottom:'-2px', transition:'all 0.15s'}}>
@@ -903,6 +905,9 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
               </button>
             ))}
           </div>
+
+          {/* ABA DEMONSTRATIVO (PDF para banco / contabilidade) */}
+          {aba === 'demonstrativo' && <DemonstrativoFinanceiro showError={showError} showSuccess={showSuccess} />}
 
           {/* ABA SALDO */}
           {aba === 'saldo' && (
