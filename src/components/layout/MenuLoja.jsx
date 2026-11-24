@@ -62,6 +62,7 @@ export default function MenuLoja({
 
     { tipo: 'grupo', chave: 'filantropia', icone: '🤝', label: 'Filantropia', itens: [
       { pagina: 'comodatos', icone: '♿', label: 'Comodatos', mostrar: ver('comodatos') },
+      { pagina: 'recursos-publicos', icone: '🏛️', label: 'Recursos Públicos', mostrar: ver('recursos_publicos') },
       { pagina: 'caridade', icone: '❤️', label: 'Caridade', mostrar: ver('caridade') },
       { pagina: 'eventos', icone: '🎉', label: 'Eventos', mostrar: ver('eventos_filantropia') },
     ]},
