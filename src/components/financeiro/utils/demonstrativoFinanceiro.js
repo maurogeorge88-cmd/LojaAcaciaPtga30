@@ -180,7 +180,8 @@ const getJsPDF = async () => {
   return module.default;
 };
 
-export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showError, showSuccess }) {
+export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, modo = 'completo', showError, showSuccess }) {
+  const fat = modo === 'faturamento';
   try {
     showSuccess?.('Gerando PDF...');
     const jsPDF = await getJsPDF();
@@ -223,7 +224,7 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
     rect(0, 0, W, 28, COR_ACCENT);
     if (dadosLoja?.logo_url) { try { doc.addImage(dadosLoja.logo_url, 'PNG', margin, 2, 22, 22); } catch { /* sem logo */ } }
     txt(nomeLoja, W / 2, 10, { bold: true, size: 13, color: [255, 255, 255], align: 'center' });
-    txt('DEMONSTRATIVO FINANCEIRO', W / 2, 16, { bold: true, size: 10, color: [200, 210, 255], align: 'center' });
+    txt(fat ? 'DEMONSTRATIVO DE FATURAMENTO' : 'DEMONSTRATIVO FINANCEIRO', W / 2, 16, { bold: true, size: 10, color: [200, 210, 255], align: 'center' });
     txt(`Período: ${dados.periodo.label}  ·  Emissão: ${new Date().toLocaleDateString('pt-BR')}`, W / 2, 22, { size: 8, color: [200, 210, 255], align: 'center' });
     y = 34;
 
@@ -231,12 +232,12 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
     const cnpj = dadosLoja?.cnpj ? `CNPJ: ${dadosLoja.cnpj}` : '';
     const end = [dadosLoja?.endereco, dadosLoja?.cidade && `${dadosLoja.cidade}${dadosLoja.estado ? '-' + dadosLoja.estado : ''}`].filter(Boolean).join(' - ');
     [cnpj, end].filter(Boolean).forEach(t => { txt(t, W / 2, y, { size: 8, color: COR_CINZA, align: 'center' }); y += 4.5; });
-    txt('Valores efetivamente recebidos e pagos no período (regime de caixa), somando todo o movimento da Loja.', W / 2, y, { size: 7.5, color: COR_CINZA, align: 'center' });
+    txt(fat ? 'Valores efetivamente recebidos no período (regime de caixa), somando todo o movimento da Loja.' : 'Valores efetivamente recebidos e pagos no período (regime de caixa), somando todo o movimento da Loja.', W / 2, y, { size: 7.5, color: COR_CINZA, align: 'center' });
     y += 7;
 
     // ── 1. Resumo ──
-    titulo('1. RESUMO DO PERÍODO');
-    moldura(COR_ACCENT, () => {
+    if (!fat) titulo('1. RESUMO DO PERÍODO');
+    if (!fat) moldura(COR_ACCENT, () => {
       const itens = [
         ['Saldo inicial do período', dados.saldoInicial, [30, 30, 30], false],
         ['(+) Total de receitas', dados.receitas, COR_VERDE, false],
@@ -252,8 +253,38 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
       });
     });
 
+    // ── Faturamento por mês (somente receitas) ──
+    if (fat) {
+      titulo('1. FATURAMENTO POR MÊS', dados.periodo.label);
+      moldura(COR_ACCENT, () => {
+        rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
+        const c = { mes: margin + 2, rec: margin + 45, bar: margin + 105 };
+        txt('Mês', c.mes, y + 4, { size: 8, bold: true, color: [255, 255, 255] });
+        txt('Receitas', c.rec, y + 4, { size: 8, bold: true, color: [255, 255, 255] });
+        y += 7;
+        const maxV = Math.max(...dados.mensal.map(m => m.receitas), 1);
+        const barMax = 62;
+        dados.mensal.forEach((m, i) => {
+          nova(9);
+          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 7, COR_FUNDO);
+          txt(m.rotulo, c.mes, y + 3.8, { size: 9, bold: true });
+          txt(formatarMoeda(m.receitas), c.rec, y + 3.8, { size: 9, color: COR_VERDE });
+          rect(c.bar, y + 1.3, barMax, 3, [225, 225, 225]);
+          const bw = m.receitas / maxV * barMax;
+          if (bw > 0) rect(c.bar, y + 1.3, bw, 3, COR_VERDE);
+          y += 7;
+        });
+        nova(12);
+        linha(y, margin, colRight, COR_ACCENT); y += 1;
+        rect(margin, y, colRight - margin, 8, [219, 234, 254], 1);
+        txt('TOTAL', c.mes, y + 5.2, { bold: true, size: 9.5 });
+        txt(formatarMoeda(dados.receitas), c.rec, y + 5.2, { bold: true, size: 10, color: COR_VERDE });
+        y += 9;
+      });
+    }
+
     // ── 2. Resultado por mês ──
-    if (dados.mensal.length > 0) {
+    if (!fat && dados.mensal.length > 0) {
       titulo('2. RESULTADO POR MÊS', dados.periodo.label);
       moldura(COR_ACCENT, () => {
         rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
@@ -315,8 +346,10 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
         });
       });
     };
-    blocoCategorias(3, 'RECEITAS POR CATEGORIA', dados.gruposReceitas, dados.receitas, COR_VERDE);
-    blocoCategorias(4, 'DESPESAS POR CATEGORIA', dados.gruposDespesas, dados.despesas, COR_VERM);
+    if (!fat) {
+      blocoCategorias(3, 'RECEITAS POR CATEGORIA', dados.gruposReceitas, dados.receitas, COR_VERDE);
+      blocoCategorias(4, 'DESPESAS POR CATEGORIA', dados.gruposDespesas, dados.despesas, COR_VERM);
+    }
 
     // ── Declaração e assinaturas ──
     nova(70);
@@ -325,7 +358,7 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
     const uf = dadosLoja?.estado || 'MT';
     const hoje = new Date();
     const dataExt = `${hoje.getDate()} de ${MESES[hoje.getMonth()].toLowerCase()} de ${hoje.getFullYear()}`;
-    const decl = `Declaramos, para os devidos fins, que as informações acima refletem os registros financeiros da ${nomeLoja}${dadosLoja?.cnpj ? ` (CNPJ ${dadosLoja.cnpj})` : ''}, referentes ao período de ${dados.periodo.label}, considerando somente valores efetivamente recebidos e pagos.`;
+    const decl = `Declaramos, para os devidos fins, que as informações acima refletem os registros financeiros da ${nomeLoja}${dadosLoja?.cnpj ? ` (CNPJ ${dadosLoja.cnpj})` : ''}, referentes ao período (${dados.periodo.label}), considerando somente ${fat ? 'as receitas efetivamente recebidas' : 'valores efetivamente recebidos e pagos'}.`;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(40, 40, 40);
     const linhasDecl = doc.splitTextToSize(limpar(decl), colRight - margin);
     doc.text(linhasDecl, margin, y); y += linhasDecl.length * 4.3 + 4;
@@ -353,7 +386,7 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, showEr
       txt(`Emitido em ${emissao}  ·  ${i} de ${total}`, colRight, 289, { size: 7, color: COR_CINZA, align: 'right' });
     }
 
-    doc.save(`Demonstrativo_Financeiro_${dados.periodo.inicio}_a_${dados.periodo.fim}.pdf`);
+    doc.save(`${fat ? 'Demonstrativo_Faturamento' : 'Demonstrativo_Financeiro'}_${dados.periodo.inicio}_a_${dados.periodo.fim}.pdf`);
     showSuccess?.('PDF gerado com sucesso!');
   } catch (err) {
     console.error('Erro ao gerar PDF:', err);
