@@ -56,7 +56,7 @@ export default function DetalheRecurso({ recurso, dados, podeEditar, onVoltar, o
       let logo = null;
       if (loja?.logo_url) { try { logo = await urlParaDataUrl(loja.logo_url); } catch (e) { /* sem logo */ } }
       const lista = montarDadosPrestacao({ entes, recursos: [recurso], saldos, nfs, equipamentos, aplicacoes, anexos });
-      gerarPrestacaoContasRecursosPDF({ dados: lista, dadosLoja: loja || {}, logo, filtro: `${ente?.nome || ''} — ${recurso.titulo}`, nomeArquivo: 'Prestacao_Contas_Recurso.pdf' });
+      gerarPrestacaoContasRecursosPDF({ dados: lista, dadosLoja: loja || {}, logo, filtro: `${ente?.caminho || ''} — ${recurso.titulo}`, nomeArquivo: 'Prestacao_Contas_Recurso.pdf' });
     } catch (err) { showError('Erro ao gerar PDF: ' + err.message); }
     finally { setGerando(false); }
   };
@@ -70,7 +70,7 @@ export default function DetalheRecurso({ recurso, dados, podeEditar, onVoltar, o
           <div>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>{recurso.titulo}</h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-              🏛️ {ente?.nome || '—'}{recurso.data_recebimento ? ` • recebido em ${dataBR(recurso.data_recebimento)}` : ''}
+              🏛️ {ente?.caminho || '—'}{recurso.data_recebimento ? ` • recebido em ${dataBR(recurso.data_recebimento)}` : ''}
               {recurso.numero_processo ? ` • processo ${recurso.numero_processo}` : ''}{recurso.documento_ref ? ` • ${recurso.documento_ref}` : ''}
             </p>
             {recurso.finalidade && <p style={{ margin: '0.3rem 0 0', fontSize: '0.82rem', color: 'var(--color-text)' }}>Finalidade: {recurso.finalidade}</p>}
