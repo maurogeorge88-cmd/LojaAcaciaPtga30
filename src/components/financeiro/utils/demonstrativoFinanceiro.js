@@ -84,6 +84,28 @@ const classificar = (l) => {
   return null;
 };
 
+// Efeito de um lançamento pago no SALDO (banco + caixa físico) — regra idêntica à do sistema
+// (calcularResumo / calcularCaixaFisicoTotal do FinancasLoja): Tronco em dinheiro e sangria
+// de Tronco não entram no caixa; Ajuste Interno Tronco não mexe no saldo da Loja.
+const efeitoNoSaldo = (l) => {
+  const v = parseFloat(l.valor || 0);
+  const tronco = (l.cat_nome || '').toLowerCase().includes('tronco');
+  const dinheiro = l.tipo_pagamento === 'dinheiro';
+  const transf = l.eh_transferencia_interna === true;
+  if (l.tipo_pagamento === 'compensacao') return 0;
+  if (l.cat_tipo === 'receita') {
+    if (transf) return v;
+    if (dinheiro) return tronco ? 0 : v;
+    return v;
+  }
+  if (l.cat_tipo === 'despesa') {
+    if (ehAjusteInternoTronco(l)) return 0;
+    if (transf || dinheiro) return tronco ? 0 : -v;
+    return -v;
+  }
+  return 0;
+};
+
 // Saldo (banco + caixa) acumulado ANTES da data informada — igual ao fechamento
 async function saldoAnteriorTotal(dataLimite) {
   const d = await buscarTodos(() =>
@@ -145,27 +167,27 @@ export async function calcularDemonstrativo(sel) {
     eh_transferencia_interna: l.eh_transferencia_interna ?? false,
   }));
 
-  const mensal = per.meses.map(m => ({ ...m, receitas: 0, despesas: 0, depositos: 0, sangrias: 0 }));
+  const mensal = per.meses.map(m => ({ ...m, receitas: 0, despesas: 0, movimento: 0 }));
   const idx = {}; mensal.forEach((m, i) => { idx[m.chave] = i; });
   lancs.forEach(l => {
-    const g = classificar(l); if (!g) return;
     const i = idx[String(l.data_pagamento).slice(0, 7)]; if (i === undefined) return;
+    mensal[i].movimento += efeitoNoSaldo(l);
+    const g = classificar(l); if (!g) return;
     const v = parseFloat(l.valor || 0);
     if (g === 'banco_receita' || g === 'caixa_receita') mensal[i].receitas += v;
     else if (g === 'banco_despesa' || g === 'caixa_despesa') mensal[i].despesas += v;
-    else if (g === 'banco_deposito') mensal[i].depositos += v;
-    else if (g === 'sangria') mensal[i].sangrias += v;
   });
   mensal.forEach(m => { m.resultado = m.receitas - m.despesas; });
 
   const receitas = mensal.reduce((s, m) => s + m.receitas, 0);
   const despesas = mensal.reduce((s, m) => s + m.despesas, 0);
-  const transf = mensal.reduce((s, m) => s + m.depositos - m.sangrias, 0); // movimentação interna banco x caixa (normalmente ~0)
+  const movimento = mensal.reduce((s, m) => s + m.movimento, 0);
   return {
     periodo: per,
     saldoInicial: anterior,
     receitas, despesas, resultado: receitas - despesas,
-    saldoFinal: anterior + receitas - despesas + transf,
+    saldoFinal: anterior + movimento,
+    outrasMovimentacoes: movimento - (receitas - despesas), // transferências, Tronco e ajustes internos
     mensal,
     gruposReceitas: agruparCategorias(lancs, 'receita', catMap),
     gruposDespesas: agruparCategorias(lancs, 'despesa', catMap),
@@ -243,6 +265,7 @@ export async function gerarPDFDemonstrativo({ dados, dadosLoja, contador, modo =
         ['(+) Total de receitas', dados.receitas, COR_VERDE, false],
         ['(-) Total de despesas', dados.despesas, COR_VERM, false],
         ['(=) Resultado do período', dados.resultado, dados.resultado >= 0 ? COR_VERDE : COR_VERM, true],
+        ...(Math.abs(dados.outrasMovimentacoes) > 0.005 ? [['(+/-) Transferências, Tronco e ajustes internos', dados.outrasMovimentacoes, [30, 30, 30], false]] : []),
         ['Saldo final do período', dados.saldoFinal, COR_ACCENT, true],
       ];
       itens.forEach(([l, v, c, b], i) => {
