@@ -105,6 +105,10 @@ const obterEmojiPessoa = (idade, sexo, tipo = null) => {
   return sexo === 'F' ? '👵' : '👴';
 };
 
+// Regra: felicitações (e-mail) só para irmãos em situação REGULAR ou LICENCIADO
+const podeFelicitar = (situacao) => ['regular', 'licenciado'].includes(String(situacao || '').trim().toLowerCase());
+const AVISO_BLOQUEIO = 'Envio bloqueado: só é permitido felicitar irmãos em situação regular ou licenciado.';
+
 export default function Aniversariantes({ permissoes }) {
   const podeEnviarEmail = permissoes?.canEditFinancial || permissoes?.canManageUsers || false;
   // Relatórios em PDF: só quem tem alguma permissão de edição; acesso simples apenas visualiza
@@ -370,6 +374,7 @@ export default function Aniversariantes({ permissoes }) {
 
   const handleEnviarEmail = async (irmao) => {
     if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
+    if (!podeFelicitar(irmao.situacao)) { alert(AVISO_BLOQUEIO); return; }
     setEnviandoEmail(irmao.irmao_id);
     try {
       await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', 'manual');
@@ -385,6 +390,7 @@ export default function Aniversariantes({ permissoes }) {
 
   const handleEnviarEmailEsposa = async (aniv) => {
     if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
+    if (!podeFelicitar(aniv.situacao_irmao)) { alert(AVISO_BLOQUEIO); return; }
     if (!aniv.email) { alert('Esta cunhada não possui e-mail cadastrado.'); return; }
     setEnviandoEmail(`esposa_${aniv.esposa_id}`);
     try {
@@ -411,6 +417,7 @@ export default function Aniversariantes({ permissoes }) {
 
   const handleEnviarBodas = async (aniv) => {
     if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
+    if (!podeFelicitar(aniv.situacao_irmao)) { alert(AVISO_BLOQUEIO); return; }
     if (!aniv.email_irmao && !aniv.email_esposa) {
       alert('Nenhum dos dois possui e-mail cadastrado.');
       return;
@@ -987,6 +994,7 @@ export default function Aniversariantes({ permissoes }) {
               irmao_id: irmao.id,
               nivel: 1,
               email: irmao.email || null,
+              situacao: irmao.situacao,
             });
           }
         });
@@ -1120,6 +1128,7 @@ export default function Aniversariantes({ permissoes }) {
               irmao_id: esposa.irmao_id,
               esposa_id: esposa.id,
               email: esposa.email || null,
+              situacao_irmao: esposa.irmaos?.situacao,
               nivel: 2
             });
           }
@@ -1449,6 +1458,7 @@ export default function Aniversariantes({ permissoes }) {
                 irmao_id: esposa.irmao_id,
                 email_esposa: esposa.email || null,
                 email_irmao: esposa.irmaos?.email || null,
+                situacao_irmao: esposa.irmaos?.situacao,
                 nivel: 2,
                 icone: '💑'
               });
