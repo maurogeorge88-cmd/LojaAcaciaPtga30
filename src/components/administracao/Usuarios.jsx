@@ -77,6 +77,18 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       });
   }, []);
 
+  // Senhas temporárias ficam numa tabela protegida (só gestor lê); a tabela usuarios guarda só um marcador
+  const [senhasTemp, setSenhasTemp] = useState({});
+  React.useEffect(() => {
+    supabase.from('usuarios_senha_temp').select('usuario_id, senha')
+      .then(({ data, error }) => {
+        if (error) return; // tabela ainda não criada: mantém comportamento antigo
+        const m = {}; (data || []).forEach(r => { m[r.usuario_id] = r.senha; });
+        setSenhasTemp(m);
+      });
+  }, [usuarios]);
+  const senhaTempDe = (u) => (senhasTemp[u.id] ?? (u.senha_temporaria && u.senha_temporaria !== '(oculta)' ? u.senha_temporaria : null));
+
   const [modoEdicao, setModoEdicao] = useState(false);
   const [usuarioEditando, setUsuarioEditando] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -1390,7 +1402,7 @@ IMPORTANTE: Copie estas informações agora!
                     <ResumoAcesso usuario={usuario} />
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {usuario.senha_temporaria ? (
+                    {senhaTempDe(usuario) ? (
                       <span style={{
                         fontFamily: 'monospace',
                         fontSize: '0.75rem',
@@ -1399,7 +1411,7 @@ IMPORTANTE: Copie estas informações agora!
                         borderRadius: 'var(--radius-sm)',
                         border: '1px solid var(--color-border)'
                       }}>
-                        🔑 {usuario.senha_temporaria}
+                        🔑 {senhaTempDe(usuario)}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-xs">-</span>
