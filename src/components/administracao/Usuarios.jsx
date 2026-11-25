@@ -410,6 +410,12 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     setLoading(true);
 
     try {
+      // Guarda a sessão do admin: o signUp pode trocar a sessão para o usuário recém-criado
+      const { data: sessaoAdmin } = await supabase.auth.getSession();
+      const tokensAdmin = sessaoAdmin?.session
+        ? { access_token: sessaoAdmin.session.access_token, refresh_token: sessaoAdmin.session.refresh_token }
+        : null;
+
       // 1. Criar usuário no Auth usando signUp (não precisa de admin)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: usuarioForm.email,
@@ -421,6 +427,14 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           emailRedirectTo: window.location.origin + '/primeiro-acesso'
         }
       });
+
+      // Restaura a sessão do admin (se o signUp tiver trocado) para o insert rodar como admin
+      if (tokensAdmin) {
+        const { data: atual } = await supabase.auth.getSession();
+        if (atual?.session?.access_token !== tokensAdmin.access_token) {
+          await supabase.auth.setSession(tokensAdmin);
+        }
+      }
 
       if (authError) throw authError;
 
