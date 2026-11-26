@@ -717,6 +717,18 @@ IMPORTANTE: Copie estas informações agora!
       externos: ordenar(usuariosFiltrados.filter(u => u.nivel_acesso === 'arco_real')),
       entes: ordenar(usuariosFiltrados.filter(u => u.nivel_acesso === 'ente_publico')),
     };
+    // ── Resumo de acessos (sobre todos os usuários cadastrados, sem os filtros da busca) ──
+    const baseResumo = usuarios || [];
+    const ehLoja = (u) => u.nivel_acesso !== 'arco_real' && u.nivel_acesso !== 'ente_publico';
+    const resumoAcessos = [
+      { chave: 'soloja', icone: '🏛️', rotulo: 'Só a Loja', cor: '#3b82f6', qtd: baseResumo.filter(u => ehLoja(u) && !temAcessoArcoReal(u)).length },
+      { chave: 'lojaarco', icone: '🏛️🔺', rotulo: 'Loja + Arco Real', cor: '#06b6d4', qtd: baseResumo.filter(u => ehLoja(u) && temAcessoArcoReal(u)).length },
+      { chave: 'soarco', icone: '🔺', rotulo: 'Só o Arco Real', cor: '#8b5cf6', qtd: baseResumo.filter(u => u.nivel_acesso === 'arco_real').length },
+      { chave: 'entes', icone: '🏛️', rotulo: 'Entes Públicos', cor: '#10b981', qtd: baseResumo.filter(u => u.nivel_acesso === 'ente_publico').length },
+    ];
+    const totalResumo = baseResumo.length;
+    const pct = (n) => (totalResumo > 0 ? ((n / totalResumo) * 100).toFixed(1).replace('.', ',') : '0,0');
+
     const rotuloEnteDe = (u) => origensEnte.find(o => String(o.id) === String(u.ente_origem_id))?.rotulo || (u.ente_origem_id ? `Ente #${u.ente_origem_id}` : '—');
     const membroArcoDe = (u) => membrosArcoReal.find(m => String(m.id) === String(u.arco_real_membro_id))?.nome || '—';
 
@@ -1494,6 +1506,23 @@ IMPORTANTE: Copie estas informações agora!
             ))}
           </select>
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(11rem, 1fr))', gap: '0.75rem' }}>
+        {resumoAcessos.map(r => (
+          <div key={r.chave} style={{ background: 'var(--color-surface)', border: `1px solid color-mix(in srgb, ${r.cor} 40%, transparent)`, borderLeft: `4px solid ${r.cor}`, borderRadius: 'var(--radius-lg)', padding: '0.75rem 1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--color-text-muted)' }}>
+              <span>{r.icone}</span><span>{r.rotulo}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.2rem' }}>
+              <span style={{ fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.1, color: r.cor }}>{r.qtd}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>{pct(r.qtd)}%</span>
+            </div>
+            <div style={{ height: '0.3rem', borderRadius: '999px', background: 'var(--color-surface-2)', marginTop: '0.5rem', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${totalResumo > 0 ? (r.qtd / totalResumo) * 100 : 0}%`, background: r.cor }} />
+            </div>
+          </div>
+        ))}
       </div>
 
       {quadro({
