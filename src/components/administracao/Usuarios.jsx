@@ -44,6 +44,48 @@ const ResumoAcesso = ({ usuario }) => {
   );
 };
 
+// ── Elementos visuais da lista de usuários ──
+const BtnAcao = ({ onClick, title, cor, disabled, children }) => (
+  <button type="button" onClick={onClick} title={title} aria-label={title} disabled={disabled}
+    style={{
+      width: '2.1rem', height: '2.1rem', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: '0.95rem', lineHeight: 1, borderRadius: 'var(--radius-md)', cursor: disabled ? 'not-allowed' : 'pointer',
+      background: `color-mix(in srgb, ${cor} 14%, transparent)`, color: cor,
+      border: `1px solid color-mix(in srgb, ${cor} 35%, transparent)`, opacity: disabled ? 0.5 : 1, padding: 0,
+    }}>
+    {children}
+  </button>
+);
+
+const PillStatus = ({ ativo }) => (
+  <span style={{
+    display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.6rem',
+    borderRadius: '999px', whiteSpace: 'nowrap',
+    color: ativo ? '#10b981' : '#ef4444', background: ativo ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
+  }}>
+    <span style={{ width: '0.4rem', height: '0.4rem', borderRadius: '50%', background: 'currentColor' }} />
+    {ativo ? 'Ativo' : 'Inativo'}
+  </span>
+);
+
+const AvatarInicial = ({ nome, cor }) => (
+  <span style={{
+    width: '2rem', height: '2rem', flexShrink: 0, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '0.8rem', fontWeight: 800, color: cor, background: `color-mix(in srgb, ${cor} 16%, transparent)`,
+    border: `1px solid color-mix(in srgb, ${cor} 35%, transparent)`,
+  }}>
+    {String(nome || '?').trim().charAt(0).toUpperCase()}
+  </span>
+);
+
+const temAcessoArcoReal = (u) => !!(
+  u.pode_visualizar_arco_real || u.arco_real_membro_id ||
+  (u.permissoes_arco_real && typeof u.permissoes_arco_real === 'object' && Object.keys(u.permissoes_arco_real).length > 0)
+);
+
+const thStyle = { padding: '0.55rem 0.75rem', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', background: 'var(--color-surface-2)' };
+const tdStyle = { padding: '0.6rem 0.75rem', verticalAlign: 'middle', borderTop: '1px solid var(--color-border)' };
+
 export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, showError, embedded = false }) {
   const [usuarioForm, setUsuarioForm] = useState({
     nome: '',
@@ -667,6 +709,84 @@ IMPORTANTE: Copie estas informações agora!
     if (filtroCargo && u.cargo !== filtroCargo) return false;
     return true;
   });
+
+    // ── Lista em 3 quadros: Loja (com/sem Arco Real), Arco Real externos, Entes públicos ──
+    const ordenar = (arr) => [...arr].sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    const gruposUsuarios = {
+      loja: ordenar(usuariosFiltrados.filter(u => u.nivel_acesso !== 'arco_real' && u.nivel_acesso !== 'ente_publico')),
+      externos: ordenar(usuariosFiltrados.filter(u => u.nivel_acesso === 'arco_real')),
+      entes: ordenar(usuariosFiltrados.filter(u => u.nivel_acesso === 'ente_publico')),
+    };
+    const rotuloEnteDe = (u) => origensEnte.find(o => String(o.id) === String(u.ente_origem_id))?.rotulo || (u.ente_origem_id ? `Ente #${u.ente_origem_id}` : '—');
+    const membroArcoDe = (u) => membrosArcoReal.find(m => String(m.id) === String(u.arco_real_membro_id))?.nome || '—';
+
+    const celulaNome = (u, cor, mostrarArco) => (
+      <td style={tdStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: '11rem' }}>
+          <AvatarInicial nome={u.nome} cor={cor} />
+          <button type="button" onClick={() => abrirUsuario(u, 'ver')} title="Visualizar"
+            style={{ color: 'var(--color-text)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', fontWeight: 600, fontSize: '0.9rem' }}>
+            {u.nome}
+          </button>
+          {mostrarArco && temAcessoArcoReal(u) && (
+            <span title="Também tem acesso ao Arco Real"
+              style={{ fontSize: '0.62rem', padding: '0.1rem 0.3rem', borderRadius: '999px', color: '#a78bfa', background: 'rgba(139,92,246,0.16)', border: '1px solid rgba(139,92,246,0.35)', lineHeight: 1.2, flexShrink: 0 }}>
+              🔺
+            </span>
+          )}
+        </div>
+      </td>
+    );
+    const celulaEmail = (u) => (
+      <td style={{ ...tdStyle, fontSize: '0.82rem', color: 'var(--color-text-muted)', wordBreak: 'break-all', minWidth: '12rem' }}>{u.email}</td>
+    );
+    const celulaSenha = (u) => (
+      <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+        {senhaTempDe(u) ? (
+          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', background: 'var(--color-warning-bg)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
+            🔑 {senhaTempDe(u)}
+          </span>
+        ) : <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>—</span>}
+      </td>
+    );
+    const celulaStatus = (u) => <td style={{ ...tdStyle, textAlign: 'center' }}><PillStatus ativo={!!u.ativo} /></td>;
+    const celulaAcoes = (u) => (
+      <td style={{ ...tdStyle, width: '1%', whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+          <BtnAcao onClick={() => abrirUsuario(u, 'ver')} title="Visualizar" cor="var(--color-text-muted)">👁️</BtnAcao>
+          <BtnAcao onClick={() => abrirUsuario(u, 'editar')} title="Editar" cor="var(--color-accent)">✏️</BtnAcao>
+          <BtnAcao onClick={() => handleResetarSenha(u)} disabled={resetandoSenha === u.id} title="Resetar senha" cor="var(--color-warning)">🔑</BtnAcao>
+          <BtnAcao onClick={() => handleExcluirUsuario(u)} title="Excluir" cor="var(--color-danger)">🗑️</BtnAcao>
+        </div>
+      </td>
+    );
+
+    const quadro = ({ icone, titulo, descricao, cor, lista, cabecalhos, linha }) => (
+      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: `4px solid ${cor}`, borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '0.85rem 1.1rem', background: `color-mix(in srgb, ${cor} 8%, var(--color-surface))`, borderBottom: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '1.3rem' }}>{icone}</span>
+          <div style={{ flex: 1, minWidth: '12rem' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>{titulo}</h3>
+            <p style={{ margin: '0.1rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{descricao}</p>
+          </div>
+          <span style={{ fontSize: '0.8rem', fontWeight: 800, padding: '0.2rem 0.7rem', borderRadius: '999px', color: cor, background: `color-mix(in srgb, ${cor} 16%, transparent)` }}>
+            {lista.length}
+          </span>
+        </div>
+        {lista.length === 0 ? (
+          <div style={{ padding: '1.2rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Nenhum usuário neste grupo.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>
+                <tr>{cabecalhos.map(([rot, alinhamento]) => <th key={rot} style={{ ...thStyle, textAlign: alinhamento || 'left' }}>{rot}</th>)}</tr>
+              </thead>
+              <tbody>{lista.map(u => <tr key={u.id}>{linha(u)}</tr>)}</tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
 
     const conteudoUsuarios = (
       <div className="space-y-6">
@@ -1354,7 +1474,7 @@ IMPORTANTE: Copie estas informações agora!
         </div>
       )}
 
-      {/* LISTA DE USUÁRIOS */}
+      {/* LISTA DE USUÁRIOS — 3 quadros */}
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <h3 className="text-xl font-bold" style={{ color: 'var(--color-text)', margin: 0, flex: 1 }}>
@@ -1365,7 +1485,7 @@ IMPORTANTE: Copie estas informações agora!
             ➕ Novo Usuário
           </button>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <input className="form-input" placeholder="🔍 Buscar por nome ou e-mail..." value={busca} onChange={e => setBusca(e.target.value)} style={{ flex: 2, minWidth: '200px' }} />
           <select className="form-input" value={filtroCargo} onChange={e => setFiltroCargo(e.target.value)} style={{ flex: 1, minWidth: '160px', cursor: 'pointer' }}>
             <option value="">Todos os cargos</option>
@@ -1374,152 +1494,60 @@ IMPORTANTE: Copie estas informações agora!
             ))}
           </select>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead style={{ background: 'var(--color-surface-2)' }}>
-              <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Nome</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Email</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Cargo</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Permissões</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Senha Temp</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Status</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuariosFiltrados.map((usuario) => (
-                <tr key={usuario.id} style={{ borderTop: '1px solid var(--color-border)' }}>
-                  <td className="px-4 py-3">
-                    <button type="button" onClick={() => abrirUsuario(usuario, 'ver')} title="Visualizar"
-                      className="font-medium" style={{ color: 'var(--color-text)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', textDecoration: 'underline dotted' }}>
-                      {usuario.nome}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                    {usuario.email}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span style={{
-                      padding: '0.25rem 0.75rem',
-                      background: 'var(--color-accent-bg)',
-                      color: 'var(--color-accent)',
-                      fontSize: '0.75rem',
-                      borderRadius: 'var(--radius-md)',
-                      fontWeight: '600'
-                    }}>
-                      {formatarCargo(usuario.cargo)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <ResumoAcesso usuario={usuario} />
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {senhaTempDe(usuario) ? (
-                      <span style={{
-                        fontFamily: 'monospace',
-                        fontSize: '0.75rem',
-                        background: 'var(--color-warning-bg)',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: 'var(--radius-sm)',
-                        border: '1px solid var(--color-border)'
-                      }}>
-                        🔑 {senhaTempDe(usuario)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {usuario.ativo ? (
-                      <span className="text-green-600">✅</span>
-                    ) : (
-                      <span className="text-red-600">🚫</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={() => abrirUsuario(usuario, 'ver')}
-                        title="Visualizar"
-                        style={{ padding: '0.25rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: '0.875rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', cursor: 'pointer', fontWeight: '600' }}
-                      >
-                        👁️
-                      </button>
-                      <button
-                        onClick={() => abrirUsuario(usuario, 'editar')}
-                        title="Editar"
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          background: 'var(--color-accent-bg)',
-                          color: 'var(--color-accent)',
-                          fontSize: '0.875rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          fontWeight: '600'
-                        }}
-                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
-                        onMouseLeave={(e) => e.target.style.opacity = '1'}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleResetarSenha(usuario)}
-                        disabled={resetandoSenha === usuario.id}
-                        title="Resetar Senha"
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          background: 'var(--color-warning-bg)',
-                          color: 'var(--color-warning)',
-                          fontSize: '0.875rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: 'none',
-                          cursor: resetandoSenha === usuario.id ? 'not-allowed' : 'pointer',
-                          transition: 'all 0.2s ease',
-                          fontWeight: '600',
-                          opacity: resetandoSenha === usuario.id ? 0.5 : 1
-                        }}
-                        onMouseEnter={(e) => { if (resetandoSenha !== usuario.id) e.target.style.opacity = '0.8'; }}
-                        onMouseLeave={(e) => { if (resetandoSenha !== usuario.id) e.target.style.opacity = '1'; }}
-                      >
-                        🔑
-                      </button>
-                      <button
-                        onClick={() => handleExcluirUsuario(usuario)}
-                        title="Excluir"
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          background: 'var(--color-danger-bg)',
-                          color: 'var(--color-danger)',
-                          fontSize: '0.875rem',
-                          borderRadius: 'var(--radius-md)',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          fontWeight: '600'
-                        }}
-                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
-                        onMouseLeave={(e) => e.target.style.opacity = '1'}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {usuariosFiltrados.length === 0 && (
-          <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
-            Nenhum usuário cadastrado ainda.
-          </div>
-        )}
       </div>
+
+      {quadro({
+        icone: '🏛️', titulo: 'Irmãos da Loja', cor: '#3b82f6',
+        descricao: 'Acesso ao sistema da Loja. O ícone 🔺 ao lado do nome indica que o irmão também tem acesso ao Arco Real.',
+        lista: gruposUsuarios.loja,
+        cabecalhos: [['Nome'], ['E-mail'], ['Cargo'], ['Permissões', 'center'], ['Senha temp'], ['Status', 'center'], ['Ações', 'right']],
+        linha: (u) => (<>
+          {celulaNome(u, '#3b82f6', true)}
+          {celulaEmail(u)}
+          <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+            <span style={{ padding: '0.2rem 0.65rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', fontSize: '0.74rem', borderRadius: '999px', fontWeight: 700 }}>{formatarCargo(u.cargo)}</span>
+          </td>
+          <td style={{ ...tdStyle, textAlign: 'center' }}><ResumoAcesso usuario={u} /></td>
+          {celulaSenha(u)}
+          {celulaStatus(u)}
+          {celulaAcoes(u)}
+        </>),
+      })}
+
+      {quadro({
+        icone: '🔺', titulo: 'Arco Real — Irmãos externos', cor: '#8b5cf6',
+        descricao: 'Não são irmãos da Loja: acessam somente o Arco Real.',
+        lista: gruposUsuarios.externos,
+        cabecalhos: [['Nome'], ['E-mail'], ['Membro vinculado'], ['Senha temp'], ['Status', 'center'], ['Ações', 'right']],
+        linha: (u) => (<>
+          {celulaNome(u, '#8b5cf6', false)}
+          {celulaEmail(u)}
+          <td style={{ ...tdStyle, fontSize: '0.82rem', color: 'var(--color-text)' }}>{membroArcoDe(u)}</td>
+          {celulaSenha(u)}
+          {celulaStatus(u)}
+          {celulaAcoes(u)}
+        </>),
+      })}
+
+      {quadro({
+        icone: '🏛️', titulo: 'Entes Públicos', cor: '#10b981',
+        descricao: 'Acesso somente leitura ao Comodato e aos recursos liberados ao ente.',
+        lista: gruposUsuarios.entes,
+        cabecalhos: [['Nome'], ['E-mail'], ['Entidade'], ['Acesso', 'center'], ['Senha temp'], ['Status', 'center'], ['Ações', 'right']],
+        linha: (u) => (<>
+          {celulaNome(u, '#10b981', false)}
+          {celulaEmail(u)}
+          <td style={{ ...tdStyle, fontSize: '0.82rem', color: 'var(--color-text)', minWidth: '12rem' }}>{rotuloEnteDe(u)}</td>
+          <td style={{ ...tdStyle, textAlign: 'center', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.2rem 0.55rem', borderRadius: '999px', color: u.ente_acesso_estendido ? '#10b981' : 'var(--color-text-muted)', background: u.ente_acesso_estendido ? 'rgba(16,185,129,0.14)' : 'var(--color-surface-2)' }}>
+              {u.ente_acesso_estendido ? 'Estendido' : 'Padrão'}
+            </span>
+          </td>
+          {celulaSenha(u)}
+          {celulaStatus(u)}
+          {celulaAcoes(u)}
+        </>),
+      })}
 
       </div>
     );
