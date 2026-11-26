@@ -1884,6 +1884,7 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
   const [categorias, setCategorias] = useState([]);
   const [filtroAno, setFiltroAno] = useState('todos');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [abertos, setAbertos] = useState({});            // cartões expandidos/recolhidos (padrão: só os em aberto ficam expandidos)
   const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [resumos, setResumos] = useState({});            // indicadores por evento (cartões da lista)
   const [carregandoResumos, setCarregandoResumos] = useState(false);
@@ -2059,6 +2060,7 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
           {eventosFiltrados.map(ev => {
             const encerrado = ev.status === 'encerrado';
+            const expandido = abertos[ev.id] ?? !encerrado;
             return (
               <div key={ev.id} style={{ ...card, borderLeft: `4px solid ${encerrado ? '#10b981' : '#f59e0b'}`, cursor: 'pointer', transition: 'border-color 0.15s' }}
                 onClick={() => setEventoAtivo(ev)}>
@@ -2077,12 +2079,14 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setAbertos(a => ({ ...a, [ev.id]: !expandido }))} title={expandido ? 'Recolher resumo' : 'Expandir resumo'}
+                      style={{ ...btnEdit, padding: '0.4rem 0.6rem', background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>{expandido ? '▲ Recolher' : '▼ Resumo'}</button>
                     <button onClick={() => setEventoAtivo(ev)} style={{ ...btnEdit, padding: '0.4rem 0.75rem' }}>👁️ Abrir</button>
                     {podeEditar && <button onClick={() => setConfirmExcluir(ev)} style={{ ...btnDanger, padding: '0.4rem 0.6rem' }}>🗑️</button>}
                   </div>
                 </div>
 
-                {(() => {
+                {expandido && (() => {
                   const r = resumos[ev.id];
                   if (!r) {
                     return carregandoResumos
