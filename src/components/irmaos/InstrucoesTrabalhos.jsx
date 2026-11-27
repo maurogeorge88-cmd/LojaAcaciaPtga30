@@ -68,9 +68,11 @@ export default function InstrucoesTrabalhos({ irmao, showSuccess, showError }) {
 
     if (corpo && corpo.length > 0) {
       const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const ven = corpo.find(c => norm(c.cargo).includes('veneravel'));
-      const ora = corpo.find(c => norm(c.cargo).includes('orador'));
-      const sec = corpo.find(c => norm(c.cargo).includes('secretario'));
+      // titular do cargo: palavra inteira (não confundir "Arquiteto Decorador" com Orador) e sem adjuntos
+      const titular = (re) => (c) => { const n = norm(c.cargo); return re.test(n) && !/adjunt|\bpast\b|\bex[- ]|\bpro[- ]|\bvice\b/.test(n); };
+      const ven = corpo.find(titular(/\bveneravel\b/));
+      const ora = corpo.find(titular(/\borador\b/));
+      const sec = corpo.find(titular(/\bsecretario\b/));
 
       const idsNecessarios = [ven?.irmao_id, ora?.irmao_id, sec?.irmao_id].filter(Boolean);
       if (idsNecessarios.length > 0) {
