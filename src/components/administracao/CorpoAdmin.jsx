@@ -315,6 +315,7 @@ export const CorpoAdmin = ({
     const n = periodoGestoes === 'atual' ? 1 : periodoGestoes === '5' ? 5 : periodoGestoes === '10' ? 10 : todos.length;
     return todos.slice(0, n);
   }, [corpoAdmin, anoFiltroAdmin, periodoGestoes]);
+  const anoAtualGestao = useMemo(() => corpoAdmin.reduce((m, ca) => (ca.ano_exercicio && ca.ano_exercicio > m ? ca.ano_exercicio : m), ''), [corpoAdmin]);
   const gestoesTela = useMemo(() => montarGestoes(corpoAdmin, irmaos || [], anosGestoes), [corpoAdmin, irmaos, anosGestoes]);
   const rotuloPeriodo = { atual: 'Gestão atual', '5': '5 últimas gestões', '10': '10 últimas gestões', todas: 'Todas as gestões' }[periodoGestoes];
 
@@ -621,9 +622,9 @@ export const CorpoAdmin = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.9rem' }}>
           {gestoesTela.map(g => (
-            <div key={g.ano} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: '3px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.7rem 0.9rem 0.8rem', display: 'flex', flexDirection: 'column' }}>
+            <div key={g.ano} style={{ background: 'var(--color-surface)', border: g.ano === anoAtualGestao ? '2px solid #d4a017' : '1px solid var(--color-border)', borderTop: g.ano === anoAtualGestao ? '3px solid #d4a017' : '3px solid var(--color-accent)', boxShadow: g.ano === anoAtualGestao ? '0 0 0 1px rgba(212,160,23,0.25), 0 2px 10px rgba(212,160,23,0.15)' : 'none', borderRadius: 'var(--radius-lg)', padding: '0.7rem 0.9rem 0.8rem', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>Gestão {g.ano}</h3>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>Gestão {g.ano}</h3>
                 {podeEditarCorpo && (
                   <button onClick={() => abrirModalCorpo(g.ano)} title="Editar gestão"
                     style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', padding: '0.2rem 0.45rem', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}>✏️</button>
