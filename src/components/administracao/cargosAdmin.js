@@ -105,3 +105,27 @@ export const calcularResumoCargos = (corpoAdmin = [], irmaos = []) => {
     max: Math.max(1, ...lista.flatMap(r => Object.values(r.cargos))),
   };
 };
+
+// ── Gestões em quadros (tela e PDF) ──
+export const SLOTS_PRINCIPAIS = [
+  ['veneravel mestre', 'Venerável Mestre'],
+  ['primeiro vigilante', '1º Vigilante'],
+  ['segundo vigilante', '2º Vigilante'],
+  ['orador', 'Orador'],
+  ['secretario', 'Secretário'],
+  ['tesoureiro', 'Tesoureiro'],
+  ['chanceler', 'Chanceler'],
+];
+
+/** Monta, para cada ano, os 7 cargos principais (em ordem) e os demais cargos. */
+export const montarGestoes = (corpoAdmin = [], irmaos = [], anos = []) =>
+  anos.map((ano) => {
+    const regs = corpoAdmin.filter(ca => ca.ano_exercicio === ano).sort(ordenarCargos);
+    const nomeDe = (ca) => ca.irmao?.nome || irmaos.find(i => i.id === ca.irmao_id)?.nome || 'Irmão não encontrado';
+    const principais = SLOTS_PRINCIPAIS.map(([chave, label]) => ({
+      chave, label,
+      nomes: regs.filter(ca => cargoPrincipalDe(ca.cargo) === chave).map(nomeDe),
+    }));
+    const demais = regs.filter(ca => !cargoPrincipalDe(ca.cargo)).map(ca => ({ cargo: ca.cargo || 'Cargo não informado', nome: nomeDe(ca) }));
+    return { ano, principais, demais };
+  });
