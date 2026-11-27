@@ -47,3 +47,59 @@ export const ordenarCargos = (a, b) => {
   if (ib === -1) return -1;
   return ia - ib;
 };
+
+// ── Contagem do Painel da Administração (usada por CorpoAdmin, PainelCorpoAdmin e pelo PDF) ──
+// Regras: cada PESSOA conta uma única vez em cada indicador, não importa quantas vezes repetiu o cargo
+// (VM 2x = 1; Tesoureiro 3x = 1). Pessoa = nome normalizado (junta cadastros duplicados do mesmo irmão).
+// Cargos de adjunto / pró / vice / ex / past NÃO contam como cargo principal.
+const semAcento = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const RE_NAO_TITULAR = /(adjunt|\bpast\b|\bex[- ]|\bpro[- ]|\bvice\b)/;
+
+export const cargoPrincipalDe = (texto) => {
+  if (RE_NAO_TITULAR.test(semAcento(texto))) return null;
+  const n = normalizarCargo(texto);
+  return CARGOS_PRINCIPAIS.includes(n) ? n : null;
+};
+
+export const calcularResumoCargos = (corpoAdmin = [], irmaos = []) => {
+  const irmaoPorId = new Map((irmaos || []).map(i => [i.id, i]));
+  const porPessoa = {};
+  const anos = new Set();
+  const vistos = new Set();
+  (corpoAdmin || []).forEach(ca => {
+    if (ca.ano_exercicio) anos.add(String(ca.ano_exercicio));
+    const cargo = cargoPrincipalDe(ca.cargo);
+    if (!cargo || !ca.irmao_id) return;
+    const ref = irmaoPorId.get(ca.irmao_id);
+    const nome = ca.irmao?.nome || ref?.nome;
+    if (!nome) return;
+    const pessoa = semAcento(nome);
+    const ano = String(ca.ano_exercicio ?? '');
+    const chave = `${pessoa}|${cargo}|${ano}`;
+    if (vistos.has(chave)) return;      // mesma pessoa, cargo e ano lançados em duplicidade
+    vistos.add(chave);
+    const foto = ca.irmao?.foto_url || ref?.foto_url;
+    if (!porPessoa[pessoa]) porPessoa[pessoa] = { id: ca.irmao_id, ids: [], nome, foto, cargos: {}, anos: {}, total: 0 };
+    const r = porPessoa[pessoa];
+    if (!r.ids.includes(ca.irmao_id)) r.ids.push(ca.irmao_id);
+    if (!r.foto && foto) r.foto = foto;
+    r.cargos[cargo] = (r.cargos[cargo] || 0) + 1;
+    (r.anos[cargo] = r.anos[cargo] || []).push(ano);
+    r.total += 1;
+  });
+  const lista = Object.values(porPessoa);
+  const anoAtual = [...anos].sort().pop();
+  const vmAtualReg = (corpoAdmin || []).find(ca => String(ca.ano_exercicio) === anoAtual && cargoPrincipalDe(ca.cargo) === 'veneravel mestre');
+  const OFICIAIS = CARGOS_PRINCIPAIS.filter(c => c !== 'veneravel mestre');   // 1º Vigilante até Chanceler
+  return {
+    lista,
+    totalGestoes: anos.size,
+    irmaosDistintos: lista.length,                                   // VM até Chanceler (pessoas distintas)
+    jaForamVM: lista.filter(r => r.cargos['veneravel mestre']).length,
+    jaForamOficiais: lista.filter(r => OFICIAIS.some(c => r.cargos[c])).length,   // 1º Vig até Chanceler (pessoas distintas)
+    distintosPorCargo: Object.fromEntries(CARGOS_PRINCIPAIS.map(c => [c, lista.filter(r => r.cargos[c]).length])),
+    anoAtual,
+    vmAtual: vmAtualReg ? (vmAtualReg.irmao?.nome || irmaoPorId.get(vmAtualReg.irmao_id)?.nome) : null,
+    max: Math.max(1, ...lista.flatMap(r => Object.values(r.cargos))),
+  };
+};
