@@ -3,7 +3,7 @@
  * Usa apenas os dados de corpo_administrativo já carregados (sem SQL).
  */
 import React, { useMemo, useState } from 'react';
-import { normalizarCargo, CARGOS_PRINCIPAIS } from './cargosAdmin';
+import { normalizarCargo, CARGOS_PRINCIPAIS, calcularResumoCargos } from './cargosAdmin';
 
 const COLUNAS = [
   { key: 'veneravel mestre',   label: 'Venerável Mestre', curto: 'VM' },
@@ -23,38 +23,7 @@ export const PainelCorpoAdmin = ({ corpoAdmin = [], irmaos = [] }) => {
   const [ordem, setOrdem] = useState({ key: 'total', dir: 'desc' });
   const [detalhe, setDetalhe] = useState(null);
 
-  const dados = useMemo(() => {
-    const porIrmao = {};
-    const anos = new Set();
-    const anosPorCargo = {};
-    corpoAdmin.forEach(ca => {
-      if (ca.ano_exercicio) anos.add(String(ca.ano_exercicio));
-      const cargo = normalizarCargo(ca.cargo);
-      if (!CARGOS_PRINCIPAIS.includes(cargo)) return;
-      if (!ca.irmao_id) return;
-      const nome = ca.irmao?.nome || irmaos.find(i => i.id === ca.irmao_id)?.nome;
-      if (!nome) return;
-      const foto = ca.irmao?.foto_url || irmaos.find(i => i.id === ca.irmao_id)?.foto_url;
-      if (!porIrmao[ca.irmao_id]) porIrmao[ca.irmao_id] = { id: ca.irmao_id, nome, foto, cargos: {}, anos: {}, total: 0 };
-      const r = porIrmao[ca.irmao_id];
-      r.cargos[cargo] = (r.cargos[cargo] || 0) + 1;
-      (r.anos[cargo] = r.anos[cargo] || []).push(String(ca.ano_exercicio));
-      r.total += 1;
-      if (cargo === 'veneravel mestre') (anosPorCargo.vm = anosPorCargo.vm || []).push(String(ca.ano_exercicio));
-    });
-    const lista = Object.values(porIrmao);
-    const anoAtual = [...anos].sort().pop();
-    const vmAtual = corpoAdmin.find(ca => String(ca.ano_exercicio) === anoAtual && normalizarCargo(ca.cargo) === 'veneravel mestre');
-    return {
-      lista,
-      totalGestoes: anos.size,
-      irmaosDistintos: lista.length,
-      jaForamVM: lista.filter(r => r.cargos['veneravel mestre']).length,
-      anoAtual,
-      vmAtual: vmAtual ? (vmAtual.irmao?.nome || irmaos.find(i => i.id === vmAtual.irmao_id)?.nome) : null,
-      max: Math.max(1, ...lista.flatMap(r => Object.values(r.cargos))),
-    };
-  }, [corpoAdmin, irmaos]);
+  const dados = useMemo(() => calcularResumoCargos(corpoAdmin, irmaos), [corpoAdmin, irmaos]);
 
   const linhas = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -89,8 +58,8 @@ export const PainelCorpoAdmin = ({ corpoAdmin = [], irmaos = [] }) => {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
         {kpi('📜', dados.totalGestoes, 'Gestões registradas', dados.anoAtual ? `até ${dados.anoAtual}` : null)}
-        {kpi('👥', dados.irmaosDistintos, 'Irmãos com cargo principal', 'VM até Chanceler')}
-        {kpi('👑', dados.jaForamVM, 'Irmãos que já foram VM')}
+        {kpi('👑', dados.jaForamVM, 'Irmãos que já foram VM', 'cada irmão conta 1 vez')}
+        {kpi('👥', dados.jaForamOficiais, 'Irmãos que já ocuparam 1º Vig. a Chanceler', 'cada irmão conta 1 vez')}
         {kpi('🎖️', dados.vmAtual ? `Ir∴ ${dados.vmAtual}` : '—', 'Veneralato mais recente', dados.anoAtual)}
       </div>
 
