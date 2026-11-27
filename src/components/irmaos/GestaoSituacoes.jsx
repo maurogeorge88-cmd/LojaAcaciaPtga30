@@ -240,6 +240,33 @@ export default function GestaoSituacoes({ irmaId }) {
     return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
   };
 
+  // Intervalo entre duas datas (AAAA-MM-DD) em anos, meses e dias. Só calcula quando há início e fim.
+  const calcularDuracao = (ini, fim) => {
+    if (!ini || !fim) return null;
+    const [iy, im, id] = String(ini).substring(0, 10).split('-').map(Number);
+    const [fy, fm, fd] = String(fim).substring(0, 10).split('-').map(Number);
+    if (!iy || !fy) return null;
+    const totalDias = Math.round((Date.UTC(fy, fm - 1, fd) - Date.UTC(iy, im - 1, id)) / 86400000);
+    if (totalDias < 0) return null;
+    // meses completos entre as datas; os dias restantes contam a partir do "aniversário" mensal (ajustado ao fim do mês)
+    let totalMeses = (fy - iy) * 12 + (fm - im);
+    if (fd < id) totalMeses -= 1;
+    const alvoMes = (im - 1) + totalMeses;
+    const ancoraAno = iy + Math.floor(alvoMes / 12);
+    const ancoraMes = ((alvoMes % 12) + 12) % 12;
+    const ancoraDia = Math.min(id, new Date(ancoraAno, ancoraMes + 1, 0).getDate());
+    const dias = Math.round((Date.UTC(fy, fm - 1, fd) - Date.UTC(ancoraAno, ancoraMes, ancoraDia)) / 86400000);
+    const anos = Math.floor(totalMeses / 12), meses = totalMeses % 12;
+    const partes = [];
+    if (anos > 0) partes.push(`${anos} ${anos === 1 ? 'ano' : 'anos'}`);
+    if (meses > 0) partes.push(`${meses} ${meses === 1 ? 'mês' : 'meses'}`);
+    if (dias > 0) partes.push(`${dias} ${dias === 1 ? 'dia' : 'dias'}`);
+    const texto = partes.length === 0 ? 'menos de 1 dia'
+      : partes.length === 1 ? partes[0]
+      : `${partes.slice(0, -1).join(', ')} e ${partes[partes.length - 1]}`;
+    return { texto, totalDias };
+  };
+
   const getTipoLabel = (tipo) => {
     const labels = {
       'licenca': 'Licença',
@@ -336,6 +363,17 @@ export default function GestaoSituacoes({ irmaId }) {
                       <strong>Período:</strong> {formatarData(sit.data_inicio)} 
                       {sit.data_fim ? ` → ${formatarData(sit.data_fim)}` : ' → Indefinido'}
                     </div>
+                    {(() => {
+                      const dur = calcularDuracao(sit.data_inicio, sit.data_fim);
+                      if (!dur) return null;
+                      const aindaNaoTerminou = sit.data_fim > hojeLocal();
+                      return (
+                        <div>
+                          <strong>{aindaNaoTerminou ? 'Duração prevista:' : 'Tempo afastado:'}</strong> {dur.texto}
+                          <span style={{ color: 'var(--color-text-muted)' }}> ({dur.totalDias.toLocaleString('pt-BR')} {dur.totalDias === 1 ? 'dia' : 'dias'})</span>
+                        </div>
+                      );
+                    })()}
                     {sit.motivo && (
                       <div><strong>Motivo:</strong> {sit.motivo}</div>
                     )}
