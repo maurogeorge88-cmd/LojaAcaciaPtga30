@@ -7,7 +7,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 import { gerarPainelCargosPDF } from '../../utils/gerarPainelCargosPDF';
-import { normalizarCargo, CARGOS_PRINCIPAIS, ORDEM_HIERARQUICA, ordenarCargos, calcularResumoCargos } from './cargosAdmin';
+import { gerarGestoesPDF } from '../../utils/gerarGestoesPDF';
+import { normalizarCargo, CARGOS_PRINCIPAIS, ORDEM_HIERARQUICA, ordenarCargos, calcularResumoCargos, montarGestoes } from './cargosAdmin';
 
 const STATUS_ELEICAO = {
   rascunho:            { label: 'Em Processo de Eleição', emoji: '📝', cor: '#f59e0b' },
@@ -303,6 +304,39 @@ export const CorpoAdmin = ({
   const [extrasAbertos, setExtrasAbertos] = useState({});
   const alternarExtras = (ano) => setExtrasAbertos(a => ({ ...a, [ano]: !a[ano] }));
   const [abaAdmin, setAbaAdmin] = useState('gestoes');
+  const [periodoGestoes, setPeriodoGestoes] = useState('todas');
+  const [gerandoPdfGestoes, setGerandoPdfGestoes] = useState(false);
+
+  // anos exibidos: filtro por ano (busca) + período (atual / 5 / 10 / todas)
+  const anosGestoes = useMemo(() => {
+    const todos = [...new Set(corpoAdmin
+      .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
+      .map(ca => ca.ano_exercicio))].sort((a, b) => b - a);
+    const n = periodoGestoes === 'atual' ? 1 : periodoGestoes === '5' ? 5 : periodoGestoes === '10' ? 10 : todos.length;
+    return todos.slice(0, n);
+  }, [corpoAdmin, anoFiltroAdmin, periodoGestoes]);
+  const gestoesTela = useMemo(() => montarGestoes(corpoAdmin, irmaos || [], anosGestoes), [corpoAdmin, irmaos, anosGestoes]);
+  const rotuloPeriodo = { atual: 'Gestão atual', '5': '5 últimas gestões', '10': '10 últimas gestões', todas: 'Todas as gestões' }[periodoGestoes];
+
+  const gerarPdfGestoes = async () => {
+    setGerandoPdfGestoes(true);
+    try {
+      const { data: loja } = await supabase.from('dados_loja').select('*').limit(1).maybeSingle();
+      let logo = null;
+      if (loja?.logo_url) {
+        try {
+          const r = await fetch(loja.logo_url); const blob = await r.blob();
+          logo = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+        } catch (e) { /* sem logo */ }
+      }
+      const filtro = [rotuloPeriodo, anoFiltroAdmin && `Ano: ${anoFiltroAdmin}`].filter(Boolean).join(' • ');
+      gerarGestoesPDF({ gestoes: gestoesTela, dadosLoja: loja || {}, logo, filtro });
+    } catch (e) {
+      alert('Erro ao gerar o PDF: ' + e.message);
+    } finally {
+      setGerandoPdfGestoes(false);
+    }
+  };
 
   const limparFormularioCorpoAdmin = () => {
     setCorpoAdminForm({
@@ -570,166 +604,58 @@ export const CorpoAdmin = ({
 
       {abaAdmin === 'painel' && <PainelCorpoAdmin corpoAdmin={corpoAdmin} irmaos={irmaos} />}
 
-      {/* LISTA POR ANO */}
+      {/* GESTÕES EM QUADROS */}
       {abaAdmin === 'gestoes' && (
-      <div className="space-y-6">
-        {[...new Set(corpoAdmin
-          .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
-          .map(ca => ca.ano_exercicio))]
-          .sort((a, b) => b - a)
-          .map(ano => (
-            <div key={ano} className="card" style={{ overflow: 'hidden', padding: 0 }}>
-              <div onClick={() => alternarAno(ano)} style={{ 
-                padding: '0.85rem 1rem', 
-                background: 'var(--color-accent)', 
-                color: 'white',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem'
-              }}>
-                <span style={{ fontSize: '0.9rem', transition: 'transform 0.2s', transform: anosAbertos[ano] ? 'rotate(90deg)' : 'none' }}>▶</span>
-                <div style={{ flex: 1 }}>
-                  {(() => {
-                    // Venerável Mestre do ano (identifica a faixa)
-                    const vm = corpoAdmin.find(ca => ca.ano_exercicio === ano && /vener/i.test(String(ca.cargo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')));
-                    const nomeVm = vm ? (vm.irmao?.nome || irmaos?.find(i => i.id === vm.irmao_id)?.nome) : null;
-                    return (
-                      <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
-                        Administração {ano}{nomeVm && <span style={{ fontWeight: 600 }}> — Veneralato do Ir∴ {nomeVm}</span>}
-                      </h3>
-                    );
-                  })()}
-                  <p style={{ fontSize: '0.8rem', opacity: 0.9, margin: 0 }}>
-                    {(() => { const rs = corpoAdmin.filter(ca => ca.ano_exercicio === ano); const p = rs.filter(ca => CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo))).length; const o = rs.length - p; return o > 0 ? `${p} principais + ${o} demais cargos` : `${rs.length} cargos`; })()}
-                  </p>
-                </div>
+      <div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem' }}>
+          {[['atual', 'Gestão atual'], ['5', '5 últimas'], ['10', '10 últimas'], ['todas', 'Todas']].map(([k, l]) => (
+            <button key={k} onClick={() => setPeriodoGestoes(k)}
+              style={{ padding: '0.35rem 0.85rem', borderRadius: 999, border: '1px solid var(--color-border)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer',
+                background: periodoGestoes === k ? 'var(--color-accent)' : 'var(--color-surface)', color: periodoGestoes === k ? '#fff' : 'var(--color-text)' }}>{l}</button>
+          ))}
+          <button onClick={gerarPdfGestoes} disabled={gerandoPdfGestoes || gestoesTela.length === 0}
+            style={{ marginLeft: 'auto', padding: '0.35rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-accent)', background: 'var(--color-surface)', color: 'var(--color-accent)', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', opacity: gerandoPdfGestoes ? 0.6 : 1 }}>
+            {gerandoPdfGestoes ? 'Gerando...' : '📄 PDF das gestões'}
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.9rem' }}>
+          {gestoesTela.map(g => (
+            <div key={g.ano} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderTop: '3px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.7rem 0.9rem 0.8rem', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--color-text)' }}>Gestão {g.ano}</h3>
                 {podeEditarCorpo && (
-                  <button onClick={e => { e.stopPropagation(); abrirModalCorpo(ano); }}
-                    style={{ padding: '0.35rem 0.8rem', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer' }}>
-                    ✏️ Editar ano
-                  </button>
+                  <button onClick={() => abrirModalCorpo(g.ano)} title="Editar gestão"
+                    style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', padding: '0.2rem 0.45rem', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}>✏️</button>
                 )}
               </div>
-
-              {anosAbertos[ano] && (() => {
-                const regs = corpoAdmin.filter(ca => ca.ano_exercicio === ano).sort(ordenarCargos);
-                const principais = regs.filter(ca => CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo)));
-                const demais = regs.filter(ca => !CARGOS_PRINCIPAIS.includes(normalizarCargo(ca.cargo)));
-                const mostrarDemais = !!extrasAbertos[ano];
-                const renderCard = (item) => {
-                  const irmao = item.irmao;
-                  return (
-                          <div
-                            key={item.id}
-                            style={{
-                              background:'var(--color-surface-2)',
-                              border:'1px solid var(--color-border)',
-                              borderRadius:'var(--radius-lg)',
-                              padding:'0.75rem 1rem',
-                              display:'flex',
-                              flexDirection:'column',
-                              gap:'0.25rem',
-                              position:'relative'
-                            }}
-                          >
-                            {/* Cargo */}
-                            <p style={{
-                              fontSize:'0.72rem',
-                              fontWeight:'700',
-                              color:'var(--color-accent)',
-                              textTransform:'uppercase',
-                              letterSpacing:'0.04em',
-                              margin:0
-                            }}>
-                              {item.cargo || 'Cargo não informado'}
-                            </p>
-
-                            {/* Avatar + Nome */}
-                            <div style={{display:'flex', alignItems:'center', gap:'0.5rem', marginTop:'0.15rem'}}>
-                              {irmao?.foto_url ? (
-                                <img
-                                  src={irmao.foto_url}
-                                  alt={irmao.nome}
-                                  style={{width:'32px',height:'32px',borderRadius:'50%',objectFit:'cover',border:'2px solid var(--color-border)',flexShrink:0}}
-                                />
-                              ) : (
-                                <div style={{width:'32px',height:'32px',borderRadius:'50%',background:'var(--color-surface-3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>
-                                  👤
-                                </div>
-                              )}
-                              <p style={{
-                                fontSize:'0.82rem',
-                                fontWeight:'600',
-                                color:'var(--color-text)',
-                                margin:0,
-                                lineHeight:'1.2',
-                                wordBreak:'break-word'
-                              }}>
-                                {irmao?.nome || 'Irmão não encontrado'}
-                              </p>
-                            </div>
-
-                            {/* CIM + Ações */}
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'0.25rem'}}>
-                              <span style={{
-                                fontSize:'0.72rem',
-                                color:'var(--color-text-muted)',
-                                background:'var(--color-surface)',
-                                border:'1px solid var(--color-border)',
-                                borderRadius:'var(--radius-sm)',
-                                padding:'0.1rem 0.4rem',
-                                fontWeight:'600'
-                              }}>
-                                CIM {irmao?.cim || '-'}
-                              </span>
-
-                              {podeEditarCorpo && (
-                                <div style={{display:'flex', gap:'0.25rem'}}>
-                                  <button
-                                    onClick={() => abrirModalCorpo(item.ano_exercicio)}
-                                    title="Editar"
-                                    style={{background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-sm)',padding:'0.2rem 0.4rem',cursor:'pointer',fontSize:'0.75rem',lineHeight:1}}
-                                  >✏️</button>
-                                  <button
-                                    onClick={() => handleExcluirCorpoAdmin(item.id)}
-                                    title="Remover"
-                                    style={{background:'rgba(239,68,68,0.1)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-sm)',padding:'0.2rem 0.4rem',cursor:'pointer',fontSize:'0.75rem',lineHeight:1}}
-                                  >🗑️</button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                  );
-                };
-                return (
-                  <div style={{ padding: '1rem' }}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '0.75rem' }}>
-                      {principais.map(renderCard)}
+              {g.principais.map((p, i) => (
+                <div key={p.chave} style={{ display: 'flex', gap: '0.6rem', alignItems: 'baseline', padding: '0.28rem 0', borderTop: i ? '1px solid var(--color-border)' : 'none' }}>
+                  <span style={{ width: 98, flexShrink: 0, fontSize: '0.66rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--color-text-muted)' }}>{p.label}</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: p.nomes.length ? 'var(--color-text)' : 'var(--color-text-muted)', lineHeight: 1.25, wordBreak: 'break-word' }}>{p.nomes.length ? p.nomes.join(' / ') : '—'}</span>
+                </div>
+              ))}
+              {g.demais.length > 0 && (
+                <>
+                  <button onClick={() => alternarExtras(g.ano)}
+                    style={{ marginTop: '0.5rem', padding: '0.3rem', background: 'var(--color-surface-2)', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-accent)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}>
+                    {extrasAbertos[g.ano] ? '▴ Recolher demais cargos' : `▾ Ver mais ${g.demais.length} cargo${g.demais.length > 1 ? 's' : ''}`}
+                  </button>
+                  {extrasAbertos[g.ano] && g.demais.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.6rem', alignItems: 'baseline', padding: '0.25rem 0', borderTop: '1px solid var(--color-border)' }}>
+                      <span style={{ width: 98, flexShrink: 0, fontSize: '0.64rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{d.cargo}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-text)', lineHeight: 1.25 }}>{d.nome}</span>
                     </div>
-                    {demais.length > 0 && (
-                      <>
-                        <button onClick={() => alternarExtras(ano)}
-                          style={{ marginTop: '0.85rem', width: '100%', padding: '0.5rem', background: 'var(--color-surface-2)', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-accent)', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
-                          {mostrarDemais ? '▴ Recolher demais cargos' : `▾ Ver mais ${demais.length} cargo${demais.length > 1 ? 's' : ''}`}
-                        </button>
-                        {mostrarDemais && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '0.75rem', marginTop: '0.75rem' }}>
-                            {demais.map(renderCard)}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
+                  ))}
+                </>
+              )}
             </div>
           ))}
+        </div>
 
-        {[...new Set(corpoAdmin
-          .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
-          .map(ca => ca.ano_exercicio))].length === 0 && (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center text-gray-500">
-            {anoFiltroAdmin 
-              ? `Nenhum registro encontrado para o ano "${anoFiltroAdmin}"`
-              : 'Nenhum cargo administrativo registrado'}
+        {gestoesTela.length === 0 && (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+            {anoFiltroAdmin ? `Nenhum registro encontrado para o ano "${anoFiltroAdmin}"` : 'Nenhum cargo administrativo registrado'}
           </div>
         )}
       </div>
