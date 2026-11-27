@@ -87,8 +87,8 @@ export const gerarPainelCargosPDF = ({ linhas = [], resumo = {}, dadosLoja = {},
   y += 6;
   const cards = [
     [String(resumo.totalGestoes ?? '—'), 'Gestões registradas'],
-    [String(resumo.irmaosDistintos ?? '—'), 'Irmãos com cargo principal'],
     [String(resumo.jaForamVM ?? '—'), 'Irmãos que já foram VM'],
+    [String(resumo.jaForamOficiais ?? '—'), 'Irmãos que já foram 1º Vig. a Chanceler'],
     [resumo.vmAtual ? `Ir. ${resumo.vmAtual}` : '—', `Veneralato mais recente${resumo.anoAtual ? ` (${resumo.anoAtual})` : ''}`],
   ];
   const gap = 4;
