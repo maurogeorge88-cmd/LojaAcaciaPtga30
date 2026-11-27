@@ -2,15 +2,17 @@
 export const normalizarCargo = (cargo) => {
   if (!cargo) return '';
   const c = cargo.toLowerCase().trim();
-  if (c.includes('veneravel') || c.includes('venerável')) return 'veneravel mestre';
-  if (c.includes('1') && c.includes('vigilante')) return 'primeiro vigilante';
-  if (c.includes('primeiro') && c.includes('vigilante')) return 'primeiro vigilante';
-  if (c.includes('2') && c.includes('vigilante')) return 'segundo vigilante';
-  if (c.includes('segundo') && c.includes('vigilante')) return 'segundo vigilante';
-  if (c.includes('orador')) return 'orador';
-  if (c.includes('secretario') || c.includes('secretário')) return 'secretario';
-  if (c.includes('tesoureiro')) return 'tesoureiro';
-  if (c.includes('chanceler')) return 'chanceler';
+  // Cargos principais: casam por PALAVRA inteira (evita "Arquiteto Decorador" virar "Orador")
+  const cs = c.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (/\bveneravel\b/.test(cs)) return 'veneravel mestre';
+  if (/\bvigilante\b/.test(cs)) {
+    if (c.includes('1') || /\bprimeiro\b/.test(cs)) return 'primeiro vigilante';
+    if (c.includes('2') || /\bsegundo\b/.test(cs)) return 'segundo vigilante';
+  }
+  if (/\borador\b/.test(cs)) return 'orador';
+  if (/\bsecretario\b/.test(cs)) return 'secretario';
+  if (/\btesoureiro\b/.test(cs)) return 'tesoureiro';
+  if (/\bchanceler\b/.test(cs)) return 'chanceler';
   if (c.includes('hospitaleiro')) return 'hospitaleiro';
   if (c.includes('mestre') && c.includes('cerimonia')) return 'mestre de cerimonia';
   if (c.includes('mestre') && c.includes('harmonia')) return 'mestre de harmonia';
