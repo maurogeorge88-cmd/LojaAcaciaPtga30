@@ -81,7 +81,7 @@ export const gerarGestoesPDF = ({ gestoes = [], dadosLoja = {}, logo = null, fil
   // ── Quadros ──
   const COLS = 3, GAP = 5;
   const bw = (W - 2 * M - GAP * (COLS - 1)) / COLS;
-  const HEAD = 9, ROW = 6, PAD = 2;
+  const HEAD = 11, ROW = 6, PAD = 2;
   const bh = HEAD + 7 * ROW + PAD;
   const limite = H - 16;
   let x0 = M, col = 0;
@@ -91,13 +91,21 @@ export const gerarGestoesPDF = ({ gestoes = [], dadosLoja = {}, logo = null, fil
     const x = M + col * (bw + GAP);
 
     doc.setFillColor(255, 255, 255); doc.setDrawColor(...DOURADO); doc.setLineWidth(0.3);
+    if (g.fundacao) doc.setLineWidth(0.8);
     doc.roundedRect(x, y, bw, bh, 2, 2, 'FD');
+    doc.setLineWidth(0.3);
     doc.setFillColor(...CREME);
     doc.roundedRect(x, y, bw, HEAD, 2, 2, 'F');
     doc.rect(x, y + HEAD - 2, bw, 2, 'F');
     doc.setFillColor(...DOURADO); doc.rect(x, y + HEAD - 0.6, bw, 0.6, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
-    doc.text(`GESTÃO ${g.ano}`, x + bw / 2, y + 6.2, { align: 'center' });
+    if (g.fundacao) {
+      doc.text(`GESTÃO ${g.ano}  ·  FUNDAÇÃO`, x + bw / 2, y + 5.2, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...CINZA);
+      doc.text(`Fundada em ${g.fundacao}`, x + bw / 2, y + 9, { align: 'center' });
+    } else {
+      doc.text(`GESTÃO ${g.ano}`, x + bw / 2, y + 7, { align: 'center' });
+    }
 
     g.principais.forEach((p, i) => {
       const ry = y + HEAD + i * ROW;
