@@ -316,7 +316,18 @@ export const CorpoAdmin = ({
     return todos.slice(0, n);
   }, [corpoAdmin, anoFiltroAdmin, periodoGestoes]);
   const anoAtualGestao = useMemo(() => corpoAdmin.reduce((m, ca) => (ca.ano_exercicio && ca.ano_exercicio > m ? ca.ano_exercicio : m), ''), [corpoAdmin]);
-  const gestoesTela = useMemo(() => montarGestoes(corpoAdmin, irmaos || [], anosGestoes), [corpoAdmin, irmaos, anosGestoes]);
+  // Fundação = gestão mais antiga cadastrada; data vem de dados_loja.data_fundacao
+  const [dataFundacao, setDataFundacao] = useState('1997-12-20');
+  useEffect(() => {
+    supabase.from('dados_loja').select('data_fundacao').limit(1).maybeSingle()
+      .then(({ data }) => { if (data?.data_fundacao) setDataFundacao(String(data.data_fundacao).substring(0, 10)); });
+  }, []);
+  const anoFundacao = useMemo(() => corpoAdmin.reduce((m, ca) => (ca.ano_exercicio && (!m || ca.ano_exercicio < m) ? ca.ano_exercicio : m), ''), [corpoAdmin]);
+  const dataFundacaoBR = dataFundacao.split('-').reverse().join('/');
+  const gestoesTela = useMemo(
+    () => montarGestoes(corpoAdmin, irmaos || [], anosGestoes).map(g => ({ ...g, fundacao: g.ano === anoFundacao ? dataFundacaoBR : null })),
+    [corpoAdmin, irmaos, anosGestoes, anoFundacao, dataFundacaoBR]
+  );
   const rotuloPeriodo = { atual: 'Gestão atual', '5': '5 últimas gestões', '10': '10 últimas gestões', todas: 'Todas as gestões' }[periodoGestoes];
 
   const gerarPdfGestoes = async () => {
@@ -622,9 +633,14 @@ export const CorpoAdmin = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.9rem' }}>
           {gestoesTela.map(g => (
-            <div key={g.ano} style={{ background: 'var(--color-surface)', border: g.ano === anoAtualGestao ? '2px solid #d4a017' : '1px solid var(--color-border)', borderTop: g.ano === anoAtualGestao ? '3px solid #d4a017' : '3px solid var(--color-accent)', boxShadow: g.ano === anoAtualGestao ? '0 0 0 1px rgba(212,160,23,0.25), 0 2px 10px rgba(212,160,23,0.15)' : 'none', borderRadius: 'var(--radius-lg)', padding: '0.7rem 0.9rem 0.8rem', display: 'flex', flexDirection: 'column' }}>
+            <div key={g.ano} style={{ background: 'var(--color-surface)', border: (g.ano === anoAtualGestao || g.fundacao) ? '2px solid #d4a017' : '1px solid var(--color-border)', borderTop: (g.ano === anoAtualGestao || g.fundacao) ? '3px solid #d4a017' : '3px solid var(--color-accent)', boxShadow: (g.ano === anoAtualGestao || g.fundacao) ? '0 0 0 1px rgba(212,160,23,0.25), 0 2px 10px rgba(212,160,23,0.15)' : 'none', borderRadius: 'var(--radius-lg)', padding: '0.7rem 0.9rem 0.8rem', display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>Gestão {g.ano}</h3>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>
+                    Gestão {g.ano}{g.fundacao && <span style={{ marginLeft: '0.5rem', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#d4a017', background: 'rgba(212,160,23,0.15)', border: '1px solid rgba(212,160,23,0.5)', borderRadius: 999, padding: '0.1rem 0.5rem', verticalAlign: 'middle' }}>✦ Fundação</span>}
+                  </h3>
+                  {g.fundacao && <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 2 }}>Fundada em {g.fundacao}</div>}
+                </div>
                 {podeEditarCorpo && (
                   <button onClick={() => abrirModalCorpo(g.ano)} title="Editar gestão"
                     style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', padding: '0.2rem 0.45rem', cursor: 'pointer', fontSize: '0.75rem', lineHeight: 1 }}>✏️</button>
